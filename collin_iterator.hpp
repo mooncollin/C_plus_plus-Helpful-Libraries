@@ -17,7 +17,7 @@ namespace collin
 			template<class... Args>
 			back_emplace_iterator<Container>& operator=(Args&&... args)
 			{
-				container->emplace_back(std::forward<Args>(args));
+				container->emplace_back(std::forward<Args>(args...));
 				return *this;
 			}
 
