@@ -38,6 +38,12 @@ namespace collin
 		return std::any_of(std::cbegin(container), std::cend(container), pred);
 	}
 
+	template<class Container, class UnaryPredicate>
+	bool all_of(const Container& container, UnaryPredicate pred)
+	{
+		return std::all_of(std::cbegin(container), std::cend(container), pred);
+	}
+
 	template<class Container, class T>
 	typename Container::const_iterator find(const Container& container, const T& val)
 	{
@@ -91,19 +97,19 @@ namespace collin
 	}
 
 	template<class Container, class Container2, class Function>
-	auto transform(const Container& container, Container2& container2, Function func) -> decltype(std::begin(container2))
+	auto transform(const Container& container, Container2& container2, Function fn)
 	{
 		return transform(container, std::begin(container2), fn);
 	}
 
 	template<class Container, class Function>
-	auto transform(Container& container, Function fn) -> decltype(std::begin(container))
+	auto transform(Container& container, Function fn)
 	{
 		return transform(container, std::begin(container), fn);
 	}
 
 	template<class Container, class UnaryPredicate>
-	auto remove_if(Container& container, UnaryPredicate fn) -> decltype(std::end(container))
+	auto remove_if(Container& container, UnaryPredicate fn)
 	{
 		return std::remove_if(std::begin(container), std::end(container), fn);
 	}

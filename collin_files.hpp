@@ -1,9 +1,12 @@
 #ifndef COLLIN_FILES
 #define COLLIN_FILES
 
+#include <fstream>
+#include <regex>
+
 namespace collin
 {
-	template<typename T>
+	template<typename T = std::string>
     class Lines : public std::istream_iterator<T>
     {
         using parent = std::istream_iterator<T>;
@@ -21,6 +24,11 @@ namespace collin
             Lines<T> end() const
             {
                 return Lines<T>();
+            }
+
+            Lines<T> begin() const
+            {
+                return *this;
             }
 
             typename parent::reference operator*() const
@@ -64,7 +72,7 @@ namespace collin
             std::string get_input() const
             {
                 std::string str;
-                std::getline(*input, str);
+                std::getline(*input, str, '\n');
                 return str;
             }
 
@@ -79,22 +87,44 @@ namespace collin
 
             void next_input()
             {
-                if(input != NULL && input->eof())
+                if(input != nullptr)
                 {
-                    input = NULL;
-                }
-                if(input != NULL)
-                {
-                    current = parse_input(get_input());
+                    if(input->fail() || input->eof())
+                    {
+                        input = nullptr;
+                    }
+                    else
+                    {
+                        current = parse_input(get_input());
+                    }
                 }
             }
     };
+
+    template<>
+    std::string Lines<std::string>::parse_input(const std::string& str)
+    {
+        return str;
+    }
 
     std::string read_all(const std::string& name)
     {
         std::ifstream file(name);
 
         return std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    }
+
+    template<class T = std::string>
+    std::vector<T> readlines(std::ifstream& input)
+    {
+        std::vector<T> lines;
+
+        for(const auto& line : Lines<T>(input))
+        {
+            lines.push_back(line);
+        }
+
+        return lines;
     }
 }
 
