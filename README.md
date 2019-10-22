@@ -1,4 +1,4 @@
-# Collin's Usefull C++ Libraries
+# Collin's Useful C++ Libraries
 
 All the files are header only files that attempt to be an extension onto the current C++ standard library.
 
