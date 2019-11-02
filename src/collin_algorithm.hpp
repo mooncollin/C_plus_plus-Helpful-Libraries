@@ -4,6 +4,7 @@
 #include <utility>
 #include <algorithm>
 #include <functional>
+#include "collin_iterator.hpp"
 
 namespace collin
 {

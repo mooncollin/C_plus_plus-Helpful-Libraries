@@ -12,9 +12,7 @@ namespace collin
         using parent = std::istream_iterator<T>;
 
         public:
-            Lines()
-            {
-            }
+            Lines() = default;
 
             Lines(std::ifstream& input) : input(&input)
             {

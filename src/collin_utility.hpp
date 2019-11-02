@@ -1,6 +1,9 @@
 #ifndef COLLIN_UTILITY
 #define COLLIN_UTILITY
 
+#include <iterator>
+#include <exception>
+
 namespace collin
 {
 	template<class T>
