@@ -2,7 +2,6 @@
 #define COLLIN_STRING
 
 #include <unordered_set>
-#include <experimental/array>
 #include <algorithm>
 #include <functional>
 #include <type_traits>
@@ -16,12 +15,12 @@
 
 namespace collin
 {
-    constexpr auto english_alphabet = std::experimental::make_array
-    (
+    constexpr std::array english_alphabet =
+    {
         'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
         'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
         's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
-    );
+    };
 
     const std::unordered_set vowels = {'a', 'e', 'i', 'o', 'u'};
     const std::unordered_set consonants = {'b', 'c', 'd', 'f', 'g', 'h', 'j', 'k',
@@ -29,12 +28,12 @@ namespace collin
 
 	bool is_vowel(char t) noexcept
     {
-        return find(vowels, std::tolower(t)) != std::cend(vowels);
+        return vowels.find(std::tolower(t)) != std::cend(vowels);
     }
 
     bool is_consonant(char t) noexcept
     {
-        return find(consonants, std::tolower(t)) != std::cend(consonants);
+        return consonants.find(std::tolower(t)) != std::cend(consonants);
     }
 
     template<class Container>
