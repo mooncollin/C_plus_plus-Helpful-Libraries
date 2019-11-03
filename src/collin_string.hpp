@@ -9,6 +9,7 @@
 #include <regex>
 #include <cctype>
 #include <sstream>
+#include <string_view>
 #include "collin_utility.hpp"
 #include "collin_algorithm.hpp"
 #include "collin_functional.hpp"
@@ -132,17 +133,76 @@ namespace collin
         transform(container, static_cast<int(*)(int)>(std::tolower));
     }
 
+    template<class T>
+    T from_string(std::string_view str)
+    {
+        using plain_type = std::remove_cv_t<T>;
+
+        if constexpr(std::is_same_v<plain_type, char*>)
+        {
+            return str.data();
+        }
+        else if constexpr(std::is_same_v<plain_type, int>)
+        {
+            return std::stoi(str.data());
+        }
+        else if constexpr(std::is_same_v<plain_type, long>)
+        {
+            return std::stol(str.data());
+        }
+        else if constexpr(std::is_same_v<plain_type, unsigned long>)
+        {
+            return std::stoul(str.data());
+        }
+        else if constexpr(std::is_same_v<plain_type, long int>)
+        {
+            return std::atol(str.data());
+        }
+        else if constexpr(std::is_same_v<plain_type, float>)
+        {
+            return std::stof(str.data());
+        }
+        else if constexpr(std::is_same_v<plain_type, double>)
+        {
+            return std::stod(str.data());
+        }
+        else if constexpr(std::is_same_v<plain_type, long double>)
+        {
+            return std::stold(str.data());
+        }
+        else if constexpr(std::is_same_v<plain_type, long long>)
+        {
+            return std::stoll(str.data());
+        }
+        else if constexpr(std::is_same_v<plain_type, unsigned long long>)
+        {
+            return std::stoull(str.data());
+        }
+        else if constexpr(std::is_convertible_v<plain_type, std::string>)
+        {
+            return std::string(str.data());
+        }
+    }
+
     template<class T, class Container, class Function>
-    std::vector<T> split_impl(const Container& container, const std::string& s, Function f)
+    std::vector<T> split_impl(const Container& container, std::string_view s, Function f)
     {
         std::vector<T> tokens;
-        std::regex split_regex(s);
-        std::sregex_token_iterator it(std::cbegin(container), std::cend(container), split_regex, -1);
-        std::sregex_token_iterator end;
+        std::regex split_regex(s.data());
+        std::regex_token_iterator<typename Container::const_iterator> it(std::cbegin(container), std::cend(container), split_regex, -1);
+        std::regex_token_iterator<typename Container::const_iterator> end;
 
         while(it != end)
         {
-            tokens.push_back(f(*it));
+            const auto current_str = it->str().c_str();
+            const auto current_size = static_cast<std::size_t>(it->length());
+            tokens.push_back(
+                std::move(f(std::string_view(
+                        current_str,
+                        current_size
+                    )
+                )
+            ));
             it++;
         }
 
@@ -150,16 +210,24 @@ namespace collin
     }
 
     template<class Function>
-    std::vector<std::string> split_impl(const std::string& str, const std::string& s, std::size_t n, Function f)
+    std::vector<std::string> split_impl(std::string_view str, std::string_view s, std::size_t n, Function f)
     {
         std::vector<std::string> tokens;
-        std::regex split_regex(s);
-        std::sregex_token_iterator it(std::cbegin(str), std::cend(str), split_regex, -1);
-        std::sregex_token_iterator end;
+        std::regex split_regex(s.data());
+        std::regex_token_iterator<decltype(str)::const_iterator> it(std::cbegin(str), std::cend(str), split_regex, -1);
+        std::regex_token_iterator<decltype(str)::const_iterator> end;
 
         while(it != end && n != 0)
         {
-            tokens.push_back(f(*it));
+            const auto current_str = it->str().c_str();
+            const auto current_size = static_cast<std::size_t>(it->length());
+            tokens.push_back(
+                std::move(f(std::string_view(
+                        current_str,
+                        current_size
+                    )
+                )
+            ));
             it++;
             n--;
         }
@@ -183,60 +251,28 @@ namespace collin
     }
 
     template<class T, class Container, class Function>
-    std::vector<T> split(const Container& container, const std::string& s, Function fn)
+    std::vector<T> split(const Container& container, std::string_view s, Function fn)
     {
         return split_impl<T>(container, s, fn);
     }
 
     template<class T = std::string, class Container>
-    std::vector<T> split(const Container& container, const std::string& s=" ", std::size_t n=-1)
+    std::vector<T> split(const Container& container, std::string_view s=" ", std::size_t n=-1)
     {
-        if constexpr(std::is_same_v<T, std::string>)
+        if constexpr(std::is_convertible_v<T, std::string>)
         {
-            return split_impl(container, s, n, [](const auto& in) { return in; });
+            return split_impl(container, s, n, from_string<T>);
         }
-        else if constexpr(std::is_same_v<T, int>)
+        else
         {
-            return split<T>(container, s, [](const auto& in) { return std::stoi(in); });
-        }
-        else if constexpr(std::is_same_v<T, long>)
-        {
-            return split<T>(container, s, [](const auto& in) { return std::stol(in); });
-        }
-        else if constexpr(std::is_same_v<T, unsigned long>)
-        {
-            return split<T>(container, s, [](const auto& in) { return std::stoul(in); });
-        }
-        else if constexpr(std::is_same_v<T, long int>)
-        {
-            return split<T>(container, s, [](const auto& in) { return std::strtol(in); });
-        }
-        else if constexpr(std::is_same_v<T, float>)
-        {
-            return split<T>(container, s, [](const auto& in) { return std::stof(in); });
-        }
-        else if constexpr(std::is_same_v<T, double>)
-        {
-            return split<T>(container, s, [](const auto& in) { return std::stod(in); });
-        }
-        else if constexpr(std::is_same_v<T, long double>)
-        {
-            return split<T>(container, s, [](const auto& in) { return std::stold(in); });
-        }
-        else if constexpr(std::is_same_v<T, long long>)
-        {
-            return split<T>(container, s, [](const auto& in) { return std::stoll(in); });
-        }
-        else if constexpr(std::is_same_v<T, unsigned long long>)
-        {
-            return split<T>(container, s, [](const auto& in) { return std::stoull(in); });
+            return split<T>(container, s, from_string<T>);
         }
     }
 
     template<class InputIterator>
-    std::string join(InputIterator begin, InputIterator end, const std::string& join_string)
+    std::string join(InputIterator begin, InputIterator end, std::string_view join_string)
     {
-        std::stringstream s;
+        std::ostringstream s;
         while(begin != end)
         {
             s << *begin;
@@ -252,7 +288,7 @@ namespace collin
     }
 
     template<class Container>
-    std::string join(const Container& container, const std::string& join_string)
+    std::string join(const Container& container, std::string_view join_string)
     {
         return join(std::cbegin(container), std::cend(container), join_string);
     }

@@ -396,7 +396,7 @@ void split_test()
 
 void join_test()
 {
-	using join_vector_func_t = std::string (*)(const std::vector<std::string>&, const std::string&);
+	using join_vector_func_t = std::string (*)(const std::vector<const char*>&, std::string_view);
 
 
 	const auto join_vector_func = static_cast<join_vector_func_t>(collin::join);
@@ -405,14 +405,14 @@ void join_test()
 	(
 		join_vector_func,
 			{
-				std::make_pair(std::make_tuple(std::vector<std::string> {"These", "are", "words"}, " "s), "These are words"s),
-				std::make_pair(std::make_tuple(std::vector<std::string> {"These", "are", "words"}, "\n"s), "These\nare\nwords"s)
+				std::make_pair(std::make_tuple(std::vector {"These", "are", "words"}, " "s), "These are words"s),
+				std::make_pair(std::make_tuple(std::vector {"These", "are", "words"}, "\n"s), "These\nare\nwords"s)
 			}
 	);
 
-	auto words = std::vector<std::string> {"Look", "at", "these", "strings"};
+	const auto words = std::vector {"Look", "at", "these", "strings"};
 
-	using join_it_func_t = std::string (*)(typename decltype(words)::iterator, typename decltype(words)::iterator, const std::string&);
+	using join_it_func_t = std::string (*)(typename decltype(words)::const_iterator, typename decltype(words)::const_iterator, std::string_view);
 
 	const auto join_it_func = static_cast<join_it_func_t>(collin::join);
 

@@ -11,26 +11,28 @@
 #include <initializer_list>
 #include <functional>
 #include <iostream>
+#include <string_view>
 #include "collin_functional.hpp"
 #include "collin_type_traits.hpp"
 
 namespace collin
 {
 	template<class T, class F>
-	void assert_equals(const T& first, const F& second, const std::string& message="")
+	void assert_equals(const T& first, const F& second, std::string_view message="")
 	{
 		if(first != second)
 		{
-			throw std::runtime_error("Assertion Failed: " + message);
+			using namespace std::literals;
+			throw std::runtime_error("Assertion Failed: "s + message.data());
 		}
 	}
 
 	template<class T>
-	void assert_test_data(const std::list<std::pair<T, T>>& data, const std::string& test="")
+	void assert_test_data(const std::list<std::pair<T, T>>& data, std::string_view test="")
 	{
 		for(const auto&[result, expected] : data)
 		{
-			std::stringstream error_text;
+			std::ostringstream error_text;
 
 			error_text << test << "\n";
 

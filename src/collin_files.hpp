@@ -2,7 +2,10 @@
 #define COLLIN_FILES
 
 #include <fstream>
-#include <regex>
+#include <string_view>
+#include <algorithm>
+#include <iterator>
+#include "collin_string.hpp"
 
 namespace collin
 {
@@ -65,23 +68,7 @@ namespace collin
 
         private:
             std::ifstream* input = nullptr;
-            T current{};
-
-            std::string get_input() const
-            {
-                std::string str;
-                std::getline(*input, str, '\n');
-                return str;
-            }
-
-            T parse_input(const std::string& str)
-            {
-                T result;
-                std::stringstream ss;
-                ss << str;
-                ss >> result;
-                return result;
-            }
+            T current {};
 
             void next_input()
             {
@@ -93,21 +80,18 @@ namespace collin
                     }
                     else
                     {
-                        current = parse_input(get_input());
+                        std::string str;
+                        std::getline(*input, str, '\n');
+
+                        current = from_string<T>(std::string_view(str.c_str(), str.size()));
                     }
                 }
             }
     };
 
-    template<>
-    std::string Lines<std::string>::parse_input(const std::string& str)
+    std::string read_all(std::string_view name)
     {
-        return str;
-    }
-
-    std::string read_all(const std::string& name)
-    {
-        std::ifstream file(name);
+        std::ifstream file(name.data());
 
         return std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     }
@@ -116,11 +100,7 @@ namespace collin
     std::vector<T> readlines(std::ifstream& input)
     {
         std::vector<T> lines;
-
-        for(const auto& line : Lines<T>(input))
-        {
-            lines.push_back(line);
-        }
+        std::copy(Lines<T>(input), Lines<T>(), std::back_inserter(lines));
 
         return lines;
     }
