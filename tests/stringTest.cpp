@@ -398,7 +398,6 @@ void join_test()
 {
 	using join_vector_func_t = std::string (*)(const std::vector<const char*>&, std::string_view);
 
-
 	const auto join_vector_func = static_cast<join_vector_func_t>(collin::join);
 
 	const auto test_string_values = collin::make_test_data

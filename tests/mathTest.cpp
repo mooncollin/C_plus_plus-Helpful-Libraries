@@ -68,6 +68,20 @@ void test_is_odd()
 	collin::assert_test_data(is_odd_test_values, "is_odd Normal");
 	collin::assert_test_data(is_odd_float_test_values, "is_odd Float");
 	collin::assert_test_data(is_odd_random_test_values, "is_odd Random");
+
+	static_assert(collin::is_odd(1) == true);
+	static_assert(collin::is_odd(2) == false);
+	static_assert(collin::is_odd(3) == true);
+	static_assert(collin::is_odd(4) == false);
+	static_assert(collin::is_odd(5) == true);
+	static_assert(collin::is_odd(6) == false);
+	static_assert(collin::is_odd(7) == true);
+	static_assert(collin::is_odd(8) == false);
+	static_assert(collin::is_odd(9) == true);
+	static_assert(collin::is_odd(10) == false);
+	static_assert(collin::is_odd(-3) == true);
+	static_assert(collin::is_odd(-2) == false);
+	static_assert(collin::is_odd(0) == false);
 }
 
 void test_is_even()
@@ -133,6 +147,20 @@ void test_is_even()
 	collin::assert_test_data(is_even_test_values, "is_even Normal");
 	collin::assert_test_data(is_even_float_test_values, "is_even Float");
 	collin::assert_test_data(is_even_random_test_values, "is_even Random");
+
+	static_assert(collin::is_even(1) == false);
+	static_assert(collin::is_even(2) == true);
+	static_assert(collin::is_even(3) == false);
+	static_assert(collin::is_even(4) == true);
+	static_assert(collin::is_even(5) == false);
+	static_assert(collin::is_even(6) == true);
+	static_assert(collin::is_even(7) == false);
+	static_assert(collin::is_even(8) == true);
+	static_assert(collin::is_even(9) == false);
+	static_assert(collin::is_even(10) == true);
+	static_assert(collin::is_even(-3) == false);
+	static_assert(collin::is_even(-2) == true);
+	static_assert(collin::is_even(0) == true);
 }
 
 void test_factorial()
@@ -155,6 +183,17 @@ void test_factorial()
 	);
 
 	collin::assert_test_data(test_values, "factorial Normal");
+
+	static_assert(collin::factorial(1) == 1);
+	static_assert(collin::factorial(2) == 2);
+	static_assert(collin::factorial(3) == 6);
+	static_assert(collin::factorial(4) == 24);
+	static_assert(collin::factorial(5) == 120);
+	static_assert(collin::factorial(6) == 720);
+	static_assert(collin::factorial(7) == 5040);
+	static_assert(collin::factorial(8) == 40320);
+	static_assert(collin::factorial(9) == 362880);
+	static_assert(collin::factorial(10) == 3628800);
 }
 
 int main()
