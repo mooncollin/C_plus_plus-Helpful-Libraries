@@ -83,7 +83,7 @@ namespace collin
                         std::string str;
                         std::getline(*input, str, '\n');
 
-                        current = from_string<T>(std::string_view(str.c_str(), str.size()));
+                        current = from_string<T>(str);
                     }
                 }
             }

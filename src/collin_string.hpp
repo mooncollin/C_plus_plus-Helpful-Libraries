@@ -184,6 +184,12 @@ namespace collin
         }
     }
 
+    template<class T>
+    T from_string(const std::string& str)
+    {
+        return from_string<T>(std::string_view(str.data(), str.size()));
+    }
+
     template<class T, class Container, class Function>
     std::vector<T> split_impl(const Container& container, std::string_view s, Function f)
     {
@@ -194,15 +200,10 @@ namespace collin
 
         while(it != end)
         {
-            const auto current_str = it->str().c_str();
-            const auto current_size = static_cast<std::size_t>(it->length());
+            const auto current_str = it->str();
             tokens.push_back(
-                std::move(f(std::string_view(
-                        current_str,
-                        current_size
-                    )
-                )
-            ));
+                std::move(f(current_str))
+            );
             it++;
         }
 
@@ -219,15 +220,10 @@ namespace collin
 
         while(it != end && n != 0)
         {
-            const auto current_str = it->str().c_str();
-            const auto current_size = static_cast<std::size_t>(it->length());
+            const auto current_str = it->str();
             tokens.push_back(
-                std::move(f(std::string_view(
-                        current_str,
-                        current_size
-                    )
-                )
-            ));
+                std::move(f(current_str))
+            );
             it++;
             n--;
         }
@@ -259,14 +255,22 @@ namespace collin
     template<class T = std::string, class Container>
     std::vector<T> split(const Container& container, std::string_view s=" ", std::size_t n=-1)
     {
+        const T(*from_string_f)(const std::string& str) = from_string;
+
         if constexpr(std::is_convertible_v<T, std::string>)
         {
-            return split_impl(container, s, n, from_string<T>);
+            return split_impl(container, s, n, from_string_f);
         }
         else
         {
-            return split<T>(container, s, from_string<T>);
+            return split<T>(container, s, from_string_f);
         }
+    }
+
+    template<class T = std::string, class Container>
+    std::vector<T> split(const Container& container, const std::string& s, std::size_t n=-1)
+    {
+        return split(container, std::string_view(s.data(), s.size()), n);
     }
 
     template<class InputIterator>

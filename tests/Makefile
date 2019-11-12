@@ -17,4 +17,10 @@ algorithmTest:	algorithmTest.cpp
 	@algorithmTest.exe
 	@rm algorithmTest.exe
 
+graphTest:	graphTest.cpp
+	@$(compiler) $(compiler-flags) $< -o $@
+	@graphTest.exe
+	@rm graphTest.exe
+
+
 tests:	mathTest stringTest algorithmTest

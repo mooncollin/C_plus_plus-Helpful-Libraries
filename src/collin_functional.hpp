@@ -37,6 +37,18 @@ namespace collin
 	{
 		return bind_1(std::equal_to<T>(), std::move(thing));
 	}
+
+	struct pair_hash
+	{
+		template<class T1, class T2>
+		std::size_t operator()(const std::pair<T1, T2>& p) const
+		{
+			const auto h1 = std::hash<T1>{}(p.first);
+			const auto h2 = std::hash<T2>{}(p.second);
+
+			return h1 ^ h2;
+		}
+	};
 }
 
 #endif
