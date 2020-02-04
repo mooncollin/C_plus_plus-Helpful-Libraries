@@ -80,10 +80,17 @@ namespace collin
                     }
                     else
                     {
-                        std::string str;
-                        std::getline(*input, str, '\n');
+                        if constexpr(std::is_same_v<T, std::string>)
+                        {
+                            std::getline(*input, current, '\n');
+                        }
+                        else
+                        {
+                            std::string str;
+                            std::getline(*input, str, '\n');
 
-                        current = from_string<T>(str);
+                            current = from_string<T>(str);
+                        }
                     }
                 }
             }
@@ -97,12 +104,9 @@ namespace collin
     }
 
     template<class T = std::string>
-    std::vector<T> readlines(std::ifstream& input)
+    std::vector<T> read_lines(std::ifstream& input)
     {
-        std::vector<T> lines;
-        std::copy(Lines<T>(input), Lines<T>(), std::back_inserter(lines));
-
-        return lines;
+        return std::vector<T>(Lines<T>(input), Lines<T>());
     }
 }
 

@@ -79,6 +79,16 @@ namespace collin
 				return node_map.at(key);
 			}
 
+			void clear()
+			{
+				node_map.clear();
+			}
+
+			auto size() const
+			{
+				return std::size(node_map);
+			}
+
 		private:
 			std::unordered_map<value_type, edge_set> node_map;
 			

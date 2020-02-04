@@ -6,16 +6,28 @@
 
 namespace collin
 {
-	template<class T>
-	constexpr auto& last_of(T& thing, typename T::size_type n = 1)
+	template<class Container>
+	constexpr auto& last_of(Container& container, typename Container::size_type n = 1)
 	{
-		return *(std::end(thing) - n);
+		return *(std::end(container) - n);
 	}
 
-	template<class T>
-	constexpr auto& first_of(T& thing, typename T::size_type n = 1)
+	template<class Container>
+	constexpr auto& first_of(Container& container, typename Container::size_type n = 1)
 	{
-		return *(std::begin(thing) + n);
+		return *(std::begin(container) + n);
+	}
+
+	template<class Container, class... Args>
+	constexpr auto construct_value(Args&&... args)
+	{
+		return typename Container::value_type {std::forward<Args...>(args)...};
+	}
+
+	template<class Container, class... Args>
+	constexpr auto construct_value(const Container& _, Args&&... args)
+	{
+		return construct_value<Container>(args...);
 	}
 }
 

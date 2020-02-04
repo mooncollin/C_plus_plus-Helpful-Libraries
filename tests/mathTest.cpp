@@ -27,16 +27,6 @@ void test_is_odd()
 			}
 	);
 
-	const auto is_odd_float_test_values = collin::make_test_data
-	(
-		collin::is_odd<float>,
-			{
-				std::make_pair(std::make_tuple(4.5), false),
-				std::make_pair(std::make_tuple(3.3), true),
-				std::make_pair(std::make_tuple(-55.3), true),
-			}
-	);
-
 	const auto seed = std::chrono::system_clock::now().time_since_epoch().count();
 	std::default_random_engine generator(seed);
 
@@ -66,7 +56,6 @@ void test_is_odd()
 	);
 
 	collin::assert_test_data(is_odd_test_values, "is_odd Normal");
-	collin::assert_test_data(is_odd_float_test_values, "is_odd Float");
 	collin::assert_test_data(is_odd_random_test_values, "is_odd Random");
 
 	static_assert(collin::is_odd(1) == true);
@@ -106,16 +95,6 @@ void test_is_even()
 			}
 	);
 
-	const auto is_even_float_test_values = collin::make_test_data
-	(
-		collin::is_even<float>,
-			{
-				std::make_pair(std::make_tuple(4.5), true),
-				std::make_pair(std::make_tuple(3.3), false),
-				std::make_pair(std::make_tuple(-55.3), false),
-			}
-	);
-
 	const auto seed = std::chrono::system_clock::now().time_since_epoch().count();
 	std::default_random_engine generator(seed);
 
@@ -145,7 +124,6 @@ void test_is_even()
 	);
 
 	collin::assert_test_data(is_even_test_values, "is_even Normal");
-	collin::assert_test_data(is_even_float_test_values, "is_even Float");
 	collin::assert_test_data(is_even_random_test_values, "is_even Random");
 
 	static_assert(collin::is_even(1) == false);

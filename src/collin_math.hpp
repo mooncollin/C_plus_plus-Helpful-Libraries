@@ -18,23 +18,16 @@ namespace collin
 		return result;
 	}
 
-	template<class T, typename Cast=std::intmax_t>
+	template<class T, class = std::enable_if_t<std::is_integral_v<T>>>
 	constexpr bool is_odd(const T& val)
 	{
-		if constexpr(std::is_integral<T>::value)
-		{
-			return val & 1;
-		}
-		else if constexpr(std::is_floating_point<T>::value)
-		{
-			return static_cast<Cast>(val) & 1;
-		}
+		return val & 1;
 	}
 
-	template<class T, typename Cast=std::intmax_t>
+	template<class T>
 	constexpr bool is_even(const T& val)
 	{
-		return !(is_odd<Cast>(val));
+		return !is_odd(val);
 	}
 }
 

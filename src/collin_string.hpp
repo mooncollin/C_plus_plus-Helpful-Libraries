@@ -10,6 +10,9 @@
 #include <cctype>
 #include <sstream>
 #include <string_view>
+#include <array>
+#include <cstring>
+#include <charconv>
 #include "collin_utility.hpp"
 #include "collin_algorithm.hpp"
 #include "collin_functional.hpp"
@@ -133,61 +136,118 @@ namespace collin
         transform(container, static_cast<int(*)(int)>(std::tolower));
     }
 
+    void trim(std::string& s, const std::string& trim_str)
+    {
+        const auto start_position = s.find_first_not_of(trim_str);
+        if(start_position != std::string::npos)
+        {
+            s.erase(std::begin(s), std::begin(s) + start_position);
+        }
+
+        const auto end_position = s.find_last_not_of(trim_str);
+        if(end_position != std::string::npos)
+        {
+            s.erase(std::begin(s) + end_position + 1, std::end(s));
+        }
+    }
+
     template<class T>
     T from_string(std::string_view str)
     {
-        using plain_type = std::remove_cv_t<T>;
+        return T(str.data());
+    }
 
-        if constexpr(std::is_same_v<plain_type, char*>)
-        {
-            return str.data();
-        }
-        else if constexpr(std::is_same_v<plain_type, int>)
-        {
-            return std::stoi(str.data());
-        }
-        else if constexpr(std::is_same_v<plain_type, long>)
-        {
-            return std::stol(str.data());
-        }
-        else if constexpr(std::is_same_v<plain_type, unsigned long>)
-        {
-            return std::stoul(str.data());
-        }
-        else if constexpr(std::is_same_v<plain_type, long int>)
-        {
-            return std::atol(str.data());
-        }
-        else if constexpr(std::is_same_v<plain_type, float>)
-        {
-            return std::stof(str.data());
-        }
-        else if constexpr(std::is_same_v<plain_type, double>)
-        {
-            return std::stod(str.data());
-        }
-        else if constexpr(std::is_same_v<plain_type, long double>)
-        {
-            return std::stold(str.data());
-        }
-        else if constexpr(std::is_same_v<plain_type, long long>)
-        {
-            return std::stoll(str.data());
-        }
-        else if constexpr(std::is_same_v<plain_type, unsigned long long>)
-        {
-            return std::stoull(str.data());
-        }
-        else if constexpr(std::is_convertible_v<plain_type, std::string>)
-        {
-            return std::string(str.data());
-        }
+    // The user needs to free the memory
+    template<>
+    char* from_string<char*>(std::string_view str)
+    {
+        auto new_str = new char[str.size() + 1];
+        std::copy(str.data(), str.data() + str.size(), new_str);
+        new_str[str.size()] = '\0';
+
+        return new_str;
+    }
+
+    template<>
+    int from_string<int>(std::string_view str)
+    {
+        return std::stoi(str.data());
+    }
+
+    template<>
+    long from_string<long>(std::string_view str)
+    {
+        return std::stol(str.data());
+    }
+
+    template<>
+    unsigned long from_string<unsigned long>(std::string_view str)
+    {
+        return std::stoul(str.data());
+    }
+
+    template<>
+    float from_string<float>(std::string_view str)
+    {
+        return std::stof(str.data());
+    }
+
+    template<>
+    double from_string<double>(std::string_view str)
+    {
+        return std::stod(str.data());
+    }
+
+    template<>
+    long double from_string<long double>(std::string_view str)
+    {
+        return std::stold(str.data());
+    }
+
+    template<>
+    long long from_string<long long>(std::string_view str)
+    {
+        return std::stoll(str.data());
+    }
+
+    template<>
+    unsigned long long from_string<unsigned long long>(std::string_view str)
+    {
+        return std::stoull(str.data());
     }
 
     template<class T>
     T from_string(const std::string& str)
     {
         return from_string<T>(std::string_view(str.data(), str.size()));
+    }
+
+    template<class T>
+    std::pair<T, std::errc> from_string_fast(std::string_view str)
+    {
+        T result;
+
+        auto [_, err] = std::from_chars(str.data(), str.data() + str.size(), result);
+
+        return std::make_pair(result, err);
+    }
+
+    template<class T>
+    std::string to_string(const T& value)
+    {
+        return std::to_string(value);
+    }
+
+    template<>
+    std::string to_string<std::string>(const std::string& value)
+    {
+        return std::string(value);
+    }
+
+    template<class T>
+    std::pair<T, std::errc> from_string_fast(const std::string& str)
+    {
+        return from_string_fast<T>(std::string_view(str.data(), str.size()));
     }
 
     template<class T, class Container, class Function>
@@ -201,9 +261,7 @@ namespace collin
         while(it != end)
         {
             const auto current_str = it->str();
-            tokens.push_back(
-                std::move(f(current_str))
-            );
+            tokens.push_back(f(current_str));
             it++;
         }
 
@@ -221,9 +279,7 @@ namespace collin
         while(it != end && n != 0)
         {
             const auto current_str = it->str();
-            tokens.push_back(
-                std::move(f(current_str))
-            );
+            tokens.push_back(f(current_str));
             it++;
             n--;
         }
@@ -255,7 +311,7 @@ namespace collin
     template<class T = std::string, class Container>
     std::vector<T> split(const Container& container, std::string_view s=" ", std::size_t n=-1)
     {
-        const T(*from_string_f)(const std::string& str) = from_string;
+        const auto from_string_f = static_cast<T(*)(const std::string& str)>(from_string);
 
         if constexpr(std::is_convertible_v<T, std::string>)
         {

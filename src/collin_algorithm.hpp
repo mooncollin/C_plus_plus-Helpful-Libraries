@@ -63,23 +63,10 @@ namespace collin
 		return std::sort(std::begin(container), std::end(container), comp);
 	}
 
-	template<class Function, class T>
-	T& apply(Function func, T& val)
-	{
-		func(val);
-		return val;
-	}
-
-	template<class Function, class T>
-	bool test(Function func, T& val)
-	{
-		return func(val);
-	}
-
 	template<class InputIterator, class T>
 	T& apply_range(InputIterator first, InputIterator last, T& val)
 	{
-		const auto apply_func = std::bind(apply<typename InputIterator::value_type, T>, std::placeholders::_1, std::ref(val));
+		const auto apply_func = std::bind(std::apply<typename InputIterator::value_type, T>, std::placeholders::_1, std::ref(val));
 		std::for_each(first, last, apply_func);
 
 		return val;

@@ -22,11 +22,12 @@ int main()
 	{
 		std::cout << node << ": ";
 
-		auto edges = collin::to_stream(graph.get_edges(node))
-						.map([](const auto& pair) { return pair.first; })
-						.collect<std::unordered_set<int>>();
+		collin::to_stream(graph.get_edges(node))
+			.map([](const auto& pair) { return pair.first; })
+			.for_each([](const auto& node) {
+				std::cout << node << " ";
+			});
 
-		collin::print(edges, " ");
 		std::cout << '\n';
 	}
 }
