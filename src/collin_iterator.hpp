@@ -51,7 +51,7 @@ namespace collin
 	{
 		public:
 			explicit Enumerate(Container& container)
-				: Enumerate(container, std::begin(container), 0)
+				: Enumerate(container, std::begin(container))
 			{
 			}
 
@@ -60,27 +60,17 @@ namespace collin
 			{
 			}
 
-			Enumerate(Container& container, typename Container::const_iterator place, int start)
+			Enumerate(Container& container, typename Container::const_iterator place, int start=0)
 				: container(container), it(place), index(start)
 			{
 			}
 
-			Enumerate(const Enumerate& other)
-				: container(other.container), it(other.it), index(other.index)
-			{
-			}
+			Enumerate(const Enumerate& other) = default;
+			Enumerate& operator=(const Enumerate& other) = default;
 
-			Enumerate& operator=(const Enumerate& other)
-			{
-				if(this != &other)
-				{
-					container = other.container;
-					it = other.it;
-					index = other.index;
-				}
+			Enumerate(Enumerate&&) = delete;
+			Enumerate& operator=(Enumerate&&) = delete;
 
-				return *this;
-			}
 
 			Enumerate begin() const
 			{
@@ -89,7 +79,7 @@ namespace collin
 
 			Enumerate end() const
 			{
-				return Enumerate(container, std::cend(container), 0);
+				return Enumerate(container, std::cend(container));
 			}
 
 			Enumerate& operator++()

@@ -5,18 +5,18 @@
 
 namespace collin
 {
-	template<class S, class T, class = void>
-	struct is_streamable : std::false_type
+	template<class T, class S, class = void>
+	struct is_stream_readable : std::false_type
 	{
 	};
 
-	template<class S, class T>
-	struct is_streamable<S, T, std::void_t<decltype(std::declval<S&>() << std::declval<const T&>())>> : std::true_type
+	template<class T, class S>
+	struct is_stream_readable<S, T, std::void_t<decltype(std::declval<S&>() << std::declval<const T&>())>> : std::true_type
 	{
 	};
 
-	template<class S, class T>
-	constexpr bool is_streamable_v = is_streamable<S, T>::value;
+	template<class T, class S>
+	constexpr bool is_stream_readable_v = is_stream_readable<S, T>::value;
 
 	template<class T, class = void>
 	struct has_size : std::false_type

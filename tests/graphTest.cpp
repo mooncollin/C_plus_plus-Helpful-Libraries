@@ -7,12 +7,12 @@
 
 int main()
 {
-	collin::directed_graph<int> graph;
+	collin::graph<int, int, true> graph;
 	graph.insert_node(5);
 	graph.insert_edge(5, 6);
 	graph.insert_edge(8, 5);
 
-	const auto nodes = graph.get_nodes();
+	const auto& nodes = graph.get_nodes();
 
 	std::cout << "Nodes:\n";
 	collin::print(nodes, "\n");
@@ -22,11 +22,10 @@ int main()
 	{
 		std::cout << node << ": ";
 
-		collin::to_stream(graph.get_edges(node))
-			.map([](const auto& pair) { return pair.first; })
-			.for_each([](const auto& node) {
-				std::cout << node << " ";
-			});
+		for(const auto& [source, destination, weight] : graph.get_out_edges(node))
+		{
+			std::cout << destination << " ";
+		}
 
 		std::cout << '\n';
 	}

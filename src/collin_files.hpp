@@ -19,7 +19,7 @@ namespace collin
 
             Lines(std::ifstream& input) : input(&input)
             {
-                this->operator++();
+                operator++();
             }
 
             Lines<T> end() const
@@ -68,7 +68,7 @@ namespace collin
 
         private:
             std::ifstream* input = nullptr;
-            T current {};
+            T current;
 
             void next_input()
             {
@@ -96,11 +96,9 @@ namespace collin
             }
     };
 
-    std::string read_all(std::string_view name)
+    std::string read_all(std::ifstream& input)
     {
-        std::ifstream file(name.data());
-
-        return std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+        return std::string((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
     }
 
     template<class T = std::string>

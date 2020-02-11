@@ -1,8 +1,6 @@
 #ifndef COLLIN_TEST
 #define COLLIN_TEST
 
-#include <list>
-#include <utility>
 #include <sstream>
 #include <string>
 #include <stdexcept>
@@ -27,8 +25,8 @@ namespace collin
 		}
 	}
 
-	template<class T>
-	void assert_test_data(const std::list<std::pair<T, T>>& data, std::string_view test="")
+	template<class Container, typename T = typename Container::value_type>
+	void assert_test_data(const Container& data, std::string_view test="")
 	{
 		for(const auto&[result, expected] : data)
 		{
@@ -36,7 +34,7 @@ namespace collin
 
 			error_text << test << "\n";
 
-			if constexpr(is_streamable_v<decltype(std::cout), T>)
+			if constexpr(is_stream_readable_v<T, decltype(std::cout)>)
 			{
 				if constexpr(std::is_same_v<T, bool>)
 				{
@@ -54,13 +52,13 @@ namespace collin
 	}
 
 	template<class Function, class Expected, class... Args>
-	std::list<std::pair<Expected, Expected>> make_test_data(Function&& func, const std::initializer_list<std::pair<std::tuple<Args...>, Expected>>& raw)
+	auto make_test_data(Function&& func, const std::initializer_list<std::pair<std::tuple<Args...>, Expected>>& raw)
 	{
-		std::list<std::pair<Expected, Expected>> data;
+		std::vector<std::pair<Expected, Expected>> data;
 
-		for(const auto& pair : raw)
+		for(const auto& [arguments, expected] : raw)
 		{
-			data.emplace_back(std::apply(func, pair.first), pair.second);
+			data.emplace_back(std::apply(func, arguments), expected);
 		}
 
 		return data;

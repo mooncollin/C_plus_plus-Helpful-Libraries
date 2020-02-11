@@ -10,7 +10,7 @@ namespace collin
 	constexpr auto factorial(std::size_t n)
 	{
 		std::uintmax_t result = 1;
-		for(decltype(n) i = 2; i <= n; i++)
+		for(std::size_t i = 2; i <= n; i++)
 		{
 			result *= i;
 		}

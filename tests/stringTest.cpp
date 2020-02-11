@@ -430,39 +430,6 @@ void join_test()
 }
 
 template<class T, class Input>
-using from_string_fast_func_t = std::pair<T, std::errc>(*)(Input);
-
-void from_string_fast_test()
-{
-	const auto int_test_values = collin::make_test_data
-	(
-		static_cast<from_string_fast_func_t<int, std::string_view>>(collin::from_string_fast),
-		 	{
-				std::make_pair(std::make_tuple("1"), std::make_pair(1, std::errc{})),
-				std::make_pair(std::make_tuple("1223"), std::make_pair(1223, std::errc{})),
-				std::make_pair(std::make_tuple("-2391"), std::make_pair(-2391, std::errc{})),
-				std::make_pair(std::make_tuple("37943"), std::make_pair(37943, std::errc{})),
-				std::make_pair(std::make_tuple("0"), std::make_pair(0, std::errc{})),
-			}
-	);
-
-	// const auto float_test_values = collin::make_test_data
-	// (
-	// 	static_cast<from_string_fast_func_t<double, std::string_view>>(collin::from_string_fast),
-	// 		{
-	// 			std::make_pair(std::make_tuple("0.23489"), std::make_pair(0.23489, std::errc{})),
-	// 			std::make_pair(std::make_tuple("43.923"), std::make_pair(43.923, std::errc{})),
-	// 			std::make_pair(std::make_tuple("-239.8923"), std::make_pair(-239.8923, std::errc{})),
-	// 			std::make_pair(std::make_tuple("0"), std::make_pair(0.0, std::errc{})),
-	// 			std::make_pair(std::make_tuple("1"), std::make_pair(1.0, std::errc{})),
-	// 		}
-	// );
-
-	collin::assert_test_data(int_test_values, "from string fast Integers");
-	// collin::assert_test_data(float_test_values, "from string fast Doubles");
-}
-
-template<class T, class Input>
 using from_string_func_t = T(*)(Input);
 
 void from_string_test()
@@ -500,6 +467,5 @@ int main()
 	lowercase_test();
 	split_test();
 	join_test();
-	from_string_fast_test();
 	from_string_test();
 }

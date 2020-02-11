@@ -8,11 +8,9 @@
 
 namespace collin
 {
-	template<class Key, class Weight=int>
-	class directed_graph
+	template<class Key, class Weight=int, bool directed=false>
+	class graph
 	{
-		using edge_set = std::unordered_set<std::pair<Key, Weight>, pair_hash>;
-
 		public:
 			using value_type = Key;
 			using reference = value_type&;
@@ -20,78 +18,103 @@ namespace collin
 			using pointer = value_type*;
 			using const_pointer = const pointer;
 
-			directed_graph() = default;
-			~directed_graph() = default;
-			directed_graph(const directed_graph&) = default;
-			directed_graph(directed_graph&&) = default;
-			directed_graph& operator=(const directed_graph&) = default;
-			directed_graph& operator=(directed_graph&&) = default;
+			using node = value_type;
+			using edge = std::tuple<value_type, value_type, Weight>;
+			constexpr static auto source_node_index = 0;
+			constexpr static auto destination_node_index = 1;
+			constexpr static auto weight_index = 2;
 
-			void insert_node(value_type val)
+			graph() = default;
+			~graph() = default;
+			graph(const graph&) = default;
+			graph(graph&&) = default;
+			graph& operator=(const graph&) = default;
+			graph& operator=(graph&&) = default;
+
+			void insert_node(const node& val)
 			{
-				node_map[std::move(val)] = {};
+				nodes.insert(val);
 			}
 
-			void insert_edge(value_type source, value_type destination, Weight w={})
+			void insert_edge(const edge& e)
 			{
-				node_map[std::move(source)].emplace(std::move(destination), std::move(w));
+				edges.push_back(e);
 			}
 
-			void remove_node(const_reference val)
+			void insert_edge(const node& source, const node& destination, Weight w={})
 			{
-				const auto location = node_map.find(val);
-				if(location != std::end(node_map))
+				insert_node(source);
+				insert_node(destination);
+				insert_edge(std::make_tuple(source, destination, w));
+				if constexpr(!directed)
 				{
-					node_map.erase(location);
-					for(auto& [_, node_set] : node_map)
-					{
-						node_set.remove(val);
-					}
+					insert_edge(std::make_tuple(destination, source, w));
 				}
 			}
 
-			void remove_edge(const_reference source, const_reference destination)
+			void remove_node(const_reference val) noexcept
 			{
-				auto location = node_map.find(source);
-				if(location == std::end(node_map))
-				{
-					throw std::runtime_error("Source node does not exist");
-				}
-
-				location->second.erase(destination);
+				nodes.erase(val);
+				erase_if(edges, [&](const edge& e) {
+					return std::get<source_node_index>(e) == val || std::get<destination_node_index>(e) == val;
+				});
 			}
 
-			std::unordered_set<Key> get_nodes() const
+			void remove_edge(const_reference source, const_reference destination) noexcept
 			{
-				std::unordered_set<Key> node_set;
-				node_set.reserve(std::size(node_map));
-
-				for(const auto& [node, _] : node_map)
-				{
-					node_set.insert(node);
-				}
-
-				return node_set;
+				erase_if(edges, [&](const edge& e) {
+					return std::get<source_node_index>(e) == source && std::get<destination_node_index>(e) == destination;
+				});
 			}
 
-			const edge_set& get_edges(value_type key) const
+			const std::unordered_set<node>& get_nodes() const noexcept
 			{
-				return node_map.at(key);
+				return nodes;
 			}
 
-			void clear()
+			const std::vector<edge>& get_edges() const noexcept
 			{
-				node_map.clear();
+				return edges;
 			}
 
-			auto size() const
+			std::vector<edge> get_out_edges(const node& val) const
 			{
-				return std::size(node_map);
+				return get_edges_if([&](const edge& e) { return std::get<source_node_index>(e) == val; });
+			}
+
+			std::vector<edge> get_in_edges(const node& val) const
+			{
+				return get_edges_if([&](const edge& e) { return std::get<destination_node_index>(e) == val; });
+			}
+
+			void clear() noexcept
+			{
+				nodes.clear();
+				edges.clear();
+			}
+
+			auto order() const noexcept
+			{
+				return std::size(nodes);
+			}
+
+			auto size() const noexcept
+			{
+				return std::size(edges);
 			}
 
 		private:
-			std::unordered_map<value_type, edge_set> node_map;
-			
+			std::unordered_set<node> nodes;
+			std::vector<edge> edges;
+
+			template<class UnaryPredicate>
+			std::vector<edge> get_edges_if(UnaryPredicate fn) const
+			{
+				std::vector<edge> node_edges;
+				std::copy_if(std::begin(edges), std::end(edges), std::back_inserter(node_edges), fn);
+
+				return node_edges;
+			}
 	};
 }
 

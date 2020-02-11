@@ -12,13 +12,12 @@ namespace collin
 	Function for_each_n(InputIterator first, InputIterator last,
 		std::size_t n, Function fn)
 	{
-		for(decltype(n) i {}; i < n && first != last; i++)
+		for(std::size_t i = 0; i < n && first != last; i++, first++)
 		{
 			fn(i, *first);
-			first++;
 		}
 
-		return std::move(fn);
+		return fn;
 	}
 
 	template<class Container, class Function>
@@ -66,7 +65,7 @@ namespace collin
 	template<class InputIterator, class T>
 	T& apply_range(InputIterator first, InputIterator last, T& val)
 	{
-		const auto apply_func = std::bind(std::apply<typename InputIterator::value_type, T>, std::placeholders::_1, std::ref(val));
+		const auto apply_func = std::bind2nd(std::apply<typename InputIterator::value_type, T>, std::ref(val));
 		std::for_each(first, last, apply_func);
 
 		return val;
@@ -100,6 +99,12 @@ namespace collin
 	auto remove_if(Container& container, UnaryPredicate fn)
 	{
 		return std::remove_if(std::begin(container), std::end(container), fn);
+	}
+
+	template<class Container, class UnaryPredicate>
+	auto erase_if(Container& container, UnaryPredicate fn)
+	{
+		return container.erase(remove_if(container, fn), std::end(container));
 	}
 }
 
