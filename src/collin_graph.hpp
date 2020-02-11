@@ -100,7 +100,14 @@ namespace collin
 
 			auto size() const noexcept
 			{
-				return std::size(edges);
+				if constexpr(directed)
+				{
+					return std::size(edges);
+				}
+				else
+				{
+					return std::size(edges) / 2;
+				}
 			}
 
 		private:
