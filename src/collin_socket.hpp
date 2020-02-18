@@ -18,7 +18,7 @@ namespace collin
 	class Socket
 	{
 	public:
-		static int init(void)
+		static int init(void) noexcept
 		{
 			#ifdef _WIN32
 				WSADATA data;
@@ -28,7 +28,7 @@ namespace collin
 			#endif
 		}
 
-		static int cleanup(void)
+		static int cleanup(void) noexcept
 		{
 			#ifdef _WIN32
 				return WSACleanup();
@@ -37,15 +37,20 @@ namespace collin
 			#endif
 		}
 
-		Socket(int family=AF_INET, int socktype=SOCK_STREAM, int protocol=0)
+		Socket(int family=AF_INET, int socktype=SOCK_STREAM, int protocol=0) noexcept
 			: sock(socket(family, socktype, protocol)) {}
 
-		~Socket()
+		Socket(const Socket&) = default;
+		Socket(Socket&&) = default;
+		Socket& operator=(const Socket&) = default;
+		Socket& operator=(Socket&&) = default;
+
+		~Socket() noexcept
 		{
 			close();
 		}
 
-		int close()
+		int close() noexcept
 		{
 			int status = 0;
 			if(*this)
@@ -70,38 +75,42 @@ namespace collin
 			return status;
 		}
 
-		int connect(sockaddr_in& address)
+		int connect(const sockaddr_in& address) noexcept
 		{
 			return ::connect(sock, &(sockaddr&)address, sizeof(sockaddr_in));
 		}
 
 		template<class T>
-		Socket& operator<<(T value)
+		Socket& operator<<(T value) noexcept
 		{
 			sendData(value);
 			return *this;
 		}
 
 		template<class T>
-		Socket& operator>>(T& value)
+		Socket& operator>>(T& value) noexcept
 		{
 			receiveData(value);
 			return *this;
 		}
 
-		bool receiveData(void* buf, int buflen, int flags=0)
+		bool receiveData(char* buf, int buflen, int flags=0) noexcept
 		{
-			auto pbuf = (char*)buf;
+			if (buf == nullptr)
+			{
+				return false;
+			}
+
 			while (buflen > 0)
 			{
-				const auto num = ::recv(sock, pbuf, buflen, flags);
+				const auto num = ::recv(sock, buf, buflen, flags);
 				if (num == SOCKET_ERROR)
 				{
 					close();
 					return false;
 				}
 
-				pbuf += num;
+				buf += num;
 				buflen -= num;
 			}
 
@@ -109,10 +118,13 @@ namespace collin
 		}
 
 		template<class T>
-		bool receiveData(T& value)
+		bool receiveData(T value) noexcept;
+
+		template<class T>
+		bool receiveData(T& value) noexcept
 		{
 			auto result = receiveData(&value, sizeof(T));
-			
+
 			if constexpr (std::is_same_v<T, unsigned long>)
 			{
 				value = ::ntohl(value);
@@ -130,23 +142,27 @@ namespace collin
 		}
 
 		template<>
-		bool receiveData(std::string& str)
+		bool receiveData(std::string& str) noexcept
 		{
-			return receiveData(&str[0], str.size());
+			return receiveData(str.data(), str.size());
 		}
 
-		bool sendData(void* buf, int buflen, int flags=0)
+		bool sendData(const char* buf, int buflen, int flags=0) noexcept
 		{
-			auto pbuf = (const char*)buf;
+			if (buf == nullptr)
+			{
+				return false;
+			}
+
 			while (buflen > 0)
 			{
-				const auto num = ::send(sock, pbuf, buflen, flags);
+				const auto num = ::send(sock, buf, buflen, flags);
 				if (num == SOCKET_ERROR)
 				{
 					close();
 					return false;
 				}
-				pbuf += num;
+				buf += num;
 				buflen -= num;
 			}
 
@@ -154,57 +170,52 @@ namespace collin
 		}
 
 		template<class T>
-		bool sendData(T value)
+		bool sendData(T value) noexcept;
+
+		template<>
+		bool sendData<unsigned long>(unsigned long value) noexcept
 		{
-			void* ptr = nullptr;
-			int length = 0;
-			if constexpr (std::is_integral_v<T>)
-			{
-				if constexpr (std::is_same_v<T, unsigned long>)
-				{
-					value = ::htonl(value);
-				}
-				else if constexpr (std::is_same_v<T, unsigned long long>)
-				{
-					value = ::htonll(value);
-				}
-				else if constexpr (std::is_same_v<T, unsigned short>)
-				{
-					value = ::htons(value);
-				}
-				else
-				{
-					throw "Type not supported";
-				}
+			value = ::htonl(value);
+			const auto length = sizeof(value);
 
-				ptr = (void*)&value;
-				length = sizeof(T);
-			}
-			else if constexpr (std::is_convertible_v<T, std::string_view>)
-			{
-				std::string_view s = value;
-				ptr = (void*)s.data();
-				length = s.length();
-			}
-			else
-			{
-				throw "Type not supported";
-			}
-
-			return sendData(ptr, length);
+			return sendData(reinterpret_cast<const char*>(&value), length);
 		}
 
-		bool operator==(int value) const
+		template<>
+		bool sendData<unsigned long long>(unsigned long long value) noexcept
+		{
+			value = ::htonll(value);
+			const auto length = sizeof(value);
+
+			return sendData(reinterpret_cast<const char*>(&value), length);
+		}
+
+		template<>
+		bool sendData<unsigned short>(unsigned short value) noexcept
+		{
+			value = ::htons(value);
+			const auto length = sizeof(value);
+
+			return sendData(reinterpret_cast<const char*>(&value), length);
+		}
+
+		template<>
+		bool sendData<std::string_view>(std::string_view value) noexcept
+		{
+			return sendData(value.data(), value.length());
+		}
+
+		bool operator==(int value) const noexcept
 		{
 			return value == sock;
 		}
 
-		bool operator!=(int value) const
+		bool operator!=(int value) const noexcept
 		{
 			return !(operator==(value));
 		}
 
-		explicit operator bool() const
+		explicit operator bool() const noexcept
 		{
 			return *this != -1;
 		}
@@ -216,7 +227,11 @@ namespace collin
 	{
 	public:
 		AddressInfo() = default;
-		~AddressInfo()
+		AddressInfo(const AddressInfo&) = default;
+		AddressInfo(AddressInfo&&) = default;
+		AddressInfo& operator=(const AddressInfo&) = default;
+		AddressInfo& operator=(AddressInfo&&) = default;
+		~AddressInfo() noexcept
 		{
 			if (resultList != nullptr)
 			{
@@ -224,12 +239,12 @@ namespace collin
 			}
 		}
 
-		addrinfo** operator&()
+		addrinfo** operator&() noexcept
 		{
 			return &resultList;
 		}
 
-		addrinfo* operator->()
+		addrinfo* operator->() noexcept
 		{
 			return resultList;
 		}
@@ -240,7 +255,7 @@ namespace collin
 	class AddressInfoHints
 	{
 	public:
-		AddressInfoHints(int family=AF_INET, int socktype=SOCK_STREAM, int protocol=0)
+		AddressInfoHints(int family=AF_INET, int socktype=SOCK_STREAM, int protocol=0) noexcept
 		{
 			memset(&hints, 0, sizeof(hints));
 			hints.ai_family = family;
@@ -248,7 +263,7 @@ namespace collin
 			hints.ai_protocol = protocol;
 		}
 
-		addrinfo* operator&()
+		addrinfo* operator&() noexcept
 		{
 			return &hints;
 		}
@@ -266,7 +281,7 @@ namespace collin
 
 		if (result != -1)
 		{
-			return std::move(*(sockaddr_in*)(pResultList->ai_addr));
+			return std::move(*reinterpret_cast<sockaddr_in*>(pResultList->ai_addr));
 		}
 
 		return {};
