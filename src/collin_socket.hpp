@@ -36,7 +36,7 @@ namespace collin
 			#endif
 		}
 
-		Socket(int family, int socktype, int protocol)
+		Socket(int family=AF_INET, int socktype=SOCK_STREAM, int protocol=0)
 			: sock(socket(family, socktype, protocol)) {}
 
 		~Socket()
@@ -54,12 +54,14 @@ namespace collin
 					if (status == 0)
 					{
 						status = closesocket(sock);
+						sock = -1;
 					}
 				#else
 					status = shutdown(sock, SHUT_RDWR);
 					if (status == 0)
 					{
 						status = close(sock);
+						sock = -1;
 					}
 				#endif
 			}
@@ -99,6 +101,7 @@ namespace collin
 				const auto num = ::recv(sock, pbuf, buflen, flags);
 				if (num == SOCKET_ERROR)
 				{
+					close();
 					return false;
 				}
 
@@ -144,6 +147,7 @@ namespace collin
 				const auto num = ::send(sock, pbuf, buflen, flags);
 				if (num == SOCKET_ERROR)
 				{
+					close();
 					return false;
 				}
 				pbuf += num;
