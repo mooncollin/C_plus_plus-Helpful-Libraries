@@ -94,23 +94,24 @@ namespace collin
 			return *this;
 		}
 
-		bool receiveData(char* buf, int buflen, int flags=0) noexcept
+		bool receiveData(void* buf, int buflen, int flags=0) noexcept
 		{
-			if (buf == nullptr)
+			auto pbuf = static_cast<char*>(buf);
+			if (pbuf == nullptr)
 			{
 				return false;
 			}
 
 			while (buflen > 0)
 			{
-				const auto num = ::recv(sock, buf, buflen, flags);
+				const auto num = ::recv(sock, pbuf, buflen, flags);
 				if (num == SOCKET_ERROR)
 				{
 					close();
 					return false;
 				}
 
-				buf += num;
+				pbuf += num;
 				buflen -= num;
 			}
 
@@ -142,27 +143,28 @@ namespace collin
 		}
 
 		template<>
-		bool receiveData(std::string& str) noexcept
+		bool receiveData<std::string>(std::string& str) noexcept
 		{
 			return receiveData(str.data(), str.size());
 		}
 
-		bool sendData(const char* buf, int buflen, int flags=0) noexcept
+		bool sendData(const void* buf, int buflen, int flags=0) noexcept
 		{
-			if (buf == nullptr)
+			auto pbuf = static_cast<const char*>(buf);
+			if (pbuf == nullptr)
 			{
 				return false;
 			}
 
 			while (buflen > 0)
 			{
-				const auto num = ::send(sock, buf, buflen, flags);
+				const auto num = ::send(sock, pbuf, buflen, flags);
 				if (num == SOCKET_ERROR)
 				{
 					close();
 					return false;
 				}
-				buf += num;
+				pbuf += num;
 				buflen -= num;
 			}
 
