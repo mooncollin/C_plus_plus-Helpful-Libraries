@@ -13,6 +13,12 @@ namespace collin
 			(..., func(x));
 		}, t);
 	}
+
+	template<class... Ts>
+	constexpr auto default_tuple()
+	{
+		return std::make_tuple((Ts{})...);
+	}
 }
 
 #endif

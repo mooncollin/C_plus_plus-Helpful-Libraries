@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <string_view>
+#include <optional>
 
 namespace collin
 {
@@ -69,14 +70,9 @@ namespace collin
 			return status;
 		}
 
-		int connect(sockaddr* address)
+		int connect(sockaddr_in& address)
 		{
-			return ::connect(sock, address, sizeof(sockaddr_in));
-		}
-
-		int connect(sockaddr_in* address)
-		{
-			return connect((sockaddr*)address);
+			return ::connect(sock, &(sockaddr&)address, sizeof(sockaddr_in));
 		}
 
 		template<class T>
@@ -260,20 +256,19 @@ namespace collin
 		addrinfo hints;
 	};
 
-	int resolveHostName(std::string_view pszHostName, std::string_view service, sockaddr_in* pAddr)
+	std::optional<sockaddr_in> resolveHostName(std::string_view pszHostName, std::string_view service)
 	{
 		AddressInfo pResultList;
 		AddressInfoHints hints(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP);
 
 		const auto ret = ::getaddrinfo(pszHostName.data(), service.data(), &hints, &pResultList);
-		auto result = (ret == 0) ? 1 : -1;
+		const auto result = (ret == 0) ? 1 : -1;
 
 		if (result != -1)
 		{
-			*pAddr = *(sockaddr_in*)(pResultList->ai_addr);
-			result = 0;
+			return std::move(*(sockaddr_in*)(pResultList->ai_addr));
 		}
 
-		return result;
+		return {};
 	}
 }
