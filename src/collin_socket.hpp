@@ -20,221 +20,248 @@ namespace collin
 {
 	class Socket
 	{
-	public:
-		static int init(void) noexcept
-		{
-			#ifdef _WIN32
-				WSADATA data;
-				return WSAStartup(MAKEWORD(2, 2), &data);
-			#else
-				return 0;
-			#endif
-		}
-
-		static int cleanup(void) noexcept
-		{
-			#ifdef _WIN32
-				return WSACleanup();
-			#else
-				return 0;
-			#endif
-		}
-
-		Socket(int family=AF_INET, int socktype=SOCK_STREAM, int protocol=0) noexcept
-			: sock(socket(family, socktype, protocol)) {}
-
-		Socket(const Socket&) = default;
-		Socket(Socket&&) = default;
-		Socket& operator=(const Socket&) = default;
-		Socket& operator=(Socket&&) = default;
-
-		~Socket() noexcept
-		{
-			close();
-		}
-
-		int close() noexcept
-		{
-			int status = 0;
-			if(*this)
+		public:
+			static int init(void) noexcept
 			{
 				#ifdef _WIN32
-					status = shutdown(sock, SD_BOTH);
-					if (status == 0)
-					{
-						status = closesocket(sock);
-						sock = -1;
-					}
+					WSADATA data;
+					return WSAStartup(MAKEWORD(2, 2), &data);
 				#else
-					status = shutdown(sock, SHUT_RDWR);
-					if (status == 0)
-					{
-						status = close(sock);
-						sock = -1;
-					}
+					return 0;
 				#endif
 			}
 
-			return status;
-		}
-
-		int connect(const sockaddr_in& address) noexcept
-		{
-			return ::connect(sock, &(sockaddr&)address, sizeof(sockaddr_in));
-		}
-
-		template<class T>
-		Socket& operator<<(T value)
-		{
-			sendData(value);
-			return *this;
-		}
-
-		template<class T>
-		Socket& operator>>(T& value) noexcept
-		{
-			receiveData(value);
-			return *this;
-		}
-
-		bool receiveData(void* buf, int buflen, int flags=0) noexcept
-		{
-			auto pbuf = static_cast<char*>(buf);
-			if (pbuf == nullptr)
+			static int cleanup(void) noexcept
 			{
-				return false;
+				#ifdef _WIN32
+					return WSACleanup();
+				#else
+					return 0;
+				#endif
 			}
 
-			while (buflen > 0)
+			Socket(int family=AF_INET, int socktype=SOCK_STREAM, int protocol=0) noexcept
+				: sock(socket(family, socktype, protocol)) {}
+
+			Socket(const Socket&) = default;
+			Socket(Socket&&) = default;
+			Socket& operator=(const Socket&) = default;
+			Socket& operator=(Socket&&) = default;
+
+			~Socket() noexcept
 			{
-				const auto num = ::recv(sock, pbuf, buflen, flags);
-				if (num == 0)
+				close();
+			}
+
+			int close() noexcept
+			{
+				int status = 0;
+				if(*this)
+				{
+					#ifdef _WIN32
+						status = shutdown(sock, SD_BOTH);
+						if (status == 0)
+						{
+							status = closesocket(sock);
+							sock = -1;
+						}
+					#else
+						status = shutdown(sock, SHUT_RDWR);
+						if (status == 0)
+						{
+							status = close(sock);
+							sock = -1;
+						}
+					#endif
+				}
+
+				return status;
+			}
+
+			int connect(const sockaddr_in& address) noexcept
+			{
+				return ::connect(sock, &(sockaddr&)address, sizeof(sockaddr_in));
+			}
+
+			template<class T>
+			Socket& operator<<(T value)
+			{
+				sendData(value);
+				return *this;
+			}
+
+			template<class T>
+			Socket& operator>>(T& value) noexcept
+			{
+				receiveData(value);
+				return *this;
+			}
+
+			bool receiveData(void* buf, int buflen, int flags=0) noexcept
+			{
+				auto pbuf = static_cast<char*>(buf);
+				if (pbuf == nullptr)
 				{
 					return false;
 				}
-				if (num == SOCKET_ERROR)
+
+				while (buflen > 0)
 				{
-					close();
+					const auto num = ::recv(sock, pbuf, buflen, flags);
+					last_read_result = num;
+					if (num == 0)
+					{
+						return false;
+					}
+					if (num == SOCKET_ERROR)
+					{
+						close();
+						return false;
+					}
+
+					pbuf += num;
+					buflen -= num;
+				}
+
+				return true;
+			}
+
+			bool receiveData(unsigned long& value) noexcept
+			{
+				const auto result = receiveData(&value, sizeof(value));
+				value = ::ntohl(value);
+				return result;
+			}
+
+			bool receiveData(unsigned long long& value) noexcept
+			{
+				const auto result = receiveData(&value, sizeof(value));
+				value = ::ntohll(value);
+				return result;
+			}
+
+			bool receiveData(unsigned short& value) noexcept
+			{
+				const auto result = receiveData(&value, sizeof(value));
+				value = ::ntohs(value);
+				return result;
+			}
+
+			bool receiveData(std::string& str) noexcept
+			{
+				if (str.empty())
+				{
 					return false;
 				}
 
-				pbuf += num;
-				buflen -= num;
+				return receiveData(&str[0], str.size());
 			}
 
-			return true;
-		}
-
-		bool receiveData(unsigned long& value) noexcept
-		{
-			const auto result = receiveData(&value, sizeof(value));
-			value = ::ntohl(value);
-			return result;
-		}
-
-		bool receiveData(unsigned long long& value) noexcept
-		{
-			const auto result = receiveData(&value, sizeof(value));
-			value = ::ntohll(value);
-			return result;
-		}
-
-		bool receiveData(unsigned short& value) noexcept
-		{
-			const auto result = receiveData(&value, sizeof(value));
-			value = ::ntohs(value);
-			return result;
-		}
-
-		bool receiveData(std::string& str) noexcept
-		{
-			if (str.empty())
+			template<typename T, std::size_t N>
+			bool receiveData(std::array<T, N>& data)
 			{
-				return false;
+				return receiveData(data.data(), sizeof(T) * N);
 			}
 
-			return receiveData(&str[0], str.size());
-		}
-
-		template<typename T, std::size_t N>
-		bool receiveData(std::array<T, N>& data)
-		{
-			return receiveData(data.data(), sizeof(T) * N);
-		}
-
-		bool sendData(const void* buf, int buflen, int flags=0) noexcept
-		{
-			auto pbuf = static_cast<const char*>(buf);
-			if (pbuf == nullptr)
+			template<class T>
+			bool receiveData(std::vector<T>& data)
 			{
-				return false;
+				return receiveData(data.data(), sizeof(T) * std::size(data));
 			}
 
-			while (buflen > 0)
+			bool sendData(const void* buf, int buflen, int flags=0) noexcept
 			{
-				const auto num = ::send(sock, pbuf, buflen, flags);
-				if (num == SOCKET_ERROR)
+				auto pbuf = static_cast<const char*>(buf);
+				if (pbuf == nullptr)
 				{
-					close();
 					return false;
 				}
-				pbuf += num;
-				buflen -= num;
+
+				while (buflen > 0)
+				{
+					const auto num = ::send(sock, pbuf, buflen, flags);
+					last_write_result = num;
+					if (num == SOCKET_ERROR)
+					{
+						close();
+						return false;
+					}
+					pbuf += num;
+					buflen -= num;
+				}
+
+				return true;
 			}
 
-			return true;
-		}
+			template<typename T, std::size_t N>
+			bool sendData(const std::array<T, N>& arr)
+			{
+				return sendData(arr.data(), sizeof(T) * N);
+			}
 
-		template<typename T, std::size_t N>
-		bool sendData(std::array<T, N>& arr)
-		{
-			return sendData(reinterpret_cast<const char*>(arr.data()), sizeof(T) * N);
-		}
+			template<class T>
+			bool sendData(const std::vector<T>& data)
+			{
+				return sendData(data.data(), sizeof(T) * std::size(data));
+			}
 
-		bool sendData(unsigned long value) noexcept
-		{
-			value = ::htonl(value);
-			return sendData(reinterpret_cast<const char*>(&value), sizeof(value));
-		}
+			bool sendData(unsigned long value) noexcept
+			{
+				value = ::htonl(value);
+				return sendData(&value, sizeof(value));
+			}
 
-		bool sendData(unsigned long long value) noexcept
-		{
-			value = ::htonll(value);
-			return sendData(reinterpret_cast<const char*>(&value), sizeof(value));
-		}
+			bool sendData(unsigned long long value) noexcept
+			{
+				value = ::htonll(value);
+				return sendData(&value, sizeof(value));
+			}
 
-		bool sendData(unsigned short value) noexcept
-		{
-			value = ::htons(value);
-			return sendData(reinterpret_cast<const char*>(&value), sizeof(value));
-		}
+			bool sendData(unsigned short value) noexcept
+			{
+				value = ::htons(value);
+				return sendData(&value, sizeof(value));
+			}
 
-		bool sendData(std::string_view value) noexcept
-		{
-			return sendData(value.data(), value.length());
-		}
+			bool sendData(std::string_view value) noexcept
+			{
+				return sendData(value.data(), value.length());
+			}
 
-		void setOption(int type, int option) noexcept
-		{
-			setsockopt(sock, SOL_SOCKET, type, reinterpret_cast<char*>(&option), sizeof(option));
-		}
+			void setOption(int type, int option) noexcept
+			{
+				setsockopt(sock, SOL_SOCKET, type, reinterpret_cast<char*>(&option), sizeof(option));
+			}
 
-		bool operator==(int value) const noexcept
-		{
-			return value == sock;
-		}
+			bool operator==(int value) const noexcept
+			{
+				return value == sock;
+			}
 
-		bool operator!=(int value) const noexcept
-		{
-			return !(operator==(value));
-		}
+			bool operator!=(int value) const noexcept
+			{
+				return !(operator==(value));
+			}
 
-		explicit operator bool() const noexcept
-		{
-			return *this != -1;
-		}
+			explicit operator bool() const noexcept
+			{
+				return *this != -1;
+			}
 
-		SOCKET sock;
+			int lastRead() const noexcept
+			{
+				return last_read_result;
+			}
+
+			int lastWrite() const noexcept
+			{
+				return last_write_result;
+			}
+
+			SOCKET sock;
+		private:
+			int last_read_result;
+			int last_write_result;
 	};
 
 	class AddressInfo

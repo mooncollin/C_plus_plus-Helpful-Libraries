@@ -3,31 +3,26 @@
 #include <algorithm>
 #include <vector>
 #include <array>
+#include <string>
+
+using namespace std::literals;
 
 int main()
 {
 	collin::http::HttpClient c;
 	collin::http::HttpRequest<std::string> r;
-	r.header("Host", "www.google.com");
+	r.header(collin::http::host_header, "www.google.com");
+	std::string extra = "Hello";
+	r.contentProvider(extra);
 
-	std::vector<std::future<std::optional<collin::http::HttpResponse<std::string>>>> calls;
-
-	for (auto i = 0; i < 10; i++)
+	const auto op = c.send<std::string>(r);
+	if (op)
 	{
-		calls.push_back(c.sendAsync<std::string>(r));
+		std::cout << op.value().body() << '\n';
 	}
-
-	for (auto& fut : calls)
+	else
 	{
-		auto op = fut.get();
-		if (op)
-		{
-			std::cout << op.value().response_code() << '\n';
-		}
-		else
-		{
-			std::cout << "No reply\n";
-		}
+		std::cout << "No response\n";
 	}
 
 	std::getchar();

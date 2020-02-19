@@ -9,6 +9,7 @@
 #include <utility>
 #include <cstring>
 #include <future>
+#include <type_traits>
 
 #include "collin_socket.hpp"
 
@@ -18,7 +19,8 @@ namespace collin
 {
 	namespace http
 	{
-		constexpr auto default_port = "80";
+		inline constexpr auto default_port = "80";
+		inline constexpr auto host_header = "Host";
 
 		enum class HttpVersion
 		{
@@ -82,21 +84,19 @@ namespace collin
 		class HttpRequest
 		{
 			public:
-				using content_type = typename BodyContent::value_type;
-
 				HttpRequest() = default;
 
-				HttpRequest(std::string_view url)
-					: url(url.data()) {}
+				HttpRequest(std::string_view r)
+					: _resource(r.data()) {}
 
-				void url(std::string_view str)
+				void resource(std::string_view str)
 				{
-					_url = str.data();
+					_resource = str.data();
 				}
 
-				const std::string& url() const
+				const std::string& resource() const
 				{
-					return _url;
+					return _resource;
 				}
 
 				void method(std::string_view str)
@@ -109,10 +109,12 @@ namespace collin
 					return _method;
 				}
 
-				void contentProvider(const BodyContent& c)
+				void contentProvider(BodyContent& c) noexcept
 				{
 					_contentProvider = &c;
 				}
+
+				void contentProvider(BodyContent&& c) = delete;
 
 				BodyContent* contentProvider() const noexcept
 				{
@@ -126,7 +128,7 @@ namespace collin
 
 				const std::string& header(std::string_view name) const
 				{
-					return _headers.at(name);
+					return _headers.at(name.data());
 				}
 
 				const std::unordered_map<std::string, std::string>& headers() const noexcept
@@ -160,11 +162,11 @@ namespace collin
 				
 					std::string msg;
 					const auto http_version = http_version_string(_version);
-					msg.reserve(std::size(_url) + std::size(_method) + std::size(http_version));
+					msg.reserve(std::size(_resource) + std::size(_method) + std::size(http_version));
 
 					msg += _method;
 					msg += " ";
-					msg += _url;
+					msg += _resource;
 					msg += " ";
 					msg += http_version;
 					msg += line_terminator;
@@ -188,7 +190,7 @@ namespace collin
 				}
 			
 			private:
-				std::string _url = "/";
+				std::string _resource = "/";
 				std::string _method = get.data();
 				HttpVersion _version = HttpVersion::HTTP_1_1;
 				BodyContent* _contentProvider = nullptr;
@@ -196,8 +198,108 @@ namespace collin
 				std::chrono::milliseconds _timeout = 1000ms;
 		};
 
+		template<>
+		class HttpRequest<void>
+		{
+			public:
+				HttpRequest() = default;
+
+				HttpRequest(std::string_view r)
+					: _resource(r.data()) {}
+
+				void resource(std::string_view str)
+				{
+					_resource = str.data();
+				}
+
+				const std::string& resource() const
+				{
+					return _resource;
+				}
+
+				void method(std::string_view str)
+				{
+					_method = str.data();
+				}
+
+				const std::string& method() const
+				{
+					return _method;
+				}
+
+				void header(std::string_view name, std::string_view value)
+				{
+					_headers[name.data()] = value.data();
+				}
+
+				const std::string& header(std::string_view name) const
+				{
+					return _headers.at(name.data());
+				}
+
+				const std::unordered_map<std::string, std::string>& headers() const noexcept
+				{
+					return _headers;
+				}
+
+				template<class Rep, class Period>
+				void timeout(std::chrono::duration<Rep, Period> d) noexcept
+				{
+					_timeout = d;
+				}
+
+				std::chrono::milliseconds timeout() const
+				{
+					return _timeout;
+				}
+
+				void version(HttpVersion v)
+				{
+					_version = v;
+				}
+
+				HttpVersion version() const
+				{
+					return _version;
+				}
+
+				std::string message() const
+				{
+
+					std::string msg;
+					const auto http_version = http_version_string(_version);
+					msg.reserve(std::size(_resource) + std::size(_method) + std::size(http_version));
+
+					msg += _method;
+					msg += " ";
+					msg += _resource;
+					msg += " ";
+					msg += http_version;
+					msg += line_terminator;
+
+					for (const auto& [name, value] : _headers)
+					{
+						msg += name;
+						msg += ": ";
+						msg += value;
+						msg += "\r\n";
+					}
+
+					msg += line_terminator;
+
+					return msg;
+				}
+
+			private:
+				std::string _resource = "/";
+				std::string _method = get.data();
+				HttpVersion _version = HttpVersion::HTTP_1_1;
+				std::unordered_map<std::string, std::string> _headers;
+				std::chrono::milliseconds _timeout = 1000ms;
+		};
+
 		template<class BodyContent>
-		struct HttpResponse
+		class HttpResponse
 		{
 			public:
 				HttpResponse(std::size_t _response_code, HttpVersion _version, std::unordered_map<std::string, std::string>&& _headers, BodyContent&& _body={})
@@ -258,9 +360,11 @@ namespace collin
 				std::unordered_map<std::string, std::string> _headers;
 		};
 
+		template<std::size_t Buffer_Size = 8192>
 		class HttpClient
 		{
 			public:
+
 				HttpClient() noexcept
 				{
 					Socket::init();
@@ -303,7 +407,6 @@ namespace collin
 				}
 
 			private:
-				inline static constexpr auto host_header = "Host";
 
 				template<class RequestBody>
 				std::optional<sockaddr_in> gather_address_information(const HttpRequest<RequestBody>& req)
@@ -330,9 +433,13 @@ namespace collin
 				template<class ResponseBody>
 				std::optional<HttpResponse<ResponseBody>> parseResponse(Socket& s)
 				{
-					std::array<char, 4096> buf;
+					std::array<char, Buffer_Size> buf;
 					buf.fill('\0');
 					s >> buf;
+					if (buf.at(0) == '\0')
+					{
+						return {};
+					}
 
 					const auto fill_until = [&s, &buf](std::string_view ch, std::size_t offset)
 					{
