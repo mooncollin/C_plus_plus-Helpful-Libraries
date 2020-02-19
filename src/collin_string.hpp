@@ -29,12 +29,12 @@ namespace collin
     const std::unordered_set consonants = {'b', 'c', 'd', 'f', 'g', 'h', 'j', 'k',
             'l', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'x', 'y', 'z'};
 
-	bool is_vowel(char t) noexcept
+	bool is_vowel(char t)
     {
         return vowels.find(std::tolower(t)) != std::cend(vowels);
     }
 
-    bool is_consonant(char t) noexcept
+    bool is_consonant(char t)
     {
         return consonants.find(std::tolower(t)) != std::cend(consonants);
     }
@@ -114,7 +114,7 @@ namespace collin
     template<class Container>
     void remove_character(Container& container, char c)
     {
-        const auto f = std::bind1st(std::equal_to<char>(), c);
+        const auto f = std::bind(std::equal_to<char>(), std::placeholders::_1, c);
         erase_if(container, f);
     }
 
@@ -130,7 +130,7 @@ namespace collin
         transform(container, static_cast<int(*)(int)>(std::tolower));
     }
 
-    void trim(std::string& s, std::string_view trim_str) noexcept
+    void trim(std::string& s, std::string_view trim_str)
     {
         const auto start_position = s.find_first_not_of(trim_str);
         if(start_position != std::string::npos)

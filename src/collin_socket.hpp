@@ -1,3 +1,6 @@
+#ifndef COLLIN_SOCKET
+#define COLLIN_SOCKET
+
 #ifdef _WIN32
     #include <WinSock2.h>
     #include <WS2tcpip.h>
@@ -81,7 +84,7 @@ namespace collin
 		}
 
 		template<class T>
-		Socket& operator<<(T value) noexcept
+		Socket& operator<<(T value)
 		{
 			sendData(value);
 			return *this;
@@ -105,6 +108,10 @@ namespace collin
 			while (buflen > 0)
 			{
 				const auto num = ::recv(sock, pbuf, buflen, flags);
+				if (num == 0)
+				{
+					return false;
+				}
 				if (num == SOCKET_ERROR)
 				{
 					close();
@@ -118,34 +125,41 @@ namespace collin
 			return true;
 		}
 
-		template<class T>
-		bool receiveData(T value) noexcept;
-
-		template<class T>
-		bool receiveData(T& value) noexcept
+		bool receiveData(unsigned long& value) noexcept
 		{
-			auto result = receiveData(&value, sizeof(T));
-
-			if constexpr (std::is_same_v<T, unsigned long>)
-			{
-				value = ::ntohl(value);
-			}
-			else if constexpr (std::is_same_v<T, unsigned long long>)
-			{
-				value = ::ntohll(value);
-			}
-			else if constexpr (std::is_same_v<T, unsigned short>)
-			{
-				value = ::ntohs(value);
-			}
-
+			const auto result = receiveData(&value, sizeof(value));
+			value = ::ntohl(value);
 			return result;
 		}
 
-		template<>
-		bool receiveData<std::string>(std::string& str) noexcept
+		bool receiveData(unsigned long long& value) noexcept
 		{
-			return receiveData(str.data(), str.size());
+			const auto result = receiveData(&value, sizeof(value));
+			value = ::ntohll(value);
+			return result;
+		}
+
+		bool receiveData(unsigned short& value) noexcept
+		{
+			const auto result = receiveData(&value, sizeof(value));
+			value = ::ntohs(value);
+			return result;
+		}
+
+		bool receiveData(std::string& str) noexcept
+		{
+			if (str.empty())
+			{
+				return false;
+			}
+
+			return receiveData(&str[0], str.size());
+		}
+
+		template<typename T, std::size_t N>
+		bool receiveData(std::array<T, N>& data)
+		{
+			return receiveData(data.data(), sizeof(T) * N);
 		}
 
 		bool sendData(const void* buf, int buflen, int flags=0) noexcept
@@ -171,40 +185,38 @@ namespace collin
 			return true;
 		}
 
-		template<class T>
-		bool sendData(T value) noexcept;
+		template<typename T, std::size_t N>
+		bool sendData(std::array<T, N>& arr)
+		{
+			return sendData(reinterpret_cast<const char*>(arr.data()), sizeof(T) * N);
+		}
 
-		template<>
-		bool sendData<unsigned long>(unsigned long value) noexcept
+		bool sendData(unsigned long value) noexcept
 		{
 			value = ::htonl(value);
-			const auto length = sizeof(value);
-
-			return sendData(reinterpret_cast<const char*>(&value), length);
+			return sendData(reinterpret_cast<const char*>(&value), sizeof(value));
 		}
 
-		template<>
-		bool sendData<unsigned long long>(unsigned long long value) noexcept
+		bool sendData(unsigned long long value) noexcept
 		{
 			value = ::htonll(value);
-			const auto length = sizeof(value);
-
-			return sendData(reinterpret_cast<const char*>(&value), length);
+			return sendData(reinterpret_cast<const char*>(&value), sizeof(value));
 		}
 
-		template<>
-		bool sendData<unsigned short>(unsigned short value) noexcept
+		bool sendData(unsigned short value) noexcept
 		{
 			value = ::htons(value);
-			const auto length = sizeof(value);
-
-			return sendData(reinterpret_cast<const char*>(&value), length);
+			return sendData(reinterpret_cast<const char*>(&value), sizeof(value));
 		}
 
-		template<>
-		bool sendData<std::string_view>(std::string_view value) noexcept
+		bool sendData(std::string_view value) noexcept
 		{
 			return sendData(value.data(), value.length());
+		}
+
+		void setOption(int type, int option) noexcept
+		{
+			setsockopt(sock, SOL_SOCKET, type, reinterpret_cast<char*>(&option), sizeof(option));
 		}
 
 		bool operator==(int value) const noexcept
@@ -289,3 +301,5 @@ namespace collin
 		return {};
 	}
 }
+
+#endif
