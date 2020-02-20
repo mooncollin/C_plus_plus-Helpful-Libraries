@@ -298,42 +298,7 @@ namespace collin
 				std::chrono::milliseconds _timeout = 1000ms;
 		};
 
-		template<class BodyContent>
 		class HttpResponse
-		{
-			public:
-				HttpResponse(std::size_t _response_code, HttpVersion _version, std::unordered_map<std::string, std::string>&& _headers, BodyContent&& _body={})
-					: _response_code(_response_code), _version(_version), _headers(_headers), _body(_body) {}
-
-				std::size_t response_code() const noexcept
-				{
-					return _response_code;
-				}
-
-				HttpVersion version() const noexcept
-				{
-					return _version;
-				}
-
-				const std::unordered_map<std::string, std::string>& headers() const noexcept
-				{
-					return _headers;
-				}
-
-				const BodyContent& body() const noexcept
-				{
-					return _body;
-				}
-
-			private:
-				std::size_t _response_code;
-				HttpVersion _version;
-				std::unordered_map<std::string, std::string> _headers;
-				BodyContent _body;
-		};
-
-		template<>
-		struct HttpResponse<void>
 		{
 			public:
 				HttpResponse(std::size_t _response_code, HttpVersion _version, std::unordered_map<std::string, std::string>&& _headers)
@@ -375,38 +340,148 @@ namespace collin
 					Socket::cleanup();
 				}
 
-				template<class ResponseBody, class RequestBody>
-				std::optional<HttpResponse<ResponseBody>> send(const HttpRequest<RequestBody>& req)
+				template<class RequestBody>
+				std::optional<HttpResponse> send(const HttpRequest<RequestBody>& req)
 				{
-					auto address = gather_address_information(req);
-					if (!address)
+					Socket s;
+					if (!sendHelper(s, req))
+					{
+						return {};
+					}
+					std::array<char, Buffer_Size> buf;
+					auto offset = std::begin(buf);
+
+					return parseResponse(s, buf, offset);
+				}
+
+				template<class RequestBody, class ResponseBody>
+				std::optional<HttpResponse> send(const HttpRequest<RequestBody>& req, ResponseBody& body)
+				{
+					Socket s;
+					if (!sendHelper(s, req))
 					{
 						return {};
 					}
 
-					Socket s;
+					std::array<char, Buffer_Size> buf;
+					auto offset = std::begin(buf);
+
+					auto response = parseResponse(s, buf, offset);
+					if (!response)
+					{
+						return {};
+					}
+
+					parseBody(s, body, buf, offset);
+					return response;
+				}
+
+				template<class RequestBody, class ResponseBody>
+				std::future<std::optional<HttpResponse>> sendAsync(const HttpRequest<RequestBody>& req, RequestBody& buf, std::launch policy=std::launch::async)
+				{
+					return std::async(policy, &HttpClient::send<RequestBody, ResponseBody>, this, std::ref(req), std::ref(buf));
+				}
+
+				template<class RequestBody>
+				std::future<std::optional<HttpResponse>> sendAsync(const HttpRequest<RequestBody>& req, std::launch policy = std::launch::async)
+				{
+					return std::async(policy, &HttpClient::send<RequestBody>, this, std::ref(req));
+				}
+
+			private:
+				template<class RequestBody>
+				bool sendHelper(Socket& s, const HttpRequest<RequestBody>& req)
+				{
+					auto address = gather_address_information(req);
+					if (!address)
+					{
+						return false;
+					}
+
 					s.setOption(SO_RCVTIMEO, req.timeout().count());
 					if (s.connect(address.value()) == SOCKET_ERROR)
 					{
-						return {};
+						return false;
 					}
 
 					s << req.message();
 					if (!s)
 					{
+						return false;
+					}
+
+					return true;
+				}
+
+				template<class ArrayType, std::size_t N, class ForwardIterator>
+				std::optional<HttpResponse> parseResponse(Socket& s, std::array<ArrayType, N>& buf, ForwardIterator& out_offset)
+				{
+					buf.fill('\0');
+					s >> buf;
+					if (s.lastRead() <= 0)
+					{
 						return {};
 					}
 
-					return parseResponse<ResponseBody>(s);
+					const auto fill_until = [&s, &buf](std::string_view ch, auto& offset)
+					{
+						std::string result;
+						auto current_location = std::search(offset, std::begin(buf) + s.lastRead(), std::begin(ch), std::end(ch));
+						while (current_location == std::end(buf))
+						{
+							result += buf.data();
+							s >> buf;
+							offset = std::begin(buf);
+							current_location = std::search(std::begin(buf), std::begin(buf) + s.lastRead(), std::begin(ch), std::end(ch));
+						}
+
+						std::copy(offset, current_location, std::back_inserter(result));
+						offset = current_location;
+						return std::move(result);
+					};
+
+					out_offset = std::begin(buf);
+					const auto version = http_version(fill_until(" ", out_offset));
+					out_offset += 1;
+
+					const auto status_code = std::stoull(fill_until(" ", out_offset));
+					out_offset += 1;
+
+					fill_until(line_terminator, out_offset);
+					out_offset += line_terminator.length();
+
+					auto next_fill_result = fill_until(line_terminator, out_offset);
+
+					std::unordered_map<std::string, std::string> headers;
+					while (true)
+					{
+						const auto colon_loc = next_fill_result.find(": ");
+						if (colon_loc == std::string::npos)
+						{
+							break;
+						}
+						headers[next_fill_result.substr(0, colon_loc)] = next_fill_result.substr(colon_loc + 2);
+						out_offset += line_terminator.length();
+						next_fill_result = fill_until(line_terminator, out_offset);
+					}
+
+					out_offset += line_terminator.length();
+					return HttpResponse(status_code, version, std::move(headers));
 				}
 
-				template<class ResponseBody, class RequestBody>
-				std::future<std::optional<HttpResponse<ResponseBody>>> sendAsync(const HttpRequest<RequestBody>& req, std::launch policy=std::launch::async)
+				template<class ResponseBody, std::size_t N, class ForwardIterator>
+				void parseBody(Socket& s, ResponseBody& body, std::array<char, N>& buf, ForwardIterator starting_offset)
 				{
-					return std::async(policy, &HttpClient::send<ResponseBody, RequestBody>, this, std::ref(req));
+					if(s)
+					{
+						std::copy(starting_offset, std::begin(buf) + s.lastRead(), std::back_inserter(body));
+						while (s && s.lastRead() > 0)
+						{
+							s >> buf;
+							std::copy(std::begin(buf), std::begin(buf) + s.lastRead(), std::back_inserter(body));
+						}
+					}
 				}
-
-			private:
 
 				template<class RequestBody>
 				std::optional<sockaddr_in> gather_address_information(const HttpRequest<RequestBody>& req)
@@ -428,76 +503,6 @@ namespace collin
 					}
 
 					return resolveHostName(host, port);
-				}
-
-				template<class ResponseBody>
-				std::optional<HttpResponse<ResponseBody>> parseResponse(Socket& s)
-				{
-					std::array<char, Buffer_Size> buf;
-					buf.fill('\0');
-					s >> buf;
-					if (buf.at(0) == '\0')
-					{
-						return {};
-					}
-
-					const auto fill_until = [&s, &buf](std::string_view ch, std::size_t offset)
-					{
-						std::string result;
-						auto current_location = std::strstr(buf.data() + offset, ch.data());
-						while (current_location == nullptr)
-						{
-							result += buf.data();
-							buf.fill('\0');
-							s >> buf;
-							current_location = std::strstr(buf.data(), ch.data());
-						}
-
-						std::copy_n(std::begin(buf) + offset, current_location - (buf.data() + offset), std::back_inserter(result));
-						return std::make_pair(std::move(result), current_location - buf.data());
-					};
-
-					auto fill_result = fill_until(" ", 0);
-					const auto version_string = std::move(fill_result.first);
-					const auto version = http_version(version_string);
-					auto offset = fill_result.second;
-
-					fill_result = fill_until(" ", offset + 1);
-					const auto status_string = std::move(fill_result.first);
-					const auto status_code = std::atoll(status_string.data());
-					offset = fill_result.second;
-
-					auto previous_fill_result = fill_until(line_terminator, offset + 1);
-					auto next_fill_result = fill_until(line_terminator, previous_fill_result.second + line_terminator.length());
-
-					std::unordered_map<std::string, std::string> headers;
-					while(previous_fill_result.second != next_fill_result.second)
-					{
-						const auto colon_loc = next_fill_result.first.find(": ");
-						if (colon_loc == std::string::npos)
-						{
-							break;
-						}
-						headers[next_fill_result.first.substr(0, colon_loc)] = next_fill_result.first.substr(colon_loc + 2);
-						previous_fill_result = std::move(next_fill_result);
-						next_fill_result = fill_until(line_terminator, previous_fill_result.second + line_terminator.length());
-					}
-
-					if constexpr (std::is_same_v<ResponseBody, void>)
-					{
-						return HttpResponse<ResponseBody>(status_code, version, std::move(headers));
-					}
-					else
-					{
-						std::string body = buf.data() + next_fill_result.second + line_terminator.length();
-						while (s && buf.at(0) != '\0')
-						{
-							buf.fill('\0');
-							s >> buf;
-							body += buf.data();
-						}
-						return HttpResponse<ResponseBody>(status_code, version, std::move(headers), std::move(body));
-					}
 				}
 		};
 	}

@@ -105,10 +105,10 @@ namespace collin
 					return false;
 				}
 
+				last_read_result = 0;
 				while (buflen > 0)
 				{
 					const auto num = ::recv(sock, pbuf, buflen, flags);
-					last_read_result = num;
 					if (num == 0)
 					{
 						return false;
@@ -119,6 +119,7 @@ namespace collin
 						return false;
 					}
 
+					last_read_result += num;
 					pbuf += num;
 					buflen -= num;
 				}
@@ -177,15 +178,16 @@ namespace collin
 					return false;
 				}
 
+				last_write_result = 0;
 				while (buflen > 0)
 				{
 					const auto num = ::send(sock, pbuf, buflen, flags);
-					last_write_result = num;
 					if (num == SOCKET_ERROR)
 					{
 						close();
 						return false;
 					}
+					last_write_result += num;
 					pbuf += num;
 					buflen -= num;
 				}
@@ -248,20 +250,20 @@ namespace collin
 				return *this != -1;
 			}
 
-			int lastRead() const noexcept
+			std::size_t lastRead() const noexcept
 			{
 				return last_read_result;
 			}
 
-			int lastWrite() const noexcept
+			std::size_t lastWrite() const noexcept
 			{
 				return last_write_result;
 			}
 
 			SOCKET sock;
 		private:
-			int last_read_result;
-			int last_write_result;
+			std::size_t last_read_result = 0;
+			std::size_t last_write_result = 0;
 	};
 
 	class AddressInfo
