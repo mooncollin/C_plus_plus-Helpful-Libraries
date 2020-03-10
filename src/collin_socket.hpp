@@ -10,6 +10,21 @@
     #include <netdb.h>
     #include <unistd.h>
     using SOCKET = int;
+    #define SOCKET_ERROR -1
+    #if __BIG_ENDIAN__
+		#define htonll(x) (x)
+		#define ntohll(x) (x)
+	#else
+		inline uint64_t htonll(unsigned long long int x)
+		{
+			return ((uint64_t) htonl(x & 0xFFFFFFFF) << 32) | htonl(x >> 32);
+		}
+		
+		inline uint64_t ntohll(unsigned long long int x)
+		{
+			return ((uint64_t) ntohl(x & 0xFFFFFFFF) << 32) | ntohl(x >> 32);
+		}
+    #endif
 #endif
 
 #include <iostream>
@@ -69,7 +84,7 @@ namespace collin
 						status = shutdown(sock, SHUT_RDWR);
 						if (status == 0)
 						{
-							status = close(sock);
+							status = ::close(sock);
 							sock = -1;
 						}
 					#endif

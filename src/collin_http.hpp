@@ -27,7 +27,8 @@ namespace collin
 			HTTP_1,
 			HTTP_1_1,
 			HTTP_2,
-			HTTP_3
+			HTTP_3,
+			INVALID
 		};
 
 		constexpr std::string_view http_1 = "HTTP/1.0";
@@ -77,7 +78,7 @@ namespace collin
 				return HttpVersion::HTTP_3;
 			}
 
-			throw std::invalid_argument(s.data() + std::string(" is not a valid http version string"));
+			return HttpVersion::INVALID;
 		}
 
 		template<class BodyContent>
