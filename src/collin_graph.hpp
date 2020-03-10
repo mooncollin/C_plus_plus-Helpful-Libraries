@@ -9,7 +9,7 @@
 namespace collin
 {
 	template<class Key, class Weight=int, bool directed=false>
-	class graph
+	class Graph
 	{
 		public:
 			using value_type = Key;
@@ -24,12 +24,12 @@ namespace collin
 			constexpr static auto destination_node_index = 1;
 			constexpr static auto weight_index = 2;
 
-			graph() = default;
-			~graph() = default;
-			graph(const graph&) = default;
-			graph(graph&&) = default;
-			graph& operator=(const graph&) = default;
-			graph& operator=(graph&&) = default;
+			Graph() = default;
+			~Graph() = default;
+			Graph(const Graph&) = default;
+			Graph(Graph&&) = default;
+			Graph& operator=(const Graph&) = default;
+			Graph& operator=(Graph&&) = default;
 
 			void insert_node(const node& val)
 			{

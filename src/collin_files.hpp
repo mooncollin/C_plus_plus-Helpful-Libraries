@@ -5,6 +5,9 @@
 #include <string_view>
 #include <algorithm>
 #include <iterator>
+#include <filesystem>
+#include <regex>
+#include <vector>
 #include "collin_string.hpp"
 
 namespace collin
@@ -67,16 +70,17 @@ namespace collin
             }
 
         private:
-            std::ifstream* input = nullptr;
+            static constexpr auto end_of_input = nullptr;
+            std::ifstream* input = end_of_input;
             T current;
 
             void next_input()
             {
-                if(input != nullptr)
+                if(input != end_of_input)
                 {
                     if(input->fail() || input->eof())
                     {
-                        input = nullptr;
+                        input = end_of_input;
                     }
                     else
                     {
@@ -105,6 +109,23 @@ namespace collin
     std::vector<T> read_lines(std::ifstream& input)
     {
         return std::vector<T>(Lines<T>(input), Lines<T>());
+    }
+
+    std::vector<std::filesystem::directory_entry> search_for_files(const std::filesystem::path& path, const std::regex& r)
+    {
+        std::vector<std::filesystem::directory_entry> entries;
+
+        for (const auto& p : std::filesystem::directory_iterator(path))
+        {
+            std::smatch match;
+            const auto path_string = p.path().string();
+            if (std::regex_match(path_string, match, r))
+            {
+                entries.push_back(p);
+            }
+        }
+
+        return entries;
     }
 }
 

@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <functional>
 #include <iostream>
+#include <string_view>
 #include "collin_string.hpp"
 #include "collin_algorithm.hpp"
 #include "collin_utility.hpp"
@@ -60,21 +61,21 @@ namespace collin
                 stemmed_cache[copy] = word;
             }
 
-            static int get_measure(const std::string& word) noexcept
+            static int get_measure(std::string_view word) noexcept
             {
                 // State 0 is at consonants, looking for vowels
                 // to go to the next state.
 
                 // State 1 is at vowels, looking for consonants
                 // to add to measure and go back to state 0.
-                constexpr static auto consonant_state = 0;
-                constexpr static auto vowel_state = 1;
+                constexpr auto consonant_state = 0;
+                constexpr auto vowel_state = 1;
 
                 int measure = 0;
 
                 auto state = consonant_state;
 
-                for(std::size_t i = 0; i < std::size(word); i++)
+                for(std::size_t i = 0; i < word.length(); i++)
                 {
                     const auto current_char = word[i];
 
@@ -120,6 +121,19 @@ namespace collin
                 });
             }
 
+            static bool ends_with_double_consonant(std::string_view str)
+            {
+                if(str.length() < 2)
+                {
+                    return false;
+                }
+
+                const auto first_char = last_of(str);
+                const auto second_char = last_of(str, 2);
+
+                return is_consonant(first_char) && is_consonant(second_char);
+            }
+
             static stem_transform ends_with_transform(std::string ends, std::string replace) noexcept
             {
                 return [=](std::string& str)
@@ -147,7 +161,7 @@ namespace collin
                 {
                     const auto t = Stemmer::ends_with_transform(ends, replace);
                     auto copy = str;
-                    bool result = t(copy);
+                    const bool result = t(copy);
                     if(result && Stemmer::get_measure(copy) > measure)
                     {
                         str = std::move(copy);
@@ -164,7 +178,7 @@ namespace collin
                 {
                     const auto t = Stemmer::ends_with_transform(ends, replace);
                     auto copy = str;
-                    bool result = t(copy);
+                    const bool result = t(copy);
                     if(result && contains_vowel(copy))
                     {
                         str = std::move(copy);

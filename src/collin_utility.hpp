@@ -9,6 +9,35 @@
 
 namespace collin
 {
+	template<class Function, class... Args>
+	class Finally
+	{
+		public:
+			using return_type = std::result_of_t<Function(Args...)>;
+
+			Finally(Function&& f, Args&&... args) noexcept
+				: f(f), args(args...) {}
+
+			~Finally() noexcept
+			{
+				static_cast<void>(operator()());
+			}
+
+			return_type operator()() const noexcept
+			{
+				return std::apply(f, args);
+			}
+
+			Function function() const noexcept
+			{
+				return f;
+			}
+
+		private:
+			Function f;
+			std::tuple<Args...> args;
+	};
+
 	template<class Container>
 	constexpr auto& last_of(Container& container, typename Container::size_type n = 1)
 	{

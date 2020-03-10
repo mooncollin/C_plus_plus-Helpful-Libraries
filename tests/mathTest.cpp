@@ -174,9 +174,28 @@ void test_factorial()
 	static_assert(collin::factorial(10) == 3628800);
 }
 
+void test_rational()
+{
+	static_assert(collin::Rational(1) == 1);
+	static_assert(collin::Rational(1, 2) == 0.5);
+	static_assert(collin::Rational(1, 4) == 0.25);
+	static_assert(collin::Rational(1, 2) + collin::Rational(1, 2) == 1);
+	static_assert(collin::Rational(1, 3) + collin::Rational(1, 3) + collin::Rational(1, 3) == 1);
+	static_assert(collin::Rational(1, 3) * 3 == 1);
+	static_assert(collin::Rational(12, 3) == 4);
+	static_assert(collin::Rational(3, 1) == 3);
+	static_assert(collin::Rational(-3, 1) == -3);
+	static_assert(collin::Rational(3, -1) == -3);
+	static_assert(collin::mult_inverse(collin::Rational(1, -3)) == -3);
+	static_assert(collin::add_inverse(collin::Rational(-5, 1)) == 5);
+	static_assert(collin::add_inverse(collin::Rational(5, 1)) == -5);
+	static_assert(collin::canonical(collin::Rational(12, 3)) == collin::Rational(4, 1));
+}
+
 int main()
 {
 	test_is_odd();
 	test_is_even();
 	test_factorial();
+	test_rational();
 }
