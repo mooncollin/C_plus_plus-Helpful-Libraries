@@ -9,9 +9,9 @@ using namespace std::literals;
 
 void is_vowel_test()
 {
-	const auto test_values = collin::make_test_data
+	const auto test_values = collin::test::make_test_data
 	(
-		collin::is_vowel,
+		collin::strings::is_vowel,
 			{
 				std::make_pair(std::make_tuple('a'), true),
 				std::make_pair(std::make_tuple('b'), false),
@@ -42,14 +42,14 @@ void is_vowel_test()
 			}
 	);
 
-	collin::assert_test_data(test_values, "is_vowel");
+	collin::test::assert_test_data(test_values, "is_vowel");
 }
 
 void is_consonant_test()
 {
-	const auto test_values = collin::make_test_data
+	const auto test_values = collin::test::make_test_data
 	(
-		collin::is_consonant,
+		collin::strings::is_consonant,
 			{
 				std::make_pair(std::make_tuple('a'), false),
 				std::make_pair(std::make_tuple('b'), true),
@@ -80,14 +80,14 @@ void is_consonant_test()
 			}
 	);
 
-	collin::assert_test_data(test_values, "is_consonant");
+	collin::test::assert_test_data(test_values, "is_consonant");
 }
 
 void contains_vowel_test()
 {
-	const auto test_values = collin::make_test_data
+	const auto test_values = collin::test::make_test_data
 	(
-		collin::contains_vowel<std::string>,
+		collin::strings::contains_vowel<std::string>,
 			{
 				std::make_pair(std::make_tuple("Hello"), true),
 				std::make_pair(std::make_tuple("My"), false),
@@ -98,14 +98,14 @@ void contains_vowel_test()
 			}
 	);
 
-	collin::assert_test_data(test_values, "contains_vowel");
+	collin::test::assert_test_data(test_values, "contains_vowel");
 }
 
 void contains_consonant_test()
 {
-	const auto test_values = collin::make_test_data
+	const auto test_values = collin::test::make_test_data
 	(
-		collin::contains_consonant<std::string>,
+		collin::strings::contains_consonant<std::string>,
 			{
 				std::make_pair(std::make_tuple("Hello"), true),
 				std::make_pair(std::make_tuple("My"), true),
@@ -117,17 +117,17 @@ void contains_consonant_test()
 			}
 	);
 
-	collin::assert_test_data(test_values, "contains_consonant");
+	collin::test::assert_test_data(test_values, "contains_consonant");
 }
 
 void remove_punctuation_test()
 {
 	const auto transform_f = [] (std::string s) {
-		collin::remove_punctuation(s);
+		collin::strings::remove_punctuation(s);
 		return s;
 	};
 
-	const auto test_values = collin::make_test_data
+	const auto test_values = collin::test::make_test_data
 	(
 		transform_f,
 			{
@@ -138,17 +138,17 @@ void remove_punctuation_test()
 			}
 	);
 
-	collin::assert_test_data(test_values, "remove_punctuation");
+	collin::test::assert_test_data(test_values, "remove_punctuation");
 }
 
 void remove_spaces_test()
 {
 	const auto transform_f = [] (std::string s) {
-		collin::remove_spaces(s);
+		collin::strings::remove_spaces(s);
 		return s;
 	};
 
-	const auto test_values = collin::make_test_data
+	const auto test_values = collin::test::make_test_data
 	(
 		transform_f,
 			{
@@ -160,17 +160,17 @@ void remove_spaces_test()
 			}
 	);
 
-	collin::assert_test_data(test_values, "remove_spaces");
+	collin::test::assert_test_data(test_values, "remove_spaces");
 }
 
 void remove_alphanumerics_test()
 {
 	const auto transform_f = [] (std::string s) {
-		collin::remove_alphanumerics(s);
+		collin::strings::remove_alphanumerics(s);
 		return s;
 	};
 
-	const auto test_values = collin::make_test_data
+	const auto test_values = collin::test::make_test_data
 	(
 		transform_f,
 			{
@@ -179,17 +179,17 @@ void remove_alphanumerics_test()
 			}
 	);
 
-	collin::assert_test_data(test_values, "remove_alphanumerics");
+	collin::test::assert_test_data(test_values, "remove_alphanumerics");
 }
 
 void remove_blanks_test()
 {
 	const auto transform_f = [] (std::string s) {
-		collin::remove_blanks(s);
+		collin::strings::remove_blanks(s);
 		return s;
 	};
 
-	const auto test_values = collin::make_test_data
+	const auto test_values = collin::test::make_test_data
 	(
 		transform_f,
 			{
@@ -201,17 +201,17 @@ void remove_blanks_test()
 			}
 	);
 
-	collin::assert_test_data(test_values, "remove_blanks");
+	collin::test::assert_test_data(test_values, "remove_blanks");
 }
 
 void remove_hexdigits_test()
 {
 	const auto transform_f = [] (std::string s) {
-		collin::remove_hexdigits(s);
+		collin::strings::remove_hexdigits(s);
 		return s;
 	};
 
-	const auto test_values = collin::make_test_data
+	const auto test_values = collin::test::make_test_data
 	(
 		transform_f,
 		 {
@@ -235,17 +235,17 @@ void remove_hexdigits_test()
 		 }
 	);
 
-	collin::assert_test_data(test_values, "remove_hexdigits");
+	collin::test::assert_test_data(test_values, "remove_hexdigits");
 }
 
 void remove_upper_test()
 {
 	const auto transform_f = [] (std::string s) {
-		collin::remove_upper(s);
+		collin::strings::remove_upper(s);
 		return s;
 	};
 
-	const auto test_values = collin::make_test_data
+	const auto test_values = collin::test::make_test_data
 	(
 		transform_f,
 			{
@@ -255,17 +255,17 @@ void remove_upper_test()
 			}
 	);
 
-	collin::assert_test_data(test_values, "remove_upper");
+	collin::test::assert_test_data(test_values, "remove_upper");
 }
 
 void remove_lower_test()
 {
 	const auto transform_f = [] (std::string s) {
-		collin::remove_lower(s);
+		collin::strings::remove_lower(s);
 		return s;
 	};
 
-	const auto test_values = collin::make_test_data
+	const auto test_values = collin::test::make_test_data
 	(
 		transform_f,
 			{
@@ -275,17 +275,17 @@ void remove_lower_test()
 			}
 	);
 
-	collin::assert_test_data(test_values, "remove_lower");
+	collin::test::assert_test_data(test_values, "remove_lower");
 }
 
 void remove_character_test()
 {
 	const auto transform_f = [] (std::string s, char c) {
-		collin::remove_character(s, c);
+		collin::strings::remove_character(s, c);
 		return s;
 	};
 
-	const auto test_values = collin::make_test_data
+	const auto test_values = collin::test::make_test_data
 	(
 		transform_f,
 			{
@@ -296,17 +296,17 @@ void remove_character_test()
 			}
 	);
 
-	collin::assert_test_data(test_values, "remove_character");
+	collin::test::assert_test_data(test_values, "remove_character");
 }
 
 void uppercase_test()
 {
 	const auto transform_f = [] (std::string s) {
-		collin::uppercase(s);
+		collin::strings::uppercase(s);
 		return s;
 	};
 	
-	const auto test_values = collin::make_test_data
+	const auto test_values = collin::test::make_test_data
 	(
 		transform_f,
 			{
@@ -317,17 +317,17 @@ void uppercase_test()
 			}
 	);
 
-	collin::assert_test_data(test_values, "uppercase");
+	collin::test::assert_test_data(test_values, "uppercase");
 }
 
 void lowercase_test()
 {
 	const auto transform_f = [] (std::string s) {
-		collin::lowercase(s);
+		collin::strings::lowercase(s);
 		return s;
 	};
 	
-	const auto test_values = collin::make_test_data
+	const auto test_values = collin::test::make_test_data
 	(
 		transform_f,
 			{
@@ -338,15 +338,15 @@ void lowercase_test()
 			}
 	);
 
-	collin::assert_test_data(test_values, "lowercase");
+	collin::test::assert_test_data(test_values, "lowercase");
 }
 
 template<typename T>
 auto get_split_numeric_values()
 {
-	return collin::make_test_data
+	return collin::test::make_test_data
 	(
-		collin::split<T, std::string>,
+		collin::strings::split<T, std::string>,
 			{
 				std::make_pair(std::make_tuple("1 2 3 4", " ", -1), std::vector<T> {1, 2, 3, 4}),
 				std::make_pair(std::make_tuple("1\t2\t3\t4", "\t", -1), std::vector<T> {1, 2, 3, 4}),
@@ -358,9 +358,9 @@ auto get_split_numeric_values()
 
 void split_test()
 {
-	const auto test_string_values = collin::make_test_data
+	const auto test_string_values = collin::test::make_test_data
 	(
-		collin::split<std::string, std::string>,
+		collin::strings::split<std::string, std::string>,
 			{
 				std::make_pair(std::make_tuple("Here are words", " ", -1), std::vector<std::string> {"Here", "are", "words"}),
 				std::make_pair(std::make_tuple("Here!are!words", "!", -1), std::vector<std::string> {"Here", "are", "words"}),
@@ -382,25 +382,25 @@ void split_test()
 	const auto test_long_long_values = get_split_numeric_values<long long>();
 	const auto test_unsigned_long_long_values = get_split_numeric_values<unsigned long long>();
 
-	collin::assert_test_data(test_string_values, "split Strings");
-	collin::assert_test_data(test_int_values, "split Ints");
-	collin::assert_test_data(test_long_values, "split Longs");
-	collin::assert_test_data(test_unsigned_long_values, "split Unsigned Longs");
-	collin::assert_test_data(test_long_int_values, "split Long Ints");
-	collin::assert_test_data(test_float_values, "split Floats");
-	collin::assert_test_data(test_double_values, "split Doubles");
-	collin::assert_test_data(test_long_double_values, "split Long Doubles");
-	collin::assert_test_data(test_long_long_values, "split Long Longs");
-	collin::assert_test_data(test_unsigned_long_long_values, "split Unsigned Long Longs");
+	collin::test::assert_test_data(test_string_values, "split Strings");
+	collin::test::assert_test_data(test_int_values, "split Ints");
+	collin::test::assert_test_data(test_long_values, "split Longs");
+	collin::test::assert_test_data(test_unsigned_long_values, "split Unsigned Longs");
+	collin::test::assert_test_data(test_long_int_values, "split Long Ints");
+	collin::test::assert_test_data(test_float_values, "split Floats");
+	collin::test::assert_test_data(test_double_values, "split Doubles");
+	collin::test::assert_test_data(test_long_double_values, "split Long Doubles");
+	collin::test::assert_test_data(test_long_long_values, "split Long Longs");
+	collin::test::assert_test_data(test_unsigned_long_long_values, "split Unsigned Long Longs");
 }
 
 void join_test()
 {
 	using join_vector_func_t = std::string (*)(const std::vector<const char*>&, std::string_view);
 
-	const auto join_vector_func = static_cast<join_vector_func_t>(collin::join);
+	const auto join_vector_func = static_cast<join_vector_func_t>(collin::strings::join);
 
-	const auto test_string_values = collin::make_test_data
+	const auto test_string_values = collin::test::make_test_data
 	(
 		join_vector_func,
 			{
@@ -413,9 +413,9 @@ void join_test()
 
 	using join_it_func_t = std::string (*)(typename decltype(words)::const_iterator, typename decltype(words)::const_iterator, std::string_view);
 
-	const auto join_it_func = static_cast<join_it_func_t>(collin::join);
+	const auto join_it_func = static_cast<join_it_func_t>(collin::strings::join);
 
-	const auto test_it_values = collin::make_test_data
+	const auto test_it_values = collin::test::make_test_data
 	(
 		join_it_func,
 			{
@@ -425,8 +425,8 @@ void join_test()
 	);
 
 
-	collin::assert_test_data(test_string_values, "join Strings");
-	collin::assert_test_data(test_it_values, "join Iterators");
+	collin::test::assert_test_data(test_string_values, "join Strings");
+	collin::test::assert_test_data(test_it_values, "join Iterators");
 }
 
 template<class T, class Input>
@@ -434,9 +434,9 @@ using from_string_func_t = T(*)(Input);
 
 void from_string_test()
 {
-	const auto int_test_values = collin::make_test_data
+	const auto int_test_values = collin::test::make_test_data
 	(
-		static_cast<from_string_func_t<int, std::string_view>>(collin::from_string),
+		static_cast<from_string_func_t<int, std::string_view>>(collin::strings::from_string),
 		 	{
 				std::make_pair(std::make_tuple("1"), 1),
 				std::make_pair(std::make_tuple("1223"), 1223),
@@ -446,7 +446,7 @@ void from_string_test()
 			}
 	);
 
-	collin::assert_test_data(int_test_values, "from string Integers");
+	collin::test::assert_test_data(int_test_values, "from string Integers");
 }
 
 int main()

@@ -12,14 +12,14 @@ void for_each_test()
 	const auto sum_f = [] (auto container) {
 		auto sum = collin::construct_value(container);
 
-		collin::for_each(container, [&sum](const auto& value) {
+		collin::algorithms::for_each(container, [&sum](const auto& value) {
 			sum += value;
 		});
 
 		return sum;
 	};
 
-	const auto test_values = collin::make_test_data
+	const auto test_values = collin::test::make_test_data
 	(
 		sum_f,
 			{
@@ -27,7 +27,7 @@ void for_each_test()
 			}
 	);
 
-	collin::assert_test_data(test_values, "for_each Sum");
+	collin::test::assert_test_data(test_values, "for_each Sum");
 }
 
 void for_each_n_test()
@@ -35,14 +35,14 @@ void for_each_n_test()
 	const auto sum_f = [] ( auto container) {
 		auto sum = collin::construct_value(container);
 		
-		collin::for_each_n(container, 3, [&sum](const auto _, const auto& value) {
+		collin::algorithms::for_each_n(container, 3, [&sum](const auto _, const auto& value) {
 			sum += value;
 		});
 
 		return sum;
 	};
 
-	const auto test_values = collin::make_test_data
+	const auto test_values = collin::test::make_test_data
 	(
 		sum_f,
 			{
@@ -50,17 +50,17 @@ void for_each_n_test()
 			}
 	);
 
-	collin::assert_test_data(test_values, "for_each_n Sum");
+	collin::test::assert_test_data(test_values, "for_each_n Sum");
 }
 
 void any_of_test()
 {
 	const auto f = [] (auto container, auto pred)
 	{
-		return collin::any_of(container, pred);
+		return collin::algorithms::any_of(container, pred);
 	};
 
-	const auto test_values = collin::make_test_data
+	const auto test_values = collin::test::make_test_data
 	(
 		f,
 		{
@@ -68,17 +68,17 @@ void any_of_test()
 		}
 	);
 
-	const auto test_values_2 = collin::make_test_data
+	const auto test_values_2 = collin::test::make_test_data
 	(
 		f,
 		{
-			std::make_pair(std::make_tuple(std::vector {1, 2, 3}, collin::is_even<int>), true),
-			std::make_pair(std::make_tuple(std::vector {1, 3, 5, 9}, collin::is_even<int>), false)
+			std::make_pair(std::make_tuple(std::vector {1, 2, 3}, collin::math::is_even<int>), true),
+			std::make_pair(std::make_tuple(std::vector {1, 3, 5, 9}, collin::math::is_even<int>), false)
 		}
 	);
 
-	collin::assert_test_data(test_values, "any_of bool");
-	collin::assert_test_data(test_values_2, "any_of even");
+	collin::test::assert_test_data(test_values, "any_of bool");
+	collin::test::assert_test_data(test_values_2, "any_of even");
 }
 
 int main()

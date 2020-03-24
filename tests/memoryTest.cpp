@@ -5,7 +5,7 @@
 int main()
 {
     {
-        collin::Recycler<int> r;
+        collin::memory::Recycler<int> r;
         std::vector<int, collin::Recycler<int>> v(r);
         std::vector<int, collin::Recycler<int>> v2(r);
 
@@ -18,7 +18,7 @@ int main()
         v2.resize(1000);
     }
 
-    collin::Recycler<double> r2;
+    collin::memory::Recycler<double> r2;
     std::vector<double, decltype(r2)> v3(r2);
     std::vector<long, collin::Recycler<long>> v4;
 }

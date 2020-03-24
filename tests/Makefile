@@ -1,4 +1,4 @@
-include-folder := C:/Users/colli/git/C++ Helpful Libraries/src
+include-folder := ../src/
 compiler := g++
 cl-compiler-flags := /std:c++17 -I'$(include-folder)' /EHsc
 gcc-compiler-flags := -std=c++17 -I'$(include-folder)'
@@ -35,6 +35,14 @@ graphTest:	graphTest.cpp
 iostreamTest:	iostreamTest.cpp
 	@$(compiler) $(compiler-flags) $< -o $@
 	@iostreamTest.exe
+
+httpTest:	httpTest.cpp
+	@$(compiler) $(compiler-flags) $< -o $@ -lWs2_32
+	@httpTest.exe
+
+socketTest:	socketTest.cpp
+	@$(compiler) $(compiler-flags) $< -o $@ -lWs2_32
+	@socketTest.exe
 
 
 tests:	mathTest stringTest algorithmTest

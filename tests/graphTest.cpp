@@ -7,7 +7,7 @@
 
 int main()
 {
-	collin::graph<int, int, true> graph;
+	collin::graphs::Graph<int, int, true> graph;
 	graph.insert_node(5);
 	graph.insert_edge(5, 6);
 	graph.insert_edge(8, 5);

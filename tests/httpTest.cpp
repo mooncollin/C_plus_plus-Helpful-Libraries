@@ -1,31 +1,37 @@
-#include "collin_http.hpp"
+#include "net/collin_http.hpp"
+#include "net/collin_iocontext.hpp"
 #include <iostream>
 #include <algorithm>
 #include <vector>
 #include <array>
 #include <string>
-
-using namespace std::literals;
+#include <chrono>
 
 int main()
 {
-	collin::http::HttpClient c;
+	collin::net::io_context ctx;
+	collin::http::HttpClient c(ctx);
 	collin::http::HttpRequest<std::string> r;
-	//r.header(collin::http::host_header, "www.google.com");
-	r.header(collin::http::host_header, "127.0.0.1:5000");
-	r.resource("/video");
+	r.host(ctx, collin::net::ip::address_v4::loopback().to_string(), 5000);
+	r.resource("/");
 
 	std::string body;
-	const auto op = c.send(r, body);
-	//const auto op = c.send(r);
+	std::error_code ec;
+	const auto op = c.send(r, body, ec);
 	if (op)
 	{
-		//std::cout << op.value().response_code() << '\n';
 		std::cout << body << '\n';
 	}
 	else
 	{
-		std::cout << "No response\n";
+		if (ec)
+		{
+			std::cout << "Error code: " << ec << '\n';
+		}
+		else
+		{
+			std::cout << "No response\n";
+		}
 	}
 
 	std::getchar();

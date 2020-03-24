@@ -1,5 +1,4 @@
-#ifndef COLLIN_HTTP
-#define COLLIN_HTTP
+#pragma once
 
 #include <string>
 #include <unordered_map>
@@ -10,16 +9,19 @@
 #include <cstring>
 #include <future>
 #include <type_traits>
+#include <algorithm>
+#include <sstream>
 
 #include "collin_socket.hpp"
-
-using namespace std::literals;
+#include "collin_internet.hpp"
+#include "collin_iocontext.hpp"
 
 namespace collin
 {
 	namespace http
 	{
-		inline constexpr auto default_port = "80";
+		using namespace std::literals;
+		inline constexpr net::ip::port_type default_port = 80;
 		inline constexpr auto host_header = "Host";
 
 		enum class HttpVersion
@@ -85,94 +87,127 @@ namespace collin
 		class HttpRequest
 		{
 			public:
+				using protocol = net::ip::tcp;
+				using endpoint_t = protocol::endpoint;
+
 				HttpRequest() = default;
 
 				HttpRequest(std::string_view r)
-					: _resource(r.data()) {}
+					: resource_(r.data()) {}
+
+				void endpoint(const endpoint_t& ep)
+				{
+					endpoint_ = ep;
+					std::ostringstream ss;
+					ss << ep;
+					header(collin::http::host_header, ss.str());
+				}
+
+				std::size_t host(net::io_context& ctx, std::string_view str, net::ip::port_type port = default_port)
+				{
+					net::ip::basic_resolver<protocol> r(ctx);
+					std::string service = std::to_string(port);
+					const auto results = r.resolve(str, service);
+
+					for(const auto& result : results)
+					{
+						auto ep = result.endpoint();
+						ep.port(port);
+						endpoint(ep);
+						break;
+					}
+
+					return results.size();
+				}
+
+				endpoint_t endpoint() const
+				{
+					return endpoint_;
+				}
 
 				void resource(std::string_view str)
 				{
-					_resource = str.data();
+					resource_ = str.data();
 				}
 
 				const std::string& resource() const
 				{
-					return _resource;
+					return resource_;
 				}
 
 				void method(std::string_view str)
 				{
-					_method = str.data();
+					method_ = str.data();
 				}
 
 				const std::string& method() const
 				{
-					return _method;
+					return method_;
 				}
 
 				void contentProvider(BodyContent& c) noexcept
 				{
-					_contentProvider = &c;
+					contentProvider_ = &c;
 				}
 
 				void contentProvider(BodyContent&& c) = delete;
 
 				BodyContent* contentProvider() const noexcept
 				{
-					return _contentProvider;
+					return contentProvider_;
 				}
 
 				void header(std::string_view name, std::string_view value)
 				{
-					_headers[name.data()] = value.data();
+					headers_[name.data()] = value.data();
 				}
 
 				const std::string& header(std::string_view name) const
 				{
-					return _headers.at(name.data());
+					return headers_.at(name.data());
 				}
 
 				const std::unordered_map<std::string, std::string>& headers() const noexcept
 				{
-					return _headers;
+					return headers_;
 				}
 
 				template<class Rep, class Period>
 				void timeout(std::chrono::duration<Rep, Period> d) noexcept
 				{
-					_timeout = d;
+					timeout_ = d;
 				}
 
 				std::chrono::milliseconds timeout() const
 				{
-					return _timeout;
+					return timeout_;
 				}
 
 				void version(HttpVersion v)
 				{
-					_version = v;
+					version_ = v;
 				}
 
 				HttpVersion version() const
 				{
-					return _version;
+					return version_;
 				}
 
 				std::string message() const
 				{
 				
 					std::string msg;
-					const auto http_version = http_version_string(_version);
-					msg.reserve(std::size(_resource) + std::size(_method) + std::size(http_version));
+					const auto httpversion_ = http_version_string(version_);
+					msg.reserve(std::size(resource_) + std::size(method_) + std::size(httpversion_));
 
-					msg += _method;
+					msg += method_;
 					msg += " ";
-					msg += _resource;
+					msg += resource_;
 					msg += " ";
-					msg += http_version;
+					msg += httpversion_;
 					msg += line_terminator;
 
-					for (const auto& [name, value] : _headers)
+					for (const auto& [name, value] : headers_)
 					{
 						msg += name;
 						msg += ": ";
@@ -182,21 +217,22 @@ namespace collin
 				
 					msg += line_terminator;
 
-					if (_contentProvider != nullptr)
+					if (contentProvider_ != nullptr)
 					{
-						std::copy(std::begin(*_contentProvider), std::end(*_contentProvider), std::back_inserter(msg));
+						std::copy(std::begin(*contentProvider_), std::end(*contentProvider_), std::back_inserter(msg));
 					}
 
 					return msg;
 				}
 			
 			private:
-				std::string _resource = "/";
-				std::string _method = get.data();
-				HttpVersion _version = HttpVersion::HTTP_1_1;
-				BodyContent* _contentProvider = nullptr;
-				std::unordered_map<std::string, std::string> _headers;
-				std::chrono::milliseconds _timeout = 1000ms;
+				std::string resource_ = "/";
+				std::string method_ = get.data();
+				endpoint_t endpoint_;
+				HttpVersion version_ = HttpVersion::HTTP_1_1;
+				BodyContent* contentProvider_ = nullptr;
+				std::unordered_map<std::string, std::string> headers_;
+				std::chrono::milliseconds timeout_ = 1000ms;
 		};
 
 		template<>
@@ -206,79 +242,79 @@ namespace collin
 				HttpRequest() = default;
 
 				HttpRequest(std::string_view r)
-					: _resource(r.data()) {}
+					: resource_(r.data()) {}
 
 				void resource(std::string_view str)
 				{
-					_resource = str.data();
+					resource_ = str.data();
 				}
 
 				const std::string& resource() const
 				{
-					return _resource;
+					return resource_;
 				}
 
 				void method(std::string_view str)
 				{
-					_method = str.data();
+					method_ = str.data();
 				}
 
 				const std::string& method() const
 				{
-					return _method;
+					return method_;
 				}
 
 				void header(std::string_view name, std::string_view value)
 				{
-					_headers[name.data()] = value.data();
+					headers_[name.data()] = value.data();
 				}
 
 				const std::string& header(std::string_view name) const
 				{
-					return _headers.at(name.data());
+					return headers_.at(name.data());
 				}
 
 				const std::unordered_map<std::string, std::string>& headers() const noexcept
 				{
-					return _headers;
+					return headers_;
 				}
 
 				template<class Rep, class Period>
 				void timeout(std::chrono::duration<Rep, Period> d) noexcept
 				{
-					_timeout = d;
+					timeout_ = d;
 				}
 
 				std::chrono::milliseconds timeout() const
 				{
-					return _timeout;
+					return timeout_;
 				}
 
 				void version(HttpVersion v)
 				{
-					_version = v;
+					version_ = v;
 				}
 
 				HttpVersion version() const
 				{
-					return _version;
+					return version_;
 				}
 
 				std::string message() const
 				{
 
 					std::string msg;
-					const auto http_version = http_version_string(_version);
-					msg.reserve(std::size(_resource) + std::size(_method) + std::size(http_version));
+					const auto httpversion_ = http_version_string(version_);
+					msg.reserve(std::size(resource_) + std::size(method_) + std::size(httpversion_));
 
-					msg += _method;
+					msg += method_;
 					msg += " ";
-					msg += _resource;
+					msg += resource_;
 					msg += " ";
-					msg += http_version;
+					msg += httpversion_;
 					msg += line_terminator;
 
-					for (const auto& [name, value] : _headers)
+					for (const auto& [name, value] : headers_)
 					{
 						msg += name;
 						msg += ": ";
@@ -292,18 +328,18 @@ namespace collin
 				}
 
 			private:
-				std::string _resource = "/";
-				std::string _method = get.data();
-				HttpVersion _version = HttpVersion::HTTP_1_1;
-				std::unordered_map<std::string, std::string> _headers;
-				std::chrono::milliseconds _timeout = 1000ms;
+				std::string resource_ = "/";
+				std::string method_ = get.data();
+				HttpVersion version_ = HttpVersion::HTTP_1_1;
+				std::unordered_map<std::string, std::string> headers_;
+				std::chrono::milliseconds timeout_ = 1000ms;
 		};
 
 		class HttpResponse
 		{
 			public:
-				HttpResponse(std::size_t _response_code, HttpVersion _version, std::unordered_map<std::string, std::string>&& _headers)
-					: _response_code(_response_code), _version(_version), _headers(_headers) {}
+				HttpResponse(std::size_t _response_code, HttpVersion version_, std::unordered_map<std::string, std::string>&& headers_)
+					: _response_code(_response_code), version_(version_), headers_(headers_) {}
 
 				std::size_t response_code() const noexcept
 				{
@@ -312,40 +348,38 @@ namespace collin
 
 				HttpVersion version() const noexcept
 				{
-					return _version;
+					return version_;
 				}
 
 				const std::unordered_map<std::string, std::string>& headers() const noexcept
 				{
-					return _headers;
+					return headers_;
 				}
 
 			private:
 				std::size_t _response_code;
-				HttpVersion _version;
-				std::unordered_map<std::string, std::string> _headers;
+				HttpVersion version_;
+				std::unordered_map<std::string, std::string> headers_;
 		};
 
 		template<std::size_t Buffer_Size = 8192>
 		class HttpClient
 		{
 			public:
+				using protocol = net::ip::tcp;
+				using endpoint = protocol::endpoint;
+				using socket = net::basic_stream_socket<net::ip::tcp>;
 
-				HttpClient() noexcept
-				{
-					Socket::init();
-				}
-
-				~HttpClient() noexcept
-				{
-					Socket::cleanup();
-				}
+				HttpClient(net::io_context& ctx) noexcept
+					: ctx_(ctx) {}
+				~HttpClient() noexcept {}
 
 				template<class RequestBody>
-				std::optional<HttpResponse> send(const HttpRequest<RequestBody>& req)
+				std::optional<HttpResponse> send(const HttpRequest<RequestBody>& req, std::error_code& ec)
 				{
-					Socket s;
-					if (!sendHelper(s, req))
+					net::basic_stream_socket<net::ip::tcp> s;
+					sendHelper(s, req, ec);
+					if (ec)
 					{
 						return {};
 					}
@@ -356,24 +390,26 @@ namespace collin
 				}
 
 				template<class RequestBody, class ResponseBody>
-				std::optional<HttpResponse> send(const HttpRequest<RequestBody>& req, ResponseBody& body)
+				std::optional<HttpResponse> send(const HttpRequest<RequestBody>& req, ResponseBody& body, std::error_code& ec)
 				{
-					Socket s;
-					if (!sendHelper(s, req))
+					socket s(ctx_);
+					sendHelper(s, req, ec);
+					if (ec)
 					{
 						return {};
 					}
 
 					std::array<char, Buffer_Size> buf;
 					auto offset = std::begin(buf);
+					std::size_t last_read {0};
 
-					auto response = parseResponse(s, buf, offset);
+					auto response = parseResponse(s, last_read, buf, offset);
 					if (!response)
 					{
 						return {};
 					}
 
-					parseBody(s, body, buf, offset);
+					parseBody(s, last_read, body, buf, offset);
 					return response;
 				}
 
@@ -390,50 +426,40 @@ namespace collin
 				}
 
 			private:
+				net::io_context& ctx_;
+
 				template<class RequestBody>
-				bool sendHelper(Socket& s, const HttpRequest<RequestBody>& req)
+				void sendHelper(socket& s, const HttpRequest<RequestBody>& req, std::error_code& ec)
 				{
-					auto address = gather_address_information(req);
-					if (!address)
+					s.connect(req.endpoint(), ec);
+					s.set_option(net::socket_base::timeout(req.timeout()));
+					if (ec)
 					{
-						return false;
+						return;
 					}
-
-					s.setOption(SO_RCVTIMEO, req.timeout().count());
-					if (s.connect(address.value()) == SOCKET_ERROR)
-					{
-						return false;
-					}
-
-					s << req.message();
-					if (!s)
-					{
-						return false;
-					}
-
-					return true;
+					s.send(req.message());
 				}
 
 				template<class ArrayType, std::size_t N, class ForwardIterator>
-				std::optional<HttpResponse> parseResponse(Socket& s, std::array<ArrayType, N>& buf, ForwardIterator& out_offset)
+				std::optional<HttpResponse> parseResponse(socket& s, std::size_t& last_read, std::array<ArrayType, N>& buf, ForwardIterator& out_offset)
 				{
 					buf.fill('\0');
-					s >> buf;
-					if (s.lastRead() <= 0)
+					last_read = s.receive(buf);
+					if (last_read <= 0)
 					{
 						return {};
 					}
 
-					const auto fill_until = [&s, &buf](std::string_view ch, auto& offset)
+					const auto fill_until = [&s, &buf, &last_read](std::string_view ch, auto& offset)
 					{
 						std::string result;
-						auto current_location = std::search(offset, std::begin(buf) + s.lastRead(), std::begin(ch), std::end(ch));
+						auto current_location = std::search(offset, std::begin(buf) + last_read, std::begin(ch), std::end(ch));
 						while (current_location == std::end(buf))
 						{
 							result += buf.data();
-							s >> buf;
+							last_read = s.receive(buf);
 							offset = std::begin(buf);
-							current_location = std::search(std::begin(buf), std::begin(buf) + s.lastRead(), std::begin(ch), std::end(ch));
+							current_location = std::search(std::begin(buf), std::begin(buf) + last_read, std::begin(ch), std::end(ch));
 						}
 
 						std::copy(offset, current_location, std::back_inserter(result));
@@ -471,42 +497,18 @@ namespace collin
 				}
 
 				template<class ResponseBody, std::size_t N, class ForwardIterator>
-				void parseBody(Socket& s, ResponseBody& body, std::array<char, N>& buf, ForwardIterator starting_offset)
+				void parseBody(socket& s, std::size_t last_read, ResponseBody& body, std::array<char, N>& buf, ForwardIterator starting_offset)
 				{
 					if(s)
 					{
-						std::copy(starting_offset, std::begin(buf) + s.lastRead(), std::back_inserter(body));
-						while (s && s.lastRead() > 0)
+						std::copy(starting_offset, std::begin(buf) + last_read, std::back_inserter(body));
+						while (s.is_open() && last_read > 0)
 						{
-							s >> buf;
-							std::copy(std::begin(buf), std::begin(buf) + s.lastRead(), std::back_inserter(body));
+							last_read = s.receive(buf);
+							std::copy(std::begin(buf), std::begin(buf) + last_read, std::back_inserter(body));
 						}
 					}
-				}
-
-				template<class RequestBody>
-				std::optional<sockaddr_in> gather_address_information(const HttpRequest<RequestBody>& req)
-				{
-					const auto headers = req.headers();
-					const auto location = headers.find(host_header);
-					if (location == std::end(headers))
-					{
-						return {};
-					}
-
-					auto host = headers.at(location->first);
-					const auto colon_loc = host.find(':');
-					auto port = default_port;
-					if (colon_loc != std::string::npos)
-					{
-						port = host.data() + colon_loc + 1;
-						host.erase(std::begin(host) + colon_loc, std::end(host));
-					}
-
-					return resolveHostName(host, port);
 				}
 		};
 	}
 }
-
-#endif

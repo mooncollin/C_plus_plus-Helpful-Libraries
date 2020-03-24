@@ -1,5 +1,4 @@
-#ifndef COLLIN_TEST
-#define COLLIN_TEST
+#pragma once
 
 #include <sstream>
 #include <string>
@@ -15,54 +14,55 @@
 
 namespace collin
 {
-	template<class T, class F>
-	void assert_equals(const T& first, const F& second, std::string_view message="")
+	namespace test
 	{
-		if(first != second)
+		template<class T, class F>
+		void assert_equals(const T& first, const F& second, std::string_view message="")
 		{
-			using namespace std::literals;
-			throw std::runtime_error("Assertion Failed: "s + message.data());
-		}
-	}
-
-	template<class Container, typename T = typename Container::value_type>
-	void assert_test_data(const Container& data, std::string_view test="")
-	{
-		for(const auto&[result, expected] : data)
-		{
-			std::ostringstream error_text;
-
-			error_text << test << "\n";
-
-			if constexpr(is_stream_readable_v<T, decltype(std::cout)>)
+			if(first != second)
 			{
-				if constexpr(std::is_same_v<T, bool>)
+				using namespace std::literals;
+				throw std::runtime_error("Assertion Failed: "s + message.data());
+			}
+		}
+
+		template<class Container, typename T = typename Container::value_type>
+		void assert_test_data(const Container& data, std::string_view test="")
+		{
+			for(const auto&[result, expected] : data)
+			{
+				std::ostringstream error_text;
+
+				error_text << test << "\n";
+
+				if constexpr(type_traits::is_stream_readable_v<T, decltype(std::cout)>)
 				{
-					error_text << std::boolalpha;
+					if constexpr(std::is_same_v<T, bool>)
+					{
+						error_text << std::boolalpha;
+					}
+
+					error_text << "Expected: "
+							<< expected
+							<< " Got: "
+							<< result;
 				}
 
-				error_text << "Expected: "
-					  	   << expected
-					  	   << " Got: "
-					  	   << result;
+				assert_equals(result, expected, error_text.str());
+			}
+		}
+
+		template<class Function, class Expected, class... Args>
+		auto make_test_data(Function&& func, const std::initializer_list<std::pair<std::tuple<Args...>, Expected>>& raw)
+		{
+			std::vector<std::pair<Expected, Expected>> data;
+
+			for(const auto& [arguments, expected] : raw)
+			{
+				data.emplace_back(std::apply(func, arguments), expected);
 			}
 
-			assert_equals(result, expected, error_text.str());
+			return data;
 		}
-	}
-
-	template<class Function, class Expected, class... Args>
-	auto make_test_data(Function&& func, const std::initializer_list<std::pair<std::tuple<Args...>, Expected>>& raw)
-	{
-		std::vector<std::pair<Expected, Expected>> data;
-
-		for(const auto& [arguments, expected] : raw)
-		{
-			data.emplace_back(std::apply(func, arguments), expected);
-		}
-
-		return data;
 	}
 }
-
-#endif

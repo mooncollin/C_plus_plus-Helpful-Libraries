@@ -1,5 +1,4 @@
-#ifndef COLLIN_MATH
-#define COLLIN_MATH
+#pragma once
 
 #include <cstdint>
 #include <cstddef>
@@ -8,346 +7,347 @@
 
 namespace collin
 {
-	constexpr auto factorial(std::size_t n)
+	namespace math
 	{
-		std::uintmax_t result = 1;
-		for(std::size_t i = 2; i <= n; i++)
+		constexpr auto factorial(std::size_t n)
 		{
-			result *= i;
+			std::uintmax_t result = 1;
+			for(std::size_t i = 2; i <= n; i++)
+			{
+				result *= i;
+			}
+
+			return result;
 		}
 
-		return result;
-	}
-
-	template<class T, class = std::enable_if_t<std::is_integral_v<T>>>
-	constexpr bool is_odd(const T val)
-	{
-		return val & 1;
-	}
-
-	template<class T, class = std::enable_if_t<std::is_integral_v<T>>>
-	constexpr bool is_even(const T val)
-	{
-		return !is_odd(val);
-	}
-
-	template<class T, class = std::enable_if_t<std::is_integral_v<T>>>
-	constexpr T gcd(T first, T second)
-	{
-		while(second != 0)
+		template<class T, class = std::enable_if_t<std::is_integral_v<T>>>
+		constexpr bool is_odd(const T val)
 		{
-			const auto t = second;
-			second = first % second;
-			first = t;
+			return val & 1;
 		}
 
-		return first;
-	}
-
-	template<class T, class = std::enable_if_t<std::is_integral_v<T>>>
-	constexpr T pow(T base, int exp)
-	{
-		if(exp < 0)
+		template<class T, class = std::enable_if_t<std::is_integral_v<T>>>
+		constexpr bool is_even(const T val)
 		{
-			if(base == 1 || base  == -1)
-			{
-				return base;
-			}
-			else
-			{
-				return 0;
-			}
+			return !is_odd(val);
 		}
 
-		T result = 1;
-		while(true)
+		template<class T, class = std::enable_if_t<std::is_integral_v<T>>>
+		constexpr T gcd(T first, T second)
 		{
-			if(is_odd(exp))
+			while(second != 0)
 			{
-				result *= base;
+				const auto t = second;
+				second = first % second;
+				first = t;
 			}
-			exp >>= 1;
-			if(exp == 0)
-			{
-				break;
-			}
-			base *= base;
+
+			return first;
 		}
 
-		return result;
-	}
-
-	class Rational
-	{
-		public:
-			constexpr Rational(int numerator, int denominator)
-				: numerator_(numerator), denominator_(denominator) {}
-			constexpr Rational(int numerator)
-				: numerator_(numerator), denominator_(1) {}
-			constexpr Rational(const Rational&) = default;
-			constexpr Rational(Rational&&) = default;
-			constexpr Rational& operator=(const Rational&) = default;
-			constexpr Rational& operator=(Rational&&) = default;
-
-			constexpr Rational operator+(const Rational& r) const
-			{
-				return { numerator() * r.denominator() + denominator() * r.numerator(),
-						denominator() * r.denominator() };
-			}
-
-			constexpr Rational operator+(int i) const
-			{
-				return *this + Rational(i);
-			}
-
-			Rational& operator+=(const Rational& r)
-			{
-				*this = *this + r;
-				return *this;
-			}
-
-			Rational& operator+=(int i)
-			{
-				*this = *this + i;
-				return *this;
-			}
-
-			constexpr Rational operator-(const Rational& r) const
-			{
-				return { numerator() * r.denominator() - denominator() * r.numerator(),
-						denominator() * r.denominator() };
-			}
-
-			constexpr Rational operator-(int i) const
-			{
-				return *this - Rational(i);
-			}
-
-			Rational& operator-=(const Rational& r)
-			{
-				*this = *this - r;
-				return *this;
-			}
-
-			Rational& operator-=(int i)
-			{
-				*this = *this - i;
-				return *this;
-			}
-
-			constexpr Rational operator*(const Rational& r) const
-			{
-				return {numerator() * r.numerator(), denominator() * r.denominator()};
-			}
-
-			constexpr Rational operator*(int i) const
-			{
-				return *this * Rational(i);
-			}
-
-			Rational& operator*=(const Rational& r)
-			{
-				*this = *this * r;
-				return *this;
-			}
-
-			Rational& operator*=(int i)
-			{
-				*this = *this * i;
-				return *this;
-			}
-
-			constexpr Rational operator/(const Rational& r) const
-			{
-				return {numerator() * r.denominator(), denominator() * r.numerator()};
-			}
-
-			constexpr Rational operator/(int i) const
-			{
-				return *this / Rational(i);
-			}
-
-			Rational& operator/=(const Rational& r)
-			{
-				*this = *this / r;
-				return *this;
-			}
-
-			Rational& operator/=(int i)
-			{
-				*this = *this / i;
-				return *this;
-			}
-
-			void numerator(int n)
-			{
-				numerator_ = n;
-			}
-
-			constexpr int numerator() const
-			{
-				return numerator_;
-			}
-
-			void denominator(int d)
-			{
-				denominator_ = d;
-			}
-
-			constexpr int denominator() const
-			{
-				return denominator_;
-			}
-
-			constexpr operator double() const
-			{
-				return static_cast<double>(numerator_) / static_cast<double>(denominator_);
-			}
-		private:
-			int numerator_;
-			int denominator_;
-	};
-
-	constexpr Rational operator+(int i, const Rational& r)
-	{
-		return r + Rational(i);
-	}
-
-	constexpr Rational operator-(int i, const Rational& r)
-	{
-		return r - Rational(i);
-	}
-
-	constexpr Rational operator*(int i, const Rational& r)
-	{
-		return r * Rational(i);
-	}
-
-	constexpr Rational operator/(int i, const Rational& r)
-	{
-		return r / Rational(i);
-	}
-
-	constexpr Rational add_inverse(const Rational& r)
-	{
-		return { -r.numerator(), r.denominator() };
-	}
-
-	constexpr Rational mult_inverse(const Rational& r)
-	{
-		return { r.denominator(), r.numerator() };
-	}
-
-	constexpr Rational pow(const Rational& r, int p)
-	{
-		if (p < 0)
+		template<class T, class = std::enable_if_t<std::is_integral_v<T>>>
+		constexpr T pow(T base, int exp)
 		{
-			return pow(mult_inverse(r), -p);
+			if(exp < 0)
+			{
+				if(base == 1 || base  == -1)
+				{
+					return base;
+				}
+				else
+				{
+					return 0;
+				}
+			}
+
+			T result = 1;
+			while(true)
+			{
+				if(is_odd(exp))
+				{
+					result *= base;
+				}
+				exp >>= 1;
+				if(exp == 0)
+				{
+					break;
+				}
+				base *= base;
+			}
+
+			return result;
 		}
 
-		return { collin::pow(r.numerator(), p), collin::pow(r.denominator(), p) };
-	}
+		class Rational
+		{
+			public:
+				constexpr Rational(int numerator, int denominator)
+					: numerator_(numerator), denominator_(denominator) {}
+				constexpr Rational(int numerator)
+					: numerator_(numerator), denominator_(1) {}
+				constexpr Rational(const Rational&) = default;
+				constexpr Rational(Rational&&) = default;
+				constexpr Rational& operator=(const Rational&) = default;
+				constexpr Rational& operator=(Rational&&) = default;
 
-	constexpr Rational canonical(const Rational& r)
-	{
-		auto gcd = collin::gcd(r.numerator(), r.denominator());
-		return {r.numerator() / gcd, r.denominator() / gcd};
-	}
+				constexpr Rational operator+(const Rational& r) const
+				{
+					return { numerator() * r.denominator() + denominator() * r.numerator(),
+							denominator() * r.denominator() };
+				}
 
-	constexpr bool operator==(const Rational& first, const Rational& second)
-	{
-		return first.numerator() * second.denominator() == first.denominator() * second.numerator();
-	}
+				constexpr Rational operator+(int i) const
+				{
+					return *this + Rational(i);
+				}
 
-	constexpr bool operator==(const Rational& first, const double second)
-	{
-		return static_cast<double>(first) == second;
-	}
+				Rational& operator+=(const Rational& r)
+				{
+					*this = *this + r;
+					return *this;
+				}
 
-	constexpr bool operator==(const Rational& first, const int second)
-	{
-		return canonical(first).numerator() == second;
-	}
-	
-	constexpr bool operator!=(const Rational& first, const Rational& second)
-	{
-		return !(first == second);
-	}
+				Rational& operator+=(int i)
+				{
+					*this = *this + i;
+					return *this;
+				}
 
-	constexpr bool operator!=(const Rational& first, const double second)
-	{
-		return !(first == second);
-	}
+				constexpr Rational operator-(const Rational& r) const
+				{
+					return { numerator() * r.denominator() - denominator() * r.numerator(),
+							denominator() * r.denominator() };
+				}
 
-	constexpr bool operator!=(const Rational& first, const int second)
-	{
-		return !(first == second);
-	}
+				constexpr Rational operator-(int i) const
+				{
+					return *this - Rational(i);
+				}
 
-	constexpr bool operator<(const Rational& first, const Rational& second)
-	{
-		return first.numerator() * second.denominator() < first.denominator() * second.numerator();
-	}
+				Rational& operator-=(const Rational& r)
+				{
+					*this = *this - r;
+					return *this;
+				}
 
-	constexpr bool operator<(const Rational& first, const double second)
-	{
-		return static_cast<double>(first) < second;
-	}
+				Rational& operator-=(int i)
+				{
+					*this = *this - i;
+					return *this;
+				}
 
-	constexpr bool operator<(const Rational& first, const int second)
-	{
-		return canonical(first).numerator() < second;
-	}
+				constexpr Rational operator*(const Rational& r) const
+				{
+					return {numerator() * r.numerator(), denominator() * r.denominator()};
+				}
 
-	constexpr bool operator<=(const Rational& first, const Rational& second)
-	{
-		return first.numerator() * second.denominator() <= first.denominator() * second.numerator();
-	}
+				constexpr Rational operator*(int i) const
+				{
+					return *this * Rational(i);
+				}
 
-	constexpr bool operator<=(const Rational& first, const double second)
-	{
-		return static_cast<double>(first) <= second;
-	}
+				Rational& operator*=(const Rational& r)
+				{
+					*this = *this * r;
+					return *this;
+				}
 
-	constexpr bool operator<=(const Rational& first, const int second)
-	{
-		return canonical(first).numerator() <= second;
-	}
+				Rational& operator*=(int i)
+				{
+					*this = *this * i;
+					return *this;
+				}
 
-	constexpr bool operator>(const Rational& first, const Rational& second)
-	{
-		return !(first <= second);
-	}
+				constexpr Rational operator/(const Rational& r) const
+				{
+					return {numerator() * r.denominator(), denominator() * r.numerator()};
+				}
 
-	constexpr bool operator>(const Rational& first, const double second)
-	{
-		return !(first <= second);
-	}
+				constexpr Rational operator/(int i) const
+				{
+					return *this / Rational(i);
+				}
 
-	constexpr bool operator>(const Rational& first, const int second)
-	{
-		return !(first <= second);
-	}
+				Rational& operator/=(const Rational& r)
+				{
+					*this = *this / r;
+					return *this;
+				}
 
-	constexpr bool operator>=(const Rational& first, const Rational& second)
-	{
-		return !(first < second);
-	}
+				Rational& operator/=(int i)
+				{
+					*this = *this / i;
+					return *this;
+				}
 
-	constexpr bool operator>=(const Rational& first, const double second)
-	{
-		return !(first < second);
-	}
+				void numerator(int n)
+				{
+					numerator_ = n;
+				}
 
-	constexpr bool operator>=(const Rational& first, const int second)
-	{
-		return !(first < second);
-	}
+				constexpr int numerator() const
+				{
+					return numerator_;
+				}
 
-	inline std::ostream& operator<<(std::ostream& os, const Rational& r)
-	{
-		return os << r.numerator() << "/" << r.denominator();
+				void denominator(int d)
+				{
+					denominator_ = d;
+				}
+
+				constexpr int denominator() const
+				{
+					return denominator_;
+				}
+
+				constexpr operator double() const
+				{
+					return static_cast<double>(numerator_) / static_cast<double>(denominator_);
+				}
+			private:
+				int numerator_;
+				int denominator_;
+		};
+
+		constexpr Rational operator+(int i, const Rational& r)
+		{
+			return r + Rational(i);
+		}
+
+		constexpr Rational operator-(int i, const Rational& r)
+		{
+			return r - Rational(i);
+		}
+
+		constexpr Rational operator*(int i, const Rational& r)
+		{
+			return r * Rational(i);
+		}
+
+		constexpr Rational operator/(int i, const Rational& r)
+		{
+			return r / Rational(i);
+		}
+
+		constexpr Rational add_inverse(const Rational& r)
+		{
+			return { -r.numerator(), r.denominator() };
+		}
+
+		constexpr Rational mult_inverse(const Rational& r)
+		{
+			return { r.denominator(), r.numerator() };
+		}
+
+		constexpr Rational pow(const Rational& r, int p)
+		{
+			if (p < 0)
+			{
+				return pow(mult_inverse(r), -p);
+			}
+
+			return { pow(r.numerator(), p), pow(r.denominator(), p) };
+		}
+
+		constexpr Rational canonical(const Rational& r)
+		{
+			auto gcd_ = gcd(r.numerator(), r.denominator());
+			return {r.numerator() / gcd_, r.denominator() / gcd_};
+		}
+
+		constexpr bool operator==(const Rational& first, const Rational& second)
+		{
+			return first.numerator() * second.denominator() == first.denominator() * second.numerator();
+		}
+
+		constexpr bool operator==(const Rational& first, const double second)
+		{
+			return static_cast<double>(first) == second;
+		}
+
+		constexpr bool operator==(const Rational& first, const int second)
+		{
+			return canonical(first).numerator() == second;
+		}
+		
+		constexpr bool operator!=(const Rational& first, const Rational& second)
+		{
+			return !(first == second);
+		}
+
+		constexpr bool operator!=(const Rational& first, const double second)
+		{
+			return !(first == second);
+		}
+
+		constexpr bool operator!=(const Rational& first, const int second)
+		{
+			return !(first == second);
+		}
+
+		constexpr bool operator<(const Rational& first, const Rational& second)
+		{
+			return first.numerator() * second.denominator() < first.denominator() * second.numerator();
+		}
+
+		constexpr bool operator<(const Rational& first, const double second)
+		{
+			return static_cast<double>(first) < second;
+		}
+
+		constexpr bool operator<(const Rational& first, const int second)
+		{
+			return canonical(first).numerator() < second;
+		}
+
+		constexpr bool operator<=(const Rational& first, const Rational& second)
+		{
+			return first.numerator() * second.denominator() <= first.denominator() * second.numerator();
+		}
+
+		constexpr bool operator<=(const Rational& first, const double second)
+		{
+			return static_cast<double>(first) <= second;
+		}
+
+		constexpr bool operator<=(const Rational& first, const int second)
+		{
+			return canonical(first).numerator() <= second;
+		}
+
+		constexpr bool operator>(const Rational& first, const Rational& second)
+		{
+			return !(first <= second);
+		}
+
+		constexpr bool operator>(const Rational& first, const double second)
+		{
+			return !(first <= second);
+		}
+
+		constexpr bool operator>(const Rational& first, const int second)
+		{
+			return !(first <= second);
+		}
+
+		constexpr bool operator>=(const Rational& first, const Rational& second)
+		{
+			return !(first < second);
+		}
+
+		constexpr bool operator>=(const Rational& first, const double second)
+		{
+			return !(first < second);
+		}
+
+		constexpr bool operator>=(const Rational& first, const int second)
+		{
+			return !(first < second);
+		}
+
+		inline std::ostream& operator<<(std::ostream& os, const Rational& r)
+		{
+			return os << r.numerator() << "/" << r.denominator();
+		}
 	}
 }
-
-#endif

@@ -7,9 +7,9 @@
 
 void test_is_odd()
 {
-	const auto is_odd_test_values = collin::make_test_data
+	const auto is_odd_test_values = collin::test::make_test_data
 	(
-		collin::is_odd<int>,
+		collin::math::is_odd<int>,
 			{
 				std::make_pair(std::make_tuple(1), true),
 				std::make_pair(std::make_tuple(2), false),
@@ -38,9 +38,9 @@ void test_is_odd()
 		random_nums[i] = distribution(generator);
 	}
 
-	const auto is_odd_random_test_values = collin::make_test_data
+	const auto is_odd_random_test_values = collin::test::make_test_data
 	(
-		collin::is_odd<int>,
+		collin::math::is_odd<int>,
 			{
 				std::make_pair(std::make_tuple(random_nums[0]), random_nums[0] % 2 != 0),
 				std::make_pair(std::make_tuple(random_nums[1]), random_nums[1] % 2 != 0),
@@ -55,29 +55,29 @@ void test_is_odd()
 			}
 	);
 
-	collin::assert_test_data(is_odd_test_values, "is_odd Normal");
-	collin::assert_test_data(is_odd_random_test_values, "is_odd Random");
+	collin::test::assert_test_data(is_odd_test_values, "is_odd Normal");
+	collin::test::assert_test_data(is_odd_random_test_values, "is_odd Random");
 
-	static_assert(collin::is_odd(1) == true);
-	static_assert(collin::is_odd(2) == false);
-	static_assert(collin::is_odd(3) == true);
-	static_assert(collin::is_odd(4) == false);
-	static_assert(collin::is_odd(5) == true);
-	static_assert(collin::is_odd(6) == false);
-	static_assert(collin::is_odd(7) == true);
-	static_assert(collin::is_odd(8) == false);
-	static_assert(collin::is_odd(9) == true);
-	static_assert(collin::is_odd(10) == false);
-	static_assert(collin::is_odd(-3) == true);
-	static_assert(collin::is_odd(-2) == false);
-	static_assert(collin::is_odd(0) == false);
+	static_assert(collin::math::is_odd(1) == true);
+	static_assert(collin::math::is_odd(2) == false);
+	static_assert(collin::math::is_odd(3) == true);
+	static_assert(collin::math::is_odd(4) == false);
+	static_assert(collin::math::is_odd(5) == true);
+	static_assert(collin::math::is_odd(6) == false);
+	static_assert(collin::math::is_odd(7) == true);
+	static_assert(collin::math::is_odd(8) == false);
+	static_assert(collin::math::is_odd(9) == true);
+	static_assert(collin::math::is_odd(10) == false);
+	static_assert(collin::math::is_odd(-3) == true);
+	static_assert(collin::math::is_odd(-2) == false);
+	static_assert(collin::math::is_odd(0) == false);
 }
 
 void test_is_even()
 {
-	const auto is_even_test_values = collin::make_test_data
+	const auto is_even_test_values = collin::test::make_test_data
 	(
-		collin::is_even<int>,
+		collin::math::is_even<int>,
 			{
 				std::make_pair(std::make_tuple(1), false),
 				std::make_pair(std::make_tuple(2), true),
@@ -106,9 +106,9 @@ void test_is_even()
 		random_nums[i] = distribution(generator);
 	}
 
-	const auto is_even_random_test_values = collin::make_test_data
+	const auto is_even_random_test_values = collin::test::make_test_data
 	(
-		collin::is_even<int>,
+		collin::math::is_even<int>,
 			{
 				std::make_pair(std::make_tuple(random_nums[0]), random_nums[0] % 2 == 0),
 				std::make_pair(std::make_tuple(random_nums[1]), random_nums[1] % 2 == 0),
@@ -123,29 +123,29 @@ void test_is_even()
 			}
 	);
 
-	collin::assert_test_data(is_even_test_values, "is_even Normal");
-	collin::assert_test_data(is_even_random_test_values, "is_even Random");
+	collin::test::assert_test_data(is_even_test_values, "is_even Normal");
+	collin::test::assert_test_data(is_even_random_test_values, "is_even Random");
 
-	static_assert(collin::is_even(1) == false);
-	static_assert(collin::is_even(2) == true);
-	static_assert(collin::is_even(3) == false);
-	static_assert(collin::is_even(4) == true);
-	static_assert(collin::is_even(5) == false);
-	static_assert(collin::is_even(6) == true);
-	static_assert(collin::is_even(7) == false);
-	static_assert(collin::is_even(8) == true);
-	static_assert(collin::is_even(9) == false);
-	static_assert(collin::is_even(10) == true);
-	static_assert(collin::is_even(-3) == false);
-	static_assert(collin::is_even(-2) == true);
-	static_assert(collin::is_even(0) == true);
+	static_assert(collin::math::is_even(1) == false);
+	static_assert(collin::math::is_even(2) == true);
+	static_assert(collin::math::is_even(3) == false);
+	static_assert(collin::math::is_even(4) == true);
+	static_assert(collin::math::is_even(5) == false);
+	static_assert(collin::math::is_even(6) == true);
+	static_assert(collin::math::is_even(7) == false);
+	static_assert(collin::math::is_even(8) == true);
+	static_assert(collin::math::is_even(9) == false);
+	static_assert(collin::math::is_even(10) == true);
+	static_assert(collin::math::is_even(-3) == false);
+	static_assert(collin::math::is_even(-2) == true);
+	static_assert(collin::math::is_even(0) == true);
 }
 
 void test_factorial()
 {
-	const auto test_values = collin::make_test_data
+	const auto test_values = collin::test::make_test_data
 	(
-		collin::factorial,
+		collin::math::factorial,
 			{
 				std::make_pair(std::make_tuple(1), 1),
 				std::make_pair(std::make_tuple(2), 2),
@@ -160,36 +160,36 @@ void test_factorial()
 			}
 	);
 
-	collin::assert_test_data(test_values, "factorial Normal");
+	collin::test::assert_test_data(test_values, "factorial Normal");
 
-	static_assert(collin::factorial(1) == 1);
-	static_assert(collin::factorial(2) == 2);
-	static_assert(collin::factorial(3) == 6);
-	static_assert(collin::factorial(4) == 24);
-	static_assert(collin::factorial(5) == 120);
-	static_assert(collin::factorial(6) == 720);
-	static_assert(collin::factorial(7) == 5040);
-	static_assert(collin::factorial(8) == 40320);
-	static_assert(collin::factorial(9) == 362880);
-	static_assert(collin::factorial(10) == 3628800);
+	static_assert(collin::math::factorial(1) == 1);
+	static_assert(collin::math::factorial(2) == 2);
+	static_assert(collin::math::factorial(3) == 6);
+	static_assert(collin::math::factorial(4) == 24);
+	static_assert(collin::math::factorial(5) == 120);
+	static_assert(collin::math::factorial(6) == 720);
+	static_assert(collin::math::factorial(7) == 5040);
+	static_assert(collin::math::factorial(8) == 40320);
+	static_assert(collin::math::factorial(9) == 362880);
+	static_assert(collin::math::factorial(10) == 3628800);
 }
 
 void test_rational()
 {
-	static_assert(collin::Rational(1) == 1);
-	static_assert(collin::Rational(1, 2) == 0.5);
-	static_assert(collin::Rational(1, 4) == 0.25);
-	static_assert(collin::Rational(1, 2) + collin::Rational(1, 2) == 1);
-	static_assert(collin::Rational(1, 3) + collin::Rational(1, 3) + collin::Rational(1, 3) == 1);
-	static_assert(collin::Rational(1, 3) * 3 == 1);
-	static_assert(collin::Rational(12, 3) == 4);
-	static_assert(collin::Rational(3, 1) == 3);
-	static_assert(collin::Rational(-3, 1) == -3);
-	static_assert(collin::Rational(3, -1) == -3);
-	static_assert(collin::mult_inverse(collin::Rational(1, -3)) == -3);
-	static_assert(collin::add_inverse(collin::Rational(-5, 1)) == 5);
-	static_assert(collin::add_inverse(collin::Rational(5, 1)) == -5);
-	static_assert(collin::canonical(collin::Rational(12, 3)) == collin::Rational(4, 1));
+	static_assert(collin::math::Rational(1) == 1);
+	static_assert(collin::math::Rational(1, 2) == 0.5);
+	static_assert(collin::math::Rational(1, 4) == 0.25);
+	static_assert(collin::math::Rational(1, 2) + collin::math::Rational(1, 2) == 1);
+	static_assert(collin::math::Rational(1, 3) + collin::math::Rational(1, 3) + collin::math::Rational(1, 3) == 1);
+	static_assert(collin::math::Rational(1, 3) * 3 == 1);
+	static_assert(collin::math::Rational(12, 3) == 4);
+	static_assert(collin::math::Rational(3, 1) == 3);
+	static_assert(collin::math::Rational(-3, 1) == -3);
+	static_assert(collin::math::Rational(3, -1) == -3);
+	static_assert(collin::math::mult_inverse(collin::math::Rational(1, -3)) == -3);
+	static_assert(collin::math::add_inverse(collin::math::Rational(-5, 1)) == 5);
+	static_assert(collin::math::add_inverse(collin::math::Rational(5, 1)) == -5);
+	static_assert(collin::math::canonical(collin::math::Rational(12, 3)) == collin::math::Rational(4, 1));
 }
 
 int main()
