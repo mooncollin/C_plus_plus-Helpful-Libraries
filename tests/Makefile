@@ -1,8 +1,8 @@
 include-folder := ../src/
 compiler := g++
-cl-compiler-flags := /std:c++17 -I'$(include-folder)' /EHsc
-gcc-compiler-flags := -std=c++17 -I'$(include-folder)'
-clang-compiler-flags := -std=c++17 -I'$(include-folder)'
+cl-compiler-flags := /std:c++2a -I'$(include-folder)' /EHsc
+gcc-compiler-flags := -std=c++2a -I'$(include-folder)'
+clang-compiler-flags := -std=c++2a -I'$(include-folder)'
 
 ifeq ($(compiler), cl)
 compiler-flags := $(cl-compiler-flags)
@@ -43,6 +43,10 @@ httpTest:	httpTest.cpp
 socketTest:	socketTest.cpp
 	@$(compiler) $(compiler-flags) $< -o $@ -lWs2_32
 	@socketTest.exe
+
+rangesTest:	rangesTest.cpp
+	@$(compiler) $(compiler-flags) $< -o $@.exe
+	@rangesTest.exe
 
 
 tests:	mathTest stringTest algorithmTest

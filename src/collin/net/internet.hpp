@@ -9,8 +9,8 @@
 #include <sstream>
 #include <vector>
 #include <limits>
-#include "collin_socket.hpp"
-#include "collin_iocontext.hpp"
+#include "socket.hpp"
+#include "iocontext.hpp"
 
 namespace collin
 {
@@ -1168,33 +1168,6 @@ namespace collin
                         return std::async(resolve, std::ref(protocol), std::ref(host_name), std::ref(service_name), f);
                     }
 
-                    results_type resolve(const endpoint_type& e)
-                    {
-                        std::array<char, host_name_length> host_name {};
-                        std::array<char, service_name_length> service_name {};
-                        int flags {0};
-                        if(endpoint_type().protocol().type() == Type::dgram)
-                        {
-                            flags |= static_cast<int>(name_info_flags::dgram);
-                        }
-
-                        auto result = ::getnameinfo(static_cast<const sockaddr*>(e.data()), e.size(),
-                                                    host_name.data(), std::size(host_name),
-                                                    service_name.data(), std::size(service_name),
-                                                    flags);
-
-                        if(result != 0)
-                        {
-                            flags |= static_cast<int>(name_info_flags::numeric_service);
-                            result = ::getnameinfo(static_cast<const sockaddr*>(e.data()), e.size(),
-                                                    host_name.data(), std::size(host_name),
-                                                    service_name.data(), std::size(service_name),
-                                                    flags);
-                        }
-
-                        return 
-                    }
-
                 private:
                     enum class name_info_flags
                     {
@@ -1295,7 +1268,6 @@ namespace collin
                 ::gethostname(name.data(), std::size(name));
                 return name;
             }
-
 
             class tcp
             {

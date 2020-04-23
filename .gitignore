@@ -1,5 +1,8 @@
-.*
 *.sln
 *.vcxproj
 *.vcxproj.*
 x64
+.vs
+.vscode
+Debug
+CppProperties.json

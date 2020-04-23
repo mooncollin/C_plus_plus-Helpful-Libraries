@@ -46,5 +46,43 @@ namespace collin
 		{
 			return print(str, "\n", stream);
 		}
+
+		static std::istream& getline(std::istream& stream, std::string& str, std::string_view delim)
+		{
+			std::string possible_delim;
+			auto delim_matching = std::begin(delim);
+			while (stream.good())
+			{
+				if (delim_matching == std::end(delim))
+				{
+					return stream;
+				}
+
+				char ch;
+				stream.get(ch);
+				if (stream.good())
+				{
+					if (ch == *delim_matching)
+					{
+						delim_matching++;
+						possible_delim += ch;
+					}
+					else
+					{
+						if (!possible_delim.empty())
+						{
+							str += possible_delim;
+							possible_delim.clear();
+							delim_matching = std::begin(delim);
+						}
+
+						str += ch;
+					}
+				}
+			}
+
+			str += possible_delim;
+			return stream;
+		}
 	}
 }

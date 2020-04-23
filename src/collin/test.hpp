@@ -9,8 +9,8 @@
 #include <functional>
 #include <iostream>
 #include <string_view>
-#include "collin_functional.hpp"
-#include "collin_type_traits.hpp"
+#include "functional.hpp"
+#include "type_traits.hpp"
 
 namespace collin
 {
@@ -35,7 +35,7 @@ namespace collin
 
 				error_text << test << "\n";
 
-				if constexpr(type_traits::is_stream_readable_v<T, decltype(std::cout)>)
+				if constexpr(type_traits::is_stream_writable_v<T, decltype(std::cout)>)
 				{
 					if constexpr(std::is_same_v<T, bool>)
 					{

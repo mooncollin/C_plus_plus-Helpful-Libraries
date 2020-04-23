@@ -15,17 +15,17 @@ namespace collin
 		constexpr bool is_type_complete<T, std::void_t<decltype(sizeof(T))>> = true;
 
 		template<class T, class S, class = void>
-		struct is_stream_readable : std::false_type
+		struct is_stream_writable : std::false_type
 		{
 		};
 
 		template<class T, class S>
-		struct is_stream_readable<S, T, std::void_t<decltype(std::declval<S&>() << std::declval<const T&>())>> : std::true_type
+		struct is_stream_writable<S, T, std::void_t<decltype(std::declval<S&>() << std::declval<const T&>())>> : std::true_type
 		{
 		};
 
 		template<class T, class S>
-		constexpr bool is_stream_readable_v = is_stream_readable<S, T>::value;
+		constexpr bool is_stream_writable_v = is_stream_writable<S, T>::value;
 
 		template<class T, class = void>
 		struct has_size : std::false_type

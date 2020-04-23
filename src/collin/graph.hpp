@@ -1,6 +1,6 @@
 #pragma once
 
-#include "collin_functional.hpp"
+#include "functional.hpp"
 #include <unordered_map>
 #include <unordered_set>
 #include <stdexcept>

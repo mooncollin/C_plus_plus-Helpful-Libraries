@@ -9,9 +9,9 @@
 #include <functional>
 #include <iostream>
 #include <string_view>
-#include "collin_string.hpp"
-#include "collin_algorithm.hpp"
-#include "collin_utility.hpp"
+#include "string.hpp"
+#include "algorithm.hpp"
+#include "utility.hpp"
 
 namespace collin
 {

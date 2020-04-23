@@ -7,7 +7,7 @@
 #include <filesystem>
 #include <regex>
 #include <vector>
-#include "collin_string.hpp"
+#include "string.hpp"
 
 namespace collin
 {

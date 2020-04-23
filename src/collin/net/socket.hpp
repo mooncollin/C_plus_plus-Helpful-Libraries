@@ -33,7 +33,9 @@
 #include <list>
 #include <condition_variable>
 #include <any>
-#include "collin_iocontext.hpp"
+#include "iocontext.hpp"
+#include "../span.hpp"
+#include "../utility.hpp"
 
 #ifdef max
 #undef max
@@ -195,6 +197,14 @@ namespace collin
 			{
 				return ntohll(static_cast<uint64_t>(network));
 			}
+		}
+
+		int get_last_error()
+		{
+			#ifdef _WIN32
+			return WSAGetLastError();
+			#else
+			#endif
 		}
 
 		enum class Family
@@ -541,10 +551,17 @@ namespace collin
 		enum class socket_errc
 		{
 			already_open = 1,
-			not_found = 2
+			not_found = 2,
+			send_error = 3, 
+			receive_error = 4,
+			eof = 5,
+			try_again = 
+			#ifdef _WIN32
+			WSAEWOULDBLOCK
+			#else
+			EWOULDBLOCK
+			#endif
 		};
-
-		
 
 		inline const std::error_category& socket_category() noexcept
 		{
@@ -563,6 +580,14 @@ namespace collin
 							return "socket already open";
 						case socket_errc::not_found:
 							return "socket not found";
+						case socket_errc::send_error:
+							return "socket send error";
+						case socket_errc::receive_error:
+							return "socket receive error";
+						case socket_errc::eof:
+							return "socket at eof";
+						case socket_errc::try_again:
+							return "socket try again";
 					}
 
 					return "socket unknown error";
@@ -1287,7 +1312,11 @@ namespace collin
 					#endif
 				};
 
+				#ifdef _WIN32
+				using wait_type = SHORT;
+				#else
 				using wait_type = int;
+				#endif
 				static inline constexpr wait_type wait_read
 				{
 					#if defined _MSC_VER || defined __linux__
@@ -1325,6 +1354,13 @@ namespace collin
 				static inline constexpr message_flags message_do_not_route {MSG_DONTROUTE};
 
 				static inline constexpr int max_listen_connections {SOMAXCONN};
+				static inline constexpr auto invalid_socket {
+					#ifdef _WIN32
+					INVALID_SOCKET
+					#else
+					-1
+					#endif
+				};
 
 			protected:
 				socket_base() {}
@@ -1341,6 +1377,29 @@ namespace collin
 
 				basic_socket(io_context& ctx)
 				{
+				}
+
+				basic_socket(basic_socket&& rhs) noexcept
+					: socket_(rhs.release()), protocol_(std::move(rhs.protocol_))
+				{
+					#ifdef _WIN32
+					is_blocking = rhs.is_blocking;
+					#endif
+				}
+
+				basic_socket& operator=(basic_socket&& rhs) noexcept
+				{
+					if (this != &rhs)
+					{
+						socket_ = rhs.release();
+						protocol_ = std::move(rhs.protocol_);
+
+						#ifdef _WIN32
+						is_blocking = rhs.is_blocking;
+						#endif
+					}
+
+					return *this;
 				}
 
 				~basic_socket()
@@ -1387,13 +1446,13 @@ namespace collin
 					l.unlock();
 
 					native_handle_type h = native_handle();
-					socket_ = invalid_socket;
+					socket_ = socket_base::invalid_socket;
 					return h;
 				}
 
 				bool is_open() const noexcept
 				{
-					return socket_ != invalid_socket;
+					return socket_ != socket_base::invalid_socket;
 				}
 
 				void close()
@@ -1413,7 +1472,7 @@ namespace collin
 					::close(native_handle());
 					#endif
 
-					socket_ = invalid_socket;
+					socket_ = socket_base::invalid_socket;
 				}
 
 				template<class SettableSocketOption>
@@ -1462,7 +1521,8 @@ namespace collin
 				void native_non_blocking(bool mode)
 				{
 					#ifdef _WIN32
-					ioctlsocket(native_handle(), FIONBIO, &mode);
+					auto mode_ul = static_cast<unsigned long>(mode);
+					ioctlsocket(native_handle(), FIONBIO, &mode_ul);
 					is_blocking = mode;
 					#else
 					auto flags = fcntl(native_handle(), F_GETFL, 0);
@@ -1503,15 +1563,16 @@ namespace collin
 						throw std::errc::bad_file_descriptor;
 					}
 
-					std::size_t bytes_available;
 
 					#ifdef _WIN32
-					ioctolsocket(native_handle(), FIONREAD, &bytes_available);
+					unsigned long bytes_available;
+					ioctlsocket(native_handle(), FIONREAD, &bytes_available);
 					#else
+					std::size_t bytes_available;
 					ioctl(native_handle(), FIONREAD, &bytes_available);
 					#endif
 
-					return bytes_available;
+					return static_cast<std::size_t>(bytes_available);
 				}
 
 				void bind(const endpoint_type& endpoint)
@@ -1541,7 +1602,7 @@ namespace collin
 				{
 					endpoint_type endpoint;
 					socklen_t endpoint_len = endpoint.capacity();
-					int result = getpeername(native_handle(), endpoint.data(), &endpoint_len);
+					int result = getpeername(native_handle(), static_cast<sockaddr*>(endpoint.data()), &endpoint_len);
 					if(result == 0)
 					{
 						endpoint.resize(endpoint_len);
@@ -1558,7 +1619,7 @@ namespace collin
 					}
 
 					auto result = ::connect(native_handle(), static_cast<const sockaddr*>(endpoint.data()), endpoint.size());
-					if (result == invalid_socket)
+					if (result == socket_base::invalid_socket)
 					{
 						#ifdef _WIN32
 						ec = std::error_code(::WSAGetLastError(), std::system_category());
@@ -1575,13 +1636,13 @@ namespace collin
 					return last_call;
 				}
 
-				void wait(wait_type w)
+				int wait(wait_type w)
 				{
-					pollfd p {native_handle(), w, 0};
+					pollfd p {native_handle(), w, };
 					#ifdef _WIN32
-					::WSAPoll(&p, 1, std::chrono::milliseconds(200).count());
+					return ::WSAPoll(&p, 1, std::chrono::milliseconds(200).count());
 					#else
-					::poll(&p, 1, std::chrono::milliseconds(200).count());
+					return ::poll(&p, 1, std::chrono::milliseconds(200).count());
 					#endif
 				}
 
@@ -1602,13 +1663,11 @@ namespace collin
 				static inline std::mutex task_m;
 
 			private:
+				native_handle_type socket_ {static_cast<native_handle_type>(socket_base::invalid_socket)};
+				protocol_type protocol_ {protocol_type::v4()};
 				#ifdef _WIN32
 				bool is_blocking {false};
 				#endif
-				static inline constexpr auto invalid_socket {-1};
-				
-				protocol_type protocol_ {protocol_type::v4()};
-				native_handle_type socket_ {static_cast<native_handle_type>(invalid_socket)};
 		};
 
 		template<class AcceptableProtocol>
@@ -1620,7 +1679,8 @@ namespace collin
 				using endpoint_type = typename protocol_type::endpoint;
 				using socket_type = typename protocol_type::socket;
 
-				basic_socket_acceptor()
+				basic_socket_acceptor(io_context& ctx)
+					: ctx_(ctx)
 				{
 					std::scoped_lock l(ref_count_m);
 					ref_count++;
@@ -1680,13 +1740,13 @@ namespace collin
 					l.unlock();
 
 					native_handle_type h = native_handle();
-					socket_ = invalid_socket;
+					socket_ = socket_base::invalid_socket;
 					return h;
 				}
 
 				bool is_open() const noexcept
 				{
-					return socket_ != invalid_socket;
+					return socket_ != socket_base::invalid_socket;
 				}
 
 				void close()
@@ -1707,7 +1767,7 @@ namespace collin
 						#else
 						status = ::close(native_handle());
 						#endif
-						socket_ = invalid_socket;
+						socket_ = socket_base::invalid_socket;
 					}
 
 					return status;
@@ -1795,20 +1855,21 @@ namespace collin
 
 				std::size_t available()
 				{
-					if(!is_open())
+					if (!is_open())
 					{
 						throw std::errc::bad_file_descriptor;
 					}
 
-					std::size_t bytes_available;
 
 					#ifdef _WIN32
-					ioctolsocket(native_handle(), FIONREAD, &bytes_available);
+					unsigned long bytes_available;
+					ioctlsocket(native_handle(), FIONREAD, &bytes_available);
 					#else
+					std::size_t bytes_available;
 					ioctl(native_handle(), FIONREAD, &bytes_available);
 					#endif
 
-					return bytes_available;
+					return static_cast<std::size_t>(bytes_available);
 				}
 
 				void bind(const endpoint_type& endpoint)
@@ -1895,7 +1956,7 @@ namespace collin
 					}
 
 					auto result = ::connect(native_handle(), endpoint.data(), endpoint.size());
-					if (result == invalid_socket)
+					if (result == socket_base::invalid_socket)
 					{
 						#ifdef _WIN32
 						ec = std::error_code(::WSAGetLastError(), std::system_category());
@@ -1939,12 +2000,12 @@ namespace collin
 				static inline std::mutex task_m;
 
 			private:
+				native_handle_type socket_ {socket_base::invalid_socket};
+				protocol_type protocol_;
+				io_context& ctx_;
 				#ifdef _WIN32
 				bool is_blocking {false};
 				#endif
-				static inline constexpr auto invalid_socket {-1};
-				protocol_type protocol_;
-				native_handle_type socket_ {invalid_socket};
 		};
 
 		template<class Protocol>
@@ -1955,77 +2016,44 @@ namespace collin
 				using protocol_type = Protocol;
 				using endpoint_type = typename protocol_type::endpoint;
 
-				std::size_t receive(void* buf, int buf_len, int flags=0) noexcept
+				template<class ElementType, std::size_t Extent>
+				std::size_t receive(span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
 				{
-					auto pbuf = static_cast<char*>(buf);
-					if(pbuf == nullptr)
-					{
-						return false;
-					}
+					ec.clear();
+					auto bytes = as_writable_bytes(buf);
 
 					std::size_t total = 0;
-					while(buf_len > 0)
+					while (total != bytes.size())
 					{
-						const auto n = ::recv(native_handle(), pbuf, buf_len, flags);
-						if(n == 0)
+						const auto n = ::recv(native_handle(), reinterpret_cast<char*>(bytes.data() + total), bytes.size() - total, flags);
+						switch (get_last_error())
 						{
-							return total;
+							case socket_errc::try_again:
+								ec = make_error_code(socket_errc::try_again);
+								break;
+							case 0:
+								break;
+							default:
+								ec = make_error_code(socket_errc::receive_error);
+								close();
+								break;
 						}
-						if(n == SOCKET_ERROR)
+
+						if (ec || n <= 0)
 						{
-							close();
 							return total;
 						}
 
-						pbuf += n;
-						buflen -= n;
 						total += n;
 					}
 
 					return total;
 				}
 
-				std::size_t receive(unsigned long& value) noexcept
+				template<class ElementType, std::size_t Extent>
+				std::shared_future<std::size_t> async_receive(span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
 				{
-					const auto result = receive(&value, sizeof(value));
-					value = ntoh(value);
-					return result;
-				}
-
-				std::size_t receive(unsigned long long& value) noexcept
-				{
-					const auto result = receive(&value, sizeof(value));
-					value = ntoh(value);
-					return result;
-				}
-
-				std::size_t receive(unsigned short& value) noexcept
-				{
-					const auto result = receive(&value, sizeof(value));
-					value = ntoh(value);
-					return result;
-				}
-
-				std::size_t receive(std::string& str) noexcept
-				{
-					return receive(str.data(), str.size());
-				}
-
-				template<class T, std::size_t N>
-				std::size_t receive(std::array<T, N>& data)
-				{
-					return receive(data.data(), sizeof(T) * N);
-				}
-
-				template<class T>
-				std::size_t receive(std::vector<T>& data)
-				{
-					return receive(data.data(), sizeof(T) * std::size(data));
-				}
-
-				std::shared_future<std::size_t> async_receive(void* buf, int buf_len, int flags = 0) noexcept
-				{
-					auto call = std::shared_future<std::size_t>(std::async(receive, buf, buf_len, flags));
+					auto call = std::shared_future<std::size_t>(std::async(receive, buf, std::ref(ec), flags));
 					std::scoped_lock l {task_m};
 					last_call = std::shared_future<void>(std::async(std::launch::deferred, [=]() {
 						call.wait();
@@ -2033,152 +2061,49 @@ namespace collin
 					return call;
 				}
 
-				std::shared_future<std::size_t> async_receive(unsigned long& value) noexcept
+				template<class ElementType, std::size_t Extent>
+				std::size_t send(const span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
 				{
-					const auto result = async_receive(&value, sizeof(value));
-					value = ntoh(value);
-					return result;
-				}
-
-				std::shared_future<std::size_t> async_receive(unsigned long long& value) noexcept
-				{
-					const auto result = async_receive(&value, sizeof(value));
-					value = ntoh(value);
-					return result;
-				}
-
-				std::shared_future<std::size_t> async_receive(unsigned short& value) noexcept
-				{
-					const auto result = async_receive(&value, sizeof(value));
-					value = ntoh(value);
-					return result;
-				}
-
-				std::shared_future<std::size_t> async_receive(std::string& str) noexcept
-				{
-					return async_receive(str.data(), str.size());
-				}
-
-				template<class T, std::size_t N>
-				std::shared_future<std::size_t> async_receive(std::array<T, N>& data)
-				{
-					return async_receive(data.data(), sizeof(T) * N);
-				}
-
-				template<class T>
-				std::shared_future<std::size_t> async_receive(std::vector<T>& data)
-				{
-					return async_receive(data.data(), sizeof(T) * std::size(data));
-				}
-
-				std::size_t send(const void* buf, int buf_len, int flags = 0) noexcept
-				{
-					auto pbuf = static_cast<const char*>(buf);
-					if(pbuf == nullptr)
-					{
-						return 0;
-					}
+					ec.clear();
+					auto bytes = as_bytes(buf);
 
 					std::size_t total = 0;
-					while(buf_len > 0)
+					while (total != bytes.size())
 					{
-						const auto n = ::send(native_handle(), pbuf, buf_len, flags);
-						if(n == 0)
+						const auto n = ::send(native_handle(), reinterpret_cast<const char*>(bytes.data() + total), bytes.size() - total, flags);
+						switch (get_last_error())
 						{
-							return total;
+							case socket_errc::try_again:
+								ec = make_error_code(socket_errc::try_again);
+								break;
+							case 0:
+								break;
+							default:
+								ec = make_error_code(socket_errc::receive_error);
+								close();
+								break;
 						}
-						if(n == SOCKET_ERROR)
+
+						if (ec || n <= 0)
 						{
-							close();
 							return total;
 						}
 
-						pbuf += n;
-						buf_len -= n;
 						total += n;
 					}
 
 					return total;
 				}
 
-				std::size_t send(unsigned long value) noexcept
+				template<class ElementType, std::size_t Extent>
+				std::shared_future<std::size_t> async_send(span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
 				{
-					value = hton(value);
-					return send(&value, sizeof(value));
-				}
-
-				std::size_t send(unsigned long long value) noexcept
-				{
-					value = hton(value);
-					return send(&value, sizeof(value));
-				}
-
-				std::size_t send(unsigned short value) noexcept
-				{
-					value = hton(value);
-					return send(&value, sizeof(value));
-				}
-
-				std::size_t send(std::string_view value) noexcept
-				{
-					return send(value.data(), value.length());
-				}
-
-				template<class T>
-				std::size_t send(const std::vector<T>& data) noexcept
-				{
-					return send(data.data(), sizeof(T) * std::size(data));
-				}
-
-				template<class T, std::size_t N>
-				std::size_t send(const std::array<T, N>& arr)
-				{
-					return send(arr.data(), sizeof(T) * N);
-				}
-
-				std::shared_future<std::size_t> async_send(const void* buf, int buf_len, int flags = 0) noexcept
-				{
-					auto call = std::shared_future<std::size_t>(std::async(send, buf, buf_len, flags));
+					auto call = std::shared_future<std::size_t>(std::async(send, buf, std::ref(ec), flags));
 					std::scoped_lock l {task_m};
 					last_call = std::shared_future<void>(std::async(std::launch::deferred, [=]() {
 						call.wait();
 					}));
 					return call;
-				}
-
-				std::shared_future<std::size_t> async_send(unsigned long value) noexcept
-				{
-					value = hton(value);
-					return async_send(&value, sizeof(value));
-				}
-
-				std::shared_future<std::size_t> async_send(unsigned long long value) noexcept
-				{
-					value = hton(value);
-					return async_send(&value, sizeof(value));
-				}
-
-				std::shared_future<std::size_t> async_send(unsigned short value) noexcept
-				{
-					value = hton(value);
-					return async_send(&value, sizeof(value));
-				}
-
-				std::shared_future<std::size_t> async_send(std::string_view value) noexcept
-				{
-					return async_send(value.data(), value.length());
-				}
-
-				template<class T>
-				std::shared_future<std::size_t> async_send(const std::vector<T>& data) noexcept
-				{
-					return async_send(data.data(), sizeof(T) * std::size(data));
-				}
-
-				template<class T, std::size_t N>
-				std::shared_future<std::size_t> async_send(const std::array<T, N>& arr) noexcept
-				{
-					return async_send(arr.data(), sizeof(T) * N);
 				}
 		};
 
@@ -2193,77 +2118,44 @@ namespace collin
 				basic_stream_socket(net::io_context& ctx)
 					: basic_socket(ctx) {}
 
-				std::size_t receive(void* buf, int buf_len, int flags=0) noexcept
+				template<class ElementType, std::size_t Extent>
+				std::size_t receive(span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
 				{
-					auto pbuf = static_cast<char*>(buf);
-					if(pbuf == nullptr)
-					{
-						return false;
-					}
+					ec.clear();
+					auto bytes = as_writable_bytes(buf);
 
 					std::size_t total = 0;
-					while(buf_len > 0)
+					while (total != bytes.size())
 					{
-						const auto n = ::recv(native_handle(), pbuf, buf_len, flags);
-						if(n == 0)
+						const auto n = ::recv(native_handle(), reinterpret_cast<char*>(bytes.data() + total), bytes.size() - total, flags);
+						switch (get_last_error())
 						{
-							return total;
+							case socket_errc::try_again:
+								ec = make_error_code(socket_errc::try_again);
+								break;
+							case 0:
+								break;
+							default:
+								ec = make_error_code(socket_errc::receive_error);
+								close();
+								break;
 						}
-						if(n == SOCKET_ERROR)
+
+						if(ec || n <= 0)
 						{
-							close();
 							return total;
 						}
 
-						pbuf += n;
-						buf_len -= n;
 						total += n;
 					}
 
 					return total;
 				}
 
-				std::size_t receive(unsigned long& value) noexcept
+				template<class ElementType, std::size_t Extent>
+				std::shared_future<std::size_t> async_receive(span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
 				{
-					const auto result = receive(&value, sizeof(value));
-					value = ntoh(value);
-					return result;
-				}
-
-				std::size_t receive(unsigned long long& value) noexcept
-				{
-					const auto result = receive(&value, sizeof(value));
-					value = ntoh(value);
-					return result;
-				}
-
-				std::size_t receive(unsigned short& value) noexcept
-				{
-					const auto result = receive(&value, sizeof(value));
-					value = ntoh(value);
-					return result;
-				}
-
-				std::size_t receive(std::string& str) noexcept
-				{
-					return receive(str.data(), str.size());
-				}
-
-				template<class T, std::size_t N>
-				std::size_t receive(std::array<T, N>& data)
-				{
-					return receive(data.data(), sizeof(T) * N);
-				}
-
-				template<class T>
-				std::size_t receive(std::vector<T>& data)
-				{
-					return receive(data.data(), sizeof(T) * std::size(data));
-				}
-
-				std::shared_future<std::size_t> async_receive(void* buf, int buf_len, int flags = 0) noexcept
-				{
-					auto call = std::shared_future<std::size_t>(std::async(receive, buf, buf_len, flags));
+					auto call = std::shared_future<std::size_t>(std::async(receive, buf, std::ref(ec), flags));
 					std::scoped_lock l {task_m};
 					last_call = std::shared_future<void>(std::async(std::launch::deferred, [=]() {
 						call.wait();
@@ -2271,153 +2163,352 @@ namespace collin
 					return call;
 				}
 
-				std::shared_future<std::size_t> async_receive(unsigned long& value) noexcept
+				template<class ElementType, std::size_t Extent>
+				std::size_t send(const span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
 				{
-					const auto result = async_receive(&value, sizeof(value));
-					value = ntoh(value);
-					return result;
-				}
-
-				std::shared_future<std::size_t> async_receive(unsigned long long& value) noexcept
-				{
-					const auto result = async_receive(&value, sizeof(value));
-					value = ntoh(value);
-					return result;
-				}
-
-				std::shared_future<std::size_t> async_receive(unsigned short& value) noexcept
-				{
-					const auto result = async_receive(&value, sizeof(value));
-					value = ntoh(value);
-					return result;
-				}
-
-				std::shared_future<std::size_t> async_receive(std::string& str) noexcept
-				{
-					return async_receive(str.data(), str.size());
-				}
-
-				template<class T, std::size_t N>
-				std::shared_future<std::size_t> async_receive(std::array<T, N>& data)
-				{
-					return async_receive(data.data(), sizeof(T) * N);
-				}
-
-				template<class T>
-				std::shared_future<std::size_t> async_receive(std::vector<T>& data)
-				{
-					return async_receive(data.data(), sizeof(T) * std::size(data));
-				}
-
-				std::size_t send(const void* buf, int buf_len, int flags = 0) noexcept
-				{
-					auto pbuf = static_cast<const char*>(buf);
-					if(pbuf == nullptr)
-					{
-						return 0;
-					}
+					ec.clear();
+					auto bytes = as_bytes(buf);
 
 					std::size_t total = 0;
-					while(buf_len > 0)
+					while (total != bytes.size())
 					{
-						const auto n = ::send(native_handle(), pbuf, buf_len, flags);
-						if(n == 0)
+						const auto n = ::send(native_handle(), reinterpret_cast<const char*>(bytes.data() + total), bytes.size() - total, flags);
+						switch (get_last_error())
 						{
-							return total;
+							case socket_errc::try_again:
+								ec = make_error_code(socket_errc::try_again);
+								break;
+							case 0:
+								break;
+							default:
+								ec = make_error_code(socket_errc::receive_error);
+								close();
+								break;
 						}
-						if(n == SOCKET_ERROR)
+
+						if (ec || n <= 0)
 						{
-							close();
 							return total;
 						}
 
-						pbuf += n;
-						buf_len -= n;
 						total += n;
 					}
 
 					return total;
 				}
 
-				std::size_t send(unsigned long value) noexcept
+				template<class ElementType, std::size_t Extent>
+				std::shared_future<std::size_t> async_send(span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
 				{
-					value = hton(value);
-					return send(&value, sizeof(value));
-				}
-
-				std::size_t send(unsigned long long value) noexcept
-				{
-					value = hton(value);
-					return send(&value, sizeof(value));
-				}
-
-				std::size_t send(unsigned short value) noexcept
-				{
-					value = hton(value);
-					return send(&value, sizeof(value));
-				}
-
-				std::size_t send(std::string_view value) noexcept
-				{
-					return send(value.data(), value.length());
-				}
-
-				template<class T>
-				std::size_t send(const std::vector<T>& data) noexcept
-				{
-					return send(data.data(), sizeof(T) * std::size(data));
-				}
-
-				template<class T, std::size_t N>
-				std::size_t send(const std::array<T, N>& arr)
-				{
-					return send(arr.data(), sizeof(T) * N);
-				}
-
-				std::shared_future<std::size_t> async_send(const void* buf, int buf_len, int flags = 0) noexcept
-				{
-					auto call = std::shared_future<std::size_t>(std::async(send, buf, buf_len, flags));
+					auto call = std::shared_future<std::size_t>(std::async(send, buf, std::ref(ec), flags));
 					std::scoped_lock l {task_m};
 					last_call = std::shared_future<void>(std::async(std::launch::deferred, [=]() {
 						call.wait();
 					}));
 					return call;
 				}
+		};
 
-				std::shared_future<std::size_t> async_send(unsigned long value) noexcept
+		template<class Protocol>
+		class basic_socket_streambuf : public std::basic_streambuf<char>
+		{
+			public:
+				using protocol_type = Protocol;
+				using endpoint_type = typename protocol_type::endpoint;
+
+				basic_socket_streambuf(net::io_context& ctx)
+					: ctx_(ctx), socket_(ctx)
 				{
-					value = hton(value);
-					return async_send(&value, sizeof(value));
+					set_buffers();
 				}
 
-				std::shared_future<std::size_t> async_send(unsigned long long value) noexcept
+				explicit basic_socket_streambuf(basic_stream_socket<protocol_type> s)
+					: socket_(std::move(s))
 				{
-					value = hton(value);
-					return async_send(&value, sizeof(value));
+					set_buffers();
 				}
 
-				std::shared_future<std::size_t> async_send(unsigned short value) noexcept
+				basic_socket_streambuf(const basic_socket_streambuf&) = delete;
+				basic_socket_streambuf(basic_socket_streambuf&& rhs)
+					: std::basic_streambuf<char>(std::move(rhs)), ctx_(rhs.ctx_), socket_(std::move(rhs.socket_))
 				{
-					value = hton(value);
-					return async_send(&value, sizeof(value));
+					set_buffers();
 				}
 
-				std::shared_future<std::size_t> async_send(std::string_view value) noexcept
+				virtual ~basic_socket_streambuf()
 				{
-					return async_send(value.data(), value.length());
+					if(pptr() != pbase())
+					{
+						overflow(std::istream::traits_type::eof());
+					}
+					close();
 				}
 
-				template<class T>
-				std::shared_future<std::size_t> async_send(const std::vector<T>& data) noexcept
+				basic_socket_streambuf& operator=(const basic_socket_streambuf&) = delete;
+				basic_socket_streambuf& operator=(basic_socket_streambuf&& rhs)
 				{
-					return async_send(data.data(), sizeof(T) * std::size(data));
+					if (this != &rhs)
+					{
+						close();
+						socket_ = rhs.socket_;
+						rhs.socket_.assign(protocol_type::v4(), socket_base::invalid_socket);
+						std::basic_streambuf<char>::operator=(std::move(rhs));
+					}
+
+					return *this;
 				}
 
-				template<class T, std::size_t N>
-				std::shared_future<std::size_t> async_send(const std::array<T, N>& arr)
+				basic_socket_streambuf* connect(const endpoint_type& e)
 				{
-					return async_send(arr.data(), sizeof(T) * N);
+					if (close() == nullptr)
+					{
+						return nullptr;
+					}
+
+					ec_.clear();
+					socket_.connect(e, ec_);
+					set_buffers();
+					
+					return ec_ ? nullptr : this;
 				}
+				
+				template<class... Args>
+				basic_socket_streambuf* connect(Args&&... args)
+				{
+					const auto results = protocol_type::resolver(ctx_).resolve(std::forward<Args>(args)...);
+					for (const auto& result : results)
+					{
+						const auto end = static_cast<endpoint_type>(result.endpoint()); // Needed for overload resolution to work properly
+						auto connection_result = connect(end);
+						if (connection_result != nullptr)
+						{
+							return connection_result;
+						}
+					}
+
+					return nullptr;
+				}
+
+				basic_socket_streambuf* close()
+				{
+					ec_.clear();
+					if(socket_.is_open())
+					{
+						overflow(std::istream::traits_type::eof());
+						socket_.close();
+					}
+					return ec_ ? nullptr : this;
+				}
+
+				basic_socket<protocol_type>& socket()
+				{
+					return socket_;
+				}
+
+				std::error_code error() const
+				{
+					return ec_;
+				}
+
+			protected:
+				virtual std::ios::int_type underflow() override
+				{
+					if (gptr() != egptr())
+					{
+						return std::istream::traits_type::eof();
+					}
+
+					while(true)
+					{
+						const auto bytes_read = socket_.receive(make_span(get_buf), ec_);
+						if (bytes_read > 0)
+						{
+							setg(get_buf.data(), get_buf.data(), get_buf.data() + bytes_read);
+							return std::istream::traits_type::to_int_type(*gptr());
+						}
+
+						if (bytes_read == 0)
+						{
+							if(ec_ != make_error_code(socket_errc::receive_error))
+							{
+								ec_.clear();
+							}
+
+							return std::istream::traits_type::eof();
+						}
+
+						if (ec_ != make_error_code(socket_errc::try_again))
+						{
+							return std::istream::traits_type::eof();
+						}
+
+						if (socket().wait(socket_base::wait_read) < 0)
+						{
+							return std::istream::traits_type::eof();
+						}
+					}
+				}
+
+				virtual std::ios::int_type overflow(std::ios::int_type c = std::istream::traits_type::eof()) override
+				{
+					const auto ch = std::istream::traits_type::to_char_type(c);
+					auto begin = &ch;
+					auto size = sizeof(std::istream::traits_type::char_type);
+					if(put_buf[0] != '\0')
+					{
+						begin = put_buf.data();
+						size = (pptr() - pbase()) * sizeof(std::istream::traits_type::char_type);
+					}
+
+					while (size > 0)
+					{
+						const auto bytes_sent = socket_.send(make_span(begin, size), ec_);
+
+						if (bytes_sent > 0)
+						{
+							begin += size;
+							size -= bytes_sent;
+							continue;
+						}
+
+						if (ec_ != make_error_code(socket_errc::try_again))
+						{
+							return std::istream::traits_type::eof();
+						}
+
+						if (socket().wait(socket_base::wait_write) < 0)
+						{
+							return std::istream::traits_type::eof();
+						}
+					}
+
+					if (put_buf[0] != '\0')
+					{
+						setp(put_buf.data(), put_buf.data() + put_buf.size());
+						if (std::istream::traits_type::eq_int_type(c, std::istream::traits_type::eof()))
+						{
+							return std::istream::traits_type::not_eof(c);
+						}
+
+						*pptr() = ch;
+						pbump(1);
+					}
+
+					return std::istream::traits_type::not_eof(c);
+				}
+
+				virtual int sync() override
+				{
+					return overflow(std::istream::traits_type::eof());
+				}
+
+				std::streambuf* setbuf(std::istream::char_type* s, std::streamsize n)
+				{
+					if (pptr() == pbase() && s == nullptr && n == 0)
+					{
+						setp(0, 0);
+						sync();
+						return this;
+					}
+					
+					return nullptr;
+				}
+			private:
+				static inline constexpr std::size_t buffer_size {4096};
+				net::io_context& ctx_;
+				basic_stream_socket<protocol_type> socket_;
+				std::array<char, buffer_size> get_buf;
+				std::array<char, buffer_size> put_buf;
+				std::error_code ec_;
+
+				void set_buffers()
+				{
+					put_buf[0] = '\0';
+					setg(get_buf.data(), get_buf.data(), get_buf.data());
+					setp(put_buf.data(), put_buf.data() + put_buf.size());
+				}
+		};
+
+		template<class Protocol>
+		class basic_socket_iostream : public std::basic_iostream<char>
+		{
+			public:
+				using protocol_type = Protocol;
+				using endpoint_type = typename protocol_type::endpoint;
+
+				basic_socket_iostream(io_context& ctx)
+					: std::basic_iostream<char>(&sb_), sb_(ctx)
+				{
+					setf(std::ios_base::unitbuf);
+				}
+
+				explicit basic_socket_iostream(basic_stream_socket<protocol_type> s)
+					: std::basic_iostream<char>(&sb_), sb_(std::move(s))
+				{
+					setf(std::ios_base::unitbuf);
+				}
+
+				basic_socket_iostream(const basic_socket_iostream&) = delete;
+				basic_socket_iostream(basic_socket_iostream&& rhs)
+					: std::basic_iostream<char>(std::move(rhs)), sb_(std::move(rhs.sb_))
+				{
+					if (this != &rhs)
+					{
+						std::basic_iostream<char>::set_rdbuf(&sb_);
+					}
+				}
+
+				template<class... Args>
+				explicit basic_socket_iostream(io_context& ctx, Args&&... args)
+					: std::basic_iostream<char>(&sb_), sb_(ctx)
+				{
+					setf(std::ios_base::unitbuf);
+					connect(std::forward<Args>(args)...);
+				}
+
+				basic_socket_iostream& operator=(const basic_socket_iostream&) = delete;
+				basic_socket_iostream& operator=(basic_socket_iostream&& rhs)
+				{
+					if (this != &rhs)
+					{
+						std::basic_iostream<char>::operator=(std::move(rhs));
+						sb_ = std::move(rhs.sb_);
+					}
+				}
+
+				template<class... Args>
+				void connect(Args&&... args)
+				{
+					if (rdbuf()->connect(std::forward<Args>(args)...) == nullptr)
+					{
+						setstate(std::ios::failbit);
+					}
+				}
+
+				void close()
+				{
+					if (rdbuf()->close() == nullptr)
+					{
+						setstate(std::ios::failbit);
+					}
+				}
+
+				basic_socket_streambuf<protocol_type>* rdbuf() const
+				{
+					return const_cast<decltype(sb_)*>(std::addressof(sb_));
+				}
+
+				basic_socket<protocol_type>& socket()
+				{
+					return rdbuf()->socket();
+				}
+
+				std::error_code error() const
+				{
+					return rdbuf()->error();
+				}
+			private:
+				basic_socket_streambuf<protocol_type> sb_;
 		};
 
 		template<class Protocol, class EndpointSequence, class ConnectCondition>

@@ -1,5 +1,5 @@
-#include "collin_math.hpp"
-#include "collin_test.hpp"
+#include "collin/math.hpp"
+#include "collin/test.hpp"
 #include <tuple>
 #include <random>
 #include <array>

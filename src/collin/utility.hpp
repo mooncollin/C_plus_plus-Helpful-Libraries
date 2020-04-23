@@ -10,15 +10,15 @@
 namespace collin
 {
 	template<class Function, class... Args>
-	class Finally
+	class finally
 	{
 		public:
 			using return_type = std::result_of_t<Function(Args...)>;
 
-			Finally(Function&& f, Args&&... args) noexcept
+			finally(Function&& f, Args&&... args) noexcept
 				: f(f), args(args...) {}
 
-			~Finally() noexcept
+			~finally() noexcept
 			{
 				static_cast<void>(operator()());
 			}

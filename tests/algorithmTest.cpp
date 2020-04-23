@@ -1,89 +1,55 @@
-#include "collin_algorithm.hpp"
-#include "collin_test.hpp"
-#include "collin_utility.hpp"
-#include "collin_math.hpp"
+#include "collin/algorithm.hpp"
+#include "collin/test.hpp"
+#include "collin/utility.hpp"
+#include "collin/math.hpp"
 #include <tuple>
 #include <utility>
 #include <numeric>
-#include <array>
+#include <vector>
+#include <functional>
 
-void for_each_test()
+void apply_range_test()
 {
-	const auto sum_f = [] (auto container) {
-		auto sum = collin::construct_value(container);
-
-		collin::algorithms::for_each(container, [&sum](const auto& value) {
-			sum += value;
-		});
-
-		return sum;
+	const std::array<std::function<void(int&)>, 4> functions = {
+		std::function([](int& i){ i *= 2;}),
+		std::function([](int& i) {i *= 2;}),
+		std::function([](int& i) {i *= 2;}),
+		std::function([](int& i) {i *= 2;})
 	};
 
-	const auto test_values = collin::test::make_test_data
-	(
-		sum_f,
-			{
-				std::make_pair(std::make_tuple(std::vector {1, 2, 3, 4, 5}), 15)
-			}
-	);
+	const std::array<void(*)(int&), 4> functions2 = {
+		[](int& i){ i += 2;},
+		[](int& i) {i += 2;},
+		[](int& i) {i += 2;},
+		[](int& i) {i += 2;}
+	};
 
-	collin::test::assert_test_data(test_values, "for_each Sum");
+	int value = 1;
+	int value2 = 10;
+
+	collin::algorithms::apply_range(std::begin(functions), std::end(functions), value);
+	collin::algorithms::apply_range(std::begin(functions2), std::end(functions2), value2);
+
+	std::vector<std::pair<int, int>> test_values;
+	test_values.emplace_back(value, 16);
+	test_values.emplace_back(value2, 18);
+
+	collin::test::assert_test_data(test_values, "apply_range");
 }
 
-void for_each_n_test()
+void remove_until_test()
 {
-	const auto sum_f = [] ( auto container) {
-		auto sum = collin::construct_value(container);
-		
-		collin::algorithms::for_each_n(container, 3, [&sum](const auto _, const auto& value) {
-			sum += value;
-		});
+	std::vector<int> values = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+	collin::algorithms::remove_until(values, [](auto i){return i < 5;});
 
-		return sum;
-	};
+	std::vector<std::pair<std::vector<int>, std::vector<int>>> test_values;
+	test_values.emplace_back(values, std::vector<int>{6, 7, 8, 9, 10});
 
-	const auto test_values = collin::test::make_test_data
-	(
-		sum_f,
-			{
-				std::make_pair(std::make_tuple(std::vector {1, 2, 3, 4, 5}), 6)
-			}
-	);
-
-	collin::test::assert_test_data(test_values, "for_each_n Sum");
-}
-
-void any_of_test()
-{
-	const auto f = [] (auto container, auto pred)
-	{
-		return collin::algorithms::any_of(container, pred);
-	};
-
-	const auto test_values = collin::test::make_test_data
-	(
-		f,
-		{
-			std::make_pair(std::make_tuple(std::vector {true, false, true}, [](const auto& item){return item;}), true)
-		}
-	);
-
-	const auto test_values_2 = collin::test::make_test_data
-	(
-		f,
-		{
-			std::make_pair(std::make_tuple(std::vector {1, 2, 3}, collin::math::is_even<int>), true),
-			std::make_pair(std::make_tuple(std::vector {1, 3, 5, 9}, collin::math::is_even<int>), false)
-		}
-	);
-
-	collin::test::assert_test_data(test_values, "any_of bool");
-	collin::test::assert_test_data(test_values_2, "any_of even");
+	collin::test::assert_test_data(test_values, "remove_until");
 }
 
 int main()
 {
-	for_each_test();
-	for_each_n_test();
-	any_of_test();
+	apply_range_test();
+	remove_until_test();
 }
