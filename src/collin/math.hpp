@@ -78,109 +78,208 @@ namespace collin
 			return result;
 		}
 
-		class Rational
+		template<class intT, typename = std::enable_if_t<
+/* requires */	std::is_integral_v<intT>
+		>>
+		class basic_rational
 		{
 			public:
-				constexpr Rational(int numerator, int denominator)
-					: numerator_(numerator), denominator_(denominator) {}
-				constexpr Rational(int numerator)
-					: numerator_(numerator), denominator_(1) {}
-				constexpr Rational(const Rational&) = default;
-				constexpr Rational(Rational&&) = default;
-				constexpr Rational& operator=(const Rational&) = default;
-				constexpr Rational& operator=(Rational&&) = default;
+				using value_type = intT;
 
-				constexpr Rational operator+(const Rational& r) const
+				constexpr basic_rational(value_type numerator, value_type denominator)
+					: numerator_(numerator), denominator_(denominator) {}
+				constexpr basic_rational(value_type numerator)
+					: numerator_(numerator), denominator_(1) {}
+				constexpr basic_rational(const basic_rational&) = default;
+
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+					constexpr basic_rational(const basic_rational<intT2>& other)
+						: numerator_(other.numerator_), denominator_(other.denominator)
+				{
+				}
+
+				constexpr basic_rational(basic_rational&&) = default;
+
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+					constexpr basic_rational(basic_rational<intT2>&& other)
+						: numerator_(std::move(other.numerator_)), denominator_(std::move(other.denominator_))
+				{
+				}
+
+				constexpr basic_rational& operator=(const basic_rational&) = default;
+
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+					constexpr basic_rational& operator=(const basic_rational<intT2>& other)
+				{
+					if (this != &other)
+					{
+						numerator_ = other.numerator_;
+						denominator_ = other.denominator_;
+					}
+
+					return this;
+				}
+
+				constexpr basic_rational& operator=(basic_rational&&) = default;
+
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+					constexpr basic_rational& operator=(basic_rational<intT2>&& other)
+				{
+					numerator_ = std::move(other.numerator_);
+					denominator_ = std::move(other.denominator_);
+					return this;
+				}
+
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+				constexpr basic_rational operator+(const basic_rational<intT2>& r) const
 				{
 					return { numerator() * r.denominator() + denominator() * r.numerator(),
 							denominator() * r.denominator() };
 				}
 
-				constexpr Rational operator+(int i) const
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+				constexpr basic_rational operator+(intT2 i) const
 				{
-					return *this + Rational(i);
+					return *this + basic_rational(i);
 				}
 
-				Rational& operator+=(const Rational& r)
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+				basic_rational& operator+=(const basic_rational<intT2>& r)
 				{
 					*this = *this + r;
 					return *this;
 				}
 
-				Rational& operator+=(int i)
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+				basic_rational& operator+=(intT2 i)
 				{
 					*this = *this + i;
 					return *this;
 				}
 
-				constexpr Rational operator-(const Rational& r) const
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+				constexpr basic_rational operator-(const basic_rational<intT2>& r) const
 				{
 					return { numerator() * r.denominator() - denominator() * r.numerator(),
 							denominator() * r.denominator() };
 				}
 
-				constexpr Rational operator-(int i) const
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+				constexpr basic_rational operator-(intT2 i) const
 				{
-					return *this - Rational(i);
+					return *this - basic_rational(i);
 				}
 
-				Rational& operator-=(const Rational& r)
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+				basic_rational& operator-=(const basic_rational<intT2>& r)
 				{
 					*this = *this - r;
 					return *this;
 				}
 
-				Rational& operator-=(int i)
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+				basic_rational& operator-=(intT2 i)
 				{
 					*this = *this - i;
 					return *this;
 				}
 
-				constexpr Rational operator*(const Rational& r) const
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+				constexpr basic_rational operator*(const basic_rational<intT2>& r) const
 				{
 					return {numerator() * r.numerator(), denominator() * r.denominator()};
 				}
 
-				constexpr Rational operator*(int i) const
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+				constexpr basic_rational operator*(intT2 i) const
 				{
-					return *this * Rational(i);
+					return *this * basic_rational(i);
 				}
 
-				Rational& operator*=(const Rational& r)
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+				basic_rational& operator*=(const basic_rational<intT2>& r)
 				{
 					*this = *this * r;
 					return *this;
 				}
 
-				Rational& operator*=(int i)
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+				basic_rational& operator*=(intT2 i)
 				{
 					*this = *this * i;
 					return *this;
 				}
 
-				constexpr Rational operator/(const Rational& r) const
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+				constexpr basic_rational operator/(const basic_rational<intT2>& r) const
 				{
 					return {numerator() * r.denominator(), denominator() * r.numerator()};
 				}
 
-				constexpr Rational operator/(int i) const
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+				constexpr basic_rational operator/(intT2 i) const
 				{
-					return *this / Rational(i);
+					return *this / basic_rational(i);
 				}
 
-				Rational& operator/=(const Rational& r)
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+				basic_rational& operator/=(const basic_rational<intT2>& r)
 				{
 					*this = *this / r;
 					return *this;
 				}
 
-				Rational& operator/=(int i)
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+				basic_rational& operator/=(intT2 i)
 				{
 					*this = *this / i;
 					return *this;
 				}
 
-				void numerator(int n)
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+				void numerator(intT2 n)
 				{
 					numerator_ = n;
 				}
@@ -190,7 +289,10 @@ namespace collin
 					return numerator_;
 				}
 
-				void denominator(int d)
+				template<class intT2, typename = std::enable_if_t<
+		/* requires */	std::is_convertible_v<intT2, intT>
+				>>
+				void denominator(intT2 d)
 				{
 					denominator_ = d;
 				}
@@ -205,41 +307,50 @@ namespace collin
 					return static_cast<double>(numerator_) / static_cast<double>(denominator_);
 				}
 			private:
-				int numerator_;
-				int denominator_;
+				value_type numerator_;
+				value_type denominator_;
 		};
 
-		constexpr Rational operator+(int i, const Rational& r)
+		using rational = basic_rational<int>;
+
+		template<class intT, class intT2 = intT>
+		constexpr basic_rational<intT> operator+(intT i, const basic_rational<intT2>& r)
 		{
-			return r + Rational(i);
+			return r + basic_rational(i);
 		}
 
-		constexpr Rational operator-(int i, const Rational& r)
+		template<class intT, class intT2 = intT>
+		constexpr basic_rational<intT> operator-(intT i, const basic_rational<intT2>& r)
 		{
-			return r - Rational(i);
+			return r - basic_rational(i);
 		}
 
-		constexpr Rational operator*(int i, const Rational& r)
+		template<class intT, class intT2 = intT>
+		constexpr basic_rational<intT> operator*(intT i, const basic_rational<intT2>& r)
 		{
-			return r * Rational(i);
+			return r * basic_rational(i);
 		}
 
-		constexpr Rational operator/(int i, const Rational& r)
+		template<class intT, class intT2 = intT>
+		constexpr basic_rational<intT> operator/(intT i, const basic_rational<intT2>& r)
 		{
-			return r / Rational(i);
+			return r / basic_rational(i);
 		}
 
-		constexpr Rational add_inverse(const Rational& r)
+		template<class intT>
+		constexpr basic_rational<intT> add_inverse(const basic_rational<intT>& r)
 		{
 			return { -r.numerator(), r.denominator() };
 		}
 
-		constexpr Rational mult_inverse(const Rational& r)
+		template<class intT>
+		constexpr basic_rational<intT> mult_inverse(const basic_rational<intT>& r)
 		{
 			return { r.denominator(), r.numerator() };
 		}
 
-		constexpr Rational pow(const Rational& r, int p)
+		template<class intT, class intT2 = intT>
+		constexpr basic_rational<intT> pow(const basic_rational<intT>& r, intT2 p)
 		{
 			if (p < 0)
 			{
@@ -249,103 +360,123 @@ namespace collin
 			return { pow(r.numerator(), p), pow(r.denominator(), p) };
 		}
 
-		constexpr Rational canonical(const Rational& r)
+		template<class intT>
+		constexpr basic_rational<intT> canonical(const basic_rational<intT>& r)
 		{
 			auto gcd_ = gcd(r.numerator(), r.denominator());
 			return {r.numerator() / gcd_, r.denominator() / gcd_};
 		}
 
-		constexpr bool operator==(const Rational& first, const Rational& second)
+		template<class intT, class intT2 = intT>
+		constexpr bool operator==(const basic_rational<intT>& first, const basic_rational<intT2>& second)
 		{
 			return first.numerator() * second.denominator() == first.denominator() * second.numerator();
 		}
 
-		constexpr bool operator==(const Rational& first, const double second)
+		template<class intT>
+		constexpr bool operator==(const basic_rational<intT>& first, const double second)
 		{
 			return static_cast<double>(first) == second;
 		}
 
-		constexpr bool operator==(const Rational& first, const int second)
+		template<class intT, class intT2 = intT>
+		constexpr bool operator==(const basic_rational<intT>& first, const intT2 second)
 		{
 			return canonical(first).numerator() == second;
 		}
 		
-		constexpr bool operator!=(const Rational& first, const Rational& second)
+		template<class intT, class intT2 = intT>
+		constexpr bool operator!=(const basic_rational<intT>& first, const basic_rational<intT2>& second)
 		{
 			return !(first == second);
 		}
 
-		constexpr bool operator!=(const Rational& first, const double second)
+		template<class intT>
+		constexpr bool operator!=(const basic_rational<intT>& first, const double second)
 		{
 			return !(first == second);
 		}
 
-		constexpr bool operator!=(const Rational& first, const int second)
+		template<class intT, class intT2 = intT>
+		constexpr bool operator!=(const basic_rational<intT>& first, const intT2 second)
 		{
 			return !(first == second);
 		}
 
-		constexpr bool operator<(const Rational& first, const Rational& second)
+		template<class intT, class intT2 = intT>
+		constexpr bool operator<(const basic_rational<intT>& first, const basic_rational<intT2>& second)
 		{
 			return first.numerator() * second.denominator() < first.denominator() * second.numerator();
 		}
 
-		constexpr bool operator<(const Rational& first, const double second)
+		template<class intT>
+		constexpr bool operator<(const basic_rational<intT>& first, const double second)
 		{
 			return static_cast<double>(first) < second;
 		}
 
-		constexpr bool operator<(const Rational& first, const int second)
+		template<class intT, class intT2 = intT>
+		constexpr bool operator<(const basic_rational<intT>& first, const intT2 second)
 		{
 			return canonical(first).numerator() < second;
 		}
 
-		constexpr bool operator<=(const Rational& first, const Rational& second)
+		template<class intT, class intT2 = intT>
+		constexpr bool operator<=(const basic_rational<intT>& first, const basic_rational<intT2>& second)
 		{
 			return first.numerator() * second.denominator() <= first.denominator() * second.numerator();
 		}
 
-		constexpr bool operator<=(const Rational& first, const double second)
+		template<class intT>
+		constexpr bool operator<=(const basic_rational<intT>& first, const double second)
 		{
 			return static_cast<double>(first) <= second;
 		}
 
-		constexpr bool operator<=(const Rational& first, const int second)
+		template<class intT, class intT2 = intT>
+		constexpr bool operator<=(const basic_rational<intT>& first, const intT2 second)
 		{
 			return canonical(first).numerator() <= second;
 		}
 
-		constexpr bool operator>(const Rational& first, const Rational& second)
+		template<class intT, class intT2 = intT>
+		constexpr bool operator>(const basic_rational<intT>& first, const basic_rational<intT2>& second)
 		{
 			return !(first <= second);
 		}
 
-		constexpr bool operator>(const Rational& first, const double second)
+		template<class intT>
+		constexpr bool operator>(const basic_rational<intT>& first, const double second)
 		{
 			return !(first <= second);
 		}
 
-		constexpr bool operator>(const Rational& first, const int second)
+		template<class intT, class intT2 = intT>
+		constexpr bool operator>(const basic_rational<intT>& first, const intT2 second)
 		{
 			return !(first <= second);
 		}
 
-		constexpr bool operator>=(const Rational& first, const Rational& second)
+		template<class intT, class intT2 = intT>
+		constexpr bool operator>=(const basic_rational<intT>& first, const basic_rational<intT2>& second)
 		{
 			return !(first < second);
 		}
 
-		constexpr bool operator>=(const Rational& first, const double second)
+		template<class intT>
+		constexpr bool operator>=(const basic_rational<intT>& first, const double second)
 		{
 			return !(first < second);
 		}
 
-		constexpr bool operator>=(const Rational& first, const int second)
+		template<class intT, class intT2>
+		constexpr bool operator>=(const basic_rational<intT>& first, const intT2 second)
 		{
 			return !(first < second);
 		}
 
-		inline std::ostream& operator<<(std::ostream& os, const Rational& r)
+		template<class intT>
+		inline std::ostream& operator<<(std::ostream& os, const basic_rational<intT>& r)
 		{
 			return os << r.numerator() << "/" << r.denominator();
 		}
