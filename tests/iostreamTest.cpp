@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vector>
-#include "collin_iostream.hpp"
+#include "collin/iostream.hpp"
 
 int main()
 {

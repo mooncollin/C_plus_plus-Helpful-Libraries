@@ -1,6 +1,6 @@
-#include "net/collin_iocontext.hpp"
-#include "net/collin_socket.hpp"
-#include "net/collin_internet.hpp"
+#include "collin/net/iocontext.hpp"
+#include "collin/net/socket.hpp"
+#include "collin/net/internet.hpp"
 #include <system_error>
 #include <iostream>
 

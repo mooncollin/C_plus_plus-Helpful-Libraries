@@ -48,6 +48,9 @@ rangesTest:	rangesTest.cpp
 	@$(compiler) $(compiler-flags) $< -o $@.exe
 	@rangesTest.exe
 
+measuresTest:	measuresTest.cpp
+	@$(compiler) $(compiler-flags) $< -o $@.exe
+	@measuresTest.exe
 
 tests:	mathTest stringTest algorithmTest
 
