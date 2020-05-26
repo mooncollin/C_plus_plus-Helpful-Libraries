@@ -11,6 +11,8 @@
 #include <string_view>
 #include <array>
 #include <locale>
+#include <utility>
+#include <initializer_list>
 
 namespace collin
 {
@@ -19,6 +21,13 @@ namespace collin
         const std::unordered_set vowels = {'a', 'e', 'i', 'o', 'u'};
         const std::unordered_set consonants = {'b', 'c', 'd', 'f', 'g', 'h', 'j', 'k',
                 'l', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'x', 'y', 'z'};
+
+        constexpr std::string_view line_terminator =
+        #ifdef _WIN32
+        "\r\n";
+        #else
+        "\n";
+        #endif
 
         template<class charT>
         bool is_vowel(charT t, const std::locale& loc = {})
@@ -267,6 +276,7 @@ namespace collin
             ss.imbue(loc);
             
             T value;
+            ss.exceptions(std::istringstream::failbit | std::istringstream::badbit);
             ss >> value;
             return value;
         }

@@ -13,15 +13,13 @@ namespace collin
 {
     namespace files
     {
-        template<typename T = std::string>
-        class Lines : public std::istream_iterator<T>
+        template<class T = std::string, class CharT = char, class Traits = std::char_traits<CharT>, class Distance = std::ptrdiff_t>
+        class Lines : public std::istream_iterator<T, CharT, Traits, Distance>
         {
             using parent = std::istream_iterator<T>;
 
             public:
-                Lines() = default;
-
-                Lines(std::ifstream& input) : input(&input)
+                Lines(std::istream_type& input) : input(&input)
                 {
                     operator++();
                 }
@@ -87,12 +85,12 @@ namespace collin
                         {
                             if constexpr(std::is_same_v<T, std::string>)
                             {
-                                std::getline(*input, current, '\n');
+                                std::getline(*input, current);
                             }
                             else
                             {
                                 std::string str;
-                                std::getline(*input, str, '\n');
+                                std::getline(*input, str);
 
                                 current = from_string<T>(str);
                             }

@@ -215,7 +215,7 @@ namespace collin
 
 			template<class Container>
 			constexpr span(Container& cont) noexcept
-				: span(cont.data(), cont.size()) {}
+				: storage_(cont.data(), cont.size()) {}
 
 			constexpr span(const span& other) noexcept = default;
 			~span() noexcept = default;

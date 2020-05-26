@@ -6,6 +6,7 @@
 #include <utility>
 #include <array>
 #include <tuple>
+#include <system_error>
 
 namespace collin
 {
@@ -82,6 +83,73 @@ namespace collin
 
 	template<class... Types>
 	constexpr auto parameter_count_v = parameter_count<Types...>::value;
+
+	inline std::size_t unaligned_load(const char* p)
+	{
+		std::size_t result;
+		std::memcpy(&result, p, sizeof(result));
+		return result;
+	}
+
+	std::size_t hash_bytes(const void* ptr, std::size_t len, std::size_t seed)
+	{
+		constexpr std::size_t m = 0x5bd1e995;
+		std::size_t hash = seed ^ len;
+		auto buf = static_cast<const char*>(ptr);
+
+		while (len >= 4)
+		{
+			std::size_t k = unaligned_load(buf);
+			k *= m;
+			k ^= k >> 24;
+			k *= m;
+			hash *= m;
+			hash ^= k;
+			buf += 4;
+			len -= 4;
+		}
+
+		switch (len)
+		{
+			case 3:
+				hash ^= static_cast<unsigned char>(buf[2]) << 16;
+			case 2:
+				hash ^= static_cast<unsigned char>(buf[1]) << 8;
+			case 1:
+				hash ^= static_cast<unsigned char>(buf[0]);
+				hash *= m;
+		}
+
+		hash ^= hash >> 13;
+		hash *= m;
+		hash ^= hash >> 15;
+		return hash;
+	}
+
+	struct throw_on_error
+	{
+		explicit throw_on_error(std::string_view msg)
+			: msg(msg) {}
+
+		~throw_on_error() noexcept(false)
+		{
+			if (ec)
+			{
+				throw std::system_error(ec, msg.data());
+			}
+		}
+
+		throw_on_error(const throw_on_error&) = delete;
+		throw_on_error& operator=(const throw_on_error&) = delete;
+
+		operator std::error_code& () noexcept
+		{
+			return ec;
+		}
+
+		std::string_view msg;
+		std::error_code ec;
+	};
 }
 
 #endif

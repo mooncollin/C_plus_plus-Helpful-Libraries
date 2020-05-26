@@ -52,7 +52,7 @@ namespace collin
 				}
 
 				static inline std::mutex socket_count_m;
-				static inline int socket_ref_count {0};
+				static inline std::size_t socket_ref_count {0};
 		};
 	}
 }

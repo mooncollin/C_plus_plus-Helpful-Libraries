@@ -5,6 +5,8 @@
 #include <string_view>
 #include <algorithm>
 #include <iterator>
+#include <locale>
+#include <array>
 
 namespace collin
 {
@@ -47,37 +49,32 @@ namespace collin
 			return print(str, "\n", stream);
 		}
 
-		static std::istream& getline(std::istream& stream, std::string& str, std::string_view delim)
+		std::istream& getline(std::istream& stream, std::string& str, std::string_view delim)
 		{
 			std::string possible_delim;
 			auto delim_matching = std::begin(delim);
-			while (stream.good())
+			char ch;
+			while (stream.get(ch))
 			{
-				if (delim_matching == std::end(delim))
+				if (ch == *delim_matching)
 				{
-					return stream;
+					if (++delim_matching == std::end(delim))
+					{
+						return stream;
+					}
+					
+					possible_delim += ch;
 				}
-
-				char ch;
-				stream.get(ch);
-				if (stream.good())
+				else
 				{
-					if (ch == *delim_matching)
+					if (!possible_delim.empty())
 					{
-						delim_matching++;
-						possible_delim += ch;
+						str += possible_delim;
+						possible_delim.clear();
+						delim_matching = std::begin(delim);
 					}
-					else
-					{
-						if (!possible_delim.empty())
-						{
-							str += possible_delim;
-							possible_delim.clear();
-							delim_matching = std::begin(delim);
-						}
 
-						str += ch;
-					}
+					str += ch;
 				}
 			}
 

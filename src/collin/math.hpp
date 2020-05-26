@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <type_traits>
 #include <iostream>
+#include <cstdint>
 
 namespace collin
 {
@@ -20,19 +21,25 @@ namespace collin
 			return result;
 		}
 
-		template<class T, class = std::enable_if_t<std::is_integral_v<T>>>
+		template<class T, typename = std::enable_if_t<
+/* requires*/	std::is_integral_v<T>
+		>>
 		constexpr bool is_odd(const T val)
 		{
 			return val & 1;
 		}
 
-		template<class T, class = std::enable_if_t<std::is_integral_v<T>>>
+		template<class T, typename = std::enable_if_t<
+/* requires*/	std::is_integral_v<T>
+		>>
 		constexpr bool is_even(const T val)
 		{
 			return !is_odd(val);
 		}
 
-		template<class T, class = std::enable_if_t<std::is_integral_v<T>>>
+		template<class T, typename = std::enable_if_t<
+/* requires*/	std::is_integral_v<T>
+		>>
 		constexpr T gcd(T first, T second)
 		{
 			while(second != 0)
@@ -45,8 +52,10 @@ namespace collin
 			return first;
 		}
 
-		template<class T, class = std::enable_if_t<std::is_integral_v<T>>>
-		constexpr T pow(T base, int exp)
+		template<class T, class U, typename = std::enable_if_t<
+/* requires */ std::is_integral_v<T> && std::is_integral_v<U>
+		>>
+		constexpr auto pow(T base, U exp)
 		{
 			if(exp < 0)
 			{
@@ -60,7 +69,7 @@ namespace collin
 				}
 			}
 
-			T result = 1;
+			std::common_type_t<U, T> result = 1;
 			while(true)
 			{
 				if(is_odd(exp))
@@ -123,7 +132,7 @@ namespace collin
 						denominator_ = other.denominator_;
 					}
 
-					return this;
+					return *this;
 				}
 
 				constexpr basic_rational& operator=(basic_rational&&) = default;
@@ -135,7 +144,7 @@ namespace collin
 				{
 					numerator_ = std::move(other.numerator_);
 					denominator_ = std::move(other.denominator_);
-					return this;
+					return *this;
 				}
 
 				template<class intT2, typename = std::enable_if_t<
@@ -479,6 +488,36 @@ namespace collin
 		inline std::ostream& operator<<(std::ostream& os, const basic_rational<intT>& r)
 		{
 			return os << r.numerator() << "/" << r.denominator();
+		}
+
+		template<class IntT = int, class Float, typename = std::enable_if_t<
+/* requires */	std::is_integral_v<IntT> && std::is_floating_point_v<Float>
+		>>
+		constexpr IntT ceil(Float f)
+		{
+			const auto inum = static_cast<IntT>(f);
+			
+			if(f == static_cast<Float>(inum))
+			{
+				return inum;
+			}
+
+			return inum + (f > 0 ? 1 : 0);
+		}
+
+		template<class IntT = int, class Float, typename = std::enable_if_t<
+/* requires */	std::is_integral_v<IntT> && std::is_floating_point_v<Float>
+		>>
+		constexpr IntT floor(Float f)
+		{
+			const auto val_int = static_cast<IntT>(f);
+
+			if(f >= 0 || f == static_cast<Float>(val_int))
+			{
+				return val_int;
+			}
+
+			return val_int - 1;
 		}
 	}
 }

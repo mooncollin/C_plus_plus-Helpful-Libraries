@@ -24,81 +24,128 @@ namespace collin
         template<intmax_t Qn>
         struct static_gcd<0, Qn> : std::integral_constant<intmax_t, static_abs<Qn>::value> {};
 
-        template<class Ratio>
-        constexpr std::string_view suffix()
+        template<class T>
+        struct is_ratio : std::false_type {};
+
+        template<std::intmax_t N, std::intmax_t D>
+        struct is_ratio<std::ratio<N, D>> : std::true_type {};
+
+        template<class T>
+        constexpr bool is_ratio_v = is_ratio<T>::value;
+
+        template<class Ratio, typename = std::enable_if_t<
+/* requires */ is_ratio_v<Ratio>
+        >>
+        struct suffix_impl
         {
-            if constexpr(std::ratio_equal<Ratio, std::atto::type>::value)
-            {
-                return "a";
-            }
-            else if constexpr(std::ratio_equal<Ratio, std::femto::type>::value)
-            {
-                return "f";
-            }
-            else if constexpr(std::ratio_equal<Ratio, std::pico::type>::value)
-            {
-                return "p";
-            }
-            else if constexpr(std::ratio_equal<Ratio, std::nano::type>::value)
-            {
-                return "n";
-            }
-            else if constexpr(std::ratio_equal<Ratio, std::micro::type>::value)
-            {
-                return "µ";
-            }
-            else if constexpr(std::ratio_equal<Ratio, std::milli::type>::value)
-            {
-                return "m";
-            }
-            else if constexpr(std::ratio_equal<Ratio, std::centi::type>::value)
-            {
-                return "c";
-            }
-            else if constexpr(std::ratio_equal<Ratio, std::deci::type>::value)
-            {
-                return "d";
-            }
-            else if constexpr(std::ratio_equal<Ratio, std::ratio<1>::type>::value)
-            {
-                return "";
-            }
-            else if constexpr(std::ratio_equal<Ratio, std::deca::type>::value)
-            {
-                return "da";
-            }
-            else if constexpr(std::ratio_equal<Ratio, std::hecto::type>::value)
-            {
-                return "h";
-            }
-            else if constexpr(std::ratio_equal<Ratio, std::kilo::type>::value)
-            {
-                return "k";
-            }
-            else if constexpr(std::ratio_equal<Ratio, std::mega::type>::value)
-            {
-                return "M";
-            }
-            else if constexpr(std::ratio_equal<Ratio, std::giga::type>::value)
-            {
-                return "G";
-            }
-            else if constexpr(std::ratio_equal<Ratio, std::tera::type>::value)
-            {
-                return "T";
-            }
-            else if constexpr(std::ratio_equal<Ratio, std::peta::type>::value)
-            {
-                return "P";
-            }
-            else if constexpr(std::ratio_equal<Ratio, std::exa::type>::value)
-            {
-                return "E";
-            }
-            else
-            {
-                return "";
-            }
-        }
+            constexpr static std::string_view value {""};
+        };
+
+        template<>
+        struct suffix_impl<std::atto>
+        {
+            constexpr static std::string_view value {"a"};
+        };
+
+        template<>
+        struct suffix_impl<std::femto>
+        {
+            constexpr static std::string_view value {"f"};
+        };
+
+        template<>
+        struct suffix_impl<std::pico>
+        {
+            constexpr static std::string_view value {"p"};
+        };
+
+        template<>
+        struct suffix_impl<std::nano>
+        {
+            constexpr static std::string_view value {"n"};
+        };
+
+        template<>
+        struct suffix_impl<std::micro>
+        {
+            constexpr static std::string_view value {"µ"};
+        };
+
+        template<>
+        struct suffix_impl<std::milli>
+        {
+            constexpr static std::string_view value {"m"};
+        };
+
+        template<>
+        struct suffix_impl<std::centi>
+        {
+            constexpr static std::string_view value {"c"};
+        };
+
+        template<>
+        struct suffix_impl<std::deci>
+        {
+            constexpr static std::string_view value {"d"};
+        };
+
+        template<>
+        struct suffix_impl<std::deca>
+        {
+            constexpr static std::string_view value {"da"};
+        };
+
+        template<>
+        struct suffix_impl<std::hecto>
+        {
+            constexpr static std::string_view value {"h"};
+        };
+
+        template<>
+        struct suffix_impl<std::kilo>
+        {
+            constexpr static std::string_view value {"k"};
+        };
+
+        template<>
+        struct suffix_impl<std::mega>
+        {
+            constexpr static std::string_view value {"M"};
+        };
+
+        template<>
+        struct suffix_impl<std::giga>
+        {
+            constexpr static std::string_view value {"G"};
+        };
+
+        template<>
+        struct suffix_impl<std::tera>
+        {
+            constexpr static std::string_view value {"T"};
+        };
+
+        template<>
+        struct suffix_impl<std::peta>
+        {
+            constexpr static std::string_view value {"P"};
+        };
+
+        template<>
+        struct suffix_impl<std::exa>
+        {
+            constexpr static std::string_view value {"E"};
+        };
+
+        template<class Ratio, typename = std::enable_if_t<
+/* requires */  is_ratio_v<Ratio>
+        >>
+        struct suffix
+        {
+            constexpr static auto value = suffix_impl<Ratio>::value;
+        };
+
+        template<class T>
+        constexpr auto suffix_v = suffix<T>::value;
     }
 }

@@ -1,8 +1,8 @@
 include-folder := ../src/
 compiler := g++
-cl-compiler-flags := /std:c++2a -I'$(include-folder)' /EHsc
-gcc-compiler-flags := -std=c++2a -I'$(include-folder)'
-clang-compiler-flags := -std=c++2a -I'$(include-folder)'
+cl-compiler-flags := /std:c++2a /I'$(include-folder)' /EHsc
+gcc-compiler-flags := -std=c++2a -Wall -pedantic -I'$(include-folder)'
+clang-compiler-flags := -std=c++2a -Wall -pedantic -I'$(include-folder)'
 
 ifeq ($(compiler), cl)
 compiler-flags := $(cl-compiler-flags)
