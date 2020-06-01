@@ -51,6 +51,7 @@ namespace collin
 
 		std::istream& getline(std::istream& stream, std::string& str, std::string_view delim)
 		{
+			str.clear();
 			std::string possible_delim;
 			auto delim_matching = std::begin(delim);
 			char ch;

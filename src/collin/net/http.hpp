@@ -562,37 +562,37 @@ namespace collin
 				}
 		};
 
-		template<class Protocol = net::ip::tcp>
-		class http_acceptor : public net::basic_socket_acceptor<Protocol>
-		{
-			public:
-				using protocol_type = Protocol;
-				using endpoint_type = typename protocol_type::endpoint;
-				using socket_type = typename protocol_type::socket;
-			private:
-				using base = net::basic_socket_acceptor<protocol_type>;
-			public:
-				http_acceptor(net::io_context& ctx = net::io_context())
-					: base{ctx} {}
+		//template<class Protocol = net::ip::tcp>
+		//class http_acceptor : public net::basic_socket_acceptor<Protocol>
+		//{
+		//	public:
+		//		using protocol_type = Protocol;
+		//		using endpoint_type = typename protocol_type::endpoint;
+		//		using socket_type = typename protocol_type::socket;
+		//	private:
+		//		using base = net::basic_socket_acceptor<protocol_type>;
+		//	public:
+		//		http_acceptor(net::io_context& ctx = net::io_context())
+		//			: base{ctx} {}
 
-				http_acceptor(net::io_context& ctx, const protocol_type& protocol)
-					: base{ctx, protocol} {}
+		//		http_acceptor(net::io_context& ctx, const protocol_type& protocol)
+		//			: base{ctx, protocol} {}
 
-				http_acceptor(net::io_context& ctx, const endpoint_type& endpoint, bool reuse_addr = true)
-					: base{ctx, endpoint, reuse_addr} {}
+		//		http_acceptor(net::io_context& ctx, const endpoint_type& endpoint, bool reuse_addr = true)
+		//			: base{ctx, endpoint, reuse_addr} {}
 
-				http_acceptor(net::io_context& ctx, const protocol_type& protocol, const base::native_handle_type& handle)
-					: base{ctx, protocol, handle} {}
+		//		http_acceptor(net::io_context& ctx, const protocol_type& protocol, const base::native_handle_type& handle)
+		//			: base{ctx, protocol, handle} {}
 
-				~http_acceptor() = default;
-				
-				http_acceptor(const http_acceptor&) = delete;
-				http_acceptor(http_acceptor&&) = default;
+		//		~http_acceptor() = default;
+		//		
+		//		http_acceptor(const http_acceptor&) = delete;
+		//		http_acceptor(http_acceptor&&) = default;
 
-				http_acceptor& operator=(const http_acceptor&) = delete;
-				http_acceptor& operator=(http_acceptor&&) = delete;
-			private:
-				std::unordered_map<std::string, 
-		};
+		//		http_acceptor& operator=(const http_acceptor&) = delete;
+		//		http_acceptor& operator=(http_acceptor&&) = delete;
+		//	private:
+		//		std::unordered_map<std::string, 
+		//};
 	}
 }

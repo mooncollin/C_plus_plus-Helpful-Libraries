@@ -5,15 +5,16 @@
 #include <type_traits>
 #include <iostream>
 #include <cstdint>
+#include <cmath>
 
 namespace collin
 {
 	namespace math
 	{
-		constexpr auto factorial(std::size_t n)
+		constexpr std::uintmax_t factorial(std::size_t n)
 		{
-			std::uintmax_t result = 1;
-			for(std::size_t i = 2; i <= n; i++)
+			std::uintmax_t result {1};
+			for(std::size_t i {2}; i <= n; i++)
 			{
 				result *= i;
 			}

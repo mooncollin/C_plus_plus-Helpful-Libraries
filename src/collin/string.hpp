@@ -13,6 +13,11 @@
 #include <locale>
 #include <utility>
 #include <initializer_list>
+#include <charconv>
+#include <utility>
+
+#include "type_traits.hpp"
+#include "utility.hpp"
 
 namespace collin
 {
@@ -29,14 +34,14 @@ namespace collin
         "\n";
         #endif
 
-        template<class charT>
-        bool is_vowel(charT t, const std::locale& loc = {})
+        template<class CharT>
+        bool is_vowel(CharT t, const std::locale& loc = {})
         {
             return vowels.find(std::tolower(t, loc)) != std::cend(vowels);
         }
 
-        template<class charT>
-        bool is_consonant(charT t, const std::locale& loc = {})
+        template<class CharT>
+        bool is_consonant(CharT t, const std::locale& loc = {})
         {
             return consonants.find(std::tolower(t, loc)) != std::cend(consonants);
         }
@@ -209,14 +214,14 @@ namespace collin
             container.erase(remove_lower(std::begin(container), std::end(container), loc), std::end(container));
         }
 
-        template<class InputIterator, class charT>
-        InputIterator remove_character(InputIterator first, InputIterator last, charT c)
+        template<class InputIterator, class CharT>
+        InputIterator remove_character(InputIterator first, InputIterator last, CharT c)
         {
             return std::remove_if(first, last, [=](auto ch) {return ch == c;});
         }
 
-        template<class Container, class charT>
-        void remove_character(Container& container, charT c)
+        template<class Container, class CharT>
+        void remove_character(Container& container, CharT c)
         {
             container.erase(remove_character(std::begin(container), std::end(container), c), std::end(container));
         }
@@ -245,46 +250,55 @@ namespace collin
             lowercase(std::begin(container), std::end(container), std::begin(container), loc);
         }
 
-        void trim_front(std::string& s, std::string_view trim_str)
+        constexpr std::string_view trim_front(std::string_view s, std::string_view trim_str)
         {
             const auto start_position = s.find_first_not_of(trim_str);
-            if (start_position != std::string::npos)
-            {
-                s.erase(std::begin(s), std::begin(s) + start_position);
-            }
+            return s.substr(start_position);
         }
 
-        void trim_back(std::string& s, std::string_view trim_str)
+        constexpr std::string_view trim_back(std::string_view s, std::string_view trim_str)
         {
             const auto end_position = s.find_last_not_of(trim_str);
-            if (end_position != std::string::npos)
-            {
-                s.erase(std::begin(s) + end_position + 1, std::end(s));
-            }
+            return s.substr(0, end_position);
         }
 
-        void trim(std::string& s, std::string_view trim_str)
+        constexpr std::string_view trim(std::string_view s, std::string_view trim_str)
         {
-            trim_front(s, trim_str);
-            trim_back(s, trim_str);
+            return trim_back(trim_front(s, trim_str), trim_str);
         }
 
         template<class T>
-        T from_string(std::string_view str, const std::locale& loc = {})
+        T from_string(std::string_view str)
         {
-            std::istringstream ss(str.data());
-            ss.imbue(loc);
-            
             T value;
-            ss.exceptions(std::istringstream::failbit | std::istringstream::badbit);
-            ss >> value;
+
+            if constexpr (std::is_arithmetic_v<T> && !std::is_same_v<T, bool>)
+            {
+                auto [p, ec] = std::from_chars(str.data(), str.data() + std::size(str), value);
+                collin::throw_on_error te{"collin::strings::from_string"};
+                te.ec = std::make_error_code(ec);
+            }
+            else
+            {
+                std::istringstream ss(str.data());
+                ss.exceptions(std::istringstream::failbit | std::istringstream::badbit);
+                ss >> value;
+            }
+
             return value;
         }
 
         template<>
-        std::string from_string(std::string_view str, const std::locale& loc)
+        std::string from_string(std::string_view str)
         {
             return std::string(str);
+        }
+
+
+        template<>
+        std::string_view from_string(std::string_view str)
+        {
+            return str;
         }
 
         template<class T>
@@ -295,91 +309,55 @@ namespace collin
             return ss.str();
         }
 
-        template<class T, class Container, class Function>
-        std::vector<T> split_impl(const Container& container, std::string_view s, Function f)
+        template<>
+        char from_string(std::string_view str)
         {
-            std::vector<T> tokens;
-            std::regex split_regex(s.data());
-            std::regex_token_iterator<typename Container::const_iterator> it(std::cbegin(container), std::cend(container), split_regex, -1);
-            std::regex_token_iterator<typename Container::const_iterator> end;
-
-            while(it != end)
-            {
-                tokens.push_back(f(it->str()));
-                it++;
-            }
-
-            return tokens;
+            return str.front();
         }
 
-        template<class Function>
-        std::vector<std::string> split_impl(std::string_view str, std::string_view s, std::size_t n, Function f)
+        template<class OutputIterator, typename = std::enable_if_t<
+/* requires */  type_traits::is_iterator_v<OutputIterator>
+        >>
+        void split(std::string_view str, std::string_view delim, OutputIterator it, std::size_t amount=-1)
         {
-            std::vector<std::string> tokens;
-            std::regex split_regex(s.data());
-            std::regex_token_iterator<decltype(str)::const_iterator> it(std::cbegin(str), std::cend(str), split_regex, -1);
-            std::regex_token_iterator<decltype(str)::const_iterator> end;
+            std::size_t last_index {0};
+            std::size_t index {str.find(delim, last_index)};
 
-            while(it != end && n != 0)
+            while (index != std::string_view::npos && amount != 0)
             {
-                tokens.push_back(f(it->str()));
+                *it = str.substr(last_index, index - last_index);
                 it++;
-                n--;
+                last_index = index + 1;
+                index = str.find(delim, last_index);
+                amount--;
             }
 
-            std::string rest;
-
-            while(it != end)
-            {
-                rest += *it;
-                rest += s;
-                it++;
-            }
-
-            if(!rest.empty())
-            {
-                rest.erase(std::end(rest) - 1);
-                tokens.push_back(std::move(rest));
-            }
-
-            return tokens;
+            *it = str.substr(last_index);
         }
 
-        template<class T, class Container, class Function>
-        std::vector<T> split(const Container& container, std::string_view s, Function fn)
+        std::vector<std::string_view> split(std::string_view str, std::string_view delim, std::size_t amount=-1)
         {
-            return split_impl<T>(container, s, fn);
-        }
-
-        template<class T = std::string, class Container>
-        std::vector<T> split(const Container& container, std::string_view s=" ", std::size_t n=-1)
-        {
-            if constexpr(std::is_convertible_v<T, std::string>)
-            {
-                return split_impl(container, s, n, [](auto s){return from_string<std::string>(s);});
-            }
-            else
-            {
-                return split<T>(container, s, [](auto s) {return from_string<T>(s);});
-            }
+            std::vector<std::string_view> results;
+            split(str, delim, std::back_inserter(results), amount);
+            return results;
         }
 
         template<class InputIterator>
         std::string join(InputIterator begin, InputIterator end, std::string_view join_string)
         {
-            std::ostringstream s;
+            std::stringstream ss;
             while(begin != end)
             {
-                s << *begin;
+                ss << *begin;
                 if(begin + 1 != end)
                 {
-                    s << join_string;
+                    ss << join_string;
                 }
 
                 begin++;
             }
 
-            return s.str();
+            return ss.str();
         }
 
         template<class Container>

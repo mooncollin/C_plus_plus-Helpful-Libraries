@@ -8,479 +8,418 @@
 
 using namespace std::literals;
 
-void is_vowel_test()
+class vowel_test : public collin::test::test_case
 {
-	const auto test_values = collin::test::make_test_data
-	(
-		collin::strings::is_vowel<char>,
-			{
-				std::make_pair(std::make_tuple('a', std::locale{}), true),
-				std::make_pair(std::make_tuple('b', std::locale{}), false),
-				std::make_pair(std::make_tuple('c', std::locale{}), false),
-				std::make_pair(std::make_tuple('d', std::locale{}), false),
-				std::make_pair(std::make_tuple('e', std::locale{}), true),
-				std::make_pair(std::make_tuple('f', std::locale{}), false),
-				std::make_pair(std::make_tuple('g', std::locale{}), false),
-				std::make_pair(std::make_tuple('h', std::locale{}), false),
-				std::make_pair(std::make_tuple('i', std::locale{}), true),
-				std::make_pair(std::make_tuple('j', std::locale{}), false),
-				std::make_pair(std::make_tuple('k', std::locale{}), false),
-				std::make_pair(std::make_tuple('l', std::locale{}), false),
-				std::make_pair(std::make_tuple('m', std::locale{}), false),
-				std::make_pair(std::make_tuple('n', std::locale{}), false),
-				std::make_pair(std::make_tuple('o', std::locale{}), true),
-				std::make_pair(std::make_tuple('p', std::locale{}), false),
-				std::make_pair(std::make_tuple('q', std::locale{}), false),
-				std::make_pair(std::make_tuple('r', std::locale{}), false),
-				std::make_pair(std::make_tuple('s', std::locale{}), false),
-				std::make_pair(std::make_tuple('t', std::locale{}), false),
-				std::make_pair(std::make_tuple('u', std::locale{}), true),
-				std::make_pair(std::make_tuple('v', std::locale{}), false),
-				std::make_pair(std::make_tuple('w', std::locale{}), false),
-				std::make_pair(std::make_tuple('x', std::locale{}), false),
-				std::make_pair(std::make_tuple('y', std::locale{}), false),
-				std::make_pair(std::make_tuple('z', std::locale{}), false),
-			}
-	);
+    public:
+        vowel_test()
+            : collin::test::test_case{"vowel_test"} {}
 
-	collin::test::assert_test_data(test_values, "is_vowel");
-}
-
-void is_consonant_test()
-{
-	const auto test_values = collin::test::make_test_data
-	(
-		collin::strings::is_consonant<char>,
-			{
-				std::make_pair(std::make_tuple('a', std::locale{}), false),
-				std::make_pair(std::make_tuple('b', std::locale{}), true),
-				std::make_pair(std::make_tuple('c', std::locale{}), true),
-				std::make_pair(std::make_tuple('d', std::locale{}), true),
-				std::make_pair(std::make_tuple('e', std::locale{}), false),
-				std::make_pair(std::make_tuple('f', std::locale{}), true),
-				std::make_pair(std::make_tuple('g', std::locale{}), true),
-				std::make_pair(std::make_tuple('h', std::locale{}), true),
-				std::make_pair(std::make_tuple('i', std::locale{}), false),
-				std::make_pair(std::make_tuple('j', std::locale{}), true),
-				std::make_pair(std::make_tuple('k', std::locale{}), true),
-				std::make_pair(std::make_tuple('l', std::locale{}), true),
-				std::make_pair(std::make_tuple('m', std::locale{}), true),
-				std::make_pair(std::make_tuple('n', std::locale{}), true),
-				std::make_pair(std::make_tuple('o', std::locale{}), false),
-				std::make_pair(std::make_tuple('p', std::locale{}), true),
-				std::make_pair(std::make_tuple('q', std::locale{}), true),
-				std::make_pair(std::make_tuple('r', std::locale{}), true),
-				std::make_pair(std::make_tuple('s', std::locale{}), true),
-				std::make_pair(std::make_tuple('t', std::locale{}), true),
-				std::make_pair(std::make_tuple('u', std::locale{}), false),
-				std::make_pair(std::make_tuple('v', std::locale{}), true),
-				std::make_pair(std::make_tuple('w', std::locale{}), true),
-				std::make_pair(std::make_tuple('x', std::locale{}), true),
-				std::make_pair(std::make_tuple('y', std::locale{}), true),
-				std::make_pair(std::make_tuple('z', std::locale{}), true),
-			}
-	);
-
-	collin::test::assert_test_data(test_values, "is_consonant");
-}
-
-void contains_vowel_test()
-{
-	const auto test_values = collin::test::make_test_data
-	(
-		static_cast<bool(*)(const std::string&, const std::locale&)>(collin::strings::contains_vowel),
-			{
-				std::make_pair(std::make_tuple("Hello", std::locale{}), true),
-				std::make_pair(std::make_tuple("My", std::locale{}), false),
-				std::make_pair(std::make_tuple("cool", std::locale{}), true),
-				std::make_pair(std::make_tuple("vowels", std::locale{}), true),
-				std::make_pair(std::make_tuple("is", std::locale{}), true),
-				std::make_pair(std::make_tuple("ghjbnj", std::locale{}), false),
-			}
-	);
-
-	collin::test::assert_test_data(test_values, "contains_vowel");
-}
-
-void contains_consonant_test()
-{
-	const auto test_values = collin::test::make_test_data
-	(
-		static_cast<bool(*)(const std::string&, const std::locale&)>(collin::strings::contains_consonant<std::string>),
-			{
-				std::make_pair(std::make_tuple("Hello", std::locale{}), true),
-				std::make_pair(std::make_tuple("My", std::locale{}), true),
-				std::make_pair(std::make_tuple("cool", std::locale{}), true),
-				std::make_pair(std::make_tuple("vowels", std::locale{}), true),
-				std::make_pair(std::make_tuple("is", std::locale{}), true),
-				std::make_pair(std::make_tuple("ghjbnj", std::locale{}), true),
-				std::make_pair(std::make_tuple("iiii", std::locale{}), false),
-			}
-	);
-
-	collin::test::assert_test_data(test_values, "contains_consonant");
-}
-
-void remove_punctuation_test()
-{
-	const auto transform_f = [] (std::string s) {
-		collin::strings::remove_punctuation(s);
-		return s;
-	};
-
-	const auto test_values = collin::test::make_test_data
-	(
-		transform_f,
-			{
-				std::make_pair(std::make_tuple("!!"), ""s),
-				std::make_pair(std::make_tuple("!!fef"), "fef"s),
-				std::make_pair(std::make_tuple("Hello!"), "Hello"s),
-				std::make_pair(std::make_tuple("I/MfffS.OC00l!"), "IMfffSOC00l"s)
-			}
-	);
-
-	collin::test::assert_test_data(test_values, "remove_punctuation");
-}
-
-void remove_spaces_test()
-{
-	const auto transform_f = [] (std::string s) {
-		collin::strings::remove_spaces(s);
-		return s;
-	};
-
-	const auto test_values = collin::test::make_test_data
-	(
-		transform_f,
-			{
-				std::make_pair(std::make_tuple("These are words"), "Thesearewords"s),
-				std::make_pair(std::make_tuple("Hello !!"), "Hello!!"s),
-				std::make_pair(std::make_tuple("What"), "What"s),
-				std::make_pair(std::make_tuple("Teeee ee"), "Teeeeee"s),
-				std::make_pair(std::make_tuple("fff "), "fff"s)
-			}
-	);
-
-	collin::test::assert_test_data(test_values, "remove_spaces");
-}
-
- void remove_alphanumerics_test()
- {
- 	const auto transform_f = [] (std::string s) {
- 		collin::strings::remove_alphanumerics(s);
- 		return s;
- 	};
-
- 	const auto test_values = collin::test::make_test_data
- 	(
- 		transform_f,
- 			{
- 				std::make_pair(std::make_tuple("How Ar3 Y0u??"), "  ??"s),
- 				std::make_pair(std::make_tuple("T$$ To^"), "$$ ^"s),
- 			}
- 	);
-
- 	collin::test::assert_test_data(test_values, "remove_alphanumerics");
- }
-
- void remove_blanks_test()
- {
- 	const auto transform_f = [] (std::string s) {
- 		collin::strings::remove_blanks(s);
- 		return s;
- 	};
-
- 	const auto test_values = collin::test::make_test_data
- 	(
- 		transform_f,
- 			{
- 				std::make_pair(std::make_tuple("These are words"), "Thesearewords"s),
- 				std::make_pair(std::make_tuple("Hello\t!!"), "Hello!!"s),
- 				std::make_pair(std::make_tuple("What"), "What"s),
- 				std::make_pair(std::make_tuple("Teeee  \tee"), "Teeeeee"s),
- 				std::make_pair(std::make_tuple("fff   t\t\n"), std::isblank('\n', std::locale{}) ? "ffft"s : "ffft\n"s)
- 			}
- 	);
-
- 	collin::test::assert_test_data(test_values, "remove_blanks");
- }
-
- void remove_hexdigits_test()
- {
- 	const auto transform_f = [] (std::string s) {
- 		collin::strings::remove_hexdigits(s);
- 		return s;
- 	};
-
- 	const auto test_values = collin::test::make_test_data
- 	(
- 		transform_f,
- 		 {
- 			 std::make_pair(std::make_tuple("A"), ""s),
- 			 std::make_pair(std::make_tuple("B"), ""s),
- 			 std::make_pair(std::make_tuple("C"), ""s),
- 			 std::make_pair(std::make_tuple("D"), ""s),
- 			 std::make_pair(std::make_tuple("E"), ""s),
- 			 std::make_pair(std::make_tuple("F"), ""s),
- 			 std::make_pair(std::make_tuple("1"), ""s),
- 			 std::make_pair(std::make_tuple("2"), ""s),
- 			 std::make_pair(std::make_tuple("3"), ""s),
- 			 std::make_pair(std::make_tuple("4"), ""s),
- 			 std::make_pair(std::make_tuple("5"), ""s),
- 			 std::make_pair(std::make_tuple("6"), ""s),
- 			 std::make_pair(std::make_tuple("7"), ""s),
- 			 std::make_pair(std::make_tuple("8"), ""s),
- 			 std::make_pair(std::make_tuple("9"), ""s),
- 			 std::make_pair(std::make_tuple("0"), ""s),
- 			 std::make_pair(std::make_tuple("Auihel88 *"), "uihl *"s),
- 		 }
- 	);
-
- 	collin::test::assert_test_data(test_values, "remove_hexdigits");
- }
-
- void remove_upper_test()
- {
- 	const auto transform_f = [] (std::string s) {
- 		collin::strings::remove_upper(s);
- 		return s;
- 	};
-
- 	const auto test_values = collin::test::make_test_data
- 	(
- 		transform_f,
- 			{
- 				std::make_pair(std::make_tuple("SUP"), ""s),
- 				std::make_pair(std::make_tuple("Sup"), "up"s),
- 				std::make_pair(std::make_tuple("SUP !!"), " !!"s),
- 			}
- 	);
-
- 	collin::test::assert_test_data(test_values, "remove_upper");
- }
-
- void remove_lower_test()
- {
- 	const auto transform_f = [] (std::string s) {
- 		collin::strings::remove_lower(s);
- 		return s;
- 	};
-
- 	const auto test_values = collin::test::make_test_data
- 	(
- 		transform_f,
- 			{
- 				std::make_pair(std::make_tuple("SUP"), "SUP"s),
- 				std::make_pair(std::make_tuple("Sup"), "S"s),
- 				std::make_pair(std::make_tuple("SUP f!!"), "SUP !!"s),
- 			}
- 	);
-
- 	collin::test::assert_test_data(test_values, "remove_lower");
- }
-
- void remove_character_test()
- {
- 	const auto transform_f = [] (std::string s, char c) {
- 		collin::strings::remove_character(s, c);
- 		return s;
- 	};
-
- 	const auto test_values = collin::test::make_test_data
- 	(
- 		transform_f,
- 			{
- 				std::make_pair(std::make_tuple("cccc", 'c'), ""s),
- 				std::make_pair(std::make_tuple("ccccFFF", 'c'), "FFF"s),
- 				std::make_pair(std::make_tuple("Hello!", 'l'), "Heo!"s),
- 				std::make_pair(std::make_tuple("Tee Tee", 'T'), "ee ee"s),
- 			}
- 	);
-
- 	collin::test::assert_test_data(test_values, "remove_character");
- }
-
- void uppercase_test()
- {
- 	const auto transform_f = [] (std::string s) {
- 		collin::strings::uppercase(s);
- 		return s;
- 	};
-	
- 	const auto test_values = collin::test::make_test_data
- 	(
- 		transform_f,
- 			{
- 				std::make_pair(std::make_tuple("hello!"), "HELLO!"s),
- 				std::make_pair(std::make_tuple("h ello!"), "H ELLO!"s),
- 				std::make_pair(std::make_tuple("helLO!"), "HELLO!"s),
- 				std::make_pair(std::make_tuple("HEHOdd"), "HEHODD"s),
- 			}
- 	);
-
- 	collin::test::assert_test_data(test_values, "uppercase");
- }
-
- void lowercase_test()
- {
- 	const auto transform_f = [] (std::string s) {
- 		collin::strings::lowercase(s);
- 		return s;
- 	};
-	
- 	const auto test_values = collin::test::make_test_data
- 	(
- 		transform_f,
- 			{
- 				std::make_pair(std::make_tuple("hello!"), "hello!"s),
- 				std::make_pair(std::make_tuple("h ello!"), "h ello!"s),
- 				std::make_pair(std::make_tuple("helLO!"), "hello!"s),
- 				std::make_pair(std::make_tuple("HEHOdd"), "hehodd"s),
- 			}
- 	);
-
- 	collin::test::assert_test_data(test_values, "lowercase");
- }
-
- template<typename T>
- auto get_split_numeric_values()
- {
- 	return collin::test::make_test_data
- 	(
- 		collin::strings::split<T, std::string>,
- 			{
- 				std::make_pair(std::make_tuple("1 2 3 4", " ", -1), std::vector<T> {1, 2, 3, 4}),
- 				std::make_pair(std::make_tuple("1\t2\t3\t4", "\t", -1), std::vector<T> {1, 2, 3, 4}),
- 				std::make_pair(std::make_tuple("1fe2fe3fe4", "fe", -1), std::vector<T> {1, 2, 3, 4}),
- 				std::make_pair(std::make_tuple("1|2|3|4", "\\|", -1), std::vector<T> {1, 2, 3, 4})
- 			}
- 	);
- }
-
- void split_test()
- {
- 	std::error_code ec;
- 	const auto test_string_values = collin::test::make_test_data
- 	(
- 		collin::strings::split<std::string, std::string>,
- 			{
- 				std::make_pair(std::make_tuple("Here are words", " ", -1), std::vector<std::string> {"Here", "are", "words"}),
- 				std::make_pair(std::make_tuple("Here!are!words", "!", -1), std::vector<std::string> {"Here", "are", "words"}),
- 				std::make_pair(std::make_tuple("Here are words", " ", 1), std::vector<std::string> {"Here", "are words"}),
- 				std::make_pair(std::make_tuple("Here are words", " ", 2), std::vector<std::string> {"Here", "are", "words"}),
- 				std::make_pair(std::make_tuple("Here are words", " ", 3), std::vector<std::string> {"Here", "are", "words"}),
- 				std::make_pair(std::make_tuple("Here are words", " ", 99), std::vector<std::string> {"Here", "are", "words"}),
- 				std::make_pair(std::make_tuple("Here are words", " ", 0), std::vector<std::string> {"Here are words"})
- 			}
- 	);
-
- 	const auto test_int_values = get_split_numeric_values<int>();
- 	const auto test_long_values = get_split_numeric_values<long>();
- 	const auto test_unsigned_long_values = get_split_numeric_values<unsigned long>();
- 	const auto test_long_int_values = get_split_numeric_values<long int>();
- 	const auto test_float_values = get_split_numeric_values<float>();
- 	const auto test_double_values = get_split_numeric_values<double>();
- 	const auto test_long_double_values = get_split_numeric_values<long double>();
- 	const auto test_long_long_values = get_split_numeric_values<long long>();
- 	const auto test_unsigned_long_long_values = get_split_numeric_values<unsigned long long>();
-
- 	collin::test::assert_test_data(test_string_values, "split Strings");
- 	collin::test::assert_test_data(test_int_values, "split Ints");
- 	collin::test::assert_test_data(test_long_values, "split Longs");
- 	collin::test::assert_test_data(test_unsigned_long_values, "split Unsigned Longs");
- 	collin::test::assert_test_data(test_long_int_values, "split Long Ints");
- 	collin::test::assert_test_data(test_float_values, "split Floats");
- 	collin::test::assert_test_data(test_double_values, "split Doubles");
- 	collin::test::assert_test_data(test_long_double_values, "split Long Doubles");
- 	collin::test::assert_test_data(test_long_long_values, "split Long Longs");
- 	collin::test::assert_test_data(test_unsigned_long_long_values, "split Unsigned Long Longs");
- }
-
- void join_test()
- {
- 	using join_vector_func_t = std::string (*)(const std::vector<const char*>&, std::string_view);
-
- 	const auto join_vector_func = static_cast<join_vector_func_t>(collin::strings::join);
-
- 	const auto test_string_values = collin::test::make_test_data
- 	(
- 		join_vector_func,
- 			{
- 				std::make_pair(std::make_tuple(std::vector {"These", "are", "words"}, " "s), "These are words"s),
- 				std::make_pair(std::make_tuple(std::vector {"These", "are", "words"}, "\n"s), "These\nare\nwords"s)
- 			}
- 	);
-
- 	const auto words = std::vector {"Look", "at", "these", "strings"};
-
- 	using join_it_func_t = std::string (*)(typename decltype(words)::const_iterator, typename decltype(words)::const_iterator, std::string_view);
-
- 	const auto join_it_func = static_cast<join_it_func_t>(collin::strings::join);
-
- 	const auto test_it_values = collin::test::make_test_data
- 	(
- 		join_it_func,
- 			{
- 				std::make_pair(std::make_tuple(std::begin(words), std::end(words), " "s), "Look at these strings"s),
- 				std::make_pair(std::make_tuple(std::begin(words) + 1, std::end(words), "$$$$"s), "at$$$$these$$$$strings"s),
- 			}
- 	);
-
-
- 	collin::test::assert_test_data(test_string_values, "join Strings");
- 	collin::test::assert_test_data(test_it_values, "join Iterators");
- }
-
- template<class T>
- using from_string_func_t = T(*)(std::string_view, const std::locale&);
-
- void from_string_test()
- {
- 	std::error_code ec;
- 	const auto int_test_values = collin::test::make_test_data
- 	(
- 		static_cast<from_string_func_t<int>>(collin::strings::from_string),
- 		 	{
- 				std::make_pair(std::make_tuple("1", std::locale{}), 1),
- 				std::make_pair(std::make_tuple("1223", std::locale{}), 1223),
- 				std::make_pair(std::make_tuple("-2391", std::locale{}), -2391),
- 				std::make_pair(std::make_tuple("37943", std::locale{}), 37943),
- 				std::make_pair(std::make_tuple("0", std::locale{}), 0),
- 			}
- 	);
-
-    const auto double_test_values = collin::test::make_test_data
-    (
-        static_cast<from_string_func_t<double>>(collin::strings::from_string),
+        void operator()() override
         {
-            std::make_pair(std::make_tuple("1.5", std::locale{}), 1.5),
-            std::make_pair(std::make_tuple("-2.23478", std::locale{}), -2.23478),
-            std::make_pair(std::make_tuple("0", std::locale{}), 0.0),
-            std::make_pair(std::make_tuple("1", std::locale{}), 1.0),
+            collin::test::assert_true(collin::strings::is_vowel('a'));
+            collin::test::assert_false(collin::strings::is_vowel('b'));
+            collin::test::assert_false(collin::strings::is_vowel('c'));
+            collin::test::assert_false(collin::strings::is_vowel('d'));
+            collin::test::assert_true(collin::strings::is_vowel('e'));
+            collin::test::assert_false(collin::strings::is_vowel('f'));
+            collin::test::assert_false(collin::strings::is_vowel('g'));
+            collin::test::assert_false(collin::strings::is_vowel('h'));
+            collin::test::assert_true(collin::strings::is_vowel('i'));
+            collin::test::assert_false(collin::strings::is_vowel('j'));
+            collin::test::assert_false(collin::strings::is_vowel('k'));
+            collin::test::assert_false(collin::strings::is_vowel('l'));
+            collin::test::assert_false(collin::strings::is_vowel('m'));
+            collin::test::assert_false(collin::strings::is_vowel('n'));
+            collin::test::assert_true(collin::strings::is_vowel('o'));
+            collin::test::assert_false(collin::strings::is_vowel('p'));
+            collin::test::assert_false(collin::strings::is_vowel('q'));
+            collin::test::assert_false(collin::strings::is_vowel('r'));
+            collin::test::assert_false(collin::strings::is_vowel('s'));
+            collin::test::assert_false(collin::strings::is_vowel('t'));
+            collin::test::assert_true(collin::strings::is_vowel('u'));
+            collin::test::assert_false(collin::strings::is_vowel('v'));
+            collin::test::assert_false(collin::strings::is_vowel('w'));
+            collin::test::assert_false(collin::strings::is_vowel('x'));
+            collin::test::assert_false(collin::strings::is_vowel('y'));
+            collin::test::assert_false(collin::strings::is_vowel('z'));
         }
-    );
+};
 
- 	collin::test::assert_test_data(int_test_values, "from string Integers");
-    collin::test::assert_test_data(double_test_values, "from string Doubles");
- }
+class consonant_test : public collin::test::test_case
+{
+    public:
+        consonant_test()
+            : collin::test::test_case{"consonant_test"} {}
+
+        void operator()() override
+        {
+            collin::test::assert_false(collin::strings::is_consonant('a'));
+            collin::test::assert_true(collin::strings::is_consonant('b'));
+            collin::test::assert_true(collin::strings::is_consonant('c'));
+            collin::test::assert_true(collin::strings::is_consonant('d'));
+            collin::test::assert_false(collin::strings::is_consonant('e'));
+            collin::test::assert_true(collin::strings::is_consonant('f'));
+            collin::test::assert_true(collin::strings::is_consonant('g'));
+            collin::test::assert_true(collin::strings::is_consonant('h'));
+            collin::test::assert_false(collin::strings::is_consonant('i'));
+            collin::test::assert_true(collin::strings::is_consonant('j'));
+            collin::test::assert_true(collin::strings::is_consonant('k'));
+            collin::test::assert_true(collin::strings::is_consonant('l'));
+            collin::test::assert_true(collin::strings::is_consonant('m'));
+            collin::test::assert_true(collin::strings::is_consonant('n'));
+            collin::test::assert_false(collin::strings::is_consonant('o'));
+            collin::test::assert_true(collin::strings::is_consonant('p'));
+            collin::test::assert_true(collin::strings::is_consonant('q'));
+            collin::test::assert_true(collin::strings::is_consonant('r'));
+            collin::test::assert_true(collin::strings::is_consonant('s'));
+            collin::test::assert_true(collin::strings::is_consonant('t'));
+            collin::test::assert_false(collin::strings::is_consonant('u'));
+            collin::test::assert_true(collin::strings::is_consonant('v'));
+            collin::test::assert_true(collin::strings::is_consonant('w'));
+            collin::test::assert_true(collin::strings::is_consonant('x'));
+            collin::test::assert_true(collin::strings::is_consonant('y'));
+            collin::test::assert_true(collin::strings::is_consonant('z'));
+        }
+};
+
+class contains_vowel_test : public collin::test::test_case
+{
+    public:
+        contains_vowel_test()
+            : collin::test::test_case{ "contains_vowel_test" } {}
+
+        void operator()() override
+        {
+            collin::test::assert_true(collin::strings::contains_vowel("Hello"));
+            collin::test::assert_false(collin::strings::contains_vowel("My"));
+            collin::test::assert_true(collin::strings::contains_vowel("cool"));
+            collin::test::assert_true(collin::strings::contains_vowel("vowels"));
+            collin::test::assert_true(collin::strings::contains_vowel("is"));
+            collin::test::assert_false(collin::strings::contains_vowel("ghjbnj"));
+        }
+};
+
+class contains_consonant_test : public collin::test::test_case
+{
+    public:
+        contains_consonant_test()
+            : collin::test::test_case{ "contains_consonant_test" } {}
+
+        void operator()() override
+        {
+            collin::test::assert_true(collin::strings::contains_consonant("Hello"));
+            collin::test::assert_true(collin::strings::contains_consonant("My"));
+            collin::test::assert_true(collin::strings::contains_consonant("cool"));
+            collin::test::assert_true(collin::strings::contains_consonant("vowels"));
+            collin::test::assert_true(collin::strings::contains_consonant("is"));
+            collin::test::assert_true(collin::strings::contains_consonant("ghjbnj"));
+            collin::test::assert_false(collin::strings::contains_consonant("iiii"));
+        }
+};
+
+class remove_punctuation_test : public collin::test::test_case
+{
+    public:
+        remove_punctuation_test()
+            : collin::test::test_case{ "remove_punctuation_test" } {}
+
+        void operator()() override
+        {
+            const auto transform_f = [](std::string s) {
+                collin::strings::remove_punctuation(s);
+                return s;
+            };
+
+            collin::test::assert_equal(transform_f("!!"), "");
+            collin::test::assert_equal(transform_f("!!fef"), "fef");
+            collin::test::assert_equal(transform_f("Hello!"), "Hello");
+            collin::test::assert_equal(transform_f("I/MfffS.OC00l!"), "IMfffSOC00l");
+        }
+};
+
+class remove_spaces_test : public collin::test::test_case
+{
+    public:
+        remove_spaces_test()
+            : collin::test::test_case{ "remove_spaces_test" } {}
+
+        void operator()() override
+        {
+            const auto transform_f = [](std::string s) {
+                collin::strings::remove_spaces(s);
+                return s;
+            };
+
+            collin::test::assert_equal(transform_f("These are words"), "Thesearewords");
+            collin::test::assert_equal(transform_f("Hello !!"), "Hello!!");
+            collin::test::assert_equal(transform_f("What"), "What");
+            collin::test::assert_equal(transform_f("Teeee ee"), "Teeeeee");
+            collin::test::assert_equal(transform_f("fff "), "fff");
+        }
+};
+
+class remove_alphanumerics_test : public collin::test::test_case
+{
+    public:
+        remove_alphanumerics_test()
+            : collin::test::test_case{ "remove_alphanumerics_test" } {}
+
+        void operator()() override
+        {
+            const auto transform_f = [](std::string s) {
+                collin::strings::remove_alphanumerics(s);
+                return s;
+            };
+
+            collin::test::assert_equal(transform_f("How Ar3 Y0u??"), "  ??");
+            collin::test::assert_equal(transform_f("T$$ To^"), "$$ ^");
+        }
+};
+
+class remove_blanks_test : public collin::test::test_case
+{
+    public:
+        remove_blanks_test()
+            : collin::test::test_case{ "remove_blanks_test" } {}
+
+        void operator()() override
+        {
+            const auto transform_f = [](std::string s) {
+                collin::strings::remove_blanks(s);
+                return s;
+            };
+
+            collin::test::assert_equal(transform_f("These are words"), "Thesearewords");
+            collin::test::assert_equal(transform_f("Hello\t!!"), "Hello!!");
+            collin::test::assert_equal(transform_f("What"), "What");
+            collin::test::assert_equal(transform_f("Teeee  \tee"), "Teeeeee");
+            collin::test::assert_equal(transform_f("fff   t\t\n"), "ffft");
+        }
+};
+
+class remove_hexdigits_test : public collin::test::test_case
+{
+    public:
+        remove_hexdigits_test()
+            : collin::test::test_case{ "remove_hexdigits_test" } {}
+
+        void operator()() override
+        {
+            const auto transform_f = [](std::string s) {
+                collin::strings::remove_hexdigits(s);
+                return s;
+            };
+
+            collin::test::assert_equal(transform_f("A"), "");
+            collin::test::assert_equal(transform_f("B"), "");
+            collin::test::assert_equal(transform_f("C"), "");
+            collin::test::assert_equal(transform_f("D"), "");
+            collin::test::assert_equal(transform_f("E"), "");
+            collin::test::assert_equal(transform_f("F"), "");
+            collin::test::assert_equal(transform_f("1"), "");
+            collin::test::assert_equal(transform_f("2"), "");
+            collin::test::assert_equal(transform_f("3"), "");
+            collin::test::assert_equal(transform_f("4"), "");
+            collin::test::assert_equal(transform_f("5"), "");
+            collin::test::assert_equal(transform_f("6"), "");
+            collin::test::assert_equal(transform_f("7"), "");
+            collin::test::assert_equal(transform_f("8"), "");
+            collin::test::assert_equal(transform_f("9"), "");
+            collin::test::assert_equal(transform_f("0"), "");
+            collin::test::assert_equal(transform_f("Auihel88 *"), "uihl *");
+        }
+};
+
+class remove_upper_test : public collin::test::test_case
+{
+    public:
+        remove_upper_test()
+            : collin::test::test_case{ "remove_upper_test" } {}
+
+        void operator()() override
+        {
+            const auto transform_f = [](std::string s) {
+                collin::strings::remove_upper(s);
+                return s;
+            };
+
+            collin::test::assert_equal(transform_f("SUP"), "");
+            collin::test::assert_equal(transform_f("Sup"), "up");
+            collin::test::assert_equal(transform_f("SUP !!"), " !!");
+        }
+};
+
+class remove_lower_test : public collin::test::test_case
+{
+    public:
+        remove_lower_test()
+            : collin::test::test_case{"remove_lower_test"} {}
+
+        void operator()() override
+        {
+            const auto transform_f = [](std::string s) {
+                collin::strings::remove_lower(s);
+                return s;
+            };
+
+            collin::test::assert_equal(transform_f("SUP"), "SUP");
+            collin::test::assert_equal(transform_f("Sup"), "S");
+            collin::test::assert_equal(transform_f("SUP f!!"), "SUP !!");
+        }
+};
+
+class remove_character_test : public collin::test::test_case
+{
+    public:
+        remove_character_test()
+            : collin::test::test_case{"remove_character_test"} {}
+
+        void operator()() override
+        {
+            const auto transform_f = [](std::string s, char c) {
+                collin::strings::remove_character(s, c);
+                return s;
+            };
+
+            collin::test::assert_equal(transform_f("cccc", 'c'), "");
+            collin::test::assert_equal(transform_f("ccccFFF", 'c'), "FFF");
+            collin::test::assert_equal(transform_f("Hello!", 'l'), "Heo!");
+            collin::test::assert_equal(transform_f("Tee Tee", 'T'), "ee ee");
+        }
+};
+
+class uppercase_test : public collin::test::test_case
+{
+    public: 
+        uppercase_test()
+            : collin::test::test_case{"uppercase_test"} {}
+
+        void operator()() override
+        {
+            const auto transform_f = [](std::string s) {
+                collin::strings::uppercase(s);
+                return s;
+            };
+
+            collin::test::assert_equal(transform_f("hello!"), "HELLO!");
+            collin::test::assert_equal(transform_f("h ello!"), "H ELLO!");
+            collin::test::assert_equal(transform_f("helLO!"), "HELLO!");
+            collin::test::assert_equal(transform_f("HEHOdd"), "HEHODD");
+        }
+};
+
+class lowercase_test : public collin::test::test_case
+{
+    public:
+        lowercase_test()
+            : collin::test::test_case{"lowercase_test"} {}
+
+        void operator()() override
+        {
+            const auto transform_f = [](std::string s) {
+                collin::strings::lowercase(s);
+                return s;
+            };
+
+            collin::test::assert_equal(transform_f("hello!"), "hello!");
+            collin::test::assert_equal(transform_f("h ello!"), "h ello!");
+            collin::test::assert_equal(transform_f("helLO!"), "hello!");
+            collin::test::assert_equal(transform_f("HEHOdd"), "hehodd");
+        }
+};
+
+class split_test : public collin::test::test_case
+{
+    public:
+        split_test()
+            : collin::test::test_case{"split_test"} {}
+
+        void operator()() override
+        {
+            collin::test::assert_equal(collin::strings::split("Here are words", " "), std::vector<std::string_view>{ "Here", "are", "words"});
+            collin::test::assert_equal(collin::strings::split("Here!are!words", "!"), std::vector<std::string_view>{ "Here", "are", "words" });
+            collin::test::assert_equal(collin::strings::split("Here are words", " ", 1), std::vector<std::string_view>{ "Here", "are words" });
+            collin::test::assert_equal(collin::strings::split("Here are words", " ", 2), std::vector<std::string_view>{ "Here", "are", "words" });
+            collin::test::assert_equal(collin::strings::split("Here are words", " ", 3), std::vector<std::string_view>{ "Here", "are", "words" });
+            collin::test::assert_equal(collin::strings::split("Here are words", " ", 99), std::vector<std::string_view>{ "Here", "are", "words" });
+            collin::test::assert_equal(collin::strings::split("Here are words", " ", 0), std::vector<std::string_view>{ "Here are words" });
+
+            std::array<std::string_view, 3> results;
+            collin::strings::split("I like,csv,files", ",", std::begin(results), 3);
+
+            collin::test::assert_equal(results, std::array<std::string_view, 3>{"I like", "csv", "files"});
+        }
+};
+
+class join_test : public collin::test::test_case
+{
+    public:
+        join_test()
+            : collin::test::test_case{"join_test"} {}
+
+        void operator()() override
+        {
+            collin::test::assert_equal(collin::strings::join(std::vector {"These", "are", "words"}, " "), "These are words", "join strings space delimiter");
+            collin::test::assert_equal(collin::strings::join(std::vector{ "These", "are", "words" }, "\n"), "These\nare\nwords", "join strings newline delimiter");
+
+            const std::vector words {"Look", "at", "these", "strings"};
+
+            collin::test::assert_equal(collin::strings::join(std::begin(words), std::end(words), " "), "Look at these strings", "join iterators space delimiter");
+            collin::test::assert_equal(collin::strings::join(std::begin(words), std::end(words), "$$$$"), "Look$$$$at$$$$these$$$$strings", "join iterators '$' delimiter");
+        }
+};
+
+class from_string_test : public collin::test::test_case
+{
+    public:
+        from_string_test()
+            : collin::test::test_case{"from_string_test"} {}
+
+        void operator()() override
+        {
+            collin::test::assert_equal(collin::strings::from_string<int>("1"), 1);
+            collin::test::assert_equal(collin::strings::from_string<int>("1223"), 1223);
+            collin::test::assert_equal(collin::strings::from_string<int>("-2391"), -2391);
+            collin::test::assert_equal(collin::strings::from_string<int>("37943"), 37943);
+            collin::test::assert_equal(collin::strings::from_string<int>("0"), 0);
+
+            collin::test::assert_almost_equal(collin::strings::from_string<double>("1.5"), 1.5, 0.000001);
+            collin::test::assert_almost_equal(collin::strings::from_string<double>("-2.23478"), -2.23478, 0.000001);
+            collin::test::assert_almost_equal(collin::strings::from_string<double>("0"), 0.0, 0.000001);
+            collin::test::assert_almost_equal(collin::strings::from_string<double>("1"), 1.0, 0.000001);
+
+            collin::test::assert_equal(collin::strings::from_string<char>("c"), 'c');
+            collin::test::assert_equal(collin::strings::from_string<char>("38hs9f"), '3');
+
+            collin::test::assert_equal(collin::strings::from_string<std::string>("Hello!"), "Hello!");
+            collin::test::assert_equal(collin::strings::from_string<std::string_view>("Hello!"), "Hello!");
+
+            collin::test::assert_equal(collin::strings::from_string<bool>("1"), true);
+        }
+};
 
 int main()
 {
-	is_vowel_test();
-	is_consonant_test();
-	contains_vowel_test();
-	contains_consonant_test();
-	remove_punctuation_test();
-	remove_spaces_test();
-	remove_alphanumerics_test();
-	remove_blanks_test();
-	remove_hexdigits_test();
-	remove_upper_test();
-	remove_lower_test();
-	remove_character_test();
-	uppercase_test();
-	lowercase_test();
-	split_test();
-	join_test();
-	from_string_test();
+    collin::test::test_suite suite;
+
+    suite.add_test_case<vowel_test>();
+    suite.add_test_case<consonant_test>();
+    suite.add_test_case<contains_vowel_test>();
+    suite.add_test_case<contains_consonant_test>();
+    suite.add_test_case<remove_punctuation_test>();
+    suite.add_test_case<remove_spaces_test>();
+    suite.add_test_case<remove_alphanumerics_test>();
+    suite.add_test_case<remove_blanks_test>();
+    suite.add_test_case<remove_hexdigits_test>();
+    suite.add_test_case<remove_upper_test>();
+    suite.add_test_case<remove_lower_test>();
+    suite.add_test_case<remove_character_test>();
+    suite.add_test_case<uppercase_test>();
+    suite.add_test_case<lowercase_test>();
+    suite.add_test_case<split_test>();
+    suite.add_test_case<join_test>();
+    suite.add_test_case<from_string_test>();
+
+    collin::test::text_test_runner runner(std::cout);
+    runner.run(suite);
 }

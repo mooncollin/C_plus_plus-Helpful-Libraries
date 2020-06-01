@@ -25,7 +25,7 @@ int main()
 	if (op && !ec)
 	{
 		std::cout << "Status Code: " << op->response_code() << '\n';
-		std::cout << op.value() << '\n';
+		//std::cout << op.value() << '\n';
 		auto time_elapsed = std::chrono::steady_clock::now() - now;
 		std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(time_elapsed).count() << "ms\n";
 	}

@@ -4,6 +4,8 @@
 	#include <WinSock2.h>
 #endif
 
+#include <mutex>
+
 namespace collin
 {
 	namespace net
@@ -13,26 +15,21 @@ namespace collin
 			public:
 				io_context()
 				{
-					std::scoped_lock l {socket_count_m};
-					if(socket_ref_count == 0)
+					if (!has_started) // Do not lock a mutex if we have started
 					{
-						socket_init();
-						socket_ref_count++;
+						std::scoped_lock l{started_m};
+						if(!has_started) // Check again if we were waiting on this mutex
+						{
+							socket_init();
+							has_started = true;
+						}
 					}
 				}
 
-				~io_context()
-				{
-					std::scoped_lock l {socket_count_m};
-					socket_ref_count--;
-					if(socket_ref_count == 0)
-					{
-						socket_cleanup();
-					}
-				}
+				~io_context() = default;
 
 			private:
-				static int socket_init(void) noexcept
+				static inline int socket_init(void) noexcept
 				{
 					#ifdef _WIN32
 					WSADATA data;
@@ -42,7 +39,7 @@ namespace collin
 					#endif
 				}
 
-				static int socket_cleanup(void) noexcept
+				static inline int socket_cleanup(void) noexcept
 				{
 					#ifdef _WIN32
 					return WSACleanup();
@@ -51,8 +48,8 @@ namespace collin
 					#endif
 				}
 
-				static inline std::mutex socket_count_m;
-				static inline std::size_t socket_ref_count {0};
+				inline static bool has_started {false};
+				inline static std::mutex started_m;
 		};
 	}
 }

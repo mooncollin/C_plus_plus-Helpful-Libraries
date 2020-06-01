@@ -13,39 +13,117 @@ namespace collin
 {
     namespace measures
     {
-        template<class Rep, class Ratio = std::ratio<1>>
-        class mass;
-    }
-}
+        template<class Rep>
+        struct mass_values;
 
-namespace std
-{
-    template<class Rep1, class Interval1, class Rep2, class Interval2>
-    struct common_type<collin::measures::mass<Rep1, Interval1>, collin::measures::mass<Rep2, Interval2>>
-    {
-        private:
-            using num_ = collin::measures::static_gcd<Interval1::num, Interval2::num>;
-            using den_ = collin::measures::static_gcd<Interval1::den, Interval2::den>;
-            using cr_ = std::common_type_t<Rep1, Rep2>;
-            using r_ = std::ratio<num_::value, (Interval1::den / den_::value) * Interval2::den>;
-        public:
-            using type = collin::measures::mass<cr_, r_>;
-    };
-}
+        template<class Rep, class System, class Ratio = std::ratio<1>>
+        using mass = basic_unit<Rep, Ratio, mass_values<Rep>, System>;
 
-namespace collin
-{
-    namespace measures
-    {
-        template<class T>
-        struct is_mass : std::false_type {};
+        template<class Rep>
+        using basic_attograms = mass<Rep, metric_system, std::atto>;
+        
+        template<class Rep>
+        using basic_femtograms = mass<Rep, metric_system, std::femto>;
+        
+        template<class Rep>
+        using basic_picograms = mass<Rep, metric_system, std::pico>;
+        
+        template<class Rep>
+        using basic_nanograms = mass<Rep, metric_system, std::nano>;
+        
+        template<class Rep>
+        using basic_micrograms = mass<Rep, metric_system, std::micro>;
+        
+        template<class Rep>
+        using basic_milligrams = mass<Rep, metric_system, std::milli>;
+        
+        template<class Rep>
+        using basic_centigrams = mass<Rep, metric_system, std::centi>;
+        
+        template<class Rep>
+        using basic_decigrams = mass<Rep, metric_system, std::deci>;
+        
+        template<class Rep>
+        using basic_grams = mass<Rep, metric_system>;
+        
+        template<class Rep>
+        using basic_decagrams = mass<Rep, metric_system, std::deca>;
+        
+        template<class Rep>
+        using basic_hectograms = mass<Rep, metric_system, std::hecto>;
+        
+        template<class Rep>
+        using basic_kilograms = mass<Rep, metric_system, std::kilo>;
+        
+        template<class Rep>
+        using basic_megagrams = mass<Rep, metric_system, std::mega>;
+        
+        template<class Rep>
+        using basic_gigagrams = mass<Rep, metric_system, std::giga>;
+        
+        template<class Rep>
+        using basic_teragrams = mass<Rep, metric_system, std::tera>;
+        
+        template<class Rep>
+        using basic_petagrams = mass<Rep, metric_system, std::peta>;
+        
+        template<class Rep>
+        using basic_exagrams = mass<Rep, metric_system, std::exa>;
+        
+        using attograms = basic_attograms<std::intmax_t>;
+        using femtograms = basic_femtograms<std::intmax_t>;
+        using picograms = basic_picograms<std::intmax_t>;
+        using nanograms = basic_nanograms<std::intmax_t>;
+        using micrograms = basic_micrograms<std::intmax_t>;
+        using milligrams = basic_milligrams<std::intmax_t>;
+        using centigrams = basic_centigrams<std::intmax_t>;
+        using decigrams = basic_decigrams<std::intmax_t>;
+        using grams = basic_grams<std::intmax_t>;
+        using decagrams = basic_decagrams<std::intmax_t>;
+        using hectograms = basic_hectograms<std::intmax_t>;
+        using kilograms = basic_kilograms<std::intmax_t>;
+        using megagrams = basic_megagrams<std::intmax_t>;
+        using gigagrams = basic_gigagrams<std::intmax_t>;
+        using teragrams = basic_teragrams<std::intmax_t>;
+        using petagrams = basic_petagrams<std::intmax_t>;
+        using exagrams = basic_exagrams<std::intmax_t>;
 
-        template<class Rep, class Interval>
-        struct is_mass<mass<Rep, Interval>> : std::true_type {};
+        template<class Rep>
+        using basic_grains = mass<Rep, imperial_system, std::ratio<1, 7000>>;
 
+        template<class Rep>
+        using basic_drachm = mass<Rep, imperial_system, std::ratio<1, 256>>;
 
-        template<class T>
-        constexpr bool is_mass_v = is_mass<T>::value;
+        template<class Rep>
+        using basic_ounces = mass<Rep, imperial_system, std::ratio<1, 16>>;
+
+        template<class Rep>
+        using basic_pounds = mass<Rep, imperial_system>;
+
+        template<class Rep>
+        using basic_stones = mass<Rep, imperial_system, std::ratio<14, 1>>;
+
+        template<class Rep>
+        using basic_quarters = mass<Rep, imperial_system, std::ratio<28, 1>>;
+
+        template<class Rep>
+        using basic_hundredweights = mass<Rep, imperial_system, std::ratio<112, 1>>;
+
+        template<class Rep>
+        using basic_short_tons = mass<Rep, imperial_system, std::ratio<2000, 1>>;
+
+        template<class Rep>
+        using basic_tons = mass<Rep, imperial_system, std::ratio<2240, 1>>;
+
+        using grains = basic_grains<std::intmax_t>;
+        using drachm = basic_drachm<std::intmax_t>;
+        using ounces = basic_ounces<std::intmax_t>;
+        using pounds = basic_pounds<std::intmax_t>;
+        using stones = basic_stones<std::intmax_t>;
+        using quarters = basic_quarters<std::intmax_t>;
+        using hundredweights = basic_hundredweights<std::intmax_t>;
+        using short_tons = basic_short_tons<std::intmax_t>;
+        using tons = basic_tons<std::intmax_t>;
 
         template<class Rep>
         struct mass_values
@@ -64,375 +142,180 @@ namespace collin
             {
                 return std::numeric_limits<Rep>::max();
             }
+
+            template<class ToBasicUnit, class ToSystem = typename ToBasicUnit::system, class Ratio, typename = std::enable_if_t<
+    /* requires */  is_basic_unit_v<ToBasicUnit> && std::is_same_v<ToSystem, metric_system>
+            >>
+            static constexpr ToBasicUnit system_cast(const distance<Rep, imperial_system, Ratio>& unit) noexcept
+            {
+                using common_type = std::common_type_t<Rep, ToBasicUnit::rep>;
+                // TODO
+            }
+
+            template<class ToBasicUnit, class ToSystem = typename ToBasicUnit::system, class Ratio, typename = std::enable_if_t<
+    /* requires */  is_basic_unit_v<ToBasicUnit> && std::is_same_v<ToSystem, imperial_system>
+            >>
+            static constexpr ToBasicUnit system_cast(const distance<Rep, metric_system, Ratio>& unit) noexcept
+            {
+                using common_type = std::common_type_t<Rep, ToBasicUnit::rep>;
+                // TODO
+            }
         };
 
-        template<class ToMass, class Rep, class Interval, typename = std::enable_if_t<
-/* requires */  is_mass_v<ToMass>
-        >>
-        constexpr ToMass mass_cast(const mass<Rep, Interval>& d)
+        template<class Rep>
+        struct metric_system::suffix<basic_attograms<Rep>>
         {
-            using ratio = typename std::ratio_divide<Interval, typename ToMass::interval>::type;
-            using common_type = typename std::common_type_t<typename ToMass::rep, Rep, std::intmax_t>;
-
-            return ToMass(
-                static_cast<typename ToMass::rep>(
-                    static_cast<common_type>(d.count()) * static_cast<common_type>(ratio::num) / static_cast<common_type>(ratio::den)
-                )
-            );
-        }
-
-        template<class Rep, class Interval>
-        class mass
-        {
-            public:
-                using rep = Rep;
-                using interval = Interval;
-
-                static constexpr mass zero() noexcept
-                {
-                    return mass(mass_values<rep>::zero());
-                }
-
-                static constexpr mass min() noexcept
-                {
-                    return mass(mass_values<rep>::min());
-                }
-
-                static constexpr mass max() noexcept
-                {
-                    return mass(mass_values<rep>::max());
-                }
-
-                mass() = default;
-                mass(const mass& dsn) = default;
-
-                template<class Rep2, class Interval2>
-                constexpr mass(const mass<Rep2, Interval2>& dsn)
-                    : amount_(mass_cast<mass>(dsn).count())
-                {
-                }
-
-                template<class Rep2>
-                constexpr explicit mass(const Rep2& n)
-                    : amount_(static_cast<rep>(n))
-                {
-                }
-
-                mass& operator=(const mass& other) = default;
-
-                ~mass() = default;
-
-                constexpr rep count() const
-                {
-                    return amount_;
-                }
-
-                constexpr mass operator+() const
-                {
-                    return mass(*this);
-                }
-
-                constexpr mass operator-() const
-                {
-                    return mass(-amount_);
-                }
-
-                constexpr mass& operator++()
-                {
-                    ++amount_;
-                    return *this;
-                }
-
-                constexpr mass operator++(int)
-                {
-                    return mass(amount_++);
-                }
-
-                constexpr mass& operator--()
-                {
-                    --amount_;
-                    return *this;
-                }
-
-                constexpr mass operator--(int)
-                {
-                    return mass(amount_--);
-                }
-
-                constexpr mass& operator+=(const mass& d)
-                {
-                    amount_ += d.count();
-                    return *this;
-                }
-
-                constexpr mass& operator-=(const mass& d)
-                {
-                    amount_ -= d.count();
-                    return *this;
-                }
-
-                constexpr mass& operator*=(const rep& rhs)
-                {
-                    amount_ *= rhs;
-                    return *this;
-                }
-
-                constexpr mass& operator/=(const rep& rhs)
-                {
-                    amount_ /= rhs;
-                    return *this;
-                }
-
-                constexpr mass& operator%=(const rep& rhs)
-                {
-                    amount_ %= rhs;
-                    return *this;
-                }
-
-                constexpr mass& operator%=(const mass& d)
-                {
-                    amount_ %= d.count();
-                    return *this;
-                }
-
-            private:
-                rep amount_;
+            constexpr static std::string_view value {"ag"};
         };
 
-        using attograms = mass<std::intmax_t, std::atto>;
-        using femtograms = mass<std::intmax_t, std::femto>;
-        using picograms = mass<std::intmax_t, std::pico>;
-        using nanograms = mass<std::intmax_t, std::nano>;
-        using micrograms = mass<std::intmax_t, std::micro>;
-        using milligrams = mass<std::intmax_t, std::milli>;
-        using centigrams = mass<std::intmax_t, std::centi>;
-        using decigrams = mass<std::intmax_t, std::deci>;
-        using grams = mass<std::intmax_t>;
-        using decagrams = mass<std::intmax_t, std::deca>;
-        using hectograms = mass<std::intmax_t, std::hecto>;
-        using kilograms = mass<std::intmax_t, std::kilo>;
-        using megagrams = mass<std::intmax_t, std::mega>;
-        using gigagrams = mass<std::intmax_t, std::giga>;
-        using teragrams = mass<std::intmax_t, std::tera>;
-        using petagrams = mass<std::intmax_t, std::peta>;
-        using exagrams = mass<std::intmax_t, std::exa>;
-
-        using ounces = mass<double, std::ratio<1000000, 35274>>;
-        using pounds = mass<double, std::ratio<100000000, 220462>>;
-        using stones = mass<double, std::ratio<1000000000, 157473>>;
-        using imperial_tons = mass<double, std::ratio<1000000000000000, 984206536>>;
-        using us_tons = mass<double, std::ratio<1000000000000000, 1102311310>>;
-
-        template<class Rep1, class Interval1, class Rep2, class Interval2>
-        constexpr
-        typename std::common_type_t<mass<Rep1, Interval1>, mass<Rep2, Interval2>>
-        operator+(const mass<Rep1, Interval1> lhs, const mass<Rep2, Interval2> rhs)
+        template<class Rep>
+        struct metric_system::suffix<basic_femtograms<Rep>>
         {
-            using common_type = std::common_type_t<mass<Rep1, Interval1>, mass<Rep2, Interval2>>;
-            
-            return common_type(common_type(lhs).count() + common_type(rhs).count());
-        }
+            constexpr static std::string_view value {"fg"};
+        };
 
-        template<class Rep1, class Interval1, class Rep2, class Interval2>
-        constexpr
-        typename std::common_type_t<mass<Rep1, Interval1>, mass<Rep2, Interval2>>
-        operator-(const mass<Rep1, Interval1> lhs, const mass<Rep2, Interval2> rhs)
+        template<class Rep>
+        struct metric_system::suffix<basic_picograms<Rep>>
         {
-            using common_type = std::common_type_t<mass<Rep1, Interval1>, mass<Rep2, Interval2>>;
-            
-            return common_type(common_type(lhs).count() - common_type(rhs).count());
-        }
+            constexpr static std::string_view value {"pg"};
+        };
 
-        template<class Rep1, class Interval, class Rep2>
-        constexpr
-        mass<typename std::common_type_t<Rep1, Rep2>, Interval>
-        operator*(const mass<Rep1, Interval>& d, const Rep2& r)
+        template<class Rep>
+        struct metric_system::suffix<basic_nanograms<Rep>>
         {
-            using common_type = std::common_type_t<Rep1, Rep2>;
+            constexpr static std::string_view value {"ng"};
+        };
 
-            return mass<common_type, Interval>(static_cast<common_type>(d.count()) * static_cast<common_type>(r));
-        }
-
-        template<class Rep1, class Interval, class Rep2>
-        constexpr
-        mass<typename std::common_type_t<Rep1, Rep2>, Interval>
-        operator*(const Rep2& r, const mass<Rep1, Interval>& d)
+        template<class Rep>
+        struct metric_system::suffix<basic_micrograms<Rep>>
         {
-            using common_type = std::common_type_t<Rep1, Rep2>;
+            constexpr static std::string_view value {"µg"};
+        };
 
-            return mass<common_type, Interval>(static_cast<common_type>(d.count()) * static_cast<common_type>(r));
-        }
-
-        template<class Rep1, class Interval, class Rep2>
-        constexpr
-        mass<typename std::common_type_t<Rep1, Rep2>, Interval>
-        operator/(const mass<Rep1, Interval>& d, const Rep2& r)
+        template<class Rep>
+        struct metric_system::suffix<basic_milligrams<Rep>>
         {
-            using common_type = std::common_type_t<Rep1, Rep2>;
+            constexpr static std::string_view value {"mg"};
+        };
 
-            return mass<common_type, Interval>(static_cast<common_type>(d.count()) / static_cast<common_type>(r));
-        }
-
-        template<class Rep1, class Interval1, class Rep2, class Interval2>
-        constexpr
-        typename std::common_type_t<mass<Rep1, Interval1>, mass<Rep2, Interval2>>
-        operator/(const mass<Rep1, Interval1> lhs, const mass<Rep2, Interval2> rhs)
+        template<class Rep>
+        struct metric_system::suffix<basic_centigrams<Rep>>
         {
-            using common_type = std::common_type_t<mass<Rep1, Interval1>, mass<Rep2, Interval2>>;
-            
-            return common_type(common_type(lhs).count() / common_type(rhs).count());
-        }
+            constexpr static std::string_view value {"cg"};
+        };
 
-        template<class Rep1, class Interval, class Rep2>
-        constexpr
-        mass<typename std::common_type_t<Rep1, Rep2>, Interval>
-        operator%(const mass<Rep1, Interval>& d, const Rep2& r)
+        template<class Rep>
+        struct metric_system::suffix<basic_decigrams<Rep>>
         {
-            using common_type = std::common_type_t<Rep1, Rep2>;
+            constexpr static std::string_view value {"dg"};
+        };
 
-            return mass<common_type, Interval>(static_cast<common_type>(d.count()) % static_cast<common_type>(r));
-        }
-
-        template<class Rep1, class Interval1, class Rep2, class Interval2>
-        constexpr
-        typename std::common_type_t<mass<Rep1, Interval1>, mass<Rep2, Interval2>>
-        operator%(const mass<Rep1, Interval1> lhs, const mass<Rep2, Interval2> rhs)
-        {
-            using common_type = std::common_type_t<mass<Rep1, Interval1>, mass<Rep2, Interval2>>;
-            
-            return common_type(common_type(lhs).count() % common_type(rhs).count());
-        }
-
-        template<class Rep1, class Interval1, class Rep2, class Interval2>
-        constexpr bool operator==(const mass<Rep1, Interval1>& lhs, const mass<Rep2, Interval2>& rhs)
-        {
-            using common_type = std::common_type_t<mass<Rep1, Interval1>, mass<Rep2, Interval2>>;
-
-            return common_type(lhs).count() == common_type(rhs).count();
-        }
-
-        template<class Rep1, class Interval1, class Rep2, class Interval2>
-        constexpr bool operator!=(const mass<Rep1, Interval1>& lhs, const mass<Rep2, Interval2>& rhs)
-        {
-            return !(lhs == rhs);
-        }
-
-        template<class Rep1, class Interval1, class Rep2, class Interval2>
-        constexpr bool operator<(const mass<Rep1, Interval1>& lhs, const mass<Rep2, Interval2>& rhs)
-        {
-            using common_type = std::common_type_t<mass<Rep1, Interval1>, mass<Rep2, Interval2>>;
-            
-            return common_type(lhs).count() < common_type(rhs).count();
-        }
-
-        template<class Rep1, class Interval1, class Rep2, class Interval2>
-        constexpr bool operator>(const mass<Rep1, Interval1>& lhs, const mass<Rep2, Interval2>& rhs)
-        {
-            return rhs < lhs;
-        }
-
-        template<class Rep1, class Interval1, class Rep2, class Interval2>
-        constexpr bool operator<=(const mass<Rep1, Interval1>& lhs, const mass<Rep2, Interval2>& rhs)
-        {
-            return !(rhs < lhs);
-        }
-
-        template<class Rep1, class Interval1, class Rep2, class Interval2>
-        constexpr bool operator>=(const mass<Rep1, Interval1>& lhs, const mass<Rep2, Interval2>& rhs)
-        {
-            return !(lhs < rhs);
-        }
-
-        template<class ToMass, class Rep, class Interval, typename = std::enable_if_t<
-/* requires */  is_mass_v<ToMass>
-        >>
-        constexpr ToMass floor(const mass<Rep, Interval>& d)
-        {
-            const auto d2 = mass_cast<ToMass>(d);
-            if(d2 > d)
-            {
-                return d2 - ToMass{1};
-            }
-
-            return d2;
-        }
-
-        template<class ToMass, class Rep, class Interval, typename = std::enable_if_t<
-/* requires */  is_mass_v<ToMass>
-        >>
-        constexpr ToMass ceil(const mass<Rep, Interval>& d)
-        {
-            const auto d2 = mass_cast<ToMass>(d);
-            if(d2 < d)
-            {
-                return d2 + ToMass{1};
-            }
-
-            return d2;
-        }
-
-        template<class ToMass, class Rep, class Interval, typename = std::enable_if_t<
-/* requires */  is_mass_v<ToMass>
-        >>
-        constexpr ToMass round(const mass<Rep, Interval>& d)
-        {
-            const auto d0 = floor<ToMass>(d);
-            const auto d1 = d0 + ToMass{1};
-            const auto diff0 = d - d0;
-            const auto diff1 = d1 - d;
-            if(diff0 == diff1)
-            {
-                if(math::is_odd(d0.count()))
-                {
-                    return d1;
-                }
-                return d0;
-            }
-            else if(diff0 < diff1)
-            {
-                return d0;
-            }
-
-            return d1;
-        }
-
-        template<class Rep, class Interval, typename = std::enable_if_t<
-/* requires */  mass<Rep, Interval>::min() < mass<Rep, Interval>::zero()
-        >>
-        constexpr mass<Rep, Interval> abs(const mass<Rep, Interval>& d)
-        {
-            return d >= d.zero() ? d : -d;
-        }
-
-        template<class mass, typename = std::enable_if_t<
-/* requires */ is_mass_v<mass>
-        >>
-        struct mass_suffix_impl
+        template<class Rep>
+        struct metric_system::suffix<basic_grams<Rep>>
         {
             constexpr static std::string_view value {"g"};
         };
 
-        template<class mass, typename = std::enable_if_t<
-/* requires */ is_mass_v<mass>
-        >>
-        struct mass_suffix
+        template<class Rep>
+        struct metric_system::suffix<basic_decagrams<Rep>>
         {
-            using type = typename mass::interval::type;
-            constexpr static auto value = mass_suffix_impl<mass>::value;
+            constexpr static std::string_view value {"dag"};
         };
 
-        template<class T>
-        constexpr auto mass_suffix_v = mass_suffix<T>::value;
-
-        template<class CharT, class Traits, class Rep, class Interval>
-        std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& os, const mass<Rep, Interval>& d)
+        template<class Rep>
+        struct metric_system::suffix<basic_hectograms<Rep>>
         {
-            std::basic_ostringstream<CharT, Traits> s;
-            s.flags(os.flags());
-            s.imbue(os.getloc());
-            s.precision(os.precision());
-            s << d.count() << measures::suffix_v<Interval> << measures::mass_suffix_v<mass<Rep, Interval>>;
-            return os << s.str();
-        }
+            constexpr static std::string_view value {"hg"};
+        };
+
+        template<class Rep>
+        struct metric_system::suffix<basic_kilograms<Rep>>
+        {
+            constexpr static std::string_view value {"kg"};
+        };
+
+        template<class Rep>
+        struct metric_system::suffix<basic_megagrams<Rep>>
+        {
+            constexpr static std::string_view value {"Mg"};
+        };
+
+        template<class Rep>
+        struct metric_system::suffix<basic_gigagrams<Rep>>
+        {
+            constexpr static std::string_view value {"Gg"};
+        };
+
+        template<class Rep>
+        struct metric_system::suffix<basic_teragrams<Rep>>
+        {
+            constexpr static std::string_view value {"Tg"};
+        };
+
+        template<class Rep>
+        struct metric_system::suffix<basic_petagrams<Rep>>
+        {
+            constexpr static std::string_view value {"Pg"};
+        };
+
+        template<class Rep>
+        struct metric_system::suffix<basic_exagrams<Rep>>
+        {
+            constexpr static std::string_view value {"Eg"};
+        };
+
+        template<class Rep>
+        struct imperial_system::suffix<basic_grains<Rep>>
+        {
+            constexpr static std::string_view value {"gr"};
+        };
+
+        template<class Rep>
+        struct imperial_system::suffix<basic_drachm<Rep>>
+        {
+            constexpr static std::string_view value {"dr"};
+        };
+
+        template<class Rep>
+        struct imperial_system::suffix<basic_ounces<Rep>>
+        {
+            constexpr static std::string_view value {"oz"};
+        };
+
+        template<class Rep>
+        struct imperial_system::suffix<basic_pounds<Rep>>
+        {
+            constexpr static std::string_view value {"lb"};
+        };
+
+        template<class Rep>
+        struct imperial_system::suffix<basic_stones<Rep>>
+        {
+            constexpr static std::string_view value {"st"};
+        };
+
+        template<class Rep>
+        struct imperial_system::suffix<basic_quarters<Rep>>
+        {
+            constexpr static std::string_view value {"qr"};
+        };
+
+        template<class Rep>
+        struct imperial_system::suffix<basic_hundredweights<Rep>>
+        {
+            constexpr static std::string_view value {"cwt"};
+        };
+
+        template<class Rep>
+        struct imperial_system::suffix<basic_short_tons<Rep>>
+        {
+            constexpr static std::string_view value {"t"};
+        };
+
+        template<class Rep>
+        struct imperial_system::suffix<basic_tons<Rep>>
+        {
+            constexpr static std::string_view value {"t"};
+        };
     }
 }

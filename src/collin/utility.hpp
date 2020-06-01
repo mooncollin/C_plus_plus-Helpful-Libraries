@@ -7,6 +7,7 @@
 #include <array>
 #include <tuple>
 #include <system_error>
+#include <type_traits>
 
 namespace collin
 {
@@ -14,7 +15,7 @@ namespace collin
 	class finally
 	{
 		public:
-			using return_type = std::result_of_t<Function(Args...)>;
+			using return_type = std::invoke_result_t<Function(Args...)>;
 
 			finally(Function&& f, Args&&... args) noexcept
 				: f(f), args(args...) {}
@@ -135,7 +136,7 @@ namespace collin
 		{
 			if (ec)
 			{
-				throw std::system_error(ec, msg.data());
+				throw std::system_error(ec, msg.c_str());
 			}
 		}
 
@@ -147,9 +148,24 @@ namespace collin
 			return ec;
 		}
 
-		std::string_view msg;
+		std::string msg;
 		std::error_code ec;
 	};
+
+	namespace details
+	{
+		template<class Function, std::size_t... I, class... Args>
+		constexpr std::invoke_result_t<Function, Args...> invoke(Function&& f, std::tuple<Args...>&& tup, std::index_sequence<I...>)
+		{
+			return std::forward<Function>(f)(std::forward<Args>(std::get<I>(tup))...);
+		}
+	}
+
+	template<class Function, class... Args>
+	std::invoke_result_t<Function, Args...> invoke(Function f, std::tuple<Args...>&& tup)
+	{
+		return details::invoke_helper(f, tup, std::make_index_sequence<sizeof...(Args)>{});
+	}
 }
 
 #endif
