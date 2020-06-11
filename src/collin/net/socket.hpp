@@ -1341,7 +1341,7 @@ namespace collin
 				socket_impl(socket_impl&& rhs) noexcept
 					: ctx(rhs.ctx), sockfd(std::exchange(rhs.sockfd, socket_base::invalid_socket)), bits(std::exchange(rhs.bits, {})) {}
 
-				socket_impl& operator=(socket_impl&& rhs)
+				socket_impl& operator=(socket_impl&& rhs) noexcept
 				{
 					ctx = rhs.ctx;
 					sockfd = std::exchange(rhs.sockfd, socket_base::invalid_socket);
@@ -1349,7 +1349,7 @@ namespace collin
 					return *this;
 				}
 
-				~socket_impl() = default;
+				~socket_impl() noexcept = default;
 
 				socket_impl(const socket_impl&) = delete;
 				socket_impl& operator=(const socket_impl&) = delete;
@@ -1478,7 +1478,7 @@ namespace collin
 				basic_socket_impl(basic_socket_impl<OtherProtocol>&& rhs)
 					: base(std::move(rhs)), protocol_(std::move(rhs.protocol)) {}
 
-				basic_socket_impl& operator=(basic_socket_impl&& rhs)
+				basic_socket_impl& operator=(basic_socket_impl&& rhs) noexcept
 				{
 					if (this != std::addressof(rhs))
 					{
@@ -1962,10 +1962,10 @@ namespace collin
 				basic_socket(basic_socket<OtherProtocol>&& rhs)
 					: base(std::move(rhs)) {}
 
-				~basic_socket() = default;
+				~basic_socket() noexcept = default;
 
 				basic_socket& operator=(const basic_socket&) = delete;
-				basic_socket& operator=(basic_socket&&) = default;
+				basic_socket& operator=(basic_socket&&) noexcept = default;
 
 				template<class OtherProtocol, std::enable_if_t<
 		/* requires */	std::is_convertible_v<OtherProtocol, Protocol>
@@ -2497,11 +2497,11 @@ namespace collin
 				basic_stream_socket(basic_stream_socket<OtherProtocol>&& rhs)
 					: base(std::move(rhs)) {}
 
-				~basic_stream_socket() = default;
+				~basic_stream_socket() noexcept = default;
 
 				basic_stream_socket& operator=(const basic_stream_socket&) = delete;
 
-				basic_stream_socket& operator=(basic_stream_socket && rhs) = default;
+				basic_stream_socket& operator=(basic_stream_socket &&) noexcept = default;
 
 				template<class OtherProtocol, std::enable_if_t<
 		/* requires */	std::is_convertible_v<OtherProtocol, Protocol>

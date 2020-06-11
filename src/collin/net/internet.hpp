@@ -11,6 +11,8 @@
 #include <limits>
 #include <bitset>
 #include <forward_list>
+#include <variant>
+
 #include "../memory.hpp"
 #include "../utility.hpp"
 #include "socket.hpp"
@@ -583,48 +585,35 @@ namespace collin
             class address
             {
                 public:
-                    constexpr address() noexcept
-                        : version_{address_v4{}}, is_v4_(true) {}
-                    constexpr address(const address& a) noexcept
-                        : version_{a}, is_v4_(a.is_v4_) {}
+                    constexpr address() noexcept = default;
+                    constexpr address(const address&) = default;
                     constexpr address(const address_v4& a) noexcept
-                        : version_{a}, is_v4_(true) {}
+                        : address_{a} {}
                     constexpr address(const address_v6& a) noexcept
-                        : version_{a}, is_v4_(false) {}
+                        : address_{a} {}
 
-                    address& operator=(const address& a) noexcept
-                    {
-                        if(this != &a)
-                        {
-                            version_ = a.version_;
-                            is_v4_ = a.is_v4_;
-                        }
-
-                        return *this;
-                    }
+                    address& operator=(const address&) noexcept = default;
 
                     address& operator=(const address_v4& a) noexcept
                     {
-                        version_.v4_ = a;
-                        is_v4_ = true;
+                        address_ = a;
                         return *this;
                     }
 
                     address& operator=(const address_v6& a) noexcept
                     {
-                        version_.v6_ = a;
-                        is_v4_ = false;
+                        address_ = a;
                         return *this;
                     }
 
                     constexpr bool is_v4() const noexcept
                     {
-                        return is_v4_;
+                        return std::holds_alternative<address_v4>(address_);
                     }
 
                     constexpr bool is_v6() const noexcept
                     {
-                        return !is_v4_;
+                        return std::holds_alternative<address_v6>(address_);
                     }
 
                     constexpr address_v4 to_v4() const
@@ -634,7 +623,7 @@ namespace collin
                             throw BadAddressCast();
                         }
 
-                        return version_.v4_;
+                        return std::get<address_v4>(address_);
                     }
 
                     constexpr address_v6 to_v6() const
@@ -644,92 +633,52 @@ namespace collin
                             throw BadAddressCast();
                         }
 
-                        return version_.v6_;
+                        return std::get<address_v6>(address_);
                     }
 
                     constexpr bool is_unspecified() const noexcept
                     {
-                        if(is_v4())
-                        {
-                            return version_.v4_.is_unspecified();
-                        }
-
-                        return version_.v6_.is_unspecified();
+                        return std::visit(
+                            [](const auto& address) {
+                                return address.is_unspecified();
+                            },
+                        address_);
                     }
 
                     constexpr bool is_loopback() const noexcept
                     {
-                        if(is_v4())
-                        {
-                            return version_.v4_.is_loopback();
-                        }
-
-                        return version_.v6_.is_loopback();
+                        return std::visit(
+                            [](const auto& address) {
+                                return address.is_multicast();
+                            },
+                        address_);
                     }
 
                     constexpr bool is_multicast() const noexcept
                     {
-                        if(is_v4())
-                        {
-                            return version_.v4_.is_multicast();
-                        }
-
-                        return version_.v6_.is_multicast();
+                        return std::visit(
+                            [](const auto& address) {
+                                return address.is_multicast();
+                            },
+                        address_);
                     }
 
                     template<class Allocator = std::allocator<char>>
-                    std::basic_string<char, std::char_traits<char>, Allocator>
+                    inline std::basic_string<char, std::char_traits<char>, Allocator>
                     to_string(const Allocator& a = Allocator()) const
                     {
-                        if(is_v4())
-                        {
-                            return version_.v4_.to_string(a);
-                        }
-
-                        return version_.v6_.to_string(a);
+                        return std::visit(
+                            [](const auto& address) {
+                                return address.to_string(a);
+                            },
+                        address_);
                     }
 
                 private:
                     template<class InternetProcotol>
                     friend class basic_endpoint;
-                
-                    union U
-                    {
-                        address_v4 v4_;
-                        address_v6 v6_;
-                        bool placeholder; // Need something to initialize when v4_ and v6_ cannot.
 
-                        constexpr U(const address& a)
-                            : placeholder {}
-                        {
-                            if (a.is_v4())
-                            {
-                                v4_ = a.to_v4();
-                            }
-                            else
-                            {
-                                v6_ = a.to_v6();
-                            }
-                        }
-
-                        constexpr U(const address_v4& v4)
-                            : v4_(v4) {}
-
-                        constexpr U(const address_v6& v6)
-                            : v6_(v6) {}
-
-                        constexpr U(const U& u)
-                            : v4_(u.v4_), v6_(u.v6_) {}
-
-                        U& operator=(const U& u)
-                        {
-                            v4_ = u.v4_;
-                            v6_ = u.v6_;
-                            return *this;
-                        }
-                    } version_;
-
-                    bool is_v4_;
+                    std::variant<address_v4, address_v6> address_ {};
             };
 
             constexpr bool operator==(const address& a, const address& b) noexcept
@@ -1280,55 +1229,63 @@ namespace collin
                     using protocol_type = InternetProtocol;
 
                     constexpr basic_endpoint() noexcept
-                        : data_{}
                     {
-                        data_.v4_.sin_family = static_cast<int>(protocol_type::v4().family());
+                        std::get<::sockaddr_in>(data_).sin_family = static_cast<int>(protocol_type::v4().family());
                     }
 
                     constexpr basic_endpoint(const protocol_type& proto, port_type port_num) noexcept
-                        : data_{}
                     {
-                        data_.v4_.sin_family = proto.family();
-                        dat_.v4_.sin_port = hton(port_num);
+                        auto& data = std::get<::sockaddr_in>(data_);
+                        data.sin_family = static_cast<int>(proto.family());
+                        data.sin_port = hton(port_num);
                     }
 
                     constexpr basic_endpoint(const address& addr, port_type port_num) noexcept
-                        : data_{}
                     {
                         if (addr.is_v4())
                         {
-                            data_.v4_.sin_family = static_cast<int>(protocol_type::v4().family());
-                            data_.v4_.sin_port = hton(port_num);
-                            data_.v4_.sin_addr.s_addr = addr.to_v4().to_uint();
+                            auto& data = std::get<::sockaddr_in>(data_);
+                            data.sin_family = static_cast<int>(protocol_type::v4().family());
+                            data.sin_port = hton(port_num);
+                            data.sin_addr.s_addr = addr.to_v4().to_uint();
                         }
                         else
                         {
-                            data_.v6_ = {};
-                            data_.v6_.sin6_family = static_cast<int>(protocol_type::v6().family());
-                            data_.v6_.sin6_port = hton(port_num);
-                            std::memcpy(data_.v6_.sin6_addr.s6_addr, addr.to_v6().address_.data(), 16);
-                            data_.v6_.sin6_scope_id = addr.version_.v6_.scope_id_;
+                            data_ = ::sockaddr_in6{};
+                            auto& data = std::get<::sockaddr_in6>(data_);
+                            data.sin6_family = static_cast<int>(protocol_type::v6().family());
+                            data.sin6_port = hton(port_num);
+                            std::memcpy(data.sin6_addr.s6_addr, addr.to_v6().address_.data(), 16);
+                            data.sin6_scope_id = addr.to_v6().scope_id_;
                         }
                     }
                     
                     constexpr protocol_type protocol() const noexcept
                     {
-                        return static_cast<Family>(data_.v4_.sin_family) == Family::inet6 ? protocol_type::v6() : protocol_type::v4();
+                        return std::visit(collin::overloaded {
+                            [](::sockaddr_in) { return protocol_type::v4(); },
+                            [](::sockaddr_in6) { return protocol_type::v6(); }
+                        }, data_);
                     }
 
                     constexpr address address() const noexcept
                     {
                         ip::address addr;
 
-                        if(protocol().family() == Family::inet6)
-                        {
-                            std::memcpy(&addr.version_.v6_.address_, data_.v6_.sin6_addr.s6_addr, 16);
-                            addr.is_v4_ = false;
-                        }
-                        else
-                        {
-                            std::memcpy(&addr.version_.v4_.address, &data_.v4_.sin_addr.s_addr, 4);
-                        }
+                        std::visit(collin::overloaded{
+                            [&](::sockaddr_in& data) {
+                                addr.address_ = address_v4{};
+                                auto& address = std::get<address_v4>(addr.address_);
+
+                                std::memcpy(&address.address, &data.sin_addr.s_addr, 4);
+                            },
+                            [&](::sockaddr_in6& data) {
+                                addr.address_ = address_v6{};
+                                auto& address = std::get<address_v6>(addr.address_);
+
+                                std::memcpy(&address.address_, &data.sin6_addr.u.s6_addr, 16);
+                            }
+                        }, data_);
 
                         return addr;
                     }
@@ -1337,41 +1294,74 @@ namespace collin
                     {
                         if (addr.is_v6())
                         {
-                            data_.v6_ = {};
-                            data_.v6_.sin6_family = static_cast<int>(protocol_type::v6().family());
-                            std::memcpy(data_.v6_.sin6_addr.s6_addr, addr.version_.v6_.address_.data(), 16);
-                            data_.v6_.sin6_scope_id = addr.version_.v6_.scope_id_;
+                            data_ = ::sockaddr_in6{};
+                            auto& data = std::get<::sockaddr_in6>(data_);
+                            auto& address = std::get<address_v6>(addr.address_);
+
+                            data.sin6_family = static_cast<int>(protocol_type::v6().family());
+                            std::memcpy(data.sin6_addr.s6_addr, address.address_.data(), 16);
+                            data.sin6_scope_id = address.scope_id_;
                         }
                         else
                         {
-                            data_.v4_.sin_family = static_cast<int>(protocol_type::v4().family());
-                            data_.v4_.sin_addr.s_addr = addr.version_.v4_.address;
+                            data_ = ::sockaddr_in{};
+                            auto& data = std::get<::sockaddr_in>(data_);
+                            auto& address = std::get<address_v4>(addr.address_);
+
+                            data.sin_family = static_cast<int>(protocol_type::v4().family());
+                            data.sin_addr.s_addr = address.address;
                         }
                     }
 
                     constexpr port_type port() const noexcept
                     {
-                        return ntoh(data_.v4_.sin_port);
+                        return std::visit(overloaded {
+                            [](const ::sockaddr_in& a) {
+                                return a.sin_port;
+                            }
+                            [](const ::sockaddr_in6& a) {
+                                return a.sin6_port;
+                            }
+                        }, data_);
                     }
 
                     void port(port_type port_num) noexcept
                     {
-                        data_.v4_.sin_port = hton(port_num);
+                        std::visit(overloaded{
+                            [](::sockaddr_in& a) {
+                                a.sin_port = port_num;
+                            }
+                            [](::sockaddr_in6& a) {
+                                a.sin6_port = port_num;
+                            }
+                        }, data_);
                     }
 
                     void* data() noexcept
                     {
-                        return std::addressof(data_);
+                        return std::visit(
+                            [](auto& a) {
+                                return reinterpret_cast<void*>(std::addressof(a));
+                            },
+                        data_);
                     }
 
                     const void* data() const noexcept
                     {
-                        return std::addressof(data_);
+                        return std::visit(
+                            [](const auto& a) {
+                                return reinterpret_cast<const void*>(std::addressof(a));
+                            },
+                        data_);
                     }
 
                     constexpr std::size_t size() const noexcept
                     {
-                        return protocol().family() == Family::inet6 ? sizeof(sockaddr_in6) : sizeof(sockaddr_in);
+                        return std::visit(
+                            [](const auto& a) {
+                                return sizeof(a);
+                            },
+                        data_);
                     }
 
                     void resize(std::size_t s)
@@ -1381,15 +1371,11 @@ namespace collin
 
                     constexpr std::size_t capacity() const noexcept
                     {
-                        return sizeof(data_);
+                        return sizeof(::sockaddr_in6);
                     }
 
                 private:
-                    union
-                    {
-                        sockaddr_in v4_;
-                        sockaddr_in6 v6_;
-                    } data_;
+                    std::variant<::sockaddr_in, ::sockaddr_in6> data_ {};
             };
 
             template<class InternetProtocol>

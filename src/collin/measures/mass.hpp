@@ -7,7 +7,6 @@
 #include <sstream>
 #include <cstdint>
 #include "measure.hpp"
-#include "..\math.hpp"
 
 namespace collin
 {
@@ -18,6 +17,15 @@ namespace collin
 
         template<class Rep, class System, class Ratio = std::ratio<1>>
         using mass = basic_unit<Rep, Ratio, mass_values<Rep>, System>;
+
+        template<class T>
+        struct is_mass : std::false_type {};
+
+        template<class Rep, class System, class Ratio>
+        struct is_mass<mass<Rep, System, Ratio>> : std::true_type {};
+
+        template<class T>
+        constexpr bool is_mass_v = is_mass<T>::value;
 
         template<class Rep>
         using basic_attograms = mass<Rep, metric_system, std::atto>;
@@ -144,21 +152,25 @@ namespace collin
             }
 
             template<class ToBasicUnit, class ToSystem = typename ToBasicUnit::system, class Ratio, typename = std::enable_if_t<
-    /* requires */  is_basic_unit_v<ToBasicUnit> && std::is_same_v<ToSystem, metric_system>
+    /* requires */  is_mass_v<ToBasicUnit> && std::is_same_v<ToSystem, metric_system>
             >>
-            static constexpr ToBasicUnit system_cast(const distance<Rep, imperial_system, Ratio>& unit) noexcept
+            static constexpr ToBasicUnit system_cast(const mass<Rep, imperial_system, Ratio>& unit) noexcept
             {
-                using common_type = std::common_type_t<Rep, ToBasicUnit::rep>;
-                // TODO
+                using common_type = std::common_type_t<Rep, typename ToBasicUnit::rep>;
+                const auto grains_conversion = unit_cast<basic_grains<common_type>>(unit);
+                const auto nanograms_conversion = basic_nanograms<typename ToBasicUnit::rep>{static_cast<typename ToBasicUnit::rep>(grains_conversion.count() * 64800000)};
+                return ToBasicUnit{nanograms_conversion};
             }
 
             template<class ToBasicUnit, class ToSystem = typename ToBasicUnit::system, class Ratio, typename = std::enable_if_t<
-    /* requires */  is_basic_unit_v<ToBasicUnit> && std::is_same_v<ToSystem, imperial_system>
+    /* requires */  is_mass_v<ToBasicUnit> && std::is_same_v<ToSystem, imperial_system>
             >>
-            static constexpr ToBasicUnit system_cast(const distance<Rep, metric_system, Ratio>& unit) noexcept
+            static constexpr ToBasicUnit system_cast(const mass<Rep, metric_system, Ratio>& unit) noexcept
             {
-                using common_type = std::common_type_t<Rep, ToBasicUnit::rep>;
-                // TODO
+                using common_type = std::common_type_t<Rep, typename ToBasicUnit::rep>;
+                const auto nanograms_conversion = unit_cast<basic_nanograms<common_type>>(unit);
+                const auto grains_conversion = basic_grains<typename ToBasicUnit::rep>{static_cast<typename ToBasicUnit::rep>(nanograms_conversion.count() * 0.000000015432)};
+                return ToBasicUnit{grains_conversion};
             }
         };
 
@@ -189,7 +201,7 @@ namespace collin
         template<class Rep>
         struct metric_system::suffix<basic_micrograms<Rep>>
         {
-            constexpr static std::string_view value {"µg"};
+            constexpr static std::string_view value {"ug"};
         };
 
         template<class Rep>

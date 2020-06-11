@@ -166,6 +166,15 @@ namespace collin
 	{
 		return details::invoke_helper(f, tup, std::make_index_sequence<sizeof...(Args)>{});
 	}
+
+	template<class... Ts>
+	struct overloaded : Ts...
+	{
+		using Ts::operator()...;
+	};
+
+	template<class... Ts>
+	overloaded(Ts...) -> overloaded<Ts...>;
 }
 
 #endif

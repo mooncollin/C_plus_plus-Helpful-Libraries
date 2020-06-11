@@ -19,6 +19,15 @@ namespace collin
         template<class Rep, class System, class Ratio = std::ratio<1>>
         using distance = basic_unit<Rep, Ratio, distance_values<Rep>, System>;
 
+        template<class T>
+        struct is_distance : std::false_type {};
+
+        template<class Rep, class System, class Ratio>
+        struct is_distance<distance<Rep, System, Ratio>> : std::true_type {};
+
+        template<class T>
+        constexpr bool is_distance_v = is_distance<T>::value;
+
         template<class Rep>
         using basic_attometers = distance<Rep, metric_system, std::atto>;
 
@@ -128,10 +137,10 @@ namespace collin
             >>
             static constexpr ToBasicUnit system_cast(const distance<Rep, imperial_system, Ratio>& unit) noexcept
             {
-                using common_type = std::common_type_t<Rep, ToBasicUnit::rep>;
+                using common_type = std::common_type_t<Rep, typename ToBasicUnit::rep>;
                 const auto inch_conversion = unit_cast<basic_inches<common_type>>(unit);
-                const auto nanometer_conversion = basic_nanometers<common_type>{inch_conversion.count() * 25400000};
-                return unit_cast<ToBasicUnit>(nanometer_conversion);
+                const auto nanometer_conversion = basic_nanometers<typename ToBasicUnit::rep>{static_cast<typename ToBasicUnit::rep>(inch_conversion.count() * 25400000)};
+                return ToBasicUnit{nanometer_conversion};
             }
 
             template<class ToBasicUnit, class ToSystem = typename ToBasicUnit::system, class Ratio, typename = std::enable_if_t<
@@ -139,10 +148,10 @@ namespace collin
             >>
             static constexpr ToBasicUnit system_cast(const distance<Rep, metric_system, Ratio>& unit) noexcept
             {
-                using common_type = std::common_type_t<Rep, ToBasicUnit::rep>;
+                using common_type = std::common_type_t<Rep, typename ToBasicUnit::rep>;
                 const auto nanometer_conversion = unit_cast<basic_nanometers<common_type>>(unit);
-                const auto inch_conversion = basic_inches<common_type>{nanometer_conversion.count() * 0.00000003937};
-                return unit_cast<ToBasicUnit>(inch_conversion);
+                const auto inch_conversion = basic_inches<typename ToBasicUnit::rep>{static_cast<typename ToBasicUnit::rep>(nanometer_conversion.count() * 0.00000003937)};
+                return ToBasicUnit{inch_conversion};
             }
         };
 
@@ -173,7 +182,7 @@ namespace collin
         template<class Rep>
         struct metric_system::suffix<basic_micrometers<Rep>>
         {
-            constexpr static std::string_view value {"µm"};
+            constexpr static std::string_view value {"um"};
         };
 
         template<class Rep>

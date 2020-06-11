@@ -13,20 +13,12 @@ namespace collin
 		class io_context
 		{
 			public:
-				io_context()
+				io_context() noexcept
 				{
-					if (!has_started) // Do not lock a mutex if we have started
-					{
-						std::scoped_lock l{started_m};
-						if(!has_started) // Check again if we were waiting on this mutex
-						{
-							socket_init();
-							has_started = true;
-						}
-					}
+					io_context_create();
 				}
 
-				~io_context() = default;
+				~io_context() noexcept = default;
 
 			private:
 				static inline int socket_init(void) noexcept
@@ -48,8 +40,29 @@ namespace collin
 					#endif
 				}
 
-				inline static bool has_started {false};
-				inline static std::mutex started_m;
+				inline static void io_context_create()
+				{
+					static io_context_static_initialize io_static;
+				}
+
+				struct io_context_static_initialize
+				{
+					io_context_static_initialize() noexcept
+					{
+						socket_init();
+					}
+
+					io_context_static_initialize(const io_context_static_initialize&) = delete;
+					io_context_static_initialize(io_context_static_initialize&&) = delete;
+
+					io_context_static_initialize& operator=(const io_context_static_initialize&) = delete;
+					io_context_static_initialize& operator=(io_context_static_initialize&&) = delete;
+
+					~io_context_static_initialize()
+					{
+						socket_cleanup();
+					}
+				};
 		};
 	}
 }

@@ -53,44 +53,15 @@ namespace collin
 			return first;
 		}
 
-		template<class T, class U, typename = std::enable_if_t<
-/* requires */ std::is_integral_v<T> && std::is_integral_v<U>
+		template<class T, typename = std::enable_if_t<
+/* requires */	std::is_arithmetic_v<T>
 		>>
-		constexpr auto pow(T base, U exp)
+		constexpr T abs(T value)
 		{
-			if(exp < 0)
-			{
-				if(base == 1 || base  == -1)
-				{
-					return base;
-				}
-				else
-				{
-					return 0;
-				}
-			}
-
-			std::common_type_t<U, T> result = 1;
-			while(true)
-			{
-				if(is_odd(exp))
-				{
-					result *= base;
-				}
-				exp >>= 1;
-				if(exp == 0)
-				{
-					break;
-				}
-				base *= base;
-			}
-
-			return result;
+			return value < T(0) ? -value : value;
 		}
-
-		template<class intT, typename = std::enable_if_t<
-/* requires */	std::is_integral_v<intT>
-		>>
+		
+		template<class intT>
 		class basic_rational
 		{
 			public:
@@ -110,7 +81,7 @@ namespace collin
 				{
 				}
 
-				constexpr basic_rational(basic_rational&&) = default;
+				constexpr basic_rational(basic_rational&&) noexcept = default;
 
 				template<class intT2, typename = std::enable_if_t<
 		/* requires */	std::is_convertible_v<intT2, intT>
@@ -136,7 +107,8 @@ namespace collin
 					return *this;
 				}
 
-				constexpr basic_rational& operator=(basic_rational&&) = default;
+				constexpr basic_rational& operator=(basic_rational&&) noexcept = default;
+				~basic_rational() noexcept = default;
 
 				template<class intT2, typename = std::enable_if_t<
 		/* requires */	std::is_convertible_v<intT2, intT>
@@ -289,12 +261,12 @@ namespace collin
 				template<class intT2, typename = std::enable_if_t<
 		/* requires */	std::is_convertible_v<intT2, intT>
 				>>
-				void numerator(intT2 n)
+				void numerator(intT2 n) noexcept
 				{
 					numerator_ = n;
 				}
 
-				constexpr int numerator() const
+				constexpr int numerator() const noexcept
 				{
 					return numerator_;
 				}
@@ -302,19 +274,20 @@ namespace collin
 				template<class intT2, typename = std::enable_if_t<
 		/* requires */	std::is_convertible_v<intT2, intT>
 				>>
-				void denominator(intT2 d)
+				void denominator(intT2 d) noexcept
 				{
 					denominator_ = d;
 				}
 
-				constexpr int denominator() const
+				constexpr int denominator() const noexcept
 				{
 					return denominator_;
 				}
 
-				constexpr operator double() const
+				template<class T>
+				constexpr operator T() const noexcept
 				{
-					return static_cast<double>(numerator_) / static_cast<double>(denominator_);
+					return static_cast<T>(numerator_) / static_cast<T>(denominator_);
 				}
 			private:
 				value_type numerator_;
@@ -519,6 +492,34 @@ namespace collin
 			}
 
 			return val_int - 1;
+		}
+
+		template<class T, class T2, typename = std::enable_if_t<
+/* requires */	std::is_integral_v<T2>
+		>>
+		constexpr std::common_type_t<T, T2> pow(T base, T2 exp)
+		{
+			if (exp == 0)
+			{
+				return 1;
+			}
+
+			const auto reverse = exp < 0;
+			if (reverse)
+			{
+				exp = -exp;
+			}
+
+			std::common_type_t<T, T2> common{base};
+
+			while (--exp > 0)
+			{
+				common *= base;
+			}
+
+			return reverse
+				? 1.0L / common
+				: common;
 		}
 	}
 }
