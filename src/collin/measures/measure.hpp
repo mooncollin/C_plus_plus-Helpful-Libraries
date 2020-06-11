@@ -495,7 +495,52 @@ namespace collin
                 using dimension_t = dimension_type<Dimension>;
                 using unit_t = basic_unit<rep, ratio, unit_values, system>;
 
-                static constexpr auto dimension_v = Dimension;
+                constexpr basic_dimension_unit() = default;
+                constexpr basic_dimension_unit(const basic_dimension_unit&) = default;
+                constexpr basic_dimension_unit(basic_dimension_unit&&) noexcept = default;
+
+                constexpr basic_dimension_unit& operator=(const basic_dimension_unit&) = default;
+                constexpr basic_dimension_unit& operator=(basic_dimension_unit&&) = default;
+
+                ~basic_dimension_unit() noexcept = default;
+
+                template<class Rep2, class Ratio2>
+                constexpr basic_dimension_unit(const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension>& other)
+                    : unit_{other.unit()} {}
+
+                template<class Rep2>
+                constexpr explicit basic_dimension_unit(const Rep2& n)
+                    : unit_{n} {}
+
+                constexpr typename dimension_t::size_type dimension() const noexcept
+                {
+                    return Dimension;
+                }
+
+                constexpr unit_t& unit() noexcept
+                {
+                    return unit_;
+                }
+
+                constexpr const unit_t& unit() const noexcept
+                {
+                    return unit_;
+                }
+
+            private:
+                unit_t unit_ {};
+        };
+
+        template<class Rep, class Ratio, class UnitValues, class System>
+        class basic_dimension_unit<Rep, Ratio, UnitValues, System, dynamic_dimension>
+        {
+            public:
+                using rep = Rep;
+                using ratio = Ratio;
+                using unit_values = UnitValues;
+                using system = System;
+                using dimension_t = dimension_type<dynamic_dimension>;
+                using unit_t = basic_unit<rep, ratio, unit_values, system>;
 
                 constexpr basic_dimension_unit() = default;
                 constexpr basic_dimension_unit(const basic_dimension_unit&) = default;
@@ -506,14 +551,13 @@ namespace collin
 
                 ~basic_dimension_unit() noexcept = default;
 
-                // TODO: Convert if dimension is dynamic on either side
                 template<class Rep2, class Ratio2>
-                constexpr basic_dimension_unit(const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension>& other)
-                    : unit_{other.unit()} {}
+                constexpr basic_dimension_unit(const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, dynamic_dimension>& other)
+                    : unit_{other.unit()}, dimension_{other.dimension()} {}
 
                 template<class Rep2>
                 constexpr explicit basic_dimension_unit(const Rep2& n, std::intmax_t dim = {1})
-                    : unit_{n}, dimension_{Dimension == dynamic_dimension ? dim : Dimension} {}
+                    : unit_{n}, dimension_{dim} {}
 
                 constexpr typename dimension_t::size_type dimension() const noexcept
                 {
@@ -540,10 +584,12 @@ namespace collin
         {
 
             public:
+                using rep = Rep;
+                using ratio = Ratio;
+                using unit_values = UnitValues;
+                using system = System;
                 using dimension_t = dimension_type<1>;
                 using unit_t = basic_unit<Rep, Ratio, UnitValues, System>;
-
-                static constexpr auto dimension_v = 1;
 
                 constexpr basic_dimension_unit() = default;
                 constexpr basic_dimension_unit(const basic_dimension_unit&) = default;
