@@ -103,8 +103,8 @@ namespace collin
         template<class T>
         struct is_basic_dimension_unit : std::false_type {};
 
-        template<class Rep, class Ratio, class UnitValues, class System, std::intmax_t Dimension, typename Tag>
-        struct is_basic_dimension_unit<basic_dimension_unit<Rep, Ratio, UnitValues, System, Dimension, Tag>> : std::true_type {};
+        template<class Rep, class Ratio, class UnitValues, class System, std::intmax_t Dimension>
+        struct is_basic_dimension_unit<basic_dimension_unit<Rep, Ratio, UnitValues, System, Dimension>> : std::true_type {};
 
         template<class T>
         constexpr bool is_basic_dimension_unit_v = is_basic_dimension_unit<T>::value;
