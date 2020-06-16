@@ -707,19 +707,27 @@ class speed_construction_test : public collin::test::test_case
 
         void static_asserts()
         {
-            constexpr collin::measures::speed<collin::measures::meters> v{10, 1};
+            constexpr collin::measures::speed<collin::measures::meters> v{10};
+            constexpr collin::measures::speed<collin::measures::meters> v2{50};
+            constexpr collin::measures::speed<collin::measures::meters> v3{1000};
+            constexpr collin::measures::speed<collin::measures::kilometers> v4{1};
+            constexpr collin::measures::speed<collin::measures::exameters> v5{100};
 
-            static_assert(std::is_convertible_v<decltype(std::get<0>(v)), collin::measures::basic_dimension_unit_t<collin::measures::meters, 1>>);
-            static_assert(std::is_convertible_v<decltype(std::get<1>(v)), collin::measures::basic_dimension_unit_t<collin::measures::seconds, -1>>);
+            static_assert(v.count() == 10);
+            static_assert((+v) == v);
+            static_assert((-v) == decltype(v){-10});
 
-            static_assert(std::is_convertible_v<decltype(std::get<collin::measures::meters, 1>(v)), collin::measures::meters>);
-            static_assert(std::is_convertible_v<decltype(std::get<collin::measures::seconds, -1>(v)), collin::measures::seconds>);
+            static_assert((v + v2) == decltype(v){60});
+            static_assert((v - v2) == decltype(v){-40});
+            static_assert((v * 10) == decltype(v){100});
+            static_assert((v2 / 10) == decltype(v){5});
+            static_assert((v2 % v) == decltype(v){0});
+            static_assert((v2 % 5) == decltype(v){0});
 
-            constexpr auto first = std::get<collin::measures::meters>(v);
-            constexpr auto second = std::get<collin::measures::seconds>(v);
-
-            static_assert(std::is_convertible_v<decltype(first), collin::measures::basic_dimension_unit_t<collin::measures::meters, 1>>);
-            static_assert(std::is_convertible_v<decltype(second), collin::measures::basic_dimension_unit_t<collin::measures::seconds, -1>>);
+            static_assert((v3 + v4) == decltype(v3){2000});
+            static_assert((v3 + v4) == decltype(v4){2});
+            static_assert((v3 + v4) != decltype(v4){3});
+            static_assert((v4 - v3) == decltype(v4){0});
         }
 };
 

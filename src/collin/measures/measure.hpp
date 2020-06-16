@@ -56,6 +56,7 @@ namespace collin
         {
             public:
                 using size_type = std::intmax_t;
+                static constexpr size_type value = Ext;
 
                 constexpr dimension_type() noexcept = default;
 
@@ -78,6 +79,7 @@ namespace collin
         {
             public:
                 using size_type = std::intmax_t;
+                static constexpr size_type value = dynamic_dimension;
 
                 template<size_type Other>
                 explicit constexpr dimension_type(dimension_type<Other> ext)
@@ -300,7 +302,7 @@ namespace collin
         template<class Rep1, class Ratio1, class Rep2, class Ratio2, class UnitValues, class System>
         constexpr
         typename std::common_type_t<basic_unit<Rep1, Ratio1, UnitValues, System>,
-        basic_unit<Rep2, Ratio2, UnitValues, System>>
+                                    basic_unit<Rep2, Ratio2, UnitValues, System>>
         operator-(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
         {
             using common_type = typename std::common_type_t<basic_unit<Rep1, Ratio1, UnitValues, System>,
@@ -372,7 +374,7 @@ namespace collin
         template<class Rep1, class Ratio1, class Rep2, class Ratio2, class UnitValues, class System>
         constexpr
         typename std::common_type_t<basic_unit<Rep1, Ratio1, UnitValues, System>,
-        basic_unit<Rep2, Ratio2, UnitValues, System>>
+                                    basic_unit<Rep2, Ratio2, UnitValues, System>>
         operator%(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
         {
             using common_type = typename std::common_type_t<basic_unit<Rep1, Ratio1, UnitValues, System>,
@@ -770,64 +772,279 @@ namespace collin
         }
 
         template<class... DimensionUnits>
-        class basic_derived_unit : public std::tuple<DimensionUnits...>
+        class basic_derived_unit
         {
-        public:
-            using units = std::tuple<DimensionUnits...>;
+            public:
+                using units = std::tuple<DimensionUnits...>;
+                using main_unit_t = std::tuple_element_t<0, units>;
+                static constexpr auto num_units = sizeof...(DimensionUnits);
 
-            static constexpr auto num_units = sizeof...(DimensionUnits);
+                constexpr basic_derived_unit() = default;
 
-            constexpr basic_derived_unit()
-                : units{{DimensionUnits{}}...} {}
+                template<class Rep>
+                constexpr explicit basic_derived_unit(const Rep& amount)
+                    : unit_{amount} {}
 
-            template<class... Reps, typename = std::enable_if_t<
-    /* requires */  num_units == sizeof...(Reps)
-            >>
-            constexpr explicit basic_derived_unit(Reps&&... reps)
-                : units{{DimensionUnits{std::forward<Reps>(reps)}}...} {}
+                constexpr basic_derived_unit(const basic_derived_unit&) = default;
+                constexpr basic_derived_unit(basic_derived_unit&&) noexcept = default;
 
-            constexpr basic_derived_unit(const basic_derived_unit&) = default;
-            constexpr basic_derived_unit(basic_derived_unit&&) noexcept = default;
+                constexpr basic_derived_unit& operator=(const basic_derived_unit&) = default;
+                constexpr basic_derived_unit& operator=(basic_derived_unit&&) noexcept = default;
 
-            constexpr basic_derived_unit& operator=(const basic_derived_unit&) = default;
-            constexpr basic_derived_unit& operator=(basic_derived_unit&&) noexcept = default;
+                ~basic_derived_unit() noexcept = default;
 
-            ~basic_derived_unit() noexcept = default;
+                [[nodiscard]] constexpr auto& main_unit() const noexcept
+                {
+                    return unit_.unit();
+                }
 
-        private:
-            using enable_check = std::enable_if_t<
-                (num_units >= 2) && // Must have two or more units to be considered a derived unit
-                (... && is_basic_dimension_unit_v<DimensionUnits>) && // Unit types must be dimensional units
-                type_traits::is_unique_v<typename DimensionUnits::unit_values...> // Unit values cannot be repeated (i.e. two distance units)
-            >;
+                [[nodiscard]] constexpr auto& main_unit() noexcept
+                {
+                    return unit_.unit();
+                }
+
+                [[nodiscard]] constexpr auto count() const noexcept
+                {
+                    return main_unit().count();
+                }
+
+                [[nodiscard]] constexpr basic_derived_unit operator+() const
+                {
+                    return basic_derived_unit{*this};
+                }
+
+                [[nodiscard]] constexpr basic_derived_unit operator-() const
+                {
+                    return basic_derived_unit{-count()};
+                }
+
+                constexpr basic_derived_unit& operator++()
+                {
+                    ++main_unit();
+                    return *this;
+                }
+
+                constexpr basic_derived_unit operator++(int)
+                {
+                    const auto not_changed = *this;
+                    ++(*this);
+                    return not_changed;
+                }
+
+                constexpr basic_derived_unit& operator--()
+                {
+                    --main_unit();
+                    return *this;
+                }
+
+                constexpr basic_derived_unit operator--(int)
+                {
+                    const auto not_changed = *this;
+                    --(*this);
+                    return not_changed;
+                }
+
+                constexpr basic_derived_unit& operator+=(const basic_derived_unit& other)
+                {
+                    main_unit() += other.main_unit();
+                    return *this;
+                }
+
+                constexpr basic_derived_unit& operator-=(const basic_derived_unit& other)
+                {
+                    main_unit() -= other.main_unit();
+                    return *this;
+                }
+            
+                constexpr basic_derived_unit& operator*=(const typename main_unit_t::rep& other)
+                {
+                    main_unit() *= other;
+                    return *this;
+                }
+
+                constexpr basic_derived_unit& operator/=(const typename main_unit_t::rep& other)
+                {
+                    main_unit() /= other;
+                    return *this;
+                }
+
+                constexpr basic_derived_unit& operator%=(const typename main_unit_t::rep& other)
+                {
+                    main_unit() %= other;
+                    return *this;
+                }
+
+                constexpr basic_derived_unit& operator%=(const basic_derived_unit& other)
+                {
+                    main_unit() %= other.main_unit();
+                    return *this;
+                }
+
+            private:
+                using enable_check = std::enable_if_t<
+                    (num_units >= 2) && // Must have two or more units to be considered a derived unit
+                    (... && is_basic_dimension_unit_v<DimensionUnits>) && // Unit types must be dimensional units
+                    (... && !std::is_same_v<typename DimensionUnits::dimension_t, dimension_type<dynamic_dimension>>) && // Dimensions have to be compile time templates
+                    type_traits::is_unique_v<typename DimensionUnits::unit_values...> // Unit values cannot be repeated (i.e. two distance units)
+                >;
+
+                main_unit_t unit_ {0};
         };
 
-        namespace details
+        template<class... DimensionalUnits, class... DimensionalUnits2, typename = std::enable_if_t<
+/* requires */  sizeof...(DimensionalUnits) == sizeof...(DimensionalUnits2) && // Same amount of units
+                (... && std::is_convertible_v<typename DimensionalUnits::unit_t, typename DimensionalUnits2::unit_t>) && // Units are compatible
+                (... && (DimensionalUnits::dimension_t::value == DimensionalUnits2::dimension_t::value)) // Dimensions are the same
+        >>
+        constexpr auto operator+(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
         {
-            template<class T, class... Units, std::size_t I>
-            constexpr auto& get_helper(const measures::basic_derived_unit<Units...>& units, std::index_sequence<I>) noexcept
-            {
-                using this_type = std::tuple_element_t<I, std::tuple<Units...>>;
-                if constexpr (std::is_convertible_v<T, typename this_type::unit_t>)
-                {
-                    return std::get<I>(units);
-                }
-            }
+            using common_type = std::common_type_t<
+                                    basic_unit<
+                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::rep,
+                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::ratio,
+                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::unit_values,
+                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::system>,
+                                    basic_unit<
+                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::rep,
+                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::ratio,
+                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::unit_values,
+                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::system>>;
 
-            template<class T, class... Units, std::size_t F, std::size_t... I>
-            constexpr auto& get_helper(const measures::basic_derived_unit<Units...>& units, std::index_sequence<F, I...>) noexcept
-            {
-                using this_type = std::tuple_element_t<F, std::tuple<Units...>>;
+            return basic_derived_unit<
+                    basic_dimension_unit_t<std::common_type_t<
+                        typename DimensionalUnits::unit_t,
+                        typename DimensionalUnits2::unit_t>
+                    , DimensionalUnits::dimension_t::value>...>{common_type(lhs.main_unit() + rhs.main_unit()).count()};
+        }
 
-                if constexpr(std::is_convertible_v<T, typename this_type::unit_t>)
-                {
-                    return std::get<F>(units);
-                }
-                else
-                {
-                    return get_helper<T>(units, std::index_sequence<I...>{});
-                }
-            }
+        template<class... DimensionalUnits, class... DimensionalUnits2, typename = std::enable_if_t<
+/* requires */  sizeof...(DimensionalUnits) == sizeof...(DimensionalUnits2) && // Same amount of units
+                (... && std::is_convertible_v<DimensionalUnits, DimensionalUnits2>) && // Units are compatible
+                (... && (DimensionalUnits::dimension_t::value == DimensionalUnits2::dimension_t::value)) // Dimensions are the same
+        >>
+        constexpr auto operator-(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
+        {
+            using common_type = std::common_type_t<
+                                    basic_unit<
+                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::rep,
+                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::ratio,
+                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::unit_values,
+                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::system>,
+                                    basic_unit<
+                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::rep,
+                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::ratio,
+                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::unit_values,
+                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::system>>;
+
+            return basic_derived_unit<
+                basic_dimension_unit_t<std::common_type_t<
+                typename DimensionalUnits::unit_t,
+                typename DimensionalUnits2::unit_t>
+                , DimensionalUnits::dimension_t::value>...>{common_type(lhs.main_unit() - rhs.main_unit()).count()};
+        }
+
+        template<class Rep2, class... DimensionalUnits>
+        constexpr auto operator*(const basic_derived_unit<DimensionalUnits...>& lhs, const Rep2& rhs)
+        {
+            return basic_derived_unit<DimensionalUnits...>{lhs.count() * rhs};
+        }
+
+        template<class Rep2, class... DimensionalUnits>
+        constexpr auto operator/(const basic_derived_unit<DimensionalUnits...>& lhs, const Rep2& rhs)
+        {
+            return basic_derived_unit<DimensionalUnits...>{lhs.count() / rhs};
+        }
+
+        template<class Rep2, class... DimensionalUnits>
+        constexpr auto operator%(const basic_derived_unit<DimensionalUnits...>& lhs, const Rep2& rhs)
+        {
+            return basic_derived_unit<DimensionalUnits...>{lhs.count() % rhs};
+        }
+
+        template<class... DimensionalUnits, class... DimensionalUnits2, typename = std::enable_if_t<
+/* requires */  sizeof...(DimensionalUnits) == sizeof...(DimensionalUnits2) && // Same amount of units
+                (... && std::is_convertible_v<DimensionalUnits, DimensionalUnits2>) && // Units are compatible
+                (... && (DimensionalUnits::dimension_t::value == DimensionalUnits2::dimension_t::value)) // Dimensions are the same
+        >>
+        constexpr auto operator%(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
+        {
+            using common_type = std::common_type_t<
+                                    basic_unit<
+                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::rep,
+                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::ratio,
+                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::unit_values,
+                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::system>,
+                                    basic_unit<
+                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::rep,
+                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::ratio,
+                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::unit_values,
+                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::system>>;
+
+            return basic_derived_unit<
+                basic_dimension_unit_t<std::common_type_t<
+                typename DimensionalUnits::unit_t,
+                typename DimensionalUnits2::unit_t>
+                , DimensionalUnits::dimension_t::value>...>{common_type(lhs.main_unit() % rhs.main_unit()).count()};
+        }
+
+        template<class... DimensionalUnits, class... DimensionalUnits2, typename = std::enable_if_t<
+/* requires */  sizeof...(DimensionalUnits) == sizeof...(DimensionalUnits2) && // Same amount of units
+                (... && std::is_convertible_v<DimensionalUnits, DimensionalUnits2>) && // Units are compatible
+                (... && (DimensionalUnits::dimension_t::value == DimensionalUnits2::dimension_t::value)) // Dimensions are the same
+        >>
+        constexpr auto operator==(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
+        {
+            return lhs.main_unit() == rhs.main_unit();
+        }
+
+        template<class... DimensionalUnits, class... DimensionalUnits2, typename = std::enable_if_t<
+/* requires */  sizeof...(DimensionalUnits) == sizeof...(DimensionalUnits2) && // Same amount of units
+                (... && std::is_convertible_v<DimensionalUnits, DimensionalUnits2>) && // Units are compatible
+                (... && (DimensionalUnits::dimension_t::value == DimensionalUnits2::dimension_t::value)) // Dimensions are the same
+        >>
+        constexpr auto operator!=(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
+        {
+            return !(lhs == rhs);
+        }
+
+        template<class... DimensionalUnits, class... DimensionalUnits2, typename = std::enable_if_t<
+/* requires */  sizeof...(DimensionalUnits) == sizeof...(DimensionalUnits2) && // Same amount of units
+                (... && std::is_convertible_v<DimensionalUnits, DimensionalUnits2>) && // Units are compatible
+                (... && (DimensionalUnits::dimension_t::value == DimensionalUnits2::dimension_t::value)) // Dimensions are the same
+        >>
+        constexpr auto operator<(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
+        {
+            return lhs.main_unit() < rhs.main_unit();
+        }
+
+        template<class... DimensionalUnits, class... DimensionalUnits2, typename = std::enable_if_t<
+/* requires */  sizeof...(DimensionalUnits) == sizeof...(DimensionalUnits2) && // Same amount of units
+                (... && std::is_convertible_v<DimensionalUnits, DimensionalUnits2>) && // Units are compatible
+                (... && (DimensionalUnits::dimension_t::value == DimensionalUnits2::dimension_t::value)) // Dimensions are the same
+        >>
+        constexpr auto operator>(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
+        {
+            return rhs.count() < lhs.count();
+        }
+
+        template<class... DimensionalUnits, class... DimensionalUnits2, typename = std::enable_if_t<
+/* requires */  sizeof...(DimensionalUnits) == sizeof...(DimensionalUnits2) && // Same amount of units
+                (... && std::is_convertible_v<DimensionalUnits, DimensionalUnits2>) && // Units are compatible
+                (... && (DimensionalUnits::dimension_t::value == DimensionalUnits2::dimension_t::value)) // Dimensions are the same
+        >>
+        constexpr auto operator<=(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
+        {
+            return !(rhs.count() < lhs.count());
+        }
+
+        template<class... DimensionalUnits, class... DimensionalUnits2, typename = std::enable_if_t<
+/* requires */  sizeof...(DimensionalUnits) == sizeof...(DimensionalUnits2) && // Same amount of units
+                (... && std::is_convertible_v<DimensionalUnits, DimensionalUnits2>) && // Units are compatible
+                (... && (DimensionalUnits::dimension_t::value == DimensionalUnits2::dimension_t::value)) // Dimensions are the same
+        >>
+        constexpr auto operator>=(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
+        {
+            return !(lhs.count() < rhs.count());
         }
 
         struct metric_system
@@ -955,38 +1172,5 @@ namespace collin
         {
             return os << unit.count() << System::suffix_v<basic_unit<Rep, Ratio, UnitValues, System>>;
         }
-    }
-}
-
-namespace std
-{
-    template<class T, std::intmax_t Dimension, class... Units>
-    constexpr T& get(collin::measures::basic_derived_unit<Units...>& units) noexcept
-    {
-        return std::get<collin::measures::basic_dimension_unit_t<T, Dimension>>(units).unit();
-    }
-
-    template<class T, std::intmax_t Dimension, class... Units>
-    constexpr T&& get(collin::measures::basic_derived_unit<Units...>&& units) noexcept
-    {
-        return std::get<collin::measures::basic_dimension_unit_t<T, Dimension>>(units).unit();
-    }
-
-    template<class T, std::intmax_t Dimension, class... Units>
-    constexpr const T& get(const collin::measures::basic_derived_unit<Units...>& units) noexcept
-    {
-        return std::get<collin::measures::basic_dimension_unit_t<T, Dimension>>(units).unit();
-    }
-
-    template<class T, std::intmax_t Dimension, class... Units>
-    constexpr const T&& get(const collin::measures::basic_derived_unit<Units...>&& units) noexcept
-    {
-        return std::get<collin::measures::basic_dimension_unit_t<T, Dimension>>(units).unit();
-    }
-
-    template<class T, class... Units>
-    constexpr auto& get(const collin::measures::basic_derived_unit<Units...>& units) noexcept
-    {
-        return collin::measures::details::get_helper<T>(units, std::make_index_sequence<sizeof...(Units)>{});
     }
 }
