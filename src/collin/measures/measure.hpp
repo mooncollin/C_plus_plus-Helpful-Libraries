@@ -1024,7 +1024,7 @@ namespace collin
         >>
         constexpr auto operator>(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
         {
-            return rhs.count() < lhs.count();
+            return rhs < lhs;
         }
 
         template<class... DimensionalUnits, class... DimensionalUnits2, typename = std::enable_if_t<
@@ -1034,7 +1034,7 @@ namespace collin
         >>
         constexpr auto operator<=(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
         {
-            return !(rhs.count() < lhs.count());
+            return !(rhs < lhs);
         }
 
         template<class... DimensionalUnits, class... DimensionalUnits2, typename = std::enable_if_t<
@@ -1044,7 +1044,7 @@ namespace collin
         >>
         constexpr auto operator>=(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
         {
-            return !(lhs.count() < rhs.count());
+            return !(lhs < rhs);
         }
 
         struct metric_system
