@@ -32,15 +32,6 @@ namespace collin
 					QUOTE_NONNUMERIC
 				};
 
-				dialect() = default;
-				dialect(const dialect&) = default;
-				dialect(dialect&&) noexcept = default;
-
-				dialect& operator=(const dialect&) = default;
-				dialect& operator=(dialect&&) noexcept = default;
-
-				~dialect() noexcept = default;
-
 				std::string delimiter {default_delimiter};
 				std::string quote {default_quote};
 				std::string line_terminator {default_line_terminator};
@@ -128,14 +119,6 @@ namespace collin
 				base_csv_reader(std::istream& is, dialect&& dialect)
 					: is{&is}, dialect_{std::move(dialect)} {}
 
-				base_csv_reader(const base_csv_reader&) = default;
-				base_csv_reader(base_csv_reader&&) noexcept = default;
-
-				base_csv_reader& operator=(const base_csv_reader&) = default;
-				base_csv_reader& operator=(base_csv_reader&&) noexcept = default;
-
-				~base_csv_reader() noexcept = default;
-
 				bool operator==(const base_csv_reader& other) const
 				{
 					return is == other.is;
@@ -185,21 +168,15 @@ namespace collin
 				csv_reader(std::istream& is, dialect&& dialect)
 					: base{is, std::move(dialect)} {}
 
-				csv_reader(const csv_reader&) = default;
-				csv_reader(csv_reader&&) noexcept = default;
-
-				csv_reader& operator=(const csv_reader&) = default;
-				csv_reader& operator=(csv_reader&&) noexcept = default;
-
 				~csv_reader() noexcept = default;
 
-				[[nodiscard]] csv_reader begin()
+				csv_reader begin()
 				{
 					operator++();
 					return *this;
 				}
 
-				[[nodiscard]] csv_reader end()
+				[[nodiscard]] csv_reader end() const
 				{
 					return {};
 				}
@@ -262,21 +239,13 @@ namespace collin
 				csv_reader(std::istream& is, dialect&& dialect)
 					: base{is, std::move(dialect)} {}
 
-				csv_reader(const csv_reader&) = default;
-				csv_reader(csv_reader&&) noexcept = default;
-
-				csv_reader& operator=(const csv_reader&) = default;
-				csv_reader& operator=(csv_reader&&) noexcept = default;
-
-				~csv_reader() noexcept = default;
-
-				[[nodiscard]] csv_reader begin()
+				csv_reader begin()
 				{
 					operator++();
 					return *this;
 				}
 
-				[[nodiscard]] csv_reader end()
+				[[nodiscard]] csv_reader end() const
 				{
 					return {};
 				}

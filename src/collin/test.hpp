@@ -27,28 +27,11 @@ namespace collin
 			public:
 				assert_exception(std::string_view str)
 					: std::runtime_error{std::string(str)} {}
-
-				assert_exception(const assert_exception&) = default;
-				assert_exception(assert_exception&&) noexcept = default;
-
-				assert_exception& operator=(const assert_exception&) = default;
-				assert_exception& operator=(assert_exception&&) noexcept = default;
-
-				~assert_exception() noexcept = default;
 		};
 
 		class test_result
 		{
 			public:
-				test_result() = default;
-				test_result(const test_result&) = default;
-				test_result(test_result&&) noexcept = default;
-
-				test_result& operator=(const test_result&) = default;
-				test_result& operator=(test_result&&) noexcept = default;
-
-				~test_result() noexcept = default;
-
 				void add_error(const std::exception& e)
 				{
 					errors_.push_back(e);
@@ -96,14 +79,6 @@ namespace collin
 				test_case(std::string_view str)
 					: name_{str} {}
 
-				test_case(const test_case&) = delete;
-				test_case(test_case&&) = default;
-
-				test_case& operator=(const test_case&) = delete;
-				test_case& operator=(test_case&&) = default;
-
-				virtual ~test_case() noexcept = default;
-
 				virtual void set_up() {}
 
 				test_result run()
@@ -150,15 +125,6 @@ namespace collin
 			using iterator = typename container::iterator;
 
 			public:
-				test_suite() = default;
-				test_suite(const test_suite&) = default;
-				test_suite(test_suite&&) noexcept = default;
-
-				test_suite& operator=(const test_suite&) = default;
-				test_suite& operator=(test_suite&&) noexcept = default;
-
-				~test_suite() noexcept = default;
-
 				template<class T, class... Args>
 				void add_test_case(Args&&... args)
 				{
@@ -214,7 +180,7 @@ namespace collin
 				test_runner& operator=(const test_runner&) = delete;
 				test_runner& operator=(test_runner&&) = delete;
 
-				~test_runner() noexcept = default;
+				virtual ~test_runner() noexcept = default;
 
 				virtual bool run(test_case&) = 0;
 				virtual bool run(test_suite&) = 0;
@@ -559,6 +525,12 @@ namespace collin
 			{
 				std::ostringstream ss;
 				ss << "assert_almost_equal failed: " << message << '\n';
+				if constexpr (type_traits::is_stream_writable_v<T, decltype(ss)> &&
+					type_traits::is_stream_writable_v<F, decltype(ss)>)
+				{
+					ss << "First:\n" << first << '\n';
+					ss << "Second:\n" << second << '\n';
+				}
 				throw assert_exception(ss.str());
 			}
 		}
@@ -573,6 +545,12 @@ namespace collin
 			{
 				std::ostringstream ss;
 				ss << "assert_almost_equal failed: " << message << '\n';
+				if constexpr (type_traits::is_stream_writable_v<T, decltype(ss)> &&
+					type_traits::is_stream_writable_v<F, decltype(ss)>)
+				{
+					ss << "First:\n" << first << '\n';
+					ss << "Second:\n" << second << '\n';
+				}
 				if constexpr (type_traits::is_stream_writable_v<decltype(difference), decltype(ss)>)
 				{
 					ss << "Difference: " << difference << '\n';
@@ -668,6 +646,17 @@ namespace collin
 				std::ostringstream ss;
 				ss << "assert_sequence_not_equal failed: " << message << '\n';
 				throw assert_exception(ss.str());
+			}
+		}
+
+		template<class T, class F>
+		inline void output_if_possible(const T& first, const F& second, std::ostream& os)
+		{
+			if constexpr (type_traits::is_stream_writable_v<T, decltype(os)> &&
+				type_traits::is_stream_writable_v<F, decltype(os)>)
+			{
+				os << "First:\n" << first << '\n';
+				os << "Second:\n" << second << '\n';
 			}
 		}
 	}

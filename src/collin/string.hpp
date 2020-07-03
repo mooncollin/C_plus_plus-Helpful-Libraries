@@ -301,18 +301,18 @@ namespace collin
             return str;
         }
 
+        template<>
+        char from_string(std::string_view str)
+        {
+            return str.front();
+        }
+
         template<class T>
         std::string to_string(const T& value)
         {
             std::ostringstream ss;
             ss << value;
             return ss.str();
-        }
-
-        template<>
-        char from_string(std::string_view str)
-        {
-            return str.front();
         }
 
         template<class OutputIterator, typename = std::enable_if_t<
@@ -364,6 +364,13 @@ namespace collin
         std::string join(const Container& container, std::string_view join_string)
         {
             return join(std::cbegin(container), std::cend(container), join_string);
+        }
+
+        template<class CharT>
+        constexpr int hex_char_to_number(CharT ch) noexcept
+        {
+            const auto uppered = std::toupper(ch, std::locale{});
+            return uppered >= 'A' ? uppered - 'A' + 10 : uppered - '0';
         }
     }
 }

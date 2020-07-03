@@ -8,135 +8,6 @@ namespace collin
 {
 	constexpr std::size_t dynamic_extent = static_cast<std::size_t>(-1);
 
-	template<class Type>
-	class span_iterator
-	{
-		public:
-			using iterator_category = std::random_access_iterator_tag;
-			using value_type = std::remove_cv_t<Type>;
-			using difference_type = std::ptrdiff_t;
-			using pointer = Type*;
-			using reference = Type&;
-
-			constexpr span_iterator() = default;
-			constexpr span_iterator(pointer begin, pointer end, pointer current)
-				: begin_(begin), end_(end), current_(current) {}
-			
-			constexpr reference operator*() const noexcept
-			{
-				return *current_;
-			}
-
-			constexpr pointer operator->() const noexcept
-			{
-				return current_;
-			}
-
-			constexpr span_iterator& operator++() noexcept
-			{
-				++current_;
-				return *this;
-			}
-
-			constexpr span_iterator operator++(int) noexcept
-			{
-				auto ret = *this;
-				++*this;
-				return ret;
-			}
-
-			constexpr span_iterator& operator--() noexcept
-			{
-				--current_;
-				return *this;
-			}
-
-			constexpr span_iterator operator--(int) noexcept
-			{
-				auto ret = *this;
-				--*this;
-				return ret;
-			}
-
-			constexpr span_iterator& operator+=(const difference_type n) noexcept
-			{
-				current_ += n;
-				return *this;
-			}
-
-			constexpr span_iterator operator+(const difference_type n) const noexcept
-			{
-				auto ret = *this;
-				ret += n;
-				return ret;
-			}
-
-			friend constexpr span_iterator operator+(const difference_type n, const span_iterator& rhs) noexcept
-			{
-				return rhs + n;
-			}
-
-			constexpr span_iterator& operator-=(const difference_type n) noexcept
-			{
-				current_ -= n;
-				return *this;
-			}
-
-			constexpr span_iterator operator-(const difference_type n) const noexcept
-			{
-				auto ret = *this;
-				ret -= n;
-				return ret;
-			}
-
-			constexpr difference_type operator-(const span_iterator& rhs) const noexcept
-			{
-				return current_ - rhs.current_;
-			}
-
-			constexpr reference operator[](const difference_type n) const noexcept
-			{
-				return *(*this + n);
-			}
-
-			constexpr bool operator==(const span_iterator& rhs) noexcept
-			{
-				return current_ == rhs.current_;
-			}
-
-			constexpr bool operator!=(const span_iterator& rhs) noexcept
-			{
-				return !(*this == rhs);
-			}
-
-			constexpr bool operator<(const span_iterator& rhs) noexcept
-			{
-				return current_ < rhs.current_;
-			}
-
-			constexpr bool operator>(const span_iterator& rhs) noexcept
-			{
-				return rhs < *this;
-			}
-
-			constexpr bool operator<=(const span_iterator& rhs) noexcept
-			{
-				return !(*this < lhs);
-			}
-
-			constexpr bool operator>=(const span_iterator& rhs) noexcept
-			{
-				return !(lhs < *this);
-			}
-				
-		private:
-			pointer begin_ {nullptr};
-			pointer end_ {nullptr};
-			pointer current_ {nullptr};
-	};
-
-	
-
 	template<std::size_t Ext>
 	class extent_type
 	{
@@ -192,22 +63,23 @@ namespace collin
 			using const_reference = const element_type&;
 			using difference_type = std::ptrdiff_t;
 
-			using iterator = span_iterator<ElementType>;
-			using const_iterator = span_iterator<const ElementType>;
+			using iterator = pointer;
+			using const_iterator = const iterator;
 			using reverse_iterator = std::reverse_iterator<iterator>;
 			using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-			constexpr span() noexcept : storage_(nullptr, extent_type<0>()) {}
+			constexpr span() noexcept
+				: storage_(nullptr, extent_type<0>()) {}
 
-			constexpr span(pointer ptr, size_type count) noexcept : storage_(ptr, count)
-			{
-			}
+			constexpr span(pointer ptr, size_type count) noexcept
+				: storage_(ptr, count) {}
+
 			constexpr span(pointer firstElem, pointer lastElem) noexcept
-				: span(firstElem, static_cast<std::size_t>(lastElem - firstElem)) {}
+				: storage_(firstElem, static_cast<std::size_t>(lastElem - firstElem)) {}
 
 			template<std::size_t N>
 			constexpr span(element_type (&arr)[N]) noexcept
-				: storage_(arr + 0, extent_type<N>()) {}
+				: storage_(&arr, extent_type<N>()) {}
 
 			template<std::size_t N>
 			constexpr span(std::array<element_type, N>& arr) noexcept
@@ -216,9 +88,6 @@ namespace collin
 			template<class Container>
 			constexpr span(Container& cont) noexcept
 				: storage_(cont.data(), cont.size()) {}
-
-			constexpr span(const span& other) noexcept = default;
-			~span() noexcept = default;
 
 			constexpr operator pointer() const noexcept
 			{
@@ -289,27 +158,22 @@ namespace collin
 
 			constexpr iterator begin() const noexcept
 			{
-				return {data(), data() + size(), data()};
+				return data();
 			}
 
 			constexpr iterator end() const noexcept
 			{
-				const auto data = storage_.data();
-				const auto endData = data + storage_.size();
-				return {data, endData, endData};
+				return data() + size();
 			}
 
 			constexpr const_iterator cbegin() const noexcept
 			{
-				const auto data = storage_.data();
-				return {data, data + size(), data};
+				return data();
 			}
 
 			constexpr const_iterator cend() const noexcept
 			{
-				const auto data = storage_.data();
-				const auto endData = data + storage_.size();
-				return {data, endData, endData};
+				return data() + size();
 			}
 
 			constexpr reverse_iterator rbegin() const noexcept {return reverse_iterator{end()};}
@@ -319,6 +183,7 @@ namespace collin
 			{
 				return const_reverse_iterator{cend()};
 			}
+
 			constexpr const_reverse_iterator crend() const noexcept
 			{
 				return const_reverse_iterator{cbegin()};
@@ -353,7 +218,7 @@ namespace collin
 	template<class ElementType>
 	constexpr span<ElementType, dynamic_extent> make_span(ElementType* begin, ElementType* end) noexcept
 	{
-		return make_span(begin, end - begin);
+		return span<ElementType, dynamic_extent>(begin, end);
 	}
 
 	template<class ElementType, std::size_t N>

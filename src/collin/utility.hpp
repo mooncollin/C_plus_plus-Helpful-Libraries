@@ -8,6 +8,7 @@
 #include <tuple>
 #include <system_error>
 #include <type_traits>
+#include <limits>
 
 namespace collin
 {
@@ -15,14 +16,16 @@ namespace collin
 	class finally
 	{
 		public:
-			using return_type = std::invoke_result_t<Function(Args...)>;
+			using function_type = Function;
+			using return_type = std::invoke_result_t<function_type(Args...)>;
+			using arguments = std::tuple<Args...>;
 
-			finally(Function&& f, Args&&... args) noexcept
-				: f(f), args(args...) {}
+			finally(function_type&& f, Args&&... args) noexcept
+				: f(f), args(std::forward<Args>(args...)) {}
 
 			~finally() noexcept
 			{
-				static_cast<void>(operator()());
+				operator()();
 			}
 
 			return_type operator()() const noexcept
@@ -30,13 +33,13 @@ namespace collin
 				return std::apply(f, args);
 			}
 
-			Function function() const noexcept
+			function_type function() const noexcept
 			{
 				return f;
 			}
 
 		private:
-			Function f;
+			function_type f;
 			std::tuple<Args...> args;
 	};
 
@@ -47,7 +50,7 @@ namespace collin
 	}
 
 	template<class Container>
-	constexpr auto& first_of(Container& container, typename Container::size_type n = 1)
+	constexpr auto& first_of(Container& container, typename Container::size_type n = 0)
 	{
 		return *(std::begin(container) + n);
 	}
@@ -75,15 +78,6 @@ namespace collin
 	{
 		return a2t_impl(a, Indices{});
 	}
-
-	template<class... Types>
-	struct parameter_count
-	{
-		static constexpr std::size_t value {sizeof...(Types)};	
-	};
-
-	template<class... Types>
-	constexpr auto parameter_count_v = parameter_count<Types...>::value;
 
 	inline std::size_t unaligned_load(const char* p)
 	{
@@ -162,9 +156,9 @@ namespace collin
 	}
 
 	template<class Function, class... Args>
-	std::invoke_result_t<Function, Args...> invoke(Function f, std::tuple<Args...>&& tup)
+	std::invoke_result_t<Function, Args...> invoke(Function&& f, std::tuple<Args...>&& tup)
 	{
-		return details::invoke_helper(f, tup, std::make_index_sequence<sizeof...(Args)>{});
+		return details::invoke_helper(std::forward<Function>(f), std::forward<std::tuple<Args...>>(tup), std::make_index_sequence<sizeof...(Args)>{});
 	}
 
 	template<class... Ts>

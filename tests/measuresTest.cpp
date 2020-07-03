@@ -5,6 +5,7 @@
 #include "collin//measures/mechanical.hpp"
 #include "collin/measures/temperature.hpp"
 #include "collin/test.hpp"
+#include "collin/utility.hpp"
 #include <iostream>
 #include <ratio>
 #include <sstream>
