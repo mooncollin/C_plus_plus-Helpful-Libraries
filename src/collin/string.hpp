@@ -35,39 +35,37 @@ namespace collin
         #endif
 
         template<class CharT>
-        bool is_vowel(CharT t, const std::locale& loc = {})
+        constexpr bool is_vowel(CharT c)
         {
-            return vowels.find(std::tolower(t, loc)) != std::cend(vowels);
+            switch (std::tolower(c))
+            {
+                case static_cast<CharT>('a'):
+                case static_cast<CharT>('e'):
+                case static_cast<CharT>('i'):
+                case static_cast<CharT>('o'):
+                case static_cast<CharT>('u'):
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         template<class CharT>
-        bool is_consonant(CharT t, const std::locale& loc = {})
+        constexpr bool is_consonant(CharT t)
         {
-            return consonants.find(std::tolower(t, loc)) != std::cend(consonants);
+            return !is_vowel(c);
         }
 
         template<class InputIterator>
-        bool contains_vowel(InputIterator first, InputIterator last, const std::locale& loc = {})
+        constexpr bool contains_vowel(InputIterator first, InputIterator last)
         {
-            return std::any_of(first, last, [&](auto& val){return is_vowel(val, loc);});
-        }
-
-        template<class Container>
-        bool contains_vowel(const Container& container, const std::locale& loc = {})
-        {
-            return contains_vowel(std::begin(container), std::end(container), loc);
+            return std::any_of(first, last, [&](auto& val){return is_vowel(val);});
         }
 
         template<class InputIterator>
-        bool contains_consonant(InputIterator first, InputIterator last, const std::locale& loc = {})
+        constexpr bool contains_consonant(InputIterator first, InputIterator last)
         {
-            return std::any_of(first, last, [&](auto& val){return is_consonant(val, loc);});
-        }
-
-        template<class Container>
-        bool contains_consonant(const Container& container, const std::locale& loc = {})
-        {
-            return contains_consonant(std::begin(container), std::end(container), loc);
+            return std::any_of(first, last, [&](auto& val){return is_consonant(val);});
         }
 
         template<class InputIterator>

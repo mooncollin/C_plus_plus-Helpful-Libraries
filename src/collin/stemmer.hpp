@@ -1,7 +1,6 @@
-#ifndef COLLIN_STEMMER
-#define COLLIN_STEMMER
+#pragma once
 
-#include <unordered_map>
+#include <map>
 #include <string>
 #include <array>
 #include <cctype>
@@ -9,191 +8,303 @@
 #include <functional>
 #include <iostream>
 #include <string_view>
-#include "string.hpp"
-#include "algorithm.hpp"
-#include "utility.hpp"
+
+#include "collin/string.hpp"
+#include "collin/algorithm.hpp"
+#include "collin/utility.hpp"
 
 namespace collin
 {
-    class Stemmer
+    namespace stemming
     {
-        using stem_transform = std::function<bool(std::string&)>;
+        class porter_stemmer
+        {
+            using stem_transform = std::function<bool(std::string&)>;
 
-        public:
-            Stemmer()
-                : stemming_transforms_1a(get_stemming_transforms_1a()),
-                stemming_transforms_1b(get_stemming_transforms_1b()),
-                stemming_transforms_1b_supplemental(get_stemming_transforms_1b_supplemental()),
-                stemming_transforms_1c(get_stemming_transforms_1c()),
-                stemming_transforms_2(get_stemming_transforms_2()),
-                stemming_transforms_3(get_stemming_transforms_3()),
-                stemming_transforms_4(get_stemming_transforms_4()),
-                stemming_transforms_5a(get_stemming_transforms_5a()),
-                stemming_transforms_5b(get_stemming_transforms_5b())
-            {
-            }
-
-            void stem_word(std::string& word) noexcept
-            {
-                const auto location = stemmed_cache.find(word);
-                if(location != stemmed_cache.end())
+            public:
+                void stem_word(std::string& word)
                 {
-                    word = location->second;
-                    return;
-                }
-
-                auto copy = word;
-
-                run_through_transforms(stemming_transforms_1a, word);
-                
-                if(run_through_transforms(stemming_transforms_1b, word))
-                {
-                    run_through_transforms(stemming_transforms_1b_supplemental, word);
-                }
-
-                run_through_transforms(stemming_transforms_1c, word);
-                run_through_transforms(stemming_transforms_2, word);
-                run_through_transforms(stemming_transforms_3, word);
-                run_through_transforms(stemming_transforms_4, word);
-                run_through_transforms(stemming_transforms_5a, word);
-                run_through_transforms(stemming_transforms_5b, word);
-
-                stemmed_cache[copy] = word;
-            }
-
-            static int get_measure(std::string_view word) noexcept
-            {
-                // State 0 is at consonants, looking for vowels
-                // to go to the next state.
-
-                // State 1 is at vowels, looking for consonants
-                // to add to measure and go back to state 0.
-                constexpr auto consonant_state = 0;
-                constexpr auto vowel_state = 1;
-
-                int measure = 0;
-
-                auto state = consonant_state;
-
-                for(std::size_t i = 0; i < word.length(); i++)
-                {
-                    const auto current_char = word[i];
-
-                    switch(state)
+                    const auto location = stemmed_cache.find(word);
+                    if(location != stemmed_cache.end())
                     {
-                        case consonant_state:
-                            if(is_vowel(current_char)
-                                    || (current_char == 'y' && i != 0 && is_consonant(word[i-1])))
-                            {
-                                state = vowel_state;
-                            }
-                            break;
-                        case vowel_state:
-                            if(is_consonant(current_char)
-                                    && !(current_char == 'y' && i != 0 && is_consonant(word[i-1])))
-                            {
-                                measure++;
-                                state = consonant_state;
-                            }
-                            break;
+                        word = location->second;
+                        return;
                     }
+
+                    auto copy = word;
+
+                    porter_stemmer::stemming_transforms_1a(word);
+                
+                    if(porter_stemmer::stemming_transforms_1b(word))
+                    {
+                        porter_stemmer::stemming_transforms_1b_supplemental(word);
+                    }
+
+                    porter_stemmer::stemming_transforms_1c(word);
+                    porter_stemmer::stemming_transforms_2(word);
+                    porter_stemmer::stemming_transforms_3(word);
+                    porter_stemmer::stemming_transforms_4(word);
+                    porter_stemmer::stemming_transforms_5a(word);
+                    porter_stemmer::stemming_transforms_5b(word);
+
+                    stemmed_cache[copy] = word;
                 }
 
-                return measure;
-            }
-
-        private:
-            std::unordered_map<std::string, std::string> stemmed_cache;
-            const std::vector<stem_transform> stemming_transforms_1a;
-            const std::vector<stem_transform> stemming_transforms_1b;
-            const std::vector<stem_transform> stemming_transforms_1b_supplemental;
-            const std::vector<stem_transform> stemming_transforms_1c;
-            const std::vector<stem_transform> stemming_transforms_2;
-            const std::vector<stem_transform> stemming_transforms_3;
-            const std::vector<stem_transform> stemming_transforms_4;
-            const std::vector<stem_transform> stemming_transforms_5a;
-            const std::vector<stem_transform> stemming_transforms_5b;
-
-            bool run_through_transforms(const std::vector<stem_transform>& transforms, std::string& word) const
-            {
-                return any_of(transforms, [&](const auto& trans) {
-                    return trans(word);
-                });
-            }
-
-            static bool ends_with_double_consonant(std::string_view str)
-            {
-                if(str.length() < 2)
+                static constexpr int get_measure(std::string_view word) noexcept
                 {
-                    return false;
+                    // State 0 is at consonants, looking for vowels
+                    // to go to the next state.
+
+                    // State 1 is at vowels, looking for consonants
+                    // to add to measure and go back to state 0.
+                    enum class char_state
+                    {
+                        consonant,
+                        vowel
+                    };
+
+                    int measure = 0;
+
+                    auto state = char_state::consonant;
+
+                    for(std::size_t i = 0; i < word.length(); i++)
+                    {
+                        const auto current_char = word[i];
+
+                        switch(state)
+                        {
+                            case char_state::consonant:
+                                if(strings::is_vowel(current_char)
+                                        || (current_char == 'y' && i != 0 && strings::is_consonant(word[i-1])))
+                                {
+                                    state = char_state::vowel;
+                                }
+                                break;
+                            case char_state::vowel:
+                                if(strings::is_consonant(current_char)
+                                        && !(current_char == 'y' && i != 0 && strings::is_consonant(word[i-1])))
+                                {
+                                    measure++;
+                                    state = char_state::consonant;
+                                }
+                                break;
+                        }
+                    }
+
+                    return measure;
                 }
 
-                const auto first_char = last_of(str);
-                const auto second_char = last_of(str, 2);
+            private:
+                std::map<std::string, std::string> stemmed_cache;
 
-                return is_consonant(first_char) && is_consonant(second_char);
-            }
-
-            static stem_transform ends_with_transform(std::string ends, std::string replace) noexcept
-            {
-                return [=](std::string& str)
+                static inline bool stemming_transforms_1a(std::string& word)
                 {
-                    if(std::size(ends) > std::size(str))
+                    return porter_stemmer::ends_with_transform(word, "sses", "ss") ||
+                           porter_stemmer::ends_with_transform(word, "ies", "i") ||
+                           porter_stemmer::ends_with_transform(word, "ss", "ss") ||
+                           porter_stemmer::ends_with_transform(word, "s", "");
+                }
+
+                static inline bool stemming_transforms_1b(std::string& word)
+                {
+                    return porter_stemmer::measure_ends(word, "eed", "ee", 0) ||
+                           porter_stemmer::vowel_ends(word, "ed", "") ||
+                           porter_stemmer::vowel_ends(word, "ing", "");
+                }
+
+                static inline bool stemming_transforms_1b_supplemental(std::string& word)
+                {
+                    if (porter_stemmer::ends_with_transform(word, "at", "ate") ||
+                        porter_stemmer::ends_with_transform(word, "bl", "ble") ||
+                        porter_stemmer::ends_with_transform(word, "iz", "ize"))
+                    {
+                        return true;
+                    }
+                    
+                    if (std::size(word) < 2)
                     {
                         return false;
                     }
 
-                    const auto location = str.rfind(ends);
-                    if(location + std::size(ends) == std::size(str))
+                    const auto last_char = last_of(word);
+                    if (last_char == 'l' || last_char == 's' || last_char == 'z')
                     {
-                        str.erase(location, std::size(ends));
-                        str += replace;
+                        return false;
+                    }
+
+                    if (ends_with_double_consonant(word))
+                    {
+                        word.erase(std::size(word) - 1, 1);
                         return true;
                     }
 
                     return false;
-                };
-            }
+                }
 
-            static stem_transform measure_ends(std::string ends, std::string replace, int measure) noexcept
-            {
-                return [=](std::string& str)
+                static inline bool stemming_transforms_1c(std::string& word)
                 {
-                    const auto t = Stemmer::ends_with_transform(ends, replace);
-                    auto copy = str;
-                    const bool result = t(copy);
-                    if(result && Stemmer::get_measure(copy) > measure)
+                    return porter_stemmer::vowel_ends(word, "y", "i");
+                }
+
+                static inline bool stemming_transforms_2(std::string& word)
+                {
+                    return 
+                    porter_stemmer::measure_ends(word, "ational", "ate", 0) ||
+                    porter_stemmer::measure_ends(word, "tional", "tion", 0) ||
+                    porter_stemmer::measure_ends(word, "enci", "ence", 0) ||
+                    porter_stemmer::measure_ends(word, "anci", "ance", 0) ||
+                    porter_stemmer::measure_ends(word, "izer", "ize", 0) ||
+                    porter_stemmer::measure_ends(word, "abli", "able", 0) ||
+                    porter_stemmer::measure_ends(word, "alli", "al", 0) ||
+                    porter_stemmer::measure_ends(word, "entli", "ent", 0) ||
+                    porter_stemmer::measure_ends(word, "eli", "e", 0) ||
+                    porter_stemmer::measure_ends(word, "ousli", "ous", 0) ||
+                    porter_stemmer::measure_ends(word, "ization", "ize", 0) ||
+                    porter_stemmer::measure_ends(word, "ation", "ate", 0) ||
+                    porter_stemmer::measure_ends(word, "ator", "ate", 0) ||
+                    porter_stemmer::measure_ends(word, "alism", "al", 0) ||
+                    porter_stemmer::measure_ends(word, "iveness", "ive", 0) ||
+                    porter_stemmer::measure_ends(word, "fulness", "ful", 0) ||
+                    porter_stemmer::measure_ends(word, "ousness", "ous", 0) ||
+                    porter_stemmer::measure_ends(word, "aliti", "al", 0) ||
+                    porter_stemmer::measure_ends(word, "iviti", "ive", 0) ||
+                    porter_stemmer::measure_ends(word, "biliti", "ble", 0);
+                }
+
+                static inline bool stemming_transforms_3(std::string& word)
+                {
+                    return
+                    porter_stemmer::measure_ends(word, "icate", "ic", 0) ||
+                    porter_stemmer::measure_ends(word, "ative", "", 0) ||
+                    porter_stemmer::measure_ends(word, "alize", "al", 0) ||
+                    porter_stemmer::measure_ends(word, "iciti", "ic", 0) ||
+                    porter_stemmer::measure_ends(word, "ical", "ic", 0) ||
+                    porter_stemmer::measure_ends(word, "ful", "", 0) ||
+                    porter_stemmer::measure_ends(word, "ness", "", 0);
+                }
+
+                static inline bool stemming_transforms_4(std::string& word)
+                {
+                    if (porter_stemmer::measure_ends(word, "al", "", 1) ||
+                        porter_stemmer::measure_ends(word, "ance", "", 1) ||
+                        porter_stemmer::measure_ends(word, "ence", "", 1) ||
+                        porter_stemmer::measure_ends(word, "er", "", 1) ||
+                        porter_stemmer::measure_ends(word, "ic", "", 1) ||
+                        porter_stemmer::measure_ends(word, "able", "", 1) ||
+                        porter_stemmer::measure_ends(word, "ible", "", 1) ||
+                        porter_stemmer::measure_ends(word, "ant", "", 1) ||
+                        porter_stemmer::measure_ends(word, "ement", "", 1) ||
+                        porter_stemmer::measure_ends(word, "ment", "", 1) ||
+                        porter_stemmer::measure_ends(word, "ent", "", 1))
                     {
-                        str = std::move(copy);
                         return true;
-                    } 
+                    }
+
+                    auto copy = word;
+                    if (porter_stemmer::measure_ends(copy, "ion", "", 1))
+                    {
+                        const auto last_char = last_of(copy);
+                        if (last_char != 's' && last_char != 't')
+                        {
+                            word = std::move(copy);
+                            return true;
+                        }
+                    }
+
+                    return 
+                        porter_stemmer::measure_ends(word, "ou", "", 1) ||
+                        porter_stemmer::measure_ends(word, "ism", "", 1) ||
+                        porter_stemmer::measure_ends(word, "ate", "", 1) ||
+                        porter_stemmer::measure_ends(word, "iti", "", 1) ||
+                        porter_stemmer::measure_ends(word, "ous", "", 1) ||
+                        porter_stemmer::measure_ends(word, "ive", "", 1) ||
+                        porter_stemmer::measure_ends(word, "ize", "", 1);
+                }
+
+                static inline bool stemming_transforms_5a(std::string& word)
+                {
+                    if (porter_stemmer::measure_ends(word, "e", "", 1))
+                    {
+                        return true;
+                    }
+
+                    auto copy = word;
+                    if (!porter_stemmer::cvc_ends(copy, "e", "") && porter_stemmer::get_measure(copy) == 1)
+                    {
+                        if (porter_stemmer::ends_with_transform(copy, "e", ""))
+                        {
+                            word = std::move(copy);
+                            return true;
+                        }
+                    }
 
                     return false;
-                };
-            } 
+                }
 
-            static stem_transform vowel_ends(std::string ends, std::string replace) noexcept
-            {
-                return [=](std::string& str)
+                static inline bool stemming_transforms_5b(std::string& word)
                 {
-                    const auto t = Stemmer::ends_with_transform(ends, replace);
+                    if (porter_stemmer::get_measure(word) > 1 &&
+                        porter_stemmer::ends_with_double_consonant(word) &&
+                        last_of(word) == 'l')
+                    {
+                        word.erase(std::size(word) - 1, 1);
+                        return true;
+                    }
+
+                    return false;
+                }
+
+                static constexpr bool ends_with_double_consonant(std::string_view str)
+                {
+                    if(std::size(str) < 2)
+                    {
+                        return false;
+                    }
+
+                    const auto first_char = last_of(str);
+                    const auto second_char = last_of(str, 2);
+
+                    return strings::is_consonant(first_char) && strings::is_consonant(second_char);
+                }
+
+                static bool ends_with_transform(std::string& str, std::string_view ends, std::string_view replace)
+                {
+                    if (str.ends_with(ends))
+                    {
+                        str.erase(std::end(str) - std::size(ends));
+                        return true;
+                    }
+
+                    return false;
+                }
+
+                static bool measure_ends(std::string& str, std::string_view ends, std::string_view replace, const int measure)
+                {
                     auto copy = str;
-                    const bool result = t(copy);
-                    if(result && contains_vowel(copy))
+                    if (porter_stemmer::ends_with_transform(copy, ends, replace) && porter_stemmer::get_measure(copy) > measure)
                     {
                         str = std::move(copy);
                         return true;
                     }
 
                     return false;
-                };
-            }
+                }
 
-            static stem_transform cvc_ends(std::string ends, std::string replace) noexcept
-            {
-                return [=](std::string& str)
+                static bool vowel_ends(std::string& str, std::string_view ends, std::string_view replace)
                 {
-                    if(std::size(str) < 3)
+                    auto copy = str;
+                    if (porter_stemmer::ends_with_transform(copy, ends, replace) && strings::contains_vowel(std::begin(copy), std::end(copy)))
+                    {
+                        str = std::move(copy);
+                        return true;
+                    }
+
+                    return false;
+                }
+
+                static bool cvc_ends(std::string& str, std::string_view ends, std::string_view replace)
+                {
+                    if (std::size(str) < 3)
                     {
                         return false;
                     }
@@ -202,219 +313,39 @@ namespace collin
                     const auto second_char = last_of(str, 2);
                     const auto third_char = last_of(str, 3);
 
-                    if(Stemmer::get_measure(str) == 1 &&
-                            is_consonant(first_char) &&
-                            is_vowel(second_char) &&
-                            is_consonant(third_char) &&
-                            third_char != 'w' &&
-                            third_char != 'x' && 
-                            third_char != 'y')
+                    if (porter_stemmer::get_measure(str) == 1 &&
+                        strings::is_consonant(first_char) &&
+                        strings::is_vowel(second_char) &&
+                        strings::is_consonant(third_char) &&
+                        third_char != 'w' &&
+                        third_char != 'x' &&
+                        third_char != 'y')
                     {
-                        const auto t = Stemmer::ends_with_transform(ends, replace);
-                        t(str);
-                        return true;
+                        return porter_stemmer::ends_with_transform(str, ends, replace);
                     }
 
                     return false;
+                }
 
-                };
-            }
+                static std::vector<stem_transform> get_stemming_transforms_5b() noexcept
+                {
+                    std::vector<stem_transform> transforms;
 
-            static std::vector<stem_transform> get_stemming_transforms_1a() noexcept
-            {
-                std::vector<stem_transform> transforms;
-                transforms.push_back(ends_with_transform("sses", "ss"));
-                transforms.push_back(ends_with_transform("ies", "i"));
-                transforms.push_back(ends_with_transform("ss", "ss"));
-                transforms.push_back(ends_with_transform("s", ""));
-
-                return transforms;
-            }
-
-            static std::vector<stem_transform> get_stemming_transforms_1b() noexcept
-            {
-                std::vector<stem_transform> transforms;
-
-                transforms.push_back(Stemmer::measure_ends("eed", "ee", 0));
-                transforms.push_back(Stemmer::vowel_ends("ed", ""));
-                transforms.push_back(Stemmer::vowel_ends("ing", ""));
-
-                return transforms;
-            }
-
-            static std::vector<stem_transform> get_stemming_transforms_1b_supplemental() noexcept
-            {
-                std::vector<stem_transform> transforms;
-                transforms.push_back(Stemmer::ends_with_transform("at", "ate"));
-                transforms.push_back(Stemmer::ends_with_transform("bl", "ble"));
-                transforms.push_back(Stemmer::ends_with_transform("iz", "ize"));
-                transforms.push_back([](std::string& str)
+                    transforms.push_back([](std::string& str)
                     {
-                        if(std::size(str) < 2)
-                        {
-                            return false;
-                        }
-
-                        const auto last_char = last_of(str);
-
-                        if(last_char == 'l' || last_char == 's' || last_char == 'z')
-                        {
-                            return false;
-                        }
-
-                        if(ends_with_double_consonant(str))
+                        if(porter_stemmer::get_measure(str) > 1
+                            && ends_with_double_consonant(str)
+                            && last_of(str) == 'l')
                         {
                             str.erase(std::size(str) - 1, 1);
                             return true;
-                        }
-
-                        return false;
-                    });
-                transforms.push_back(Stemmer::cvc_ends("", "e"));
-
-                return transforms;
-            }
-
-            static std::vector<stem_transform> get_stemming_transforms_1c() noexcept
-            {
-                std::vector<stem_transform> transforms;
-
-                transforms.push_back(Stemmer::vowel_ends("y", "i"));
-
-                return transforms;
-            }
-
-            static std::vector<stem_transform> get_stemming_transforms_2() noexcept
-            {
-                std::vector<stem_transform> transforms;
-
-                transforms.push_back(Stemmer::measure_ends("ational", "ate", 0));
-                transforms.push_back(Stemmer::measure_ends("tional", "tion", 0));
-                transforms.push_back(Stemmer::measure_ends("enci", "ence", 0));
-                transforms.push_back(Stemmer::measure_ends("anci", "ance", 0));
-                transforms.push_back(Stemmer::measure_ends("izer", "ize", 0));
-                transforms.push_back(Stemmer::measure_ends("abli", "able", 0));
-                transforms.push_back(Stemmer::measure_ends("alli", "al", 0));
-                transforms.push_back(Stemmer::measure_ends("entli", "ent", 0));
-                transforms.push_back(Stemmer::measure_ends("eli", "e", 0));
-                transforms.push_back(Stemmer::measure_ends("ousli", "ous", 0));
-                transforms.push_back(Stemmer::measure_ends("ization", "ize", 0));
-                transforms.push_back(Stemmer::measure_ends("ation", "ate", 0));
-                transforms.push_back(Stemmer::measure_ends("ator", "ate", 0));
-                transforms.push_back(Stemmer::measure_ends("alism", "al", 0));
-                transforms.push_back(Stemmer::measure_ends("iveness", "ive", 0));
-                transforms.push_back(Stemmer::measure_ends("fulness", "ful", 0));
-                transforms.push_back(Stemmer::measure_ends("ousness", "ous", 0));
-                transforms.push_back(Stemmer::measure_ends("aliti", "al", 0));
-                transforms.push_back(Stemmer::measure_ends("iviti", "ive", 0));
-                transforms.push_back(Stemmer::measure_ends("biliti", "ble", 0));
-
-                return transforms;
-            }
-
-            static std::vector<stem_transform> get_stemming_transforms_3() noexcept
-            {
-                std::vector<stem_transform> transforms;
-
-                transforms.push_back(Stemmer::measure_ends("icate", "ic", 0));
-                transforms.push_back(Stemmer::measure_ends("ative", "", 0));
-                transforms.push_back(Stemmer::measure_ends("alize", "al", 0));
-                transforms.push_back(Stemmer::measure_ends("iciti", "ic", 0));
-                transforms.push_back(Stemmer::measure_ends("ical", "ic", 0));
-                transforms.push_back(Stemmer::measure_ends("ful", "", 0));
-                transforms.push_back(Stemmer::measure_ends("ness", "", 0));
-
-                return transforms;
-            }
-
-            static std::vector<stem_transform> get_stemming_transforms_4() noexcept
-            {
-                std::vector<stem_transform> transforms;
-
-                transforms.push_back(Stemmer::measure_ends("al", "", 1));
-                transforms.push_back(Stemmer::measure_ends("ance", "", 1));
-                transforms.push_back(Stemmer::measure_ends("ence", "", 1));
-                transforms.push_back(Stemmer::measure_ends("er", "", 1));
-                transforms.push_back(Stemmer::measure_ends("ic", "", 1));
-                transforms.push_back(Stemmer::measure_ends("able", "", 1));
-                transforms.push_back(Stemmer::measure_ends("ible", "", 1));
-                transforms.push_back(Stemmer::measure_ends("ant", "", 1));
-                transforms.push_back(Stemmer::measure_ends("ement", "", 1));
-                transforms.push_back(Stemmer::measure_ends("ment", "", 1));
-                transforms.push_back(Stemmer::measure_ends("ent", "", 1));
-                transforms.push_back([](std::string& str)
-                    {
-                        const auto t = Stemmer::measure_ends("ion", "", 1);
-                        auto copy = str;
-                        bool results = t(copy);
-
-                        const auto last_char = last_of(copy);
-
-                        if(results && last_char != 's' && last_char != 't')
-                        {
-                            str = std::move(copy);
-                            return true;
-                        }
-
-                        return false;
-                    });
-                transforms.push_back(Stemmer::measure_ends("ou", "", 1));
-                transforms.push_back(Stemmer::measure_ends("ism", "", 1));
-                transforms.push_back(Stemmer::measure_ends("ate", "", 1));
-                transforms.push_back(Stemmer::measure_ends("iti", "", 1));
-                transforms.push_back(Stemmer::measure_ends("ous", "", 1));
-                transforms.push_back(Stemmer::measure_ends("ive", "", 1));
-                transforms.push_back(Stemmer::measure_ends("ize", "", 1));
-
-                return transforms;
-            }
-
-            static std::vector<stem_transform> get_stemming_transforms_5a() noexcept
-            {
-                std::vector<stem_transform> transforms;
-
-                transforms.push_back(Stemmer::measure_ends("e", "", 1));
-                transforms.push_back([](std::string& str)
-                    {
-                        const auto t = Stemmer::cvc_ends("e", "");
-                        auto copy = str;
-
-                        if(!t(copy) && Stemmer::get_measure(copy) == 1)
-                        {
-                            const auto t2 = Stemmer::ends_with_transform("e", "");
-                            if(t2(copy))
-                            {
-                                str = std::move(copy);
-                                return true;
-                            }
-                        }
+                        } 
 
                         return false;
                     });
 
-                return transforms;
-            }
-
-            static std::vector<stem_transform> get_stemming_transforms_5b() noexcept
-            {
-                std::vector<stem_transform> transforms;
-
-                transforms.push_back([](std::string& str)
-                {
-                    if(Stemmer::get_measure(str) > 1
-                        && ends_with_double_consonant(str)
-                        && last_of(str) == 'l')
-                    {
-                        str.erase(std::size(str) - 1, 1);
-                        return true;
-                    } 
-
-                    return false;
-                });
-
-                return transforms;
-            }
-    };
+                    return transforms;
+                }
+        };
+    }
 }
-
-#endif
