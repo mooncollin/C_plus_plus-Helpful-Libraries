@@ -16,7 +16,8 @@
 #include <chrono>
 #include <iomanip>
 #include <ratio>
-#include "type_traits.hpp"
+
+#include "collin/concepts.hpp"
 
 namespace collin
 {
@@ -85,10 +86,15 @@ namespace collin
 				{
 					test_result result;
 
+					#ifndef _DEBUG
 					try
 					{
+					#endif
+
 						set_up();
 						operator()();
+
+					#ifndef _DEBUG
 					}
 					catch (const assert_exception& e)
 					{
@@ -98,6 +104,7 @@ namespace collin
 					{
 						result.add_error(e);
 					}
+					#endif
 
 					return result;
 				}
@@ -387,8 +394,8 @@ namespace collin
 			{
 				std::ostringstream ss;
 				ss << "assert_not_equal failed: " << message << '\n';
-				if constexpr (type_traits::is_stream_writable_v<T, decltype(ss)> &&
-					type_traits::is_stream_writable_v<F, decltype(ss)>)
+				if constexpr (collin::concepts::stream_writable<T, decltype(ss)> &&
+					collin::concepts::stream_writable<F, decltype(ss)>)
 				{
 					ss << "First:\n" << first << '\n';
 					ss << "Second:\n" << second << '\n';
@@ -525,8 +532,8 @@ namespace collin
 			{
 				std::ostringstream ss;
 				ss << "assert_almost_equal failed: " << message << '\n';
-				if constexpr (type_traits::is_stream_writable_v<T, decltype(ss)> &&
-					type_traits::is_stream_writable_v<F, decltype(ss)>)
+				if constexpr (concepts::stream_writable<T, decltype(ss)> &&
+					concepts::stream_writable<F, decltype(ss)>)
 				{
 					ss << "First:\n" << first << '\n';
 					ss << "Second:\n" << second << '\n';
@@ -545,8 +552,8 @@ namespace collin
 			{
 				std::ostringstream ss;
 				ss << "assert_almost_equal failed: " << message << '\n';
-				if constexpr (type_traits::is_stream_writable_v<T, decltype(ss)> &&
-					type_traits::is_stream_writable_v<F, decltype(ss)>)
+				if constexpr (concepts::stream_writable<T, decltype(ss)> &&
+					concepts::stream_writable<F, decltype(ss)>)
 				{
 					ss << "First:\n" << first << '\n';
 					ss << "Second:\n" << second << '\n';
@@ -566,8 +573,8 @@ namespace collin
 			{
 				std::ostringstream ss;
 				ss << "assert_greater failed: " << message << '\n';
-				if constexpr (type_traits::is_stream_writable_v<T, decltype(ss)> &&
-					type_traits::is_stream_writable_v<F, decltype(ss)>)
+				if constexpr (concepts::stream_writable<T, decltype(ss)> &&
+					concepts::stream_writable<F, decltype(ss)>)
 				{
 					ss << "First:\n" << first << '\n';
 					ss << "Second:\n" << second << '\n';
@@ -583,8 +590,8 @@ namespace collin
 			{
 				std::ostringstream ss;
 				ss << "assert_greater_equal failed: " << message << '\n';
-				if constexpr (type_traits::is_stream_writable_v<T, decltype(ss)> &&
-					type_traits::is_stream_writable_v<F, decltype(ss)>)
+				if constexpr (concepts::stream_writable<T, decltype(ss)> &&
+					concepts::stream_writable<F, decltype(ss)>)
 				{
 					ss << "First:\n" << first << '\n';
 					ss << "Second:\n" << second << '\n';
@@ -600,8 +607,8 @@ namespace collin
 			{
 				std::ostringstream ss;
 				ss << "assert_less failed: " << message << '\n';
-				if constexpr (type_traits::is_stream_writable_v<T, decltype(ss)> &&
-					type_traits::is_stream_writable_v<F, decltype(ss)>)
+				if constexpr (concepts::stream_writable<T, decltype(ss)> &&
+					concepts::stream_writable<F, decltype(ss)>)
 				{
 					ss << "First:\n" << first << '\n';
 					ss << "Second:\n" << second << '\n';
@@ -617,8 +624,8 @@ namespace collin
 			{
 				std::ostringstream ss;
 				ss << "assert_less_equal failed: " << message << '\n';
-				if constexpr (type_traits::is_stream_writable_v<T, decltype(ss)> &&
-					type_traits::is_stream_writable_v<F, decltype(ss)>)
+				if constexpr (concepts::stream_writable<T, decltype(ss)> &&
+					concepts::stream_writable<F, decltype(ss)>)
 				{
 					ss << "First:\n" << first << '\n';
 					ss << "Second:\n" << second << '\n';
@@ -652,8 +659,8 @@ namespace collin
 		template<class T, class F>
 		inline void output_if_possible(const T& first, const F& second, std::ostream& os)
 		{
-			if constexpr (type_traits::is_stream_writable_v<T, decltype(os)> &&
-				type_traits::is_stream_writable_v<F, decltype(os)>)
+			if constexpr (concepts::stream_writable<T, decltype(os)> &&
+				concepts::stream_writable<F, decltype(os)>)
 			{
 				os << "First:\n" << first << '\n';
 				os << "Second:\n" << second << '\n';

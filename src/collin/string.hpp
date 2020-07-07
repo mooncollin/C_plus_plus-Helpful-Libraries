@@ -51,7 +51,7 @@ namespace collin
         }
 
         template<class CharT>
-        constexpr bool is_consonant(CharT t)
+        constexpr bool is_consonant(CharT c)
         {
             return !is_vowel(c);
         }
