@@ -31,10 +31,12 @@
 #include <list>
 #include <condition_variable>
 #include <any>
-#include "iocontext.hpp"
-#include "buffers.hpp"
-#include "../span.hpp"
-#include "../utility.hpp"
+#include <bit>
+
+#include "collin/net/iocontext.hpp"
+#include "collin/net/buffers.hpp"
+#include "collin/span.hpp"
+#include "collin/utility.hpp"
 
 #ifdef max
 #undef max
@@ -51,19 +53,6 @@ namespace collin
 		int
 		#endif
 		;
-
-		enum class Endian
-		{
-		#ifdef _WIN32
-			little = 0,
-			big    = 1,
-			native = little
-		#else
-			little = __ORDER_LITTLE_ENDIAN__,
-			big    = __ORDER_BIG_ENDIAN__,
-			native = __BYTE_ORDER__
-		#endif
-		};
 
 		constexpr uint16_t swap_bytes(uint16_t data) noexcept
 		{
@@ -93,7 +82,7 @@ namespace collin
 
 		constexpr bool is_network_endianness() noexcept
 		{
-			return Endian::native == Endian::big;
+			return std::endian::native == std::endian::big;
 		}
 
 		constexpr uint32_t htonl(uint32_t host) noexcept

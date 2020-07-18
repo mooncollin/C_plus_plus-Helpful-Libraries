@@ -15,6 +15,7 @@
 #include <initializer_list>
 #include <charconv>
 #include <utility>
+#include <system_error>
 
 #include "type_traits.hpp"
 #include "utility.hpp"
@@ -23,10 +24,6 @@ namespace collin
 {
     namespace strings
     {
-        const std::unordered_set vowels = {'a', 'e', 'i', 'o', 'u'};
-        const std::unordered_set consonants = {'b', 'c', 'd', 'f', 'g', 'h', 'j', 'k',
-                'l', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'x', 'y', 'z'};
-
         constexpr std::string_view line_terminator =
         #ifdef _WIN32
         "\r\n";
@@ -35,7 +32,7 @@ namespace collin
         #endif
 
         template<class CharT>
-        constexpr bool is_vowel(CharT c)
+        constexpr bool is_vowel(CharT c) noexcept
         {
             switch (std::tolower(c))
             {
@@ -51,21 +48,31 @@ namespace collin
         }
 
         template<class CharT>
-        constexpr bool is_consonant(CharT c)
+        constexpr bool is_consonant(CharT c) noexcept
         {
             return !is_vowel(c);
         }
 
         template<class InputIterator>
-        constexpr bool contains_vowel(InputIterator first, InputIterator last)
+        constexpr bool contains_vowel(InputIterator first, InputIterator last) noexcept
         {
             return std::any_of(first, last, [&](auto& val){return is_vowel(val);});
         }
 
         template<class InputIterator>
-        constexpr bool contains_consonant(InputIterator first, InputIterator last)
+        constexpr bool contains_consonant(InputIterator first, InputIterator last) noexcept
         {
             return std::any_of(first, last, [&](auto& val){return is_consonant(val);});
+        }
+
+        constexpr bool contains_vowel(std::string_view str) noexcept
+        {
+            return contains_vowel(std::begin(str), std::end(str));
+        }
+
+        constexpr bool contains_consonant(std::string_view str) noexcept
+        {
+            return contains_consonant(std::begin(str), std::end(str));
         }
 
         template<class InputIterator>
@@ -248,61 +255,100 @@ namespace collin
             lowercase(std::begin(container), std::end(container), std::begin(container), loc);
         }
 
-        constexpr std::string_view trim_front(std::string_view s, std::string_view trim_str)
+        constexpr std::string_view trim_front(std::string_view s, std::string_view trim_str) noexcept
         {
             const auto start_position = s.find_first_not_of(trim_str);
+            if (start_position == std::string_view::npos)
+            {
+                return "";
+            }
+
             return s.substr(start_position);
         }
 
-        constexpr std::string_view trim_back(std::string_view s, std::string_view trim_str)
+        constexpr std::string_view trim_back(std::string_view s, std::string_view trim_str) noexcept
         {
             const auto end_position = s.find_last_not_of(trim_str);
+            if (end_position == std::string_view::npos)
+            {
+                return "";
+            }
+
             return s.substr(0, end_position);
         }
 
-        constexpr std::string_view trim(std::string_view s, std::string_view trim_str)
+        constexpr std::string_view trim(std::string_view s, std::string_view trim_str) noexcept
         {
             return trim_back(trim_front(s, trim_str), trim_str);
         }
 
         template<class T>
-        T from_string(std::string_view str)
+        T from_string(std::string_view str, std::error_code& ec)
         {
+            ec.clear();
             T value;
 
             if constexpr (std::is_arithmetic_v<T> && !std::is_same_v<T, bool>)
             {
-                auto [p, ec] = std::from_chars(str.data(), str.data() + std::size(str), value);
-                collin::throw_on_error te{"collin::strings::from_string"};
-                te.ec = std::make_error_code(ec);
+                auto [p, err] = std::from_chars(str.data(), str.data() + std::size(str), value);
+                ec = std::make_error_code(err);
             }
             else
             {
                 std::istringstream ss(str.data());
-                ss.exceptions(std::istringstream::failbit | std::istringstream::badbit);
                 ss >> value;
+                if (!ss)
+                {
+                    ec = std::make_error_code(std::errc::argument_out_of_domain);
+                }
             }
 
             return value;
         }
 
+        template<class T>
+        inline T from_string(std::string_view str)
+        {
+            return from_string<T>(str, collin::throw_on_error{"collin::strings::from_string"});
+        }
+
         template<>
-        std::string from_string(std::string_view str)
+        inline std::string from_string(std::string_view str, std::error_code& ec)
         {
             return std::string(str);
         }
 
+        template<>
+        inline std::string from_string(std::string_view str)
+        {
+            std::error_code ec{};
+            return from_string<std::string>(str, ec);
+        }
 
         template<>
-        std::string_view from_string(std::string_view str)
+        inline std::string_view from_string(std::string_view str, std::error_code& ec)
         {
             return str;
         }
 
         template<>
-        char from_string(std::string_view str)
+        inline std::string_view from_string(std::string_view str)
+        {
+            std::error_code ec{};
+            return from_string<std::string_view>(str, ec);
+        }
+
+        template<>
+        inline char from_string(std::string_view str, std::error_code& ec)
         {
             return str.front();
+        }
+
+        template<>
+        inline char from_string(std::string_view str)
+        {
+            std::error_code ec{};
+            return from_string<char>(str, ec);
         }
 
         template<class T>
@@ -316,7 +362,7 @@ namespace collin
         template<class OutputIterator, typename = std::enable_if_t<
 /* requires */  type_traits::is_iterator_v<OutputIterator>
         >>
-        void split(std::string_view str, std::string_view delim, OutputIterator it, std::size_t amount=-1)
+        constexpr void split(std::string_view str, std::string_view delim, OutputIterator it, std::size_t amount=-1) noexcept
         {
             std::size_t last_index {0};
             std::size_t index {str.find(delim, last_index)};

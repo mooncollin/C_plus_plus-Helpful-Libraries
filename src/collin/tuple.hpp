@@ -15,6 +15,14 @@ namespace collin
 			}, t);
 		}
 
+		template<typename... Ts, class Function>
+		void for_each(std::tuple<Ts...>& t, Function func)
+		{
+			std::apply([&](auto& ...x) {
+				(..., func(x));
+				}, t);
+		}
+
 		template<class... Ts>
 		constexpr auto default_tuple()
 		{

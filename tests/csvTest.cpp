@@ -146,5 +146,6 @@ int main()
 	suite.add_test_case<csv_write_read_test>();
 
 	collin::test::text_test_runner runner{std::cout};
-	runner.run(suite);
+	
+	return !runner.run(suite);
 }

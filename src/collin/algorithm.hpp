@@ -29,5 +29,39 @@ namespace collin
 			}
 			return c.erase(std::begin(c), first_false);
 		}
+
+		template<class BidirIt>
+		constexpr void reverse(BidirIt first, BidirIt last)
+		{
+			while ((first != last) && (first != --last)) {
+				std::iter_swap(first++, last);
+			}
+		}
+
+		template<class BidirIt>
+		constexpr bool next_permutation(BidirIt first, BidirIt last)
+		{
+			if (first == last) return false;
+			BidirIt i = last;
+			if (first == --i) return false;
+
+			while (true) {
+				BidirIt i1, i2;
+
+				i1 = i;
+				if (*--i < *i1) {
+					i2 = last;
+					while (!(*i < *--i2))
+						;
+					std::iter_swap(i, i2);
+					collin::algorithms::reverse(i1, last);
+					return true;
+				}
+				if (i == first) {
+					collin::algorithms::reverse(first, last);
+					return false;
+				}
+			}
+		}
 	}
 }

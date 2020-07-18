@@ -79,6 +79,21 @@ namespace collin
 		return a2t_impl(a, Indices{});
 	}
 
+	namespace details
+	{
+		template<std::size_t... I>
+		constexpr auto index_array_helper(std::index_sequence<I...>)
+		{
+			return std::array<std::size_t, sizeof...(I)>{I...};
+		}
+	}
+
+	template<std::size_t N>
+	constexpr auto index_array()
+	{
+		return details::index_array_helper(std::make_index_sequence<N>{});
+	}
+
 	inline std::size_t unaligned_load(const char* p)
 	{
 		std::size_t result;
@@ -107,11 +122,11 @@ namespace collin
 		switch (len)
 		{
 			case 3:
-				hash ^= static_cast<unsigned char>(buf[2]) << 16;
+				hash ^= static_cast<std::size_t>(buf[2]) << 16;
 			case 2:
-				hash ^= static_cast<unsigned char>(buf[1]) << 8;
+				hash ^= static_cast<std::size_t>(buf[1]) << 8;
 			case 1:
-				hash ^= static_cast<unsigned char>(buf[0]);
+				hash ^= static_cast<std::size_t>(buf[0]);
 				hash *= m;
 		}
 

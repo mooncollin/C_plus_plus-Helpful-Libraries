@@ -2,8 +2,11 @@
 
 #include <iterator>
 #include <tuple>
-#include "string.hpp"
-#include "iostream.hpp"
+#include <utility>
+
+#include "collin/string.hpp"
+#include "collin/iostream.hpp"
+#include "collin/tuple.hpp"
 
 namespace collin
 {
@@ -14,14 +17,12 @@ namespace collin
 		{
 			public:
 				explicit back_emplace_iterator(Container& x)
-					: container(&x)
-				{
-				}
+					: container(x) {}
 
 				template<class... Args>
-				back_emplace_iterator<Container>& operator=(Args&&... args)
+				back_emplace_iterator& operator=(Args&&... args)
 				{
-					container->emplace_back(std::forward<Args>(args)...);
+					container.get().emplace_back(std::forward<Args>(args)...);
 					return *this;
 				}
 
@@ -40,7 +41,7 @@ namespace collin
 					return *this;
 				}
 			private:
-				Container* container;
+				std::reference_wrapper<Container> container;
 		};
 
 		template<class Container>
@@ -50,29 +51,23 @@ namespace collin
 		}
 
 		template<class ForwardIterator>
-		class Enumerate : public std::iterator<std::forward_iterator_tag, std::tuple<int, typename ForwardIterator::value_type>>
+		class enumerate : public std::iterator<std::forward_iterator_tag, std::tuple<int, typename ForwardIterator::value_type>>
 		{
 			public:
-				explicit Enumerate(ForwardIterator begin, ForwardIterator end, int start=0, int step=1)
+				constexpr explicit enumerate(ForwardIterator begin, ForwardIterator end, int start=0, int step=1)
 					: current_(begin), end_(end), index_(start), step_(step) {}
 
-				Enumerate(const Enumerate& other) = default;
-				Enumerate& operator=(const Enumerate& other) = default;
-
-				Enumerate(Enumerate&&) = default;
-				Enumerate& operator=(Enumerate&&) = default;
-
-				Enumerate begin() const
+				constexpr enumerate begin() const
 				{
 					return *this;
 				}
 
-				Enumerate end() const
+				constexpr enumerate end() const
 				{
-					return Enumerate(end_, end_);
+					return enumerate(end_, end_);
 				}
 
-				Enumerate& operator++()
+				constexpr enumerate& operator++()
 				{
 					++current_;
 					index_ += step_;
@@ -80,34 +75,34 @@ namespace collin
 					return *this;
 				}
 
-				Enumerate operator++(int)
+				constexpr enumerate operator++(int)
 				{
-					Enumerate e(*this);
+					enumerate e(*this);
 					operator++();
 					return e;
 				}
 
-				auto operator*() const
+				constexpr auto operator*() const
 				{
-					return std::make_tuple(index_, current_);
+					return std::make_pair(index_, current_);
 				}
 
-				bool operator==(const Enumerate& rhs) const
+				constexpr bool operator==(const enumerate& rhs) const
 				{
 					return current_ == rhs.current_;
 				}
 
-				bool operator!=(const Enumerate& rhs) const
+				constexpr bool operator!=(const enumerate& rhs) const
 				{
 					return !operator==(rhs);
 				}
 
-				int index() const noexcept
+				constexpr int index() const noexcept
 				{
 					return index_;
 				}
 
-				int step() const noexcept
+				constexpr int step() const noexcept
 				{
 					return step_;
 				}
@@ -126,38 +121,38 @@ namespace collin
             static constexpr auto end_of_input = nullptr;
 
             public:
-				istream_iterator_sep() = default;
-				istream_iterator_sep(const istream_iterator_sep&) = default;
-				istream_iterator_sep(istream_iterator_sep&&) = default;
-				istream_iterator_sep& operator=(const istream_iterator_sep&) = default;
-				istream_iterator_sep& operator=(istream_iterator_sep&&) = default;
+				istream_iterator_sep() noexcept = default;
+                explicit istream_iterator_sep(std::istream& input, std::string_view sep = " ") noexcept
+					: input(&input), sep_(sep) {}
 
-                istream_iterator_sep(std::istream& input) : input(&input)
-                {
-                }
-
-				istream_iterator_sep(std::istream& input, std::string_view sep) : input(&input), sep_(sep)
-                {
-                }
-
-                istream_iterator_sep end() const
+                istream_iterator_sep end() const noexcept
                 {
                     return istream_iterator_sep();
                 }
 
-                istream_iterator_sep begin() const
+                istream_iterator_sep begin() const noexcept
                 {
                     return *this;
                 }
 
                 typename parent::reference operator*()
                 {
+					if (!have_processed)
+					{
+						next_input();
+					}
+
                     return current;
                 }
 
                 typename parent::pointer operator->()
                 {
-                    return &current;
+					if (!have_processed)
+					{
+						next_input();
+					}
+
+                    return std::addressof(current);
                 }
 
                 istream_iterator_sep& operator++()
@@ -179,28 +174,30 @@ namespace collin
 					sep_ = sep;
 				}
 
-				const std::string& seperator() const
+				const std::string& seperator() const noexcept
 				{
 					return sep_;
 				}
 
-                bool operator==(const istream_iterator_sep& rhs)
+                bool operator==(const istream_iterator_sep& rhs) const noexcept
                 {
                     return input == rhs.input;
                 }
 
-                bool operator!=(const istream_iterator_sep& rhs)
+                bool operator!=(const istream_iterator_sep& rhs) const noexcept
                 {
                     return !(*this == rhs);
                 }
 
             private:
                 std::istream* input {end_of_input};
-				std::string sep_ {" "};
+				std::string sep_;
+				bool have_processed {false};
                 T current;
 
                 void next_input()
                 {
+					have_processed = true;
                     if(input != end_of_input)
                     {
                         if(input->fail() || input->eof())

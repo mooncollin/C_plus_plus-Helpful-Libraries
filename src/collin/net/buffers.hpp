@@ -13,14 +13,15 @@
 
 #include <array>
 #include <vector>
-#include "..\span.hpp"
+#include <type_traits>
+#include "collin/span.hpp"
 
 namespace collin
 {
 	namespace net
 	{
 		using msgtype =
-		#ifdef _WIN32
+		#if _WIN32
 		WSABUF
 		#else
 		struct iovec
@@ -29,23 +30,23 @@ namespace collin
 
 		struct msgbuf : public msgtype
 		{
-			using pointer_type = 
+			using pointer_type =
 			#ifdef _WIN32
-			decltype(std::declval<msgtype>().buf)
+				decltype(std::declval<msgtype>().buf)
 			#else
-			decltype(std::declval<msgtype>().iov_base)
+				decltype(std::declval<msgtype>().iov_base)
+			#endif
+			;
+
+			using len_type =
+			#ifdef _WIN32
+				decltype(std::declval<msgtype>().len)
+			#else
+				decltype(std::declval<msgtype>().iov_len)
 			#endif
 			;
 
 			using data_type = std::remove_pointer_t<pointer_type>;
-
-			using len_type = 
-			#ifdef _WIN32
-			decltype(std::declval<msgtype>().len)
-			#else
-			decltype(std::declval<msgtype>().iov_len)
-			#endif
-			;
 
 			constexpr msgbuf() noexcept
 				: msgtype{} {}
@@ -61,12 +62,6 @@ namespace collin
 
 			constexpr msgbuf(len_type l, pointer_type p)
 				: msgbuf{p, l} {}
-
-			constexpr msgbuf(const msgbuf&) = default;
-			constexpr msgbuf(msgbuf&&) = default;
-			msgbuf& operator=(const msgbuf&) = default;
-			msgbuf& operator=(msgbuf&&) = default;
-			~msgbuf() = default;
 
 			constexpr msgbuf(const msgtype& t)
 				: msgtype{t} {}
@@ -86,13 +81,12 @@ namespace collin
 		};
 
 		static_assert(sizeof(msgtype) == sizeof(msgbuf), "Something is very wrong");
+		static_assert(std::is_convertible_v<decltype(std::declval<msgbuf>()), msgtype>, "Something is very wrong");
 
 		class buffer_sequence
 		{
 			public:
 				buffer_sequence() = default;
-				buffer_sequence(const buffer_sequence&) = default;
-				buffer_sequence(buffer_sequence&&) = default;
 
 				template<class... Args>
 				buffer_sequence(Args&&... args)
@@ -101,32 +95,28 @@ namespace collin
 				buffer_sequence(std::initializer_list<msgbuf> bufs)
 					: msgs{ bufs } {}
 
-				buffer_sequence& operator=(const buffer_sequence&) = default;
-				buffer_sequence& operator=(buffer_sequence&&) = default;
-				~buffer_sequence() = default;
-
 				buffer_sequence& operator=(std::initializer_list<msgbuf> bufs)
 				{
 					msgs = bufs;
 					return *this;
 				}
 
-				msgtype* buffers()
+				msgtype* buffers() noexcept
 				{
 					return msgs.data();
 				}
 
-				const msgtype* buffers() const
+				const msgtype* buffers() const noexcept
 				{
 					return msgs.data();
 				}
 
-				operator span<msgtype, collin::dynamic_extent>()
+				operator span<msgtype, collin::dynamic_extent>() noexcept
 				{
 					return make_span(buffers(), size());
 				}
 
-				auto get_span()
+				auto get_span() noexcept
 				{
 					return operator span<msgtype, collin::dynamic_extent>();
 				}

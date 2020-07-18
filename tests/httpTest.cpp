@@ -1,38 +1,35 @@
-#include "collin/net/http.hpp"
-#include "collin/net/iocontext.hpp"
 #include <iostream>
-#include <algorithm>
-#include <vector>
-#include <array>
-#include <string>
-#include <chrono>
-#include <sstream>
+
+#include "collin/net/http.hpp"
+#include "collin/test.hpp"
+
+class http_response_test : public collin::test::test_case
+{
+	public:
+		http_response_test()
+			: collin::test::test_case{"http_response_test"} {}
+
+		void operator()() override
+		{
+			collin::http::http_client c;
+			collin::http::basic_http_request r;
+			r.host("www.httpvshttps.com");
+
+			std::error_code ec;
+			auto op = c.send(r, ec);
+			collin::test::assert_true(op.has_value());
+			collin::test::assert_equal(ec.value(), 0);
+			collin::test::assert_equal(op->response_code(), 200);
+		}
+};
+
 
 int main()
 {
-	collin::http::http_client c;
-	collin::http::basic_http_request r;
-	//r.host("www.scratchpads.eu");
-	r.host("www.httpvshttps.com");
-	//r.resource("/explore/sites-list");
+	collin::test::test_suite suite;
+	suite.add_test_case<http_response_test>();
 
-	std::error_code ec;
-	auto now = std::chrono::steady_clock::now();
-	//const auto op = c.send(r, body, ec);
-	auto op = c.send(r, ec);
-	//auto future = c.sendAsync(r, ec);
-	//const auto op = future.get();
-	if (op && !ec)
-	{
-		std::cout << "Status Code: " << op->response_code() << '\n';
-		//std::cout << op.value() << '\n';
-		auto time_elapsed = std::chrono::steady_clock::now() - now;
-		std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(time_elapsed).count() << "ms\n";
-	}
-	else
-	{
-		std::cout << "Error code: " << ec << '\n';
-	}
+	collin::test::text_test_runner runner(std::cout);
 
-	std::getchar();
+	return !runner.run(suite);
 }

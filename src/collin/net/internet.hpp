@@ -13,10 +13,10 @@
 #include <forward_list>
 #include <variant>
 
-#include "../memory.hpp"
-#include "../utility.hpp"
-#include "socket.hpp"
-#include "iocontext.hpp"
+#include "collin/memory.hpp"
+#include "collin/utility.hpp"
+#include "collin/net/socket.hpp"
+#include "collin/net/iocontext.hpp"
 
 namespace collin
 {

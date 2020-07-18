@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <functional>
 #include <iterator>
+#include <tuple>
 
 namespace collin
 {
@@ -69,17 +70,11 @@ namespace collin
 			};
 		};
 
-		template<typename...>
-		struct is_one_of;
+		template<typename T, typename... Ts>
+		struct contains : std::disjunction<std::is_same<T, Ts>...> {};
 
-		template<typename F>
-		struct is_one_of<F> : std::false_type {};
-
-		template<typename F, typename S, typename... T>
-		struct is_one_of<F, S, T...> : std::bool_constant<std::is_same_v<F, S> || is_one_of<F, T...>::value> {};
-
-		template<typename... T>
-		constexpr auto is_one_of_v = is_one_of<T...>::value;
+		template<typename T, typename... Ts>
+		constexpr auto contains_v = contains<T, Ts...>::value;
 
 		template<typename...>
 		struct is_unique;
@@ -88,7 +83,7 @@ namespace collin
 		struct is_unique<> : std::true_type {};
 
 		template<typename F, typename... T>
-		struct is_unique<F, T...> : std::bool_constant<is_unique<T...>::value && !is_one_of_v<F, T...>> {};
+		struct is_unique<F, T...> : std::bool_constant<is_unique<T...>::value && !contains_v<F, T...>> {};
 
 		template<typename... T>
 		constexpr auto is_unique_v = is_unique<T...>::value;

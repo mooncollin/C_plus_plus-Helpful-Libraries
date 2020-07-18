@@ -377,8 +377,8 @@ namespace collin
 			{
 				std::ostringstream ss;
 				ss << "assert_equal failed: " << message << '\n';
-				if constexpr (type_traits::is_stream_writable_v<T, decltype(ss)> &&
-					type_traits::is_stream_writable_v<F, decltype(ss)>)
+				if constexpr (concepts::stream_writable<T, decltype(ss)> &&
+					concepts::stream_writable<F, decltype(ss)>)
 				{
 					ss << "First:\n" << first << '\n';
 					ss << "Second:\n" << second << '\n';

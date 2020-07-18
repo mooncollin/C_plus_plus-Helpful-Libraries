@@ -13,12 +13,12 @@
 #include <sstream>
 #include <array>
 
-#include "socket.hpp"
-#include "internet.hpp"
-#include "iocontext.hpp"
-#include "../iostream.hpp"
-#include "../iterator.hpp"
-#include "../string.hpp"
+#include "collin/net/socket.hpp"
+#include "collin/net/internet.hpp"
+#include "collin/net/iocontext.hpp"
+#include "collin/iostream.hpp"
+#include "collin/iterator.hpp"
+#include "collin/string.hpp"
 
 namespace collin
 {
@@ -489,9 +489,7 @@ namespace collin
 					std::string status_code_message;
 
 					iterator::istream_iterator_sep space_stream {s.socket(), " "};
-					iterator::istream_iterator_sep line_stream {s.socket(), "\r\n"};
 
-					++space_stream;
 					if(space_stream->empty())
 					{
 						ec = make_error_code(http_errc::malformed_response);
@@ -502,7 +500,7 @@ namespace collin
 					{
 						version = http_version_type(*space_stream);
 					}
-					catch (std::invalid_argument& e)
+					catch (const std::invalid_argument& e)
 					{
 						ec = make_error_code(http_errc::malformed_response);
 						return {};
@@ -515,17 +513,15 @@ namespace collin
 						return {};
 					}
 
-					try
-					{
-						status_code = strings::from_string<std::size_t>(*space_stream);
-					}
-					catch (std::istringstream::failure e)
+					status_code = strings::from_string<std::size_t>(*space_stream, ec);
+					if (ec)
 					{
 						ec = make_error_code(http_errc::malformed_response);
 						return {};
 					}
 
-					++line_stream;
+					iterator::istream_iterator_sep line_stream {s.socket(), "\r\n"};
+
 					if(line_stream->empty())
 					{
 						ec = make_error_code(http_errc::malformed_response);
