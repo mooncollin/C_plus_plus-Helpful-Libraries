@@ -21,7 +21,7 @@ namespace collin
 	namespace net
 	{
 		using msgtype =
-		#if _WIN32
+		#ifdef _WIN32
 		WSABUF
 		#else
 		struct iovec
