@@ -168,7 +168,7 @@ class matrix_transpose_test : public collin::test::test_case
 				3, 7
 			};
 
-			collin::test::assert_equal(mat.transpose(), mat2);
+			collin::test::assert_equal(collin::linear::transpose(mat), mat2);
 		}
 };
 
@@ -313,8 +313,8 @@ class fixed_matrix_transpose_test : public collin::test::test_case
 				3, 7
 			};
 
-			static_assert(mat.transpose() == mat2);
-			collin::test::assert_equal(mat.transpose(), mat2);
+			static_assert(collin::linear::transpose(mat) == mat2);
+			collin::test::assert_equal(collin::linear::transpose(mat), mat2);
 		}
 };
 
@@ -458,6 +458,64 @@ class mixed_matrix_multiply_test : public collin::test::test_case
 		}
 };
 
+class cofactor_test : public collin::test::test_case
+{
+	public:
+		cofactor_test()
+			: collin::test::test_case{"cofactor_test"} {}
+
+		void operator()() override
+		{
+			constexpr collin::linear::fixed_matrix<int, 3, 3> fixed_input_data = 
+			{
+				3, 0, 2,
+				2, 0, -2,
+				0, 1, 1
+			};
+
+			const collin::linear::matrix<int> input_data{fixed_input_data};
+
+			constexpr collin::linear::fixed_matrix<int, 2, 2> goal1 =
+			{
+				0, -2,
+				1, 1
+			};
+
+			constexpr collin::linear::fixed_matrix<int, 2, 2> goal2 =
+			{
+				2, -2,
+				0, 1
+			};
+
+			constexpr collin::linear::fixed_matrix<int, 2, 2> goal3 =
+			{
+				3, 2,
+				2, -2
+			};
+
+			constexpr collin::linear::fixed_matrix<int, 2, 2> goal4 =
+			{
+				3, 0,
+				2, 0
+			};
+
+			static_assert(collin::linear::cofactor(fixed_input_data, 0, 0) == goal1);
+			static_assert(collin::linear::cofactor(fixed_input_data, 0, 1) == goal2);
+			static_assert(collin::linear::cofactor(fixed_input_data, 2, 1) == goal3);
+			static_assert(collin::linear::cofactor(fixed_input_data, 2, 2) == goal4);
+
+			collin::test::assert_equal(collin::linear::cofactor(fixed_input_data, 0, 0), goal1);
+			collin::test::assert_equal(collin::linear::cofactor(fixed_input_data, 0, 1), goal2);
+			collin::test::assert_equal(collin::linear::cofactor(fixed_input_data, 2, 1), goal3);
+			collin::test::assert_equal(collin::linear::cofactor(fixed_input_data, 2, 2), goal4);
+
+			collin::test::assert_equal(collin::linear::cofactor(input_data, 0, 0), goal1);
+			collin::test::assert_equal(collin::linear::cofactor(input_data, 0, 1), goal2);
+			collin::test::assert_equal(collin::linear::cofactor(input_data, 2, 1), goal3);
+			collin::test::assert_equal(collin::linear::cofactor(input_data, 2, 2), goal4);
+		}
+};
+
 class determinant_test : public collin::test::test_case
 {
 	public:
@@ -466,28 +524,13 @@ class determinant_test : public collin::test::test_case
 
 		void operator()() override
 		{
-			collin::linear::matrix<int> mat1 {1, 1};
-			collin::linear::matrix<int> mat2 {2, 2};
-			collin::linear::matrix<int> mat3 {3, 3};
-
 			constexpr collin::linear::fixed_matrix<int, 1, 1> mat4 {6};
 			constexpr collin::linear::fixed_matrix<int, 2, 2> mat5 {5, 10, 3, 9};
 			constexpr collin::linear::fixed_matrix<int, 3, 3> mat6 {6, 1, 1, 4, -2, 5, 2, 8, 7};
 
-			mat1 = {
-				6
-			};
-			
-			mat2 = {
-				5, 10,
-				3, 9
-			};
-
-			mat3 = {
-				6, 1, 1,
-				4, -2, 5,
-				2, 8, 7
-			};
+			const collin::linear::matrix<int> mat1 {mat4};
+			const collin::linear::matrix<int> mat2 {mat5};
+			const collin::linear::matrix<int> mat3 {mat6};
 
 			collin::test::assert_throws(std::invalid_argument{"can only find the determinant of a square matrix"}, []() {
 				collin::linear::matrix<int> wrong_mat {2, 3};
@@ -709,6 +752,68 @@ class fixed_column_test : public collin::test::test_case
 		}
 };
 
+class diagonal_test : public collin::test::test_case
+{
+	public:
+		diagonal_test()
+			: collin::test::test_case{"diagonal_test"} {}
+
+		void operator()() override
+		{
+			collin::linear::matrix<int> mat{3, 3};
+
+			mat = {
+				6, 1, 1, 
+				4, -2, 5, 
+				2, 8, 7
+			};
+
+			constexpr collin::linear::fixed_matrix<int, 3, 3> mat2 = {
+				6, 1, 1, 
+				4, -2, 5, 
+				2, 8, 7
+			};
+
+			auto main_d = collin::linear::main_diagonal(mat);
+			auto main_d_it = std::begin(main_d);
+
+			collin::test::assert_equal(main_d[0], 6);
+			collin::test::assert_equal(main_d[1], -2);
+			collin::test::assert_equal(main_d[2], 7);
+
+			collin::test::assert_equal(*main_d_it, 6);
+			++main_d_it;
+			collin::test::assert_equal(*main_d_it, -2);
+			++main_d_it;
+			collin::test::assert_equal(*main_d_it, 7);
+			++main_d_it;
+			collin::test::assert_equal(main_d_it, std::end(main_d));
+
+			constexpr auto main_d2 = collin::linear::main_diagonal(mat2);
+
+			collin::test::assert_equal(main_d2[0], 6);
+			collin::test::assert_equal(main_d2[1], -2);
+			collin::test::assert_equal(main_d2[2], 7);
+
+			static_assert(main_d2[0] == 6);
+			static_assert(main_d2[1] == -2);
+			static_assert(main_d2[2] == 7);
+		}
+	private:
+		void static_information()
+		{
+			collin::linear::matrix<int> mat {3, 3};
+			constexpr collin::linear::fixed_matrix<int, 3, 3> fixed_mat;
+			const auto diag1 = collin::linear::main_diagonal(mat);
+			constexpr auto diag2 = collin::linear::main_diagonal(fixed_mat);
+
+			constexpr auto diag_size = sizeof(diag1);
+			constexpr auto fixed_diag_size = sizeof(diag2);
+			constexpr auto diag_it = sizeof(std::begin(diag1));
+			constexpr auto fixed_diag_it = sizeof(std::begin(diag2));
+		}
+};
+
 class identity_matrix_test : public collin::test::test_case
 {
 	public:
@@ -734,10 +839,152 @@ class identity_matrix_test : public collin::test::test_case
 				0, 0, 0, 1
 			};
 
+			collin::test::assert_equal(collin::linear::identity_matrix<int, 1>(), goal1);
+			collin::test::assert_equal(collin::linear::identity_matrix<int, 2>(), goal2);
+			collin::test::assert_equal(collin::linear::identity_matrix<int, 3>(), goal3);
+			collin::test::assert_equal(collin::linear::identity_matrix<int, 4>(), goal4);
+
 			static_assert(collin::linear::identity_matrix<int, 1>() == goal1);
 			static_assert(collin::linear::identity_matrix<int, 2>() == goal2);
 			static_assert(collin::linear::identity_matrix<int, 3>() == goal3);
 			static_assert(collin::linear::identity_matrix<int, 4>() == goal4);
+
+			collin::test::assert_equal(collin::linear::identity_matrix<int>(1), goal1);
+			collin::test::assert_equal(collin::linear::identity_matrix<int>(2), goal2);
+			collin::test::assert_equal(collin::linear::identity_matrix<int>(3), goal3);
+			collin::test::assert_equal(collin::linear::identity_matrix<int>(4), goal4);
+		}
+};
+
+class pivot_matrix_test : public collin::test::test_case
+{
+	public:
+		pivot_matrix_test()
+			: collin::test::test_case{"pivot_matrix_test"} {}
+
+		void operator()() override
+		{
+			constexpr collin::linear::fixed_matrix<int, 3, 3> mat = {
+				6, 1, 1, 
+				4, -2, 5, 
+				2, 8, 7
+			};
+
+			constexpr auto pivot = collin::linear::pivot_matrix(mat);
+		}
+};
+
+class lu_decomposition_test : public collin::test::test_case
+{
+	public:
+		lu_decomposition_test()
+			: collin::test::test_case{"lu_decomposition_test"} {}
+
+		void operator()() override
+		{
+			constexpr collin::linear::fixed_matrix<double, 4, 4> mat = {
+				7, 3, -1, 2,
+				3, 8, 1, -4,
+				-1, 1, 4, -1,
+				2, -4, -1, 6
+			};
+
+			constexpr auto decomp = collin::linear::lu_decomposition(mat);
+
+			constexpr auto p = std::get<0>(decomp);
+			constexpr auto l = std::get<1>(decomp);
+			constexpr auto u = std::get<2>(decomp);
+		}
+};
+
+class adjugate_test : public collin::test::test_case
+{
+	public:
+		adjugate_test()
+			: collin::test::test_case{"adjugate_test"} {}
+
+		void operator()() override
+		{
+			constexpr collin::linear::fixed_matrix<int, 2, 2> fixed_input_data =
+			{
+				10, 4,
+				-2, 54
+			};
+
+			constexpr collin::linear::fixed_matrix<int, 4, 4> fixed_input_data2 =
+			{
+				5, -2, 2, 7,
+				1, 0, 0, 3,
+				-3, 1, 5, 0,
+				3, -1, -9, 4
+			};
+
+			const collin::linear::matrix<int> input_data{fixed_input_data};
+			const collin::linear::matrix<int> input_data2{fixed_input_data2};
+
+			constexpr collin::linear::fixed_matrix<int, 2, 2> goal = 
+			{
+				54, -4,
+				2, 10
+			};
+
+			constexpr collin::linear::fixed_matrix<int, 4, 4> goal2 =
+			{
+				-12, 76, -60, -36,
+				-56, 208, -82, -58,
+				4, 4, -2, -10,
+				4, 4, 20, 12
+			};
+
+			static_assert(collin::linear::adjugate(fixed_input_data) == goal);
+			static_assert(collin::linear::adjugate(fixed_input_data2) == goal2);
+			
+			collin::test::assert_equal(collin::linear::adjugate(fixed_input_data), goal);
+			collin::test::assert_equal(collin::linear::adjugate(input_data), goal);
+
+			collin::test::assert_equal(collin::linear::adjugate(fixed_input_data2), goal2);
+			collin::test::assert_equal(collin::linear::adjugate(input_data2), goal2);
+		}
+};
+
+class inverse_test : public collin::test::test_case
+{
+	public:
+		inverse_test()
+			: collin::test::test_case{"inverse_test"} {}
+
+		void operator()() override
+		{
+			constexpr collin::linear::fixed_matrix<double, 4, 4> fixed_input_data = 
+			{
+				5, -2, 2, 7,
+				1, 0, 0, 3,
+				-3, 1, 5, 0,
+				3, -1, -9, 4
+			};
+
+			const collin::linear::matrix<double> input_data {fixed_input_data};
+
+			constexpr collin::linear::fixed_matrix<double, 4, 4> goal = 
+			{
+				-0.136364, 0.863636, -0.681818, -0.409091, 
+				-0.636364, 2.36364, -0.931818, -0.659091, 
+				0.0454545, 0.0454545, -0.0227273, -0.113636, 
+				0.0454545, 0.0454545, 0.227273, 0.136364
+			};
+
+			constexpr auto constexpr_test = collin::linear::inverse(fixed_input_data);
+			const auto test = collin::linear::inverse(input_data);
+
+			auto i_it = std::begin(test);
+			auto fixed_i_it = std::begin(constexpr_test);
+			auto goal_it = std::begin(goal);
+
+			for(; fixed_i_it != std::end(constexpr_test); ++fixed_i_it, ++goal_it, ++i_it)
+			{
+				collin::test::assert_almost_equal(*i_it, *goal_it, 0.00001);
+				collin::test::assert_almost_equal(*fixed_i_it, *goal_it, 0.00001);
+			}
 		}
 };
 
@@ -758,10 +1005,15 @@ int main()
 	suite.add_test_case<mixed_matrix_add_test>();
 	suite.add_test_case<mixed_matrix_minus_test>();
 	suite.add_test_case<mixed_matrix_multiply_test>();
+	suite.add_test_case<cofactor_test>();
 	suite.add_test_case<determinant_test>();
 	suite.add_test_case<row_test>();
 	suite.add_test_case<column_test>();
 	suite.add_test_case<fixed_row_test>();
+	suite.add_test_case<diagonal_test>();
+	suite.add_test_case<identity_matrix_test>();
+	suite.add_test_case<adjugate_test>();
+	suite.add_test_case<inverse_test>();
 
 	collin::test::text_test_runner runner{std::cout};
 	return !runner.run(suite);

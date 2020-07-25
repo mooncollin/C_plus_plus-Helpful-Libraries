@@ -509,9 +509,11 @@ namespace collin
 				constexpr constant_multidimensional_array(const constant_multidimensional_array<T2>& other)
 					: data_{other.data_} {}
 
-				template<class... Elements>
+				template<class... Elements, typename = std::enable_if_t<
+		/* requires */	(... && std::is_convertible_v<Elements, T>)
+				>>
 				constexpr constant_multidimensional_array(Elements&&... elements) noexcept(std::is_nothrow_constructible_v<T>)
-					: data_{std::forward<Elements>(elements)...} {}
+					: data_{static_cast<T>(std::forward<Elements>(elements))...} {}
 
 				constexpr constant_multidimensional_array(const constant_multidimensional_array&) = default;
 				constexpr constant_multidimensional_array(constant_multidimensional_array&&) noexcept = default;
@@ -551,7 +553,7 @@ namespace collin
 					return data_[constant_multidimensional_array::index(std::forward<Indexes>(indexes)...)];
 				}
 
-				constexpr pointer data() const noexcept
+				constexpr const_pointer data() const noexcept
 				{
 					return data_.data();
 				}

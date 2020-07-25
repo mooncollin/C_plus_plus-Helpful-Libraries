@@ -120,7 +120,87 @@ namespace collin
 				{
 					return base::empty();
 				}
+
+				template<class T2, std::size_t Size2, typename = std::enable_if_t<
+					std::is_convertible_v<T2, T>
+				>>
+				constexpr row& operator+=(const row<T2, Size2>& other)
+				{
+					auto this_it = begin();
+					auto other_it = other.begin();
+					for (; this_it != end() && other_it != other.end(); ++this_it, ++other_it)
+					{
+						*this_it += *other_it;
+					}
+
+					return *this;
+				}
+
+				template<class T2, std::size_t Size2, typename = std::enable_if_t<
+					std::is_convertible_v<T2, T>
+				>>
+				constexpr row& operator-=(const row<T2, Size2>& other)
+				{
+					auto this_it = begin();
+					auto other_it = other.begin();
+					for (; this_it != end() && other_it != other.end(); ++this_it, ++other_it)
+					{
+						*this_it -= *other_it;
+					}
+
+					return *this;
+				}
+
+				template<class T2, typename = std::enable_if_t<
+					std::is_convertible_v<T2, T>
+				>>
+				constexpr row& operator*=(const T2& other)
+				{
+					for (auto& value : *this)
+					{
+						value *= other;
+					}
+				}
+
+				constexpr void swap(row& other)
+				{
+					std::swap_ranges(begin(), end(), other.begin());
+				}
 		};
+
+		template<class T, std::size_t Size>
+		constexpr void swap(row<T, Size>& lhs, row<T, Size>& rhs)
+		{
+			lhs.swap(rhs);
+		}
+
+		template<class T, class T2, std::size_t Extent>
+		constexpr bool operator==(const row<T, Extent>& lhs, const row<T2, Extent>& rhs)
+		{
+			if(std::size(lhs) != std::size(rhs))
+			{
+				return false;
+			}
+
+			auto lhs_it = std::begin(lhs);
+			auto rhs_it = std::begin(rhs);
+
+			for(; lhs_it != std::end(lhs); ++lhs_it, ++rhs_it)
+			{
+				if(*lhs_it != *rhs_it)
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		template<class T, class T2, std::size_t Extent>
+		constexpr bool operator!=(const row<T, Extent>& lhs, const row<T2, Extent>& rhs)
+		{
+			return !(lhs == rhs);
+		}
 
 		template<class T, std::size_t RowSize>
 		class column_iterator : public std::iterator<std::bidirectional_iterator_tag, T>
@@ -129,19 +209,32 @@ namespace collin
 
 			public:
 				constexpr column_iterator(typename base::pointer item, std::size_t row_size) noexcept
-					: storage_{item, collin::extent_type<RowSize>{row_size}} {}
+					: storage_{item, row_size} {}
 
-				constexpr column_iterator& operator--()
+				constexpr column_iterator& operator--() noexcept
 				{
-					storage_.data_ -= row_size_.size();
+					storage_.data_ -= storage_.size();
 					return *this;
 				}
 
-				constexpr column_iterator operator--(int)
+				constexpr column_iterator operator--(int) noexcept
 				{
 					auto temp = *this;
 					--(*this);
 					return temp;
+				}
+
+				constexpr column_iterator& operator-=(std::size_t amount) noexcept
+				{
+					storage_.data_ -= storage_.size() * amount;
+					return *this;
+				}
+
+				friend constexpr column_iterator operator-(const column_iterator& lhs, std::size_t amount) noexcept
+				{
+					auto c_it{lhs};
+					c_it -= amount;
+					return c_it;
 				}
 
 				constexpr typename base::reference operator*()
@@ -149,17 +242,30 @@ namespace collin
 					return *storage_.data_;
 				}
 
-				constexpr column_iterator& operator++()
+				constexpr column_iterator& operator++() noexcept
 				{
 					storage_.data_ += storage_.size();
 					return *this;
 				}
 
-				constexpr column_iterator operator++(int)
+				constexpr column_iterator operator++(int) noexcept
 				{
 					auto temp = *this;
 					++(*this);
 					return temp;
+				}
+
+				constexpr column_iterator& operator+=(std::size_t amount) noexcept
+				{
+					storage_.data_ += storage_.size() * amount;
+					return *this;
+				}
+
+				friend constexpr column_iterator operator+(const column_iterator& lhs, std::size_t amount) noexcept
+				{
+					auto c_it{lhs};
+					c_it += amount;
+					return c_it;
 				}
 
 				constexpr bool operator==(const column_iterator& other) const noexcept
@@ -235,7 +341,7 @@ namespace collin
 
 				constexpr reference back() const
 				{
-					return *(end() - 1);
+					return *(--end());
 				}
 
 				constexpr reference operator[](size_type i) const
@@ -257,11 +363,292 @@ namespace collin
 				{
 					return size() == 0;
 				}
+
+				template<class T2, std::size_t Size2, std::size_t RowSize2, typename = std::enable_if_t<
+					std::is_convertible_v<T2, T>
+				>>
+				constexpr column& operator+=(const column<T2, Size2, RowSize2>& other)
+				{
+					auto this_it = begin();
+					auto other_it = other.begin();
+					for (; this_it != end() && other_it != other.end(); ++this_it, ++other_it)
+					{
+						*this_it = *this_it + *other_it;
+					}
+
+					return *this;
+				}
+
+				template<class T2, std::size_t Size2, std::size_t RowSize2, typename = std::enable_if_t<
+					std::is_convertible_v<T2, T>
+				>>
+				constexpr column& operator-=(const column<T2, Size2, RowSize2>& other)
+				{
+					auto this_it = begin();
+					auto other_it = other.begin();
+					for (; this_it != end() && other_it != other.end(); ++this_it, ++other_it)
+					{
+						*this_it = *this_it - *other_it;
+					}
+
+					return *this;
+				}
+
+				template<class T2, typename = std::enable_if_t<
+					std::is_convertible_v<T2, T>
+				>>
+				constexpr column& operator*=(const T2& other)
+				{
+					for (auto& value : *this)
+					{
+						value = value * other;
+					}
+				}
+
+				constexpr void swap(column& other)
+				{
+					std::swap_ranges(begin(), end(), other.begin());
+				}
 			private:
 				pointer first_;
 				collin::extent_type<Extent> size_;
 				collin::extent_type<RowSize> row_size_;
 		};
+
+		template<class T, std::size_t Size, std::size_t RowSize>
+		constexpr void swap(column<T, Size, RowSize>& lhs, column<T, Size, RowSize>& rhs)
+		{
+			lhs.swap(rhs);
+		}
+
+		template<class T, class T2, std::size_t Extent, std::size_t RowSize>
+		constexpr bool operator==(const column<T, Extent, RowSize>& lhs, const column<T2, Extent, RowSize>& rhs)
+		{
+			if(std::size(lhs) != std::size(rhs))
+			{
+				return false;
+			}
+
+			auto lhs_it = std::begin(lhs);
+			auto rhs_it = std::begin(rhs);
+
+			for(; lhs_it != std::end(lhs); ++lhs_it, ++rhs_it)
+			{
+				if(*lhs_it != *rhs_it)
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		template<class T, class T2, std::size_t Extent, std::size_t RowSize>
+		constexpr bool operator!=(const column<T, Extent, RowSize>& lhs, const column<T2, Extent, RowSize>& rhs)
+		{
+			return !(lhs == rhs);
+		}
+
+		template<class T, std::size_t Size>
+		class diagonal;
+
+		template<class T, std::size_t RowSize>
+		class diagonal_iterator : public std::iterator<std::bidirectional_iterator_tag, T>
+		{
+			using base = std::iterator<std::bidirectional_iterator_tag, T>;
+
+			public:
+				constexpr diagonal_iterator(typename base::pointer item, const diagonal<T, RowSize>& owner) noexcept
+					: current_{item}, owner_{&owner} {}
+
+				constexpr diagonal_iterator& operator--() noexcept
+				{
+					current_ -= 1;
+					if (*this != std::begin(*owner_))
+					{
+						current_ -= std::size(*owner_);
+					}
+
+					return *this;
+				}
+
+				constexpr diagonal_iterator operator--(int) noexcept
+				{
+					auto temp = *this;
+					--(*this);
+					return temp;
+				}
+
+				constexpr typename base::reference operator*()
+				{
+					return *current_;
+				}
+
+				constexpr diagonal_iterator& operator++() noexcept
+				{
+					current_ += 1;
+					if (*this != std::end(*owner_))
+					{
+						current_ += std::size(*owner_);
+					}
+
+					return *this;
+				}
+
+				constexpr diagonal_iterator operator++(int) noexcept
+				{
+					auto temp = *this;
+					++(*this);
+					return temp;
+				}
+
+				[[nodiscard]] constexpr bool operator==(const diagonal_iterator& other) const noexcept
+				{
+					return current_ == other.current_;
+				}
+
+				[[nodiscard]] constexpr bool operator!=(const diagonal_iterator& other) const noexcept
+				{
+					return !(*this == other);
+				}
+
+				constexpr typename base::pointer operator->()
+				{
+					return current_;
+				} 
+			private:
+				typename base::pointer current_;
+
+				// C++20 gives constexpr std::reference_wrapper,
+				// so we's gotta wait until then and use a crappy pointer.
+				//
+				// It is rather strange to hold the owner who makes the iterator
+				// but unfortunately, when we iterate through the diagonal, we have
+				// the tedency to iterate far past the end, which doesn't work well
+				// in constexpr conditions. We use the owner to make sure our current
+				// pointer does not go too far past the beginning or end of the container.
+				const diagonal<T, RowSize>* owner_;
+		};
+
+		template<class T, std::size_t Size>
+		class diagonal
+		{
+			public:
+				using element_type = T;
+				using value_type = std::remove_cv_t<T>;
+				using size_type = std::size_t;
+				using difference_type = std::ptrdiff_t;
+				using pointer = T*;
+				using const_pointer = const T*;
+				using reference = T&;
+				using const_reference = const T&;
+				using iterator = diagonal_iterator<T, Size>;
+				using reverse_iterator = std::reverse_iterator<iterator>;
+
+				constexpr diagonal(pointer first, size_type size)
+					: storage_{first, size} {}
+
+				[[nodiscard]] constexpr iterator begin() const noexcept
+				{
+					return {data(), *this};
+				}
+
+				[[nodiscard]] constexpr iterator end() const noexcept
+				{
+					return {data() + storage_.size() * storage_.size(), *this};
+				}
+
+				[[nodiscard]] constexpr reverse_iterator rbegin() const noexcept
+				{
+					return {end()};
+				}
+
+				[[nodiscard]] constexpr reverse_iterator rend() const noexcept
+				{
+					return {begin()};
+				}
+
+				[[nodiscard]] constexpr reference front() const noexcept
+				{
+					return *data();
+				}
+
+				[[nodiscard]] constexpr reference back() const noexcept
+				{
+					return *(--end());
+				}
+
+				[[nodiscard]] constexpr reference operator[](size_type i) const
+				{
+					return *(data() + (i * storage_.size()) + i);
+				}
+
+				[[nodiscard]] constexpr pointer data() const noexcept
+				{
+					return storage_.data_;
+				}
+
+				[[nodiscard]] constexpr size_type size() const noexcept
+				{
+					return storage_.size();
+				}
+
+				[[nodiscard]] constexpr bool empty() const noexcept
+				{
+					return size() == 0;
+				}
+
+				constexpr void swap(diagonal& other)
+				{
+					std::swap_ranges(begin(), end(), other.begin());
+				}
+			private:
+				template<class ExtentType>
+				struct storage_type : public ExtentType
+				{
+					template<class OtherExtentType>
+					constexpr storage_type(pointer data, OtherExtentType ext)
+						: ExtentType(ext), data_(data) {}
+
+					pointer data_;
+				};
+
+				storage_type<collin::extent_type<Size>> storage_;
+		};
+
+		template<class T, std::size_t S>
+		constexpr void swap(diagonal<T, S>& lhs, diagonal<T, S>& rhs)
+		{
+			lhs.swap(rhs);
+		}
+
+		template<class T, class T2, std::size_t Extent>
+		constexpr bool operator==(const diagonal<T, Extent>& lhs, const diagonal<T2, Extent>& rhs)
+		{
+			if(std::size(lhs) != std::size(rhs))
+			{
+				return false;
+			}
+
+			auto lhs_it = std::begin(lhs);
+			auto rhs_it = std::begin(rhs);
+
+			for(; lhs_it != std::end(lhs); ++lhs_it, ++rhs_it)
+			{
+				if(*lhs_it != *rhs_it)
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		template<class T, class T2, std::size_t Extent>
+		constexpr bool operator!=(const diagonal<T, Extent>& lhs, const diagonal<T2, Extent>& rhs)
+		{
+			return !(lhs == rhs);
+		}
 
 		template<class Rep>
 		class matrix
@@ -339,12 +726,12 @@ namespace collin
 					data_.dimensions(rows, cols);
 				}
 
-				std::size_t rows() const noexcept
+				[[nodiscard]] std::size_t rows() const noexcept
 				{
 					return data_.dimensions()[0];
 				}
 
-				std::size_t cols() const noexcept
+				[[nodiscard]] std::size_t cols() const noexcept
 				{
 					return data_.dimensions()[1];
 				}
@@ -359,105 +746,105 @@ namespace collin
 					return data_.get(r, c);
 				}
 
-				row<value_type, std::dynamic_extent> get_row(std::size_t i)
+				[[nodiscard]] row<value_type, std::dynamic_extent> get_row(std::size_t i)
 				{
 					return {&data_.get(i, 0), cols()};
 				}
 
-				row<const value_type, std::dynamic_extent> get_row(std::size_t i) const
+				[[nodiscard]] row<const value_type, std::dynamic_extent> get_row(std::size_t i) const
 				{
 					return {&data_.get(i, 0), cols()};
 				}
 
-				column<value_type, std::dynamic_extent, std::dynamic_extent> get_column(std::size_t i)
+				[[nodiscard]] column<value_type, std::dynamic_extent, std::dynamic_extent> get_column(std::size_t i)
 				{
 					return {&data_.get(0, i), cols(), rows()};
 				}
 
-				column<const value_type, std::dynamic_extent, std::dynamic_extent> get_column(std::size_t i) const
+				[[nodiscard]] column<const value_type, std::dynamic_extent, std::dynamic_extent> get_column(std::size_t i) const
 				{
 					return {&data_.get(0, i), cols(), rows()};
 				}
 
-				const_pointer data() const noexcept
+				[[nodiscard]] const_pointer data() const noexcept
 				{
 					return data_.data();
 				}
 
-				pointer data() noexcept
+				[[nodiscard]] pointer data() noexcept
 				{
 					return data_.data();
 				}
 
-				iterator begin() noexcept
+				[[nodiscard]] iterator begin() noexcept
 				{
 					return data_.begin();
 				}
 
-				const_iterator begin() const noexcept
+				[[nodiscard]] const_iterator begin() const noexcept
 				{
 					return data_.begin();
 				}
 
-				const_iterator cbegin() const noexcept
+				[[nodiscard]] const_iterator cbegin() const noexcept
 				{
 					return data_.cbegin();
 				}
 
-				iterator end() noexcept
+				[[nodiscard]] iterator end() noexcept
 				{
 					return data_.end();
 				}
 
-				const_iterator end() const noexcept
+				[[nodiscard]] const_iterator end() const noexcept
 				{
 					return data_.end();
 				}
 
-				const_iterator cend() const noexcept
+				[[nodiscard]] const_iterator cend() const noexcept
 				{
 					return data_.cend();
 				}
 
-				reverse_iterator rbegin() noexcept
+				[[nodiscard]] reverse_iterator rbegin() noexcept
 				{
 					return data_.rbegin();
 				}
 
-				reverse_iterator rbegin() const noexcept
+				[[nodiscard]] reverse_iterator rbegin() const noexcept
 				{
 					return data_.rbegin();
 				}
 
-				const_reverse_iterator crbegin() const noexcept
+				[[nodiscard]] const_reverse_iterator crbegin() const noexcept
 				{
 					return data_.crbegin();
 				}
 
-				reverse_iterator rend() noexcept
+				[[nodiscard]] reverse_iterator rend() noexcept
 				{
 					return data_.rend();
 				}
 
-				reverse_iterator rend() const noexcept
+				[[nodiscard]] reverse_iterator rend() const noexcept
 				{
 					return data_.rend();
 				}
 
-				const_reverse_iterator crend() const noexcept
+				[[nodiscard]] const_reverse_iterator crend() const noexcept
 				{
 					return data_.crend();
 				}
 
-				size_type size() const noexcept
+				[[nodiscard]] size_type size() const noexcept
 				{
 					return data_.size();
 				}
 				
-				template<class Matrix, typename = std::enable_if_t<
-		/* requires */	is_either_matrix_v<Matrix>
+				template<class Rep2, typename = std::enable_if_t<
+		/* requires */ std::is_convertible_v<Rep2, Rep>
 				>>
-				matrix& operator+=(const Matrix& other)
+				matrix& operator+=(const matrix<Rep2>& other)
 				{
 					if (rows() != other.rows() || cols() != other.cols())
 					{
@@ -469,16 +856,37 @@ namespace collin
 
 					for (; it != end(); ++it, ++other_it)
 					{
-						*it = *it + *other_it;
+						*it += *other_it;
 					}
 
 					return *this;
 				}
 
-				template<class Matrix, typename = std::enable_if_t<
-		/* requires */	is_either_matrix_v<Matrix>
+				template<class Rep2, std::size_t Rows, std::size_t Cols, typename = std::enable_if_t<
+		/* requires */ std::is_convertible_v<Rep2, Rep>
 				>>
-				matrix& operator-=(const Matrix& other)
+				matrix& operator+=(const fixed_matrix<Rep2, Rows, Cols>& other)
+				{
+					if (rows() != Rows || cols() != Cols)
+					{
+						throw std::invalid_argument{"cannot add matrices of different dimension sizes"};
+					}
+
+					auto it = begin();
+					auto other_it = other.begin();
+
+					for (; it != end(); ++it, ++other_it)
+					{
+						*it += *other_it;
+					}
+
+					return *this;
+				}
+
+				template<class Rep2, typename = std::enable_if_t<
+		/* requires */ std::is_convertible_v<Rep2, Rep>
+				>>
+				matrix& operator-=(const matrix<Rep2>& other)
 				{
 					if (rows() != other.rows() || cols() != other.cols())
 					{
@@ -490,7 +898,28 @@ namespace collin
 
 					for (; it != end(); ++it, ++other_it)
 					{
-						*it = *it - *other_it;
+						*it -= *other_it;
+					}
+
+					return *this;
+				}
+				
+				template<class Rep2, std::size_t Rows, std::size_t Cols, typename = std::enable_if_t<
+		/* requires */ std::is_convertible_v<Rep2, Rep>
+				>>
+				matrix& operator-=(const fixed_matrix<Rep2, Rows, Cols>& other)
+				{
+					if (rows() != Rows || cols() != Cols)
+					{
+						throw std::invalid_argument{"cannot subtract matrices of different dimension sizes"};
+					}
+
+					auto it = begin();
+					auto other_it = other.begin();
+
+					for (; it != end(); ++it, ++other_it)
+					{
+						*it -= *other_it;
 					}
 
 					return *this;
@@ -501,25 +930,10 @@ namespace collin
 				{
 					for (auto& value : data_)
 					{
-						value = value * other;
+						value *= other;
 					}
 
 					return *this;
-				}
-
-				matrix transpose() const
-				{
-					matrix m{cols(), rows()};
-
-					for (std::size_t i = 0; i < rows(); i++)
-					{
-						for (std::size_t j = 0; j < cols(); j++)
-						{
-							m(j, i) = (*this)(i, j);
-						}
-					}
-
-					return m;
 				}
 			private:
 				storage_t data_;
@@ -528,7 +942,7 @@ namespace collin
 		template<class Matrix1, class Matrix2, typename = std::enable_if_t<
 /* requires */	is_either_matrix_v<Matrix1> && is_either_matrix_v<Matrix2>
 		>>
-		constexpr bool operator==(const Matrix1& lhs, const Matrix2& rhs)
+		[[nodiscard]] constexpr bool operator==(const Matrix1& lhs, const Matrix2& rhs)
 		{
 			if (lhs.rows() != rhs.rows() || lhs.cols() != rhs.cols())
 			{
@@ -552,7 +966,7 @@ namespace collin
 		template<class Matrix1, class Matrix2, typename = std::enable_if_t<
 /* requires */	is_either_matrix_v<Matrix1> && is_either_matrix_v<Matrix2>
 		>>
-		constexpr bool operator!=(const Matrix1& lhs, const Matrix2& rhs)
+		[[nodiscard]] constexpr bool operator!=(const Matrix1& lhs, const Matrix2& rhs)
 		{
 			return !(lhs == rhs);
 		}
@@ -560,7 +974,7 @@ namespace collin
 		template<class Matrix1, class Matrix2, typename = std::enable_if_t<
 /* requires */	is_either_matrix_v<Matrix1> && is_either_matrix_v<Matrix2>
 		>>
-		constexpr auto operator+(const Matrix1& lhs, const Matrix2& rhs)
+		[[nodiscard]] constexpr auto operator+(const Matrix1& lhs, const Matrix2& rhs)
 		{
 			auto m {lhs};
 			m += rhs;
@@ -570,7 +984,7 @@ namespace collin
 		template<class Matrix1, class Matrix2, typename = std::enable_if_t<
 /* requires */	is_either_matrix_v<Matrix1> && is_either_matrix_v<Matrix2>
 		>>
-		constexpr auto operator-(const Matrix1& lhs, const Matrix2& rhs)
+		[[nodiscard]] constexpr auto operator-(const Matrix1& lhs, const Matrix2& rhs)
 		{
 			auto m {lhs};
 			m -= rhs;
@@ -580,7 +994,7 @@ namespace collin
 		template<class Matrix, class Other, typename = std::enable_if_t<
 /* requires */	is_either_matrix_v<Matrix>
 		>>
-		constexpr auto operator*(const Matrix& lhs, const Other& rhs)
+		[[nodiscard]] constexpr auto operator*(const Matrix& lhs, const Other& rhs)
 		{
 			if constexpr (!is_matrix_v<Other> && !is_fixed_matrix_v<Other>)
 			{
@@ -604,7 +1018,7 @@ namespace collin
 						common_type sum {};
 						for (std::size_t n = 0; n < Matrix::num_columns; n++)
 						{
-							sum = sum + (lhs(i, n) * rhs(n, j));
+							sum += (lhs(i, n) * rhs(n, j));
 						}
 
 						m(i, j) = sum;
@@ -701,12 +1115,12 @@ namespace collin
 				constexpr fixed_matrix& operator=(const fixed_matrix&) = default;
 				constexpr fixed_matrix& operator=(fixed_matrix&&) noexcept = default;
 
-				constexpr std::size_t rows() const noexcept
+				[[nodiscard]] constexpr std::size_t rows() const noexcept
 				{
 					return Rows;
 				}
 
-				constexpr std::size_t cols() const noexcept
+				[[nodiscard]] constexpr std::size_t cols() const noexcept
 				{
 					return Cols;
 				}
@@ -721,117 +1135,109 @@ namespace collin
 					return data_.get(r, c);
 				}
 
-				constexpr row<value_type, Cols> get_row(std::size_t i)
+				[[nodiscard]] constexpr row<value_type, Cols> get_row(std::size_t i)
 				{
 					return {&data_.get(i, 0), Cols};
 				}
 
-				constexpr row<const value_type, Cols> get_row(std::size_t i) const
+				[[nodiscard]] constexpr row<const value_type, Cols> get_row(std::size_t i) const
 				{
 					return {&data_.get(i, 0), Cols};
 				}
 
-				constexpr column<value_type, Cols, Rows> get_column(std::size_t i)
+				[[nodiscard]] constexpr column<value_type, Cols, Rows> get_column(std::size_t i)
 				{
 					return {&data_.get(0, i), Cols, Rows};
 				}
 
-				constexpr column<const value_type, Cols, Rows> get_column(std::size_t i) const
+				[[nodiscard]] constexpr column<const value_type, Cols, Rows> get_column(std::size_t i) const
 				{
 					return {&data_.get(0, i), Cols, Rows};
 				}
 
-				constexpr const_pointer data() const noexcept
+				[[nodiscard]] constexpr const_pointer data() const noexcept
 				{
 					return data_.data();
 				}
 
-				constexpr pointer data() noexcept
+				[[nodiscard]] constexpr pointer data() noexcept
 				{
 					return data_.data();
 				}
 
-				constexpr iterator begin() noexcept
+				[[nodiscard]] constexpr iterator begin() noexcept
 				{
 					return data_.begin();
 				}
 
-				constexpr const_iterator begin() const noexcept
+				[[nodiscard]] constexpr const_iterator begin() const noexcept
 				{
 					return data_.begin();
 				}
 
-				constexpr const_iterator cbegin() const noexcept
+				[[nodiscard]] constexpr const_iterator cbegin() const noexcept
 				{
 					return data_.cbegin();
 				}
 
-				constexpr iterator end() noexcept
+				[[nodiscard]] constexpr iterator end() noexcept
 				{
 					return data_.end();
 				}
 
-				constexpr const_iterator end() const noexcept
+				[[nodiscard]] constexpr const_iterator end() const noexcept
 				{
 					return data_.end();
 				}
 
-				constexpr const_iterator cend() const noexcept
+				[[nodiscard]] constexpr const_iterator cend() const noexcept
 				{
 					return data_.cend();
 				}
 
-				constexpr reverse_iterator rbegin() noexcept
+				[[nodiscard]] constexpr reverse_iterator rbegin() noexcept
 				{
 					return data_.rbegin();
 				}
 
-				constexpr reverse_iterator rbegin() const noexcept
+				[[nodiscard]] constexpr reverse_iterator rbegin() const noexcept
 				{
 					return data_.rbegin();
 				}
 
-				constexpr const_reverse_iterator crbegin() const noexcept
+				[[nodiscard]] constexpr const_reverse_iterator crbegin() const noexcept
 				{
 					return data_.crbegin();
 				}
 
-				constexpr reverse_iterator rend() noexcept
+				[[nodiscard]] constexpr reverse_iterator rend() noexcept
 				{
 					return data_.rend();
 				}
 
-				constexpr reverse_iterator rend() const noexcept
+				[[nodiscard]] constexpr reverse_iterator rend() const noexcept
 				{
 					return data_.rend();
 				}
 
-				constexpr const_reverse_iterator crend() const noexcept
+				[[nodiscard]] constexpr const_reverse_iterator crend() const noexcept
 				{
 					return data_.crend();
 				}
 
-				constexpr size_type size() const noexcept
+				[[nodiscard]] constexpr size_type size() const noexcept
 				{
 					return data_.size();
 				}
 
-				template<class Matrix, typename = std::enable_if_t<
-		/* requires */	is_either_matrix_v<Matrix>
+				template<class Rep2, typename = std::enable_if_t<
+		/* requires */ std::is_convertible_v<Rep2, Rep>
 				>>
-				constexpr fixed_matrix& operator+=(const Matrix& other)
+				fixed_matrix& operator+=(const matrix<Rep2>& other)
 				{
-					if constexpr (is_fixed_matrix_v<Matrix>)
+					if (Rows != other.rows() || Cols != other.cols())
 					{
-						static_assert(Matrix::num_rows == Rows && Matrix::num_columns == Cols, 
-							"cannot add matrices of different dimension sizes");
-					}
-					else
-					{
-						if (rows() != other.rows() || cols() != other.cols())
-						{
-							throw std::invalid_argument{"cannot add matrices of different dimension sizes"};
-						}
+						throw std::invalid_argument{"cannot add matrices of different dimension sizes"};
 					}
 
 					auto it = begin();
@@ -839,28 +1245,36 @@ namespace collin
 
 					for (; it != end(); ++it, ++other_it)
 					{
-						*it = *it + *other_it;
+						*it += *other_it;
 					}
 
 					return *this;
 				}
 
-				template<class Matrix, typename = std::enable_if_t<
-		/* requires */	is_either_matrix_v<Matrix>
+				template<class Rep2, typename = std::enable_if_t<
+		/* requires */ std::is_convertible_v<Rep2, Rep>
 				>>
-				constexpr fixed_matrix& operator-=(const Matrix& other)
+				constexpr fixed_matrix& operator+=(const fixed_matrix<Rep2, Rows, Cols>& other)
 				{
-					if constexpr (is_fixed_matrix_v<Matrix>)
+					auto it = begin();
+					auto other_it = other.begin();
+
+					for (; it != end(); ++it, ++other_it)
 					{
-						static_assert(Matrix::num_rows == Rows && Matrix::num_columns == Cols, 
-							"cannot subtract matrices of different dimension sizes");
+						*it += *other_it;
 					}
-					else
+
+					return *this;
+				}
+
+				template<class Rep2, typename = std::enable_if_t<
+		/* requires */ std::is_convertible_v<Rep2, Rep>
+				>>
+				fixed_matrix& operator-=(const matrix<Rep2>& other)
+				{
+					if (Rows != other.rows() || Cols != other.cols())
 					{
-						if (rows() != other.rows() || cols() != other.cols())
-						{
-							throw std::invalid_argument{"cannot subtract matrices of different dimension sizes"};
-						}
+						throw std::invalid_argument{"cannot subtract matrices of different dimension sizes"};
 					}
 
 					auto it = begin();
@@ -868,7 +1282,23 @@ namespace collin
 
 					for (; it != end(); ++it, ++other_it)
 					{
-						*it = *it - *other_it;
+						*it -= *other_it;
+					}
+
+					return *this;
+				}
+
+				template<class Rep2, typename = std::enable_if_t<
+		/* requires */ std::is_convertible_v<Rep2, Rep>
+				>>
+				constexpr fixed_matrix& operator-=(const fixed_matrix<Rep2, Rows, Cols>& other)
+				{
+					auto it = begin();
+					auto other_it = other.begin();
+
+					for (; it != end(); ++it, ++other_it)
+					{
+						*it -= *other_it;
 					}
 
 					return *this;
@@ -884,21 +1314,6 @@ namespace collin
 
 					return *this;
 				}
-
-				constexpr fixed_matrix<Rep, Cols, Rows> transpose() const
-				{
-					fixed_matrix<Rep, Cols, Rows> m;
-
-					for (std::size_t i = 0; i < rows(); i++)
-					{
-						for (std::size_t j = 0; j < cols(); j++)
-						{
-							m(j, i) = (*this)(i, j);
-						}
-					}
-
-					return m;
-				}
 			private:
 				storage_t data_;
 
@@ -909,14 +1324,68 @@ namespace collin
 		template<class T, std::size_t S>
 		using square_matrix = fixed_matrix<T, S, S>;
 
+		template<class T>
+		[[nodiscard]] bool is_square_matrix(const matrix<T>& m) noexcept
+		{
+			return m.rows() == m.cols();
+		}
+
+		template<class T, std::size_t Rows, std::size_t Cols>
+		[[nodiscard]] constexpr bool is_square_matrix(const fixed_matrix<T, Rows, Cols>& m)
+		{
+			return Rows == Cols;
+		}
+
+		template<class T>
+		[[nodiscard]] diagonal<T, collin::dynamic_extent> main_diagonal(matrix<T>& m)
+		{
+			if (!is_square_matrix(m))
+			{
+				throw std::invalid_argument{"can only find the main diagonal of a square matrix"};
+			}
+
+			return {m.data(), m.rows()};
+		}
+
+		template<class T>
+		[[nodiscard]] diagonal<const T, collin::dynamic_extent> main_diagonal(const matrix<T>& m)
+		{
+			if (!is_square_matrix(m))
+			{
+				throw std::invalid_argument{"can only find the main diagonal of a square matrix"};
+			}
+
+			return {m.data(), m.rows()};
+		}
+
+		template<class T, std::size_t Size>
+		[[nodiscard]] constexpr diagonal<T, Size> main_diagonal(square_matrix<T, Size>& m) noexcept
+		{
+			return {m.data(), Size};
+		}
+
+		template<class T, std::size_t Size>
+		[[nodiscard]] constexpr diagonal<const T, Size> main_diagonal(const square_matrix<T, Size>& m) noexcept
+		{
+			return {m.data(), Size};
+		}
+
 		template<class T, std::size_t S>
-		constexpr square_matrix<T, S> identity_matrix()
+		[[nodiscard]] constexpr square_matrix<T, S> identity_matrix()
 		{
 			square_matrix<T, S> m;
-			for (std::size_t i = 0; i < S; i++)
-			{
-				m(i, i) = T{1};
-			}
+			auto diag = main_diagonal(m);
+			std::fill(std::begin(diag), std::end(diag), T{1});
+
+			return m;
+		}
+
+		template<class T>
+		[[nodiscard]] matrix<T> identity_matrix(std::size_t size)
+		{
+			matrix<T> m{size, size};
+			auto diag = main_diagonal(m);
+			std::fill(std::begin(diag), std::end(diag), T{1});
 
 			return m;
 		}
