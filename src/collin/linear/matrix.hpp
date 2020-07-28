@@ -12,6 +12,7 @@
 #include <iterator>
 
 #include "collin/type_traits.hpp"
+#include "collin/concepts.hpp"
 #include "collin/multidimensional.hpp"
 #include "collin/iterator.hpp"
 #include "collin/math.hpp"
@@ -40,6 +41,9 @@ namespace collin
 		constexpr auto is_matrix_v = is_matrix<T>::value;
 
 		template<class T>
+		concept regular_matrix_type = is_matrix_v<T>;
+
+		template<class T>
 		struct is_fixed_matrix : std::false_type {};
 
 		template<class Rep, std::size_t Rows, std::size_t Cols>
@@ -49,7 +53,10 @@ namespace collin
 		constexpr auto is_fixed_matrix_v = is_fixed_matrix<T>::value;
 
 		template<class T>
-		constexpr auto is_either_matrix_v = is_matrix_v<T> || is_fixed_matrix_v<T>;
+		concept fixed_matrix_type = is_fixed_matrix_v<T>;
+
+		template<class T>
+		concept matrix_type = regular_matrix_type<T> || fixed_matrix_type<T>;
 
 		template<class T, std::size_t Extent>
 		class row : private std::span<T, Extent>
@@ -121,9 +128,7 @@ namespace collin
 					return base::empty();
 				}
 
-				template<class T2, std::size_t Size2, typename = std::enable_if_t<
-					std::is_convertible_v<T2, T>
-				>>
+				template<collin::concepts::convertible_to<T> T2, std::size_t Size2>
 				constexpr row& operator+=(const row<T2, Size2>& other)
 				{
 					auto this_it = begin();
@@ -136,9 +141,7 @@ namespace collin
 					return *this;
 				}
 
-				template<class T2, std::size_t Size2, typename = std::enable_if_t<
-					std::is_convertible_v<T2, T>
-				>>
+				template<collin::concepts::convertible_to<T> T2, std::size_t Size2>
 				constexpr row& operator-=(const row<T2, Size2>& other)
 				{
 					auto this_it = begin();
@@ -151,9 +154,7 @@ namespace collin
 					return *this;
 				}
 
-				template<class T2, typename = std::enable_if_t<
-					std::is_convertible_v<T2, T>
-				>>
+				template<collin::concepts::convertible_to<T> T2>
 				constexpr row& operator*=(const T2& other)
 				{
 					for (auto& value : *this)
@@ -364,9 +365,7 @@ namespace collin
 					return size() == 0;
 				}
 
-				template<class T2, std::size_t Size2, std::size_t RowSize2, typename = std::enable_if_t<
-					std::is_convertible_v<T2, T>
-				>>
+				template<collin::concepts::convertible_to<T> T2, std::size_t Size2, std::size_t RowSize2>
 				constexpr column& operator+=(const column<T2, Size2, RowSize2>& other)
 				{
 					auto this_it = begin();
@@ -379,9 +378,7 @@ namespace collin
 					return *this;
 				}
 
-				template<class T2, std::size_t Size2, std::size_t RowSize2, typename = std::enable_if_t<
-					std::is_convertible_v<T2, T>
-				>>
+				template<collin::concepts::convertible_to<T> T2, std::size_t Size2, std::size_t RowSize2>
 				constexpr column& operator-=(const column<T2, Size2, RowSize2>& other)
 				{
 					auto this_it = begin();
@@ -394,9 +391,7 @@ namespace collin
 					return *this;
 				}
 
-				template<class T2, typename = std::enable_if_t<
-					std::is_convertible_v<T2, T>
-				>>
+				template<collin::concepts::convertible_to<T> T2>
 				constexpr column& operator*=(const T2& other)
 				{
 					for (auto& value : *this)
@@ -676,23 +671,17 @@ namespace collin
 
 				matrix(const matrix&) = default;
 
-				template<class Rep2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<Rep2, Rep>
-				>>
+				template<collin::concepts::convertible_to<Rep> Rep2>
 				matrix(const matrix<Rep2>& other)
 					: data_{other.data_} {}
 
-				template<class Rep2, std::size_t R, std::size_t C, typename = std::enable_if_t<
-		/* requires */ std::is_convertible_v<Rep2, Rep>
-				>>
+				template<collin::concepts::convertible_to<Rep> Rep2, std::size_t R, std::size_t C>
 				matrix(const fixed_matrix<Rep2, R, C>& other)
 					: data_{other.data_} {}
 
 				matrix(matrix&&) noexcept = default;
 
-				template<class Rep2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<Rep2, Rep>
-				>>
+				template<collin::concepts::convertible_to<Rep> Rep2>
 				matrix& operator=(const matrix<Rep2>& other)
 				{
 					if (this != std::addressof(other))
@@ -712,9 +701,7 @@ namespace collin
 					return *this;
 				}
 
-				template<class Rep2, std::size_t R, std::size_t C, typename = std::enable_if_t<
-		/* requires */ std::is_convertible_v<Rep2, Rep>
-				>>
+				template<collin::concepts::convertible_to<Rep> Rep2, std::size_t R, std::size_t C>
 				matrix& operator=(const fixed_matrix<Rep2, R, C>& other)
 				{
 					data_ = other.data_;
@@ -841,9 +828,7 @@ namespace collin
 					return data_.size();
 				}
 				
-				template<class Rep2, typename = std::enable_if_t<
-		/* requires */ std::is_convertible_v<Rep2, Rep>
-				>>
+				template<collin::concepts::convertible_to<Rep> Rep2>
 				matrix& operator+=(const matrix<Rep2>& other)
 				{
 					if (rows() != other.rows() || cols() != other.cols())
@@ -862,9 +847,7 @@ namespace collin
 					return *this;
 				}
 
-				template<class Rep2, std::size_t Rows, std::size_t Cols, typename = std::enable_if_t<
-		/* requires */ std::is_convertible_v<Rep2, Rep>
-				>>
+				template<collin::concepts::convertible_to<Rep> Rep2, std::size_t Rows, std::size_t Cols>
 				matrix& operator+=(const fixed_matrix<Rep2, Rows, Cols>& other)
 				{
 					if (rows() != Rows || cols() != Cols)
@@ -883,9 +866,7 @@ namespace collin
 					return *this;
 				}
 
-				template<class Rep2, typename = std::enable_if_t<
-		/* requires */ std::is_convertible_v<Rep2, Rep>
-				>>
+				template<collin::concepts::convertible_to<Rep> Rep2>
 				matrix& operator-=(const matrix<Rep2>& other)
 				{
 					if (rows() != other.rows() || cols() != other.cols())
@@ -904,9 +885,7 @@ namespace collin
 					return *this;
 				}
 				
-				template<class Rep2, std::size_t Rows, std::size_t Cols, typename = std::enable_if_t<
-		/* requires */ std::is_convertible_v<Rep2, Rep>
-				>>
+				template<collin::concepts::convertible_to<Rep> Rep2, std::size_t Rows, std::size_t Cols>
 				matrix& operator-=(const fixed_matrix<Rep2, Rows, Cols>& other)
 				{
 					if (rows() != Rows || cols() != Cols)
@@ -925,7 +904,7 @@ namespace collin
 					return *this;
 				}
 
-				template<class Rep2>
+				template<collin::concepts::convertible_to<Rep> Rep2>
 				matrix& operator*=(const Rep2& other)
 				{
 					for (auto& value : data_)
@@ -939,9 +918,7 @@ namespace collin
 				storage_t data_;
 		};
 
-		template<class Matrix1, class Matrix2, typename = std::enable_if_t<
-/* requires */	is_either_matrix_v<Matrix1> && is_either_matrix_v<Matrix2>
-		>>
+		template<matrix_type Matrix1, matrix_type Matrix2>
 		[[nodiscard]] constexpr bool operator==(const Matrix1& lhs, const Matrix2& rhs)
 		{
 			if (lhs.rows() != rhs.rows() || lhs.cols() != rhs.cols())
@@ -963,17 +940,13 @@ namespace collin
 			return true;
 		}
 
-		template<class Matrix1, class Matrix2, typename = std::enable_if_t<
-/* requires */	is_either_matrix_v<Matrix1> && is_either_matrix_v<Matrix2>
-		>>
+		template<matrix_type Matrix1, matrix_type Matrix2>
 		[[nodiscard]] constexpr bool operator!=(const Matrix1& lhs, const Matrix2& rhs)
 		{
 			return !(lhs == rhs);
 		}
 
-		template<class Matrix1, class Matrix2, typename = std::enable_if_t<
-/* requires */	is_either_matrix_v<Matrix1> && is_either_matrix_v<Matrix2>
-		>>
+		template<matrix_type Matrix1, matrix_type Matrix2>
 		[[nodiscard]] constexpr auto operator+(const Matrix1& lhs, const Matrix2& rhs)
 		{
 			auto m {lhs};
@@ -981,9 +954,7 @@ namespace collin
 			return m;
 		}
 
-		template<class Matrix1, class Matrix2, typename = std::enable_if_t<
-/* requires */	is_either_matrix_v<Matrix1> && is_either_matrix_v<Matrix2>
-		>>
+		template<matrix_type Matrix1, matrix_type Matrix2>
 		[[nodiscard]] constexpr auto operator-(const Matrix1& lhs, const Matrix2& rhs)
 		{
 			auto m {lhs};
@@ -991,18 +962,16 @@ namespace collin
 			return m;
 		}
 
-		template<class Matrix, class Other, typename = std::enable_if_t<
-/* requires */	is_either_matrix_v<Matrix>
-		>>
+		template<matrix_type Matrix, class Other>
 		[[nodiscard]] constexpr auto operator*(const Matrix& lhs, const Other& rhs)
 		{
-			if constexpr (!is_matrix_v<Other> && !is_fixed_matrix_v<Other>)
+			if constexpr (!regular_matrix_type<Other> && !fixed_matrix_type<Other>)
 			{
 				auto m {lhs};
 				m *= rhs;
 				return m;
 			}
-			else if constexpr(is_fixed_matrix_v<Matrix> && is_fixed_matrix_v<Other>)
+			else if constexpr(fixed_matrix_type<Matrix> && fixed_matrix_type<Other>)
 			{
 				using common_type = std::common_type_t<typename Matrix::value_type, typename Other::value_type>;
 
@@ -1027,7 +996,7 @@ namespace collin
 
 				return m;
 			}
-			else if constexpr (is_either_matrix_v<Other> && !is_fixed_matrix_v<Matrix>)
+			else if constexpr (matrix_type<Other> && !fixed_matrix_type<Matrix>)
 			{
 				using common_type = std::common_type_t<typename Matrix::value_type, typename Other::value_type>;
 
@@ -1056,7 +1025,7 @@ namespace collin
 			}
 			else
 			{
-				using enable_ = std::enable_if_t<false>;
+				requires(false);
 			}
 		}
 
@@ -1085,23 +1054,18 @@ namespace collin
 
 				constexpr fixed_matrix(const fixed_matrix&) = default;
 
-				template<class Rep2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<Rep2, Rep>
-				>>
+				template<collin::concepts::convertible_to<Rep> Rep2>
 				constexpr fixed_matrix(const fixed_matrix<Rep2, Rows, Cols>& other)
 					: data_{other.data_} {}
 
 				constexpr fixed_matrix(fixed_matrix&&) noexcept = default;
 
-				template<class... Elements, typename = std::enable_if_t<
-		/* requires */	(sizeof...(Elements) > 0) && (... && std::is_convertible_v<Elements, Rep>)
-				>>
+				template<collin::concepts::convertible_to<Rep>... Elements>
+					requires (sizeof...(Elements) > 0)
 				constexpr fixed_matrix(Elements&&... elements)
 					: data_{std::forward<Elements>(elements)...} {}
 
-				template<class Rep2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<Rep2, Rep>
-				>>
+				template<collin::concepts::convertible_to<Rep> Rep2>
 				constexpr fixed_matrix& operator=(const fixed_matrix<Rep2, Rows, Cols>& other)
 				{
 					if (this != std::addressof(other))
@@ -1230,9 +1194,7 @@ namespace collin
 					return data_.size();
 				}
 
-				template<class Rep2, typename = std::enable_if_t<
-		/* requires */ std::is_convertible_v<Rep2, Rep>
-				>>
+				template<collin::concepts::convertible_to<Rep> Rep2>
 				fixed_matrix& operator+=(const matrix<Rep2>& other)
 				{
 					if (Rows != other.rows() || Cols != other.cols())
@@ -1251,9 +1213,7 @@ namespace collin
 					return *this;
 				}
 
-				template<class Rep2, typename = std::enable_if_t<
-		/* requires */ std::is_convertible_v<Rep2, Rep>
-				>>
+				template<collin::concepts::convertible_to<Rep> Rep2>
 				constexpr fixed_matrix& operator+=(const fixed_matrix<Rep2, Rows, Cols>& other)
 				{
 					auto it = begin();
@@ -1267,9 +1227,7 @@ namespace collin
 					return *this;
 				}
 
-				template<class Rep2, typename = std::enable_if_t<
-		/* requires */ std::is_convertible_v<Rep2, Rep>
-				>>
+				template<collin::concepts::convertible_to<Rep> Rep2>
 				fixed_matrix& operator-=(const matrix<Rep2>& other)
 				{
 					if (Rows != other.rows() || Cols != other.cols())
@@ -1288,9 +1246,7 @@ namespace collin
 					return *this;
 				}
 
-				template<class Rep2, typename = std::enable_if_t<
-		/* requires */ std::is_convertible_v<Rep2, Rep>
-				>>
+				template<collin::concepts::convertible_to<Rep> Rep2>
 				constexpr fixed_matrix& operator-=(const fixed_matrix<Rep2, Rows, Cols>& other)
 				{
 					auto it = begin();
@@ -1304,7 +1260,7 @@ namespace collin
 					return *this;
 				}
 
-				template<class Rep2>
+				template<collin::concepts::convertible_to<Rep> Rep2>
 				constexpr fixed_matrix& operator*=(const Rep2& other)
 				{
 					for (auto& value : data_)

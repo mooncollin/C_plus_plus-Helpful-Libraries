@@ -22,6 +22,9 @@ namespace collin
 		constexpr bool is_electric_current_v = is_electric_current<T>::value;
 
 		template<class T>
+		concept electric_current_type = is_electric_current_v<T>;
+
+		template<class T>
 		using basic_ampere = electric_current<T, metric_system>;
 
 		using ampere = basic_ampere<std::intmax_t>;

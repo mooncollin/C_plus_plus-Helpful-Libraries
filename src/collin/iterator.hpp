@@ -7,6 +7,7 @@
 #include "collin/string.hpp"
 #include "collin/iostream.hpp"
 #include "collin/tuple.hpp"
+#include "collin/concepts.hpp"
 
 namespace collin
 {
@@ -206,7 +207,7 @@ namespace collin
                         }
                         else
                         {
-                            if constexpr(std::is_same_v<T, std::string>)
+                            if constexpr(collin::concepts::same<T, std::string>)
                             {
 								current.clear();
                                 iostream::getline(*input, current, sep_);

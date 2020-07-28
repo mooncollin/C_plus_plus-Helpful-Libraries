@@ -247,7 +247,7 @@ namespace collin
             constexpr static std::string_view value {"y"};
         };
 
-        template<class Rep, class Ratio>
+        template<class Rep, ratio_type Ratio>
         constexpr std::chrono::duration<Rep, Ratio> to_chrono(const basic_unit<Rep, Ratio, time_values<Rep>, metric_system>& t)
         {
             return std::chrono::duration<Rep, Ratio>(t.count());

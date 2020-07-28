@@ -15,6 +15,7 @@
 #include <vector>
 #include <type_traits>
 #include "collin/span.hpp"
+#include "collin/concepts.hpp"
 
 namespace collin
 {
@@ -81,7 +82,7 @@ namespace collin
 		};
 
 		static_assert(sizeof(msgtype) == sizeof(msgbuf), "Something is very wrong");
-		static_assert(std::is_convertible_v<decltype(std::declval<msgbuf>()), msgtype>, "Something is very wrong");
+		static_assert(collin::concepts::derived_from<msgbuf, msgtype>);
 
 		class buffer_sequence
 		{

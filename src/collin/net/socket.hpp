@@ -37,6 +37,7 @@
 #include "collin/net/buffers.hpp"
 #include "collin/span.hpp"
 #include "collin/utility.hpp"
+#include "collin/concepts.hpp"
 
 #ifdef max
 #undef max
@@ -121,7 +122,7 @@ namespace collin
 			}
 		}
 
-		template<class T, typename = std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>>>
+		template<collin::concepts::unsigned_integral T>
 		constexpr T hton(T host) noexcept
 		{
 			if constexpr(sizeof(T) <= sizeof(uint16_t))
@@ -174,7 +175,7 @@ namespace collin
 			}
 		}
 
-		template<class T, typename = std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>>>
+		template<collin::concepts::unsigned_integral T>
 		constexpr T ntoh(T network) noexcept
 		{
 			if constexpr(sizeof(T) <= sizeof(uint16_t))
@@ -1221,9 +1222,7 @@ namespace collin
 			#endif
 		}
 
-		template<class ElementType, std::size_t Extent, typename = std::enable_if_t<
-/* requires */	!std::is_same_v<ElementType, msgtype>
-		>>
+		template<collin::concepts::same<msgtype> ElementType, std::size_t Extent>
 		std::size_t socket_receive(socket_type s, span<ElementType, Extent> buf, int flags, std::error_code& ec)
 		{
 			clear_last_error();
@@ -1283,9 +1282,7 @@ namespace collin
 			#endif
 		}
 
-		template<class ElementType, std::size_t Extent, typename = std::enable_if_t<
-/* requires */	!std::is_same_v<ElementType, msgtype>
-		>>
+		template<collin::concepts::same<msgtype> ElementType, std::size_t Extent>
 		std::size_t socket_send(socket_type s, const span<ElementType, Extent> buf, int flags, std::error_code& ec)
 		{
 			clear_last_error();
@@ -1603,7 +1600,7 @@ namespace collin
 				{
 					endpoint_type endpoint;
 					auto endpoint_len = endpoint.capacity();
-					if(::getsockname(sockfd, static_cast<sockaddr*>(endpoint.data()), &endpoint_len) == -1)
+					if(::getsockname(sockfd, static_cast<::sockaddr*>(endpoint.data()), &endpoint_len) == -1)
 					{
 						ec.assign(get_last_error(), std::generic_category());
 						return endpoint_type{};
@@ -1616,7 +1613,7 @@ namespace collin
 
 				void bind(const endpoint_type& endpoint, std::error_code& ec)
 				{
-					if (::bind(sockfd, static_cast<sockaddr*>(endpoint.data()), endpoint.size()) == -1)
+					if (::bind(sockfd, static_cast<::sockaddr*>(endpoint.data()), endpoint.size()) == -1)
 					{
 						ec.assign(get_last_error(), std::generic_category());
 					}
@@ -1870,7 +1867,7 @@ namespace collin
 						}
 					}
 
-					if(::connect(native_handle(), static_cast<const sockaddr*>(endpoint.data()), endpoint.size()) == -1)
+					if(::connect(native_handle(), static_cast<const ::sockaddr*>(endpoint.data()), endpoint.size()) == -1)
 					{
 						ec.assign(get_last_error(), std::generic_category());
 					}
@@ -1945,9 +1942,7 @@ namespace collin
 				basic_socket(const basic_socket&) = delete;
 				basic_socket(basic_socket&& rhs) = default;
 
-				template<class OtherProtocol, std::enable_if_t<
-		/* requires */	std::is_convertible_v<OtherProtocol, Protocol>
-				>>
+				template<collin::concepts::convertible_to<Protocol> OtherProtocol>
 				basic_socket(basic_socket<OtherProtocol>&& rhs)
 					: base(std::move(rhs)) {}
 
@@ -1956,10 +1951,8 @@ namespace collin
 				basic_socket& operator=(const basic_socket&) = delete;
 				basic_socket& operator=(basic_socket&&) noexcept = default;
 
-				template<class OtherProtocol, std::enable_if_t<
-		/* requires */	std::is_convertible_v<OtherProtocol, Protocol>
-				>>
-					basic_socket & operator=(basic_socket<OtherProtocol>&& rhs)
+				template<collin::concepts::convertible_to<Protocol> OtherProtocol>
+					basic_socket& operator=(basic_socket<OtherProtocol>&& rhs)
 				{
 					return *this = basic_socket{std::move(rhs)};
 				}
@@ -2011,9 +2004,7 @@ namespace collin
 				basic_socket_acceptor& operator=(const basic_socket_acceptor&) = delete;
 				basic_socket_acceptor& operator=(basic_socket_acceptor&&) = default;
 
-				template<class OtherProtocol, std::enable_if_t<
-		/* requires */	std::is_convertible_v<OtherProtocol, Protocol>
-				>>
+				template<collin::concepts::convertible_to<Protocol> OtherProtocol>
 				basic_socket_acceptor& operator=(basic_socket_acceptor<OtherProtocol>&& rhs)
 				{
 					base::operator=(std::move(rhs));
@@ -2242,7 +2233,7 @@ namespace collin
 					do
 					{
 						auto len = endpoint.capacity();
-						const auto h = ::accept(native_handle(), static_cast<sockaddr*>(endpoint.data()), &len);
+						const auto h = ::accept(native_handle(), static_cast<::sockaddr*>(endpoint.data()), &len);
 						if (h != -1)
 						{
 							ec.clear();
@@ -2336,7 +2327,7 @@ namespace collin
 						}
 					}
 
-					if (::connect(native_handle(), static_cast<const sockaddr*>(endpoint.data()), endpoint.size()) == -1)
+					if (::connect(native_handle(), static_cast<const ::sockaddr*>(endpoint.data()), endpoint.size()) == -1)
 					{
 						ec.assign(get_last_error(), std::generic_category());
 					}
@@ -2407,9 +2398,7 @@ namespace collin
 
 				basic_datagram_socket(basic_datagram_socket&&) = default;
 
-				template<class OtherProtocol, std::enable_if_t<
-		/* requires */	std::is_convertible_v<OtherProtocol, Protocol>
-				>>
+				template<collin::concepts::convertible_to<Protocol> OtherProtocol>
 					basic_datagram_socket(basic_datagram_socket<OtherProtocol>&& rhs)
 						: base(std::move(rhs)) {}
 
@@ -2419,9 +2408,7 @@ namespace collin
 
 				basic_datagram_socket& operator=(basic_datagram_socket&& rhs) = default;
 
-				template<class OtherProtocol, std::enable_if_t<
-		/* requires */	std::is_convertible_v<OtherProtocol, Protocol>
-				>>
+				template<collin::concepts::convertible_to<Protocol> OtherProtocol>
 					basic_datagram_socket & operator=(basic_datagram_socket<OtherProtocol>&& rhs)
 				{
 					base::operator=(std::move(rhs));
@@ -2480,9 +2467,7 @@ namespace collin
 				basic_stream_socket(const basic_stream_socket&) = delete;
 				basic_stream_socket(basic_stream_socket&& rhs) noexcept = default;
 
-				template<class OtherProtocol, std::enable_if_t<
-		/* requires */	std::is_convertible_v<OtherProtocol, Protocol>
-				>>
+				template<collin::concepts::convertible_to<Protocol> OtherProtocol>
 				basic_stream_socket(basic_stream_socket<OtherProtocol>&& rhs)
 					: base(std::move(rhs)) {}
 
@@ -2492,9 +2477,7 @@ namespace collin
 
 				basic_stream_socket& operator=(basic_stream_socket &&) noexcept = default;
 
-				template<class OtherProtocol, std::enable_if_t<
-		/* requires */	std::is_convertible_v<OtherProtocol, Protocol>
-				>>
+				template<collin::concepts::convertible_to<Protocol> OtherProtocol>
 					basic_stream_socket & operator=(basic_stream_socket<OtherProtocol>&& rhs)
 				{
 					base::operator=(std::move(rhs));
@@ -2581,24 +2564,11 @@ namespace collin
 
 					return *this;
 				}
-
-				basic_socket_streambuf* connect(const endpoint_type& e)
-				{
-					if (close() == nullptr)
-					{
-						return nullptr;
-					}
-
-					ec_.clear();
-					socket_.connect(e, ec_);
-					set_buffers();
-					
-					return ec_ ? nullptr : this;
-				}
 				
-				template<class... Args, typename = std::enable_if_t<
-		/* requires */	(sizeof...(Args) > 1)
-				>>
+				template<class... Args>
+					requires (sizeof...(Args) == 1 ? 
+								!collin::concepts::convertible_to<std::tuple_element_t<0, std::tuple<Args...>>, const endpoint_type&>
+								: true)
 				basic_socket_streambuf* connect(Args&&... args)
 				{
 					const auto results = protocol_type::resolver(ctx()).resolve(std::forward<Args>(args)...);
@@ -2612,6 +2582,20 @@ namespace collin
 					}
 
 					return nullptr;
+				}
+
+				basic_socket_streambuf* connect(const endpoint_type& e)
+				{
+					if (close() == nullptr)
+					{
+						return nullptr;
+					}
+
+					ec_.clear();
+					socket_.connect(e, ec_);
+					set_buffers();
+					
+					return ec_ ? nullptr : this;
 				}
 
 				basic_socket_streambuf* close()

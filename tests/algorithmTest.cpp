@@ -1,55 +1,71 @@
-#include "collin/algorithm.hpp"
-#include "collin/test.hpp"
-#include "collin/utility.hpp"
-#include "collin/math.hpp"
 #include <tuple>
 #include <utility>
 #include <numeric>
 #include <vector>
 #include <functional>
 
-void apply_range_test()
+#include "collin/algorithm.hpp"
+#include "collin/test.hpp"
+#include "collin/utility.hpp"
+#include "collin/math.hpp"
+
+class apply_range_test : public collin::test::test_case
 {
-	const std::array<std::function<void(int&)>, 4> functions = {
-		std::function([](int& i){ i *= 2;}),
-		std::function([](int& i) {i *= 2;}),
-		std::function([](int& i) {i *= 2;}),
-		std::function([](int& i) {i *= 2;})
-	};
+	public:
+		apply_range_test()
+			: collin::test::test_case{"apply_range_test"} {}
 
-	const std::array<void(*)(int&), 4> functions2 = {
-		[](int& i){ i += 2;},
-		[](int& i) {i += 2;},
-		[](int& i) {i += 2;},
-		[](int& i) {i += 2;}
-	};
+		void operator()()
+		{
+			const std::array<std::function<void(int&)>, 4> functions = {
+				std::function([](int& i){ i *= 2;}),
+				std::function([](int& i) {i *= 2;}),
+				std::function([](int& i) {i *= 2;}),
+				std::function([](int& i) {i *= 2;})
+			};
 
-	int value = 1;
-	int value2 = 10;
+			const std::array<void(*)(int&), 4> functions2 = {
+				[](int& i){ i += 2;},
+				[](int& i) {i += 2;},
+				[](int& i) {i += 2;},
+				[](int& i) {i += 2;}
+			};
 
-	collin::algorithms::apply_range(std::begin(functions), std::end(functions), value);
-	collin::algorithms::apply_range(std::begin(functions2), std::end(functions2), value2);
+			int value = 1;
+			int value2 = 10;
 
-	std::vector<std::pair<int, int>> test_values;
-	test_values.emplace_back(value, 16);
-	test_values.emplace_back(value2, 18);
+			collin::algorithms::apply_range(std::begin(functions), std::end(functions), value);
+			collin::algorithms::apply_range(std::begin(functions2), std::end(functions2), value2);
 
-	collin::test::assert_test_data(test_values, "apply_range");
-}
+			collin::test::assert_equal(value, 16);
+			collin::test::assert_equal(value2, 18);
+		}
+};
 
-void remove_until_test()
+class remove_until_test : public collin::test::test_case
 {
-	std::vector<int> values = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-	collin::algorithms::remove_until(values, [](auto i){return i < 5;});
+	public:
+		remove_until_test()
+			: collin::test::test_case{"remove_until_test"} {}
 
-	std::vector<std::pair<std::vector<int>, std::vector<int>>> test_values;
-	test_values.emplace_back(values, std::vector<int>{6, 7, 8, 9, 10});
+		void operator()() override
+		{
+			const std::vector<int> goal {6, 7, 8, 9, 10};
 
-	collin::test::assert_test_data(test_values, "remove_until");
-}
+			std::vector<int> values = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+			collin::algorithms::remove_until(values, [](auto i){return i < 5;});
+
+			collin::test::assert_equal(values, goal);
+		}
+};
 
 int main()
 {
-	apply_range_test();
-	remove_until_test();
+	collin::test::test_suite suite;
+	suite.add_test_case<apply_range_test>();
+	suite.add_test_case<remove_until_test>();
+
+	collin::test::text_test_runner runner{std::cout};
+
+	return !runner.run(suite);
 }

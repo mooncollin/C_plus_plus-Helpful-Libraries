@@ -24,6 +24,9 @@ namespace collin
 		template<class T>
 		constexpr bool is_temperature_v = is_temperature<T>::value;
 
+		template<class T>
+		concept temperature_type = is_temperature_v<T>;
+
 		struct celsius_scale : public metric_system
 		{
 		};
@@ -67,49 +70,43 @@ namespace collin
 				return std::numeric_limits<Rep>::max();
 			}
 
-			template<class ToBasicUnit, class ToSystem = typename ToBasicUnit::system, class Ratio, typename = std::enable_if_t<
-	/* requires */	is_temperature_v<ToBasicUnit>
-			>>
+			template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, ratio_type Ratio>
 			static constexpr ToBasicUnit system_cast(const temperature<Rep, fahrenheit_scale, Ratio>& unit) noexcept
 			{
 				constexpr auto rational_5_9 = collin::math::basic_rational<typename ToBasicUnit::rep>{5, 9};
-				if constexpr(std::is_same_v<ToSystem, celsius_scale>)
+				if constexpr(collin::concepts::same<ToSystem, celsius_scale>)
 				{
 					return ToBasicUnit{static_cast<typename ToBasicUnit::rep>((unit.count() - 32) * rational_5_9)};
 				}
-				else if constexpr (std::is_same_v<ToSystem, kelvin_scale>)
+				else if constexpr (collin::concepts::same<ToSystem, kelvin_scale>)
 				{
 					return ToBasicUnit{static_cast<typename ToBasicUnit::rep>((unit.count() + 459.67) * rational_5_9)};
 				}
 			}
 
-			template<class ToBasicUnit, class ToSystem = typename ToBasicUnit::system, class Ratio, typename = std::enable_if_t<
-	/* requires */	is_temperature_v<ToBasicUnit>
-			>>
+			template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, ratio_type Ratio>
 			static constexpr ToBasicUnit system_cast(const temperature<Rep, kelvin_scale, Ratio>& unit) noexcept
 			{
-				if constexpr (std::is_same_v<ToSystem, celsius_scale>)
+				if constexpr (collin::concepts::same<ToSystem, celsius_scale>)
 				{
 					return ToBasicUnit{static_cast<typename ToBasicUnit::rep>(unit.count() - 273.15)};
 				}
-				else if constexpr (std::is_same_v<ToSystem, fahrenheit_scale>)
+				else if constexpr (collin::concepts::same<ToSystem, fahrenheit_scale>)
 				{
 					constexpr auto rational_9_5 = collin::math::basic_rational<typename ToBasicUnit::rep>{9, 5};
 					return ToBasicUnit{static_cast<typename ToBasicUnit::rep>(unit.count() * rational_9_5 - 459.67)};
 				}
 			}
 
-			template<class ToBasicUnit, class ToSystem = typename ToBasicUnit::system, class Ratio, typename = std::enable_if_t<
-	/* requires */	is_temperature_v<ToBasicUnit>
-			>>
+			template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, ratio_type Ratio>
 			static constexpr ToBasicUnit system_cast(const temperature<Rep, celsius_scale, Ratio>& unit) noexcept
 			{
-				if constexpr(std::is_same_v<ToSystem, fahrenheit_scale>)
+				if constexpr(collin::concepts::same<ToSystem, fahrenheit_scale>)
 				{
 					constexpr auto rational_9_5 = collin::math::basic_rational<typename ToBasicUnit::rep>{9, 5};
 					return ToBasicUnit{static_cast<typename ToBasicUnit::rep>(unit.count() * rational_9_5 + 32.0)};
 				}
-				else if constexpr (std::is_same_v<ToSystem, kelvin_scale>)
+				else if constexpr (collin::concepts::same<ToSystem, kelvin_scale>)
 				{
 					return ToBasicUnit{static_cast<typename ToBasicUnit::rep>(unit.count() + 273.15)};
 				}

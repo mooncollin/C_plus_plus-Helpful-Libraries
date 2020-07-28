@@ -27,6 +27,9 @@ namespace collin
         template<class T>
         constexpr bool is_mass_v = is_mass<T>::value;
 
+        template<class T>
+        concept mass_type = is_mass_v<T>;
+
         template<class Rep>
         using basic_attograms = mass<Rep, metric_system, std::atto>;
         
@@ -151,9 +154,8 @@ namespace collin
                 return std::numeric_limits<Rep>::max();
             }
 
-            template<class ToBasicUnit, class ToSystem = typename ToBasicUnit::system, class Ratio, typename = std::enable_if_t<
-    /* requires */  is_mass_v<ToBasicUnit> && std::is_same_v<ToSystem, metric_system>
-            >>
+            template<mass_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, ratio_type Ratio>
+                requires(collin::concepts::same<ToSystem, metric_system>)
             static constexpr ToBasicUnit system_cast(const mass<Rep, imperial_system, Ratio>& unit) noexcept
             {
                 using common_type = std::common_type_t<Rep, typename ToBasicUnit::rep>;
@@ -162,9 +164,8 @@ namespace collin
                 return ToBasicUnit{nanograms_conversion};
             }
 
-            template<class ToBasicUnit, class ToSystem = typename ToBasicUnit::system, class Ratio, typename = std::enable_if_t<
-    /* requires */  is_mass_v<ToBasicUnit> && std::is_same_v<ToSystem, imperial_system>
-            >>
+            template<mass_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, ratio_type Ratio>
+                requires(collin::concepts::same<ToSystem, imperial_system>)
             static constexpr ToBasicUnit system_cast(const mass<Rep, metric_system, Ratio>& unit) noexcept
             {
                 using common_type = std::common_type_t<Rep, typename ToBasicUnit::rep>;

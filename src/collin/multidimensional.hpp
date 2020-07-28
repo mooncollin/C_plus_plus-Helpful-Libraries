@@ -11,6 +11,8 @@
 #include <span>
 #include <algorithm>
 
+#include "collin/concepts.hpp"
+
 namespace collin
 {
 	namespace multidimensional
@@ -49,13 +51,11 @@ namespace collin
 					data_.resize(dimensions_cache_.front() * dimensions_.front());
 				}
 
-				template<class T2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<T2, T>
-				>>
+				template<collin::concepts::convertible_to<T> T2>
 				multidimensional_array(const multidimensional_array<T2, Allocator>& other)
 					: data_{other.data_}, dimensions_{other.dimensions_}, dimensions_cache_{other.dimensions_cache_} {}
 
-				template<class T2, std::size_t... OtherDimensions>
+				template<collin::concepts::convertible_to<T> T2, std::size_t... OtherDimensions>
 				multidimensional_array(const constant_multidimensional_array<T2, OtherDimensions...>& other, const Allocator& alloc = Allocator{})
 					: data_{alloc}, dimensions_{OtherDimensions...}, dimensions_cache_(sizeof...(OtherDimensions) - 1)
 				{
@@ -64,7 +64,7 @@ namespace collin
 					std::copy(std::begin(other), std::end(other), begin());
 				}
 
-				template<class T2, std::size_t OtherDimensions>
+				template<collin::concepts::convertible_to<T> T2, std::size_t OtherDimensions>
 				multidimensional_array(const fixed_multidimensional_array<T2, OtherDimensions>& other, const Allocator& alloc = Allocator{})
 					: data_{alloc}, dimensions_(OtherDimensions), dimensions_cache_(OtherDimensions - 1)
 				{
@@ -77,9 +77,7 @@ namespace collin
 				multidimensional_array(const multidimensional_array&) = default;
 				multidimensional_array(multidimensional_array&&) noexcept = default;
 
-				template<class T2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<T2, T>
-				>>
+				template<collin::concepts::convertible_to<T> T2>
 				multidimensional_array& operator=(const multidimensional_array<T2, Allocator>& other)
 				{
 					if (this != std::addressof(other))
@@ -92,7 +90,7 @@ namespace collin
 					return *this;
 				}
 
-				template<class T2, std::size_t... OtherDimensions>
+				template<collin::concepts::convertible_to<T> T2, std::size_t... OtherDimensions>
 				multidimensional_array& operator=(const constant_multidimensional_array<T2, OtherDimensions...>& other)
 				{
 					dimensions_ = {OtherDimensions...};
@@ -103,7 +101,7 @@ namespace collin
 					return *this;
 				}
 
-				template<class T2, std::size_t OtherDimensions>
+				template<collin::concepts::convertible_to<T> T2, std::size_t OtherDimensions>
 				multidimensional_array& operator=(const fixed_multidimensional_array<T2, OtherDimensions>& other)
 				{
 					dimensions_.resize(OtherDimensions);
@@ -130,9 +128,8 @@ namespace collin
 					return dimensions_;
 				}
 
-				template<class... Elements, typename = std::enable_if_t<
-		/* requires */ (sizeof...(Elements) > 0)
-				>>
+				template<class... Elements>
+					requires(sizeof...(Elements) > 0)
 				void dimensions(Elements&&... elements)
 				{
 					dimensions_.clear();
@@ -290,13 +287,11 @@ namespace collin
 					data_.resize(dimensions_cache_.front() * dimensions_.front());
 				}
 
-				template<class T2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<T2, T>
-				>>
+				template<collin::concepts::convertible_to<T> T2>
 				fixed_multidimensional_array(const fixed_multidimensional_array<T2, Dimensions, Allocator>& other)
 					: data_{other.data_}, dimensions_{other.dimensions_}, dimensions_cache_{other.dimensions_cache_} {}
 
-				template<class T2, std::size_t... OtherDimensions>
+				template<collin::concepts::convertible_to<T> T2, std::size_t... OtherDimensions>
 				fixed_multidimensional_array(const constant_multidimensional_array<T2, OtherDimensions...>& other, const Allocator& alloc = Allocator{})
 					: data_{alloc}, dimensions_{OtherDimensions...}
 				{
@@ -308,9 +303,7 @@ namespace collin
 				fixed_multidimensional_array(const fixed_multidimensional_array&) = default;
 				fixed_multidimensional_array(fixed_multidimensional_array&&) noexcept = default;
 
-				template<class T2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<T2, T>
-				>>
+				template<collin::concepts::convertible_to<T> T2>
 				fixed_multidimensional_array& operator=(const fixed_multidimensional_array<T2, Dimensions, Allocator>& other)
 				{
 					if (this != std::addressof(other))
@@ -333,7 +326,7 @@ namespace collin
 					return *this;
 				}
 
-				template<class T2, std::size_t... OtherDimensions>
+				template<collin::concepts::convertible_to<T> T2, std::size_t... OtherDimensions>
 				fixed_multidimensional_array& operator=(const constant_multidimensional_array<T2, OtherDimensions...>& other)
 				{
 					dimensions_ = {OtherDimensions...};
@@ -348,9 +341,8 @@ namespace collin
 					return dimensions_;
 				}
 
-				template<class... Elements, typename = std::enable_if_t<
-		/* requires */ (sizeof...(Elements) > 0)
-				>>
+				template<class... Elements>
+					requires(sizeof...(Elements) > 0)
 				void dimensions(Elements&&... elements)
 				{
 					static_assert((sizeof...(Elements) <= Dimensions));
@@ -503,24 +495,18 @@ namespace collin
 
 				constexpr constant_multidimensional_array() noexcept(std::is_nothrow_constructible_v<T>) {}
 
-				template<class T2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<T2, T>
-				>>
+				template<collin::concepts::convertible_to<T> T2>
 				constexpr constant_multidimensional_array(const constant_multidimensional_array<T2>& other)
 					: data_{other.data_} {}
 
-				template<class... Elements, typename = std::enable_if_t<
-		/* requires */	(... && std::is_convertible_v<Elements, T>)
-				>>
+				template<collin::concepts::convertible_to<T>... Elements>
 				constexpr constant_multidimensional_array(Elements&&... elements) noexcept(std::is_nothrow_constructible_v<T>)
 					: data_{static_cast<T>(std::forward<Elements>(elements))...} {}
 
 				constexpr constant_multidimensional_array(const constant_multidimensional_array&) = default;
 				constexpr constant_multidimensional_array(constant_multidimensional_array&&) noexcept = default;
 
-				template<class T2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<T2, T>
-				>>
+				template<collin::concepts::convertible_to<T> T2>
 				constexpr constant_multidimensional_array& operator=(const constant_multidimensional_array<T2>& other)
 				{
 					if (this != std::addressof(other))

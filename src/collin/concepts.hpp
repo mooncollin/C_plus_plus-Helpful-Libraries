@@ -11,16 +11,16 @@ namespace collin
 		template<class T, class U>
 		concept same = std::is_same_v<T, U>;
 
-		template<class T, class U>
-		concept derived_from = std::is_base_of_v<U, T> &&
-							   std::is_convertible_v<std::remove_cv_t<T>*, std::remove_cv_t<U>*>;
-
 		template<class From, class To>
 		concept convertible_to = std::is_convertible_v<From, To> &&
 			requires(From (&f)())
 		{
 			static_cast<To>(f());
 		};
+
+		template<class T, class U>
+		concept derived_from = std::is_base_of_v<U, T> &&
+							   convertible_to<std::remove_cv_t<T>*, std::remove_cv_t<U>*>;
 
 		template<class T, class U>
 		concept common_reference = same<collin::type_traits::common_reference_t<T, U>, collin::type_traits::common_reference_t<U, T>> &&
@@ -52,16 +52,14 @@ namespace collin
 		template<class T>
 		concept unsigned_integral = integral<T> && !signed_integral<T>;
 
+		template<class T>
+		concept arithmetic = std::is_arithmetic_v<T>;
+
+		template<class T>
+		concept floating_point = std::is_floating_point_v<T>;
+
 		template<class T, class U>
-		concept assignable = std::is_lvalue_reference_v<T> &&
-							 common_reference<
-								const std::remove_reference_t<T>&,
-								const std::remove_reference_t<U>&
-							 > &&
-			requires(T t, U&& u)
-		{
-			{ t = std::forward<U>(u) } -> same<T>;
-		};
+		concept assignable = std::is_assignable_v<T, U>;
 
 		template<class T>
 		concept swappable = 
@@ -78,9 +76,9 @@ namespace collin
 			requires(T&& t, U&& u)
 		{
 			{ std::swap(std::forward<T>(t), std::forward<T>(t)) };
-			{ std::swap(std::forward<T>(u), std::forward<T>(u)) };
-			{ std::swap(std::forward<T>(t), std::forward<T>(u)) };
-			{ std::swap(std::forward<T>(u), std::forward<T>(t)) };
+			{ std::swap(std::forward<U>(u), std::forward<U>(u)) };
+			{ std::swap(std::forward<T>(t), std::forward<U>(u)) };
+			{ std::swap(std::forward<U>(u), std::forward<T>(t)) };
 		};
 
 		template<class T>
@@ -116,40 +114,10 @@ namespace collin
 		concept semi_regular = copyable<T> && default_constructible<T>;
 
 		template<class F, class... Args>
-		concept invocable = std::is_invocable_r_v<F, Args...>;
+		concept invocable = std::is_invocable_v<F, Args...>;
 
 		template<class F, class... Args>
 		concept regular_invocable = invocable<F, Args...>;
-
-		template<class F, class... Args>
-		concept predicate = regular_invocable<F, Args...> &&
-							boolean<std::invoke_result_t<F&&(Args&&...)>>;
-
-		template<class R, class T, class U>
-		concept relation = predicate<R, T, T> &&
-						   predicate<R, U, U> &&
-						   common_reference<
-								const std::remove_reference_t<T>&,
-								const std::remove_reference_t<U>&
-						   > &&
-						   predicate<R,
-								collin::type_traits::common_reference_t<
-									const std::remove_reference_t<T>&,
-									const std::remove_reference_t<U>&
-								>,
-								collin::type_traits::common_reference_t<
-									const std::remove_reference_t<T>&,
-									const std::remove_reference_t<U>&
-								>
-						   > &&
-						   predicate<R, T, U> &&
-						   predicate<R, U, T>;
-
-		template<class R, class T, class U>
-		concept strict_weak_order = relation<R, T, U>;
-
-		template<class T>
-		concept regular = semi_regular<T> && equality_comparable<T>;
 
 		template<class B>
 		concept boolean = movable<std::decay_t<B>> &&
@@ -234,7 +202,40 @@ namespace collin
 			{ u <= t }	-> boolean;
 			{ u >= t }	-> boolean;
 		};
+
+		template<class T>
+		concept regular = semi_regular<T> && equality_comparable<T>;
+
+		template<class F, class... Args>
+		concept predicate = regular_invocable<F, Args...> &&
+							boolean<std::invoke_result_t<F(Args...)>>;
+
+		template<class R, class T, class U>
+		concept relation = predicate<R, T, T> &&
+						   predicate<R, U, U> &&
+						   common_reference<
+								const std::remove_reference_t<T>&,
+								const std::remove_reference_t<U>&
+						   > &&
+						   predicate<R,
+								collin::type_traits::common_reference_t<
+									const std::remove_reference_t<T>&,
+									const std::remove_reference_t<U>&
+								>,
+								collin::type_traits::common_reference_t<
+									const std::remove_reference_t<T>&,
+									const std::remove_reference_t<U>&
+								>
+						   > &&
+						   predicate<R, T, U> &&
+						   predicate<R, U, T>;
 		
+		template<class R, class T, class U>
+		concept strict_weak_order = relation<R, T, U>;
+
+		template<class T>
+		concept iterator = collin::type_traits::is_iterator_v<T>;
+
 		template<class T>
 		concept complete_type = 
 			requires

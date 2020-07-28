@@ -9,8 +9,9 @@
 #include <type_traits>
 #include <array>
 
-#include "string.hpp"
-#include "iostream.hpp"
+#include "collin/string.hpp"
+#include "collin/iostream.hpp"
+#include "collin/concepts.hpp"
 
 namespace collin
 {
@@ -148,12 +149,9 @@ namespace collin
 		struct csv_any {};
 
 		template<class... Args>
+			requires((... && !std::is_void_v<Args>))
 		class csv_reader : public base_csv_reader, public std::iterator<std::input_iterator_tag, std::tuple<Args...>>
 		{
-			// Probably needs to be more constrained to only those in which collin::strings::from_string
-			// works on, but i'm not sure how to get that to work.
-			using enable_check = std::enable_if_t<(... && (!std::is_void_v<Args> && !std::is_same_v<Args, csv_any>))>;
-
 			static constexpr std::size_t num_types{sizeof...(Args)};
 
 			using base_it = std::iterator<std::input_iterator_tag, std::tuple<Args...>>;
@@ -299,9 +297,8 @@ namespace collin
 					return dialect_;
 				}
 
-				template<class InputIterator, typename = std::enable_if_t<
-		/* requires */	type_traits::is_iterator_v<InputIterator>
-				>>
+				template<class InputIterator>
+					requires(type_traits::is_iterator_v<InputIterator>)
 				void write_row(InputIterator begin, InputIterator end)
 				{
 					while (begin != end)

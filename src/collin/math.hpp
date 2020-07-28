@@ -7,6 +7,8 @@
 #include <cstdint>
 #include <cmath>
 
+#include "collin/concepts.hpp"
+
 namespace collin
 {
 	namespace math
@@ -22,25 +24,19 @@ namespace collin
 			return result;
 		}
 
-		template<class T, typename = std::enable_if_t<
-/* requires*/	std::is_integral_v<T>
-		>>
+		template<collin::concepts::integral T>
 		constexpr bool is_odd(const T val)
 		{
 			return val & 1;
 		}
 
-		template<class T, typename = std::enable_if_t<
-/* requires*/	std::is_integral_v<T>
-		>>
+		template<collin::concepts::integral T>
 		constexpr bool is_even(const T val)
 		{
 			return !is_odd(val);
 		}
 
-		template<class T, typename = std::enable_if_t<
-/* requires*/	std::is_integral_v<T>
-		>>
+		template<collin::concepts::integral T>
 		constexpr T gcd(T first, T second)
 		{
 			while(second != 0)
@@ -53,15 +49,13 @@ namespace collin
 			return first;
 		}
 
-		template<class T, typename = std::enable_if_t<
-/* requires */	std::is_arithmetic_v<T>
-		>>
+		template<collin::concepts::arithmetic T>
 		constexpr T abs(T value)
 		{
 			return value < T(0) ? -value : value;
 		}
 		
-		template<class intT>
+		template<collin::concepts::arithmetic intT>
 		class basic_rational
 		{
 			public:
@@ -73,9 +67,7 @@ namespace collin
 					: numerator_(numerator), denominator_(1) {}
 				constexpr basic_rational(const basic_rational&) = default;
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 					constexpr basic_rational(const basic_rational<intT2>& other)
 						: numerator_(other.numerator_), denominator_(other.denominator)
 				{
@@ -83,19 +75,15 @@ namespace collin
 
 				constexpr basic_rational(basic_rational&&) noexcept = default;
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 					constexpr basic_rational(basic_rational<intT2>&& other)
 						: numerator_(std::move(other.numerator_)), denominator_(std::move(other.denominator_))
 				{
 				}
-
+				
 				constexpr basic_rational& operator=(const basic_rational&) = default;
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 					constexpr basic_rational& operator=(const basic_rational<intT2>& other)
 				{
 					if (this != &other)
@@ -110,9 +98,7 @@ namespace collin
 				constexpr basic_rational& operator=(basic_rational&&) noexcept = default;
 				~basic_rational() noexcept = default;
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 					constexpr basic_rational& operator=(basic_rational<intT2>&& other)
 				{
 					numerator_ = std::move(other.numerator_);
@@ -120,147 +106,113 @@ namespace collin
 					return *this;
 				}
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 				constexpr basic_rational operator+(const basic_rational<intT2>& r) const
 				{
 					return { numerator() * r.denominator() + denominator() * r.numerator(),
 							denominator() * r.denominator() };
 				}
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 				constexpr basic_rational operator+(intT2 i) const
 				{
 					return *this + basic_rational(i);
 				}
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 				basic_rational& operator+=(const basic_rational<intT2>& r)
 				{
 					*this = *this + r;
 					return *this;
 				}
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 				basic_rational& operator+=(intT2 i)
 				{
 					*this = *this + i;
 					return *this;
 				}
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 				constexpr basic_rational operator-(const basic_rational<intT2>& r) const
 				{
 					return { numerator() * r.denominator() - denominator() * r.numerator(),
 							denominator() * r.denominator() };
 				}
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 				constexpr basic_rational operator-(intT2 i) const
 				{
 					return *this - basic_rational(i);
 				}
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 				basic_rational& operator-=(const basic_rational<intT2>& r)
 				{
 					*this = *this - r;
 					return *this;
 				}
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 				basic_rational& operator-=(intT2 i)
 				{
 					*this = *this - i;
 					return *this;
 				}
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 				constexpr basic_rational operator*(const basic_rational<intT2>& r) const
 				{
 					return {numerator() * r.numerator(), denominator() * r.denominator()};
 				}
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 				constexpr basic_rational operator*(intT2 i) const
 				{
 					return *this * basic_rational(i);
 				}
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 				basic_rational& operator*=(const basic_rational<intT2>& r)
 				{
 					*this = *this * r;
 					return *this;
 				}
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 				basic_rational& operator*=(intT2 i)
 				{
 					*this = *this * i;
 					return *this;
 				}
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 				constexpr basic_rational operator/(const basic_rational<intT2>& r) const
 				{
 					return {numerator() * r.denominator(), denominator() * r.numerator()};
 				}
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 				constexpr basic_rational operator/(intT2 i) const
 				{
 					return *this / basic_rational(i);
 				}
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 				basic_rational& operator/=(const basic_rational<intT2>& r)
 				{
 					*this = *this / r;
 					return *this;
 				}
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 				basic_rational& operator/=(intT2 i)
 				{
 					*this = *this / i;
 					return *this;
 				}
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 				void numerator(intT2 n) noexcept
 				{
 					numerator_ = n;
@@ -271,9 +223,7 @@ namespace collin
 					return numerator_;
 				}
 
-				template<class intT2, typename = std::enable_if_t<
-		/* requires */	std::is_convertible_v<intT2, intT>
-				>>
+				template<collin::concepts::convertible_to<intT> intT2>
 				void denominator(intT2 d) noexcept
 				{
 					denominator_ = d;
@@ -297,24 +247,28 @@ namespace collin
 		using rational = basic_rational<int>;
 
 		template<class intT, class intT2 = intT>
+			requires(collin::concepts::convertible_to<intT, intT2>)
 		constexpr basic_rational<intT> operator+(intT i, const basic_rational<intT2>& r)
 		{
 			return r + basic_rational(i);
 		}
 
 		template<class intT, class intT2 = intT>
+			requires(collin::concepts::convertible_to<intT, intT2>)
 		constexpr basic_rational<intT> operator-(intT i, const basic_rational<intT2>& r)
 		{
 			return r - basic_rational(i);
 		}
 
 		template<class intT, class intT2 = intT>
+			requires(collin::concepts::convertible_to<intT, intT2>)
 		constexpr basic_rational<intT> operator*(intT i, const basic_rational<intT2>& r)
 		{
 			return r * basic_rational(i);
 		}
 
 		template<class intT, class intT2 = intT>
+			requires(collin::concepts::convertible_to<intT, intT2>)
 		constexpr basic_rational<intT> operator/(intT i, const basic_rational<intT2>& r)
 		{
 			return r / basic_rational(i);
@@ -333,6 +287,7 @@ namespace collin
 		}
 
 		template<class intT, class intT2 = intT>
+			requires(collin::concepts::convertible_to<intT, intT2>)
 		constexpr basic_rational<intT> pow(const basic_rational<intT>& r, intT2 p)
 		{
 			if (p < 0)
@@ -464,9 +419,7 @@ namespace collin
 			return os << r.numerator() << "/" << r.denominator();
 		}
 
-		template<class IntT = int, class Float, typename = std::enable_if_t<
-/* requires */	std::is_integral_v<IntT> && std::is_floating_point_v<Float>
-		>>
+		template<collin::concepts::integral IntT = int, collin::concepts::floating_point Float>
 		constexpr IntT ceil(Float f)
 		{
 			const auto inum = static_cast<IntT>(f);
@@ -479,9 +432,7 @@ namespace collin
 			return inum + (f > 0 ? 1 : 0);
 		}
 
-		template<class IntT = int, class Float, typename = std::enable_if_t<
-/* requires */	std::is_integral_v<IntT> && std::is_floating_point_v<Float>
-		>>
+		template<collin::concepts::integral IntT = int, collin::concepts::floating_point Float>
 		constexpr IntT floor(Float f)
 		{
 			const auto val_int = static_cast<IntT>(f);
@@ -494,9 +445,7 @@ namespace collin
 			return val_int - 1;
 		}
 
-		template<class T, class T2, typename = std::enable_if_t<
-/* requires */	std::is_integral_v<T2>
-		>>
+		template<collin::concepts::arithmetic T, collin::concepts::integral T2>
 		constexpr std::common_type_t<T, T2> pow(T base, T2 exp)
 		{
 			if (exp == 0)

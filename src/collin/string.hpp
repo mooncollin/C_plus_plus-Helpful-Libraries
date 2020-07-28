@@ -17,8 +17,9 @@
 #include <utility>
 #include <system_error>
 
-#include "type_traits.hpp"
-#include "utility.hpp"
+#include "collin/type_traits.hpp"
+#include "collin/utility.hpp"
+#include "collin/concepts.hpp"
 
 namespace collin
 {
@@ -282,16 +283,25 @@ namespace collin
             return trim_back(trim_front(s, trim_str), trim_str);
         }
 
+        namespace details
+        {
+            template<class T>
+            concept from_chars_valid = 
+                requires(T t, const char* begin, const char* end)
+            {
+                std::from_chars(begin, end, t);
+            };
+        }
+
         template<class T>
         T from_string(std::string_view str, std::error_code& ec)
         {
             ec.clear();
             T value;
-
-            if constexpr (std::is_arithmetic_v<T> && !std::is_same_v<T, bool>)
+            if constexpr(details::from_chars_valid<T>)
             {
-                auto [p, err] = std::from_chars(str.data(), str.data() + std::size(str), value);
-                ec = std::make_error_code(err);
+                const auto result = std::from_chars(str.data(), str.data() + std::size(str), value);
+                ec = std::make_error_code(result.ec);
             }
             else
             {
@@ -321,8 +331,7 @@ namespace collin
         template<>
         inline std::string from_string(std::string_view str)
         {
-            std::error_code ec{};
-            return from_string<std::string>(str, ec);
+            return std::string(str);
         }
 
         template<>
@@ -334,8 +343,7 @@ namespace collin
         template<>
         inline std::string_view from_string(std::string_view str)
         {
-            std::error_code ec{};
-            return from_string<std::string_view>(str, ec);
+            return str;
         }
 
         template<>
@@ -347,8 +355,7 @@ namespace collin
         template<>
         inline char from_string(std::string_view str)
         {
-            std::error_code ec{};
-            return from_string<char>(str, ec);
+            return str.front();
         }
 
         template<class T>
@@ -359,9 +366,8 @@ namespace collin
             return ss.str();
         }
 
-        template<class OutputIterator, typename = std::enable_if_t<
-/* requires */  type_traits::is_iterator_v<OutputIterator>
-        >>
+        template<class OutputIterator>
+            requires(type_traits::is_iterator_v<OutputIterator>)
         constexpr void split(std::string_view str, std::string_view delim, OutputIterator it, std::size_t amount=-1) noexcept
         {
             std::size_t last_index {0};
@@ -410,10 +416,10 @@ namespace collin
             return join(std::cbegin(container), std::cend(container), join_string);
         }
 
-        template<class CharT>
-        constexpr int hex_char_to_number(CharT ch) noexcept
+        template<collin::concepts::integral CharT>
+        constexpr int hex_to_base10(CharT ch) noexcept
         {
-            const auto uppered = std::toupper(ch, std::locale{});
+            const auto uppered = std::toupper(ch);
             return uppered >= 'A' ? uppered - 'A' + 10 : uppered - '0';
         }
     }

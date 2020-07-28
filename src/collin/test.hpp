@@ -371,6 +371,7 @@ namespace collin
 		};
 
 		template<class T, class F>
+			requires(collin::concepts::weakly_equality_comparable_with<T, F>)
 		void assert_equal(const T& first, const F& second, std::string_view message="")
 		{
 			if(first != second)
@@ -388,6 +389,7 @@ namespace collin
 		}
 
 		template<class T, class F>
+			requires(collin::concepts::weakly_equality_comparable_with<T, F>)
 		void assert_not_equal(const T& first, const F& second, std::string_view message = "")
 		{
 			if (first == second)
@@ -404,7 +406,7 @@ namespace collin
 			}
 		}
 
-		template<class T>
+		template<collin::concepts::boolean T>
 		void assert_true(const T& first, std::string_view message="")
 		{
 			if (!static_cast<bool>(first))
@@ -415,7 +417,7 @@ namespace collin
 			}
 		}
 
-		template<class T>
+		template<collin::concepts::boolean T>
 		void assert_false(const T& first, std::string_view message = "")
 		{
 			if (static_cast<bool>(first))
@@ -427,6 +429,7 @@ namespace collin
 		}
 
 		template<class T, class F>
+			requires(collin::concepts::weakly_equality_comparable_with<T*, F*>)
 		void assert_is(const T& first, const F& second, std::string_view message = "")
 		{
 			if (std::addressof(first) != std::addressof(second))
@@ -438,6 +441,7 @@ namespace collin
 		}
 
 		template<class T, class F>
+			requires(collin::concepts::weakly_equality_comparable_with<T*, F*>)
 		void assert_is_not(const T& first, const F& second, std::string_view message = "")
 		{
 			if (std::addressof(first) == std::addressof(second))
@@ -501,17 +505,19 @@ namespace collin
 		}
 
 		template<class T, class F, class... Args>
-		void assert_throws(const T& exception, F& callable, Args&&... args)
+			requires(collin::concepts::invocable<F, Args...>)
+		void assert_throws(const T& exception, F&& callable, Args&&... args)
 		{
 			assert_throws(exception, callable, std::string_view{""}, std::forward<Args>(args)...);
 		}
 
 		template<class T, class F, class... Args>
-		void assert_throws(const T& exception, F& callable, std::string_view message, Args&&... args)
+			requires(collin::concepts::invocable<F, Args...>)
+		void assert_throws(const T& exception, F&& callable, std::string_view message, Args&&... args)
 		{
 			try
 			{
-				callable(std::forward<Args>(args)...);
+				std::forward<F>(callable)(std::forward<Args>(args)...);
 				std::ostringstream ss;
 				ss << "assert_throws failed: " << message << '\n';
 				throw assert_exception(ss.str());
@@ -522,9 +528,7 @@ namespace collin
 			}
 		}
 
-		template<class T, class F, typename = std::enable_if_t<
-/* requires */ std::is_arithmetic_v<T> && std::is_arithmetic_v<F>
-		>>
+		template<collin::concepts::arithmetic T, collin::concepts::arithmetic F>
 		void assert_almost_equal(const T& first, const F& second, const std::common_type_t<T, F>& delta, std::string_view message = "")
 		{
 			const auto difference = std::abs(first - second);
@@ -542,9 +546,7 @@ namespace collin
 			}
 		}
 
-		template<class T, class F, typename = std::enable_if_t<
-/* requires */ std::is_arithmetic_v<T>&& std::is_arithmetic_v<F>
-		>>
+		template<collin::concepts::arithmetic T, collin::concepts::arithmetic F>
 		void assert_not_almost_equal(const T& first, const F& second, const std::common_type_t<T, F>& delta, std::string_view message = "")
 		{
 			const auto difference = std::abs(first - second);
@@ -567,9 +569,13 @@ namespace collin
 		}
 
 		template<class T, class F>
-		void assert_greater(const T& first, const T& second, std::string_view message = "")
+			requires requires(const T& t, const F& f)
+			{
+				{t > f} -> collin::concepts::boolean;
+			}
+		void assert_greater(const T& first, const F& second, std::string_view message = "")
 		{
-			if (!(first > second)) // Can't know for sure if first <= second is supported
+			if (!(first > second))
 			{
 				std::ostringstream ss;
 				ss << "assert_greater failed: " << message << '\n';
@@ -584,7 +590,11 @@ namespace collin
 		}
 
 		template<class T, class F>
-		void assert_greater_equal(const T& first, const T& second, std::string_view message = "")
+			requires requires(const T& t, const F& f)
+			{
+				{t >= f} -> collin::concepts::boolean;
+			}
+		void assert_greater_equal(const T& first, const F& second, std::string_view message = "")
 		{
 			if (!(first >= second)) // Can't know for sure if first < second is supported
 			{
@@ -601,7 +611,11 @@ namespace collin
 		}
 
 		template<class T, class F>
-		void assert_less(const T& first, const T& second, std::string_view message = "")
+			requires requires(const T& t, const F& f)
+			{
+				{t < f} -> collin::concepts::boolean;
+			}
+		void assert_less(const T& first, const F& second, std::string_view message = "")
 		{
 			if (!(first < second)) // Can't know for sure if first >= second is supported
 			{
@@ -618,7 +632,11 @@ namespace collin
 		}
 
 		template<class T, class F>
-		void assert_less_equal(const T& first, const T& second, std::string_view message = "")
+			requires requires(const T& t, const F& f)
+			{
+				{t <= f} -> collin::concepts::boolean;
+			}
+		void assert_less_equal(const T& first, const F& second, std::string_view message = "")
 		{
 			if (!(first <= second)) // Can't know for sure if first > second is supported
 			{
@@ -634,7 +652,8 @@ namespace collin
 			}
 		}
 
-		template<class InputIterator1, class InputIterator2>
+		template<collin::concepts::iterator InputIterator1, collin::concepts::iterator InputIterator2>
+			requires(collin::concepts::weakly_equality_comparable_with<decltype(*std::declval<InputIterator1>), decltype(*std::declval<InputIterator2>)>)
 		void assert_sequence_equal(InputIterator1 first1, InputIterator1 end1, InputIterator2 first2, std::string_view message = "")
 		{
 			if (!std::equal(first1, end1, first2))
@@ -645,7 +664,8 @@ namespace collin
 			}
 		}
 
-		template<class InputIterator1, class InputIterator2>
+		template<collin::concepts::iterator InputIterator1, collin::concepts::iterator InputIterator2>
+			requires(collin::concepts::weakly_equality_comparable_with<decltype(*std::declval<InputIterator1>), decltype(*std::declval<InputIterator2>)>)
 		void assert_sequence_not_equal(InputIterator1 first1, InputIterator1 end1, InputIterator2 first2, std::string_view message = "")
 		{
 			if (std::equal(first1, end1, first2))

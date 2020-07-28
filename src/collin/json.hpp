@@ -700,7 +700,7 @@ namespace collin
 									auto i {0};
 									while (begin != end && i++ < 4)
 									{
-										const auto hex_value = collin::strings::hex_char_to_number(*begin++);
+										const auto hex_value = collin::strings::hex_to_base10(*begin++);
 										if (hex_value < 0 || hex_value > 15)
 										{
 											throw invalid_json {"Invalid unicode string"};
