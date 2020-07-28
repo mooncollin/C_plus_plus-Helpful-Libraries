@@ -204,9 +204,9 @@ namespace collin
 		}
 
 		template<class T, std::size_t RowSize>
-		class column_iterator : public std::iterator<std::bidirectional_iterator_tag, T>
+		class column_iterator : public std::iterator<std::random_access_iterator_tag, T>
 		{
-			using base = std::iterator<std::bidirectional_iterator_tag, T>;
+			using base = std::iterator<std::random_access_iterator_tag, T>;
 
 			public:
 				constexpr column_iterator(typename base::pointer item, std::size_t row_size) noexcept

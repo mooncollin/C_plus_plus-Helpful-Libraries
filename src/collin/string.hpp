@@ -54,13 +54,13 @@ namespace collin
             return !is_vowel(c);
         }
 
-        template<class InputIterator>
+        template<collin::concepts::input_iterator InputIterator>
         constexpr bool contains_vowel(InputIterator first, InputIterator last) noexcept
         {
             return std::any_of(first, last, [&](auto& val){return is_vowel(val);});
         }
 
-        template<class InputIterator>
+        template<collin::concepts::input_iterator InputIterator>
         constexpr bool contains_consonant(InputIterator first, InputIterator last) noexcept
         {
             return std::any_of(first, last, [&](auto& val){return is_consonant(val);});
@@ -76,7 +76,7 @@ namespace collin
             return contains_consonant(std::begin(str), std::end(str));
         }
 
-        template<class InputIterator>
+        template<collin::concepts::input_iterator InputIterator>
         InputIterator remove_punctuation(InputIterator first, InputIterator last, const std::locale& loc = {})
         {
             return std::remove_if(first, last, [&](auto ch) {return std::ispunct(ch, loc); });
@@ -88,7 +88,7 @@ namespace collin
             container.erase(remove_punctuation(std::begin(container), std::end(container), loc), std::end(container));
         }
 
-        template<class InputIterator>
+        template<collin::concepts::input_iterator InputIterator>
         InputIterator remove_spaces(InputIterator first, InputIterator last, const std::locale& loc = {})
         {
             return std::remove_if(first, last, [&](auto ch) {return std::isspace(ch, loc);});
@@ -100,7 +100,7 @@ namespace collin
             container.erase(remove_spaces(std::begin(container), std::end(container), loc), std::end(container));
         }
 
-        template<class InputIterator>
+        template<collin::concepts::input_iterator InputIterator>
         InputIterator remove_alphanumerics(InputIterator first, InputIterator last, const std::locale& loc = {})
         {
             return std::remove_if(first, last, [&](auto ch) {return std::isalnum(ch, loc);});
@@ -112,7 +112,7 @@ namespace collin
             container.erase(remove_alphanumerics(std::begin(container), std::end(container), loc), std::end(container));
         }
 
-        template<class InputIterator>
+        template<collin::concepts::input_iterator InputIterator>
         InputIterator remove_alphas(InputIterator first, InputIterator last, const std::locale& loc = {})
         {
             return std::remove_if(first, last, [&](auto ch){return std::isalpha(ch, loc);});
@@ -124,7 +124,7 @@ namespace collin
             container.erase(remove_alphas(std::begin(container), std::end(container), loc), std::end(container));
         }
 
-        template<class InputIterator>
+        template<collin::concepts::input_iterator InputIterator>
         InputIterator remove_digits(InputIterator first, InputIterator last, const std::locale& loc = {})
         {
             return std::remove_if(first, last, [&](auto ch) {return std::isdigit(ch, loc);});
@@ -136,7 +136,7 @@ namespace collin
             container.erase(remove_digits(std::begin(container), std::end(container), loc), std::end(container));
         }
 
-        template<class InputIterator>
+        template<collin::concepts::input_iterator InputIterator>
         InputIterator remove_blanks(InputIterator first, InputIterator last, const std::locale& loc = {})
         {
             return std::remove_if(first, last, [&](auto ch) {return std::isblank(ch, loc);});
@@ -148,7 +148,7 @@ namespace collin
             container.erase(remove_blanks(std::begin(container), std::end(container), loc), std::end(container));
         }
 
-        template<class InputIterator>
+        template<collin::concepts::input_iterator InputIterator>
         InputIterator remove_cntrls(InputIterator first, InputIterator last, const std::locale& loc = {})
         {
             return std::remove_if(first, last, [&](auto ch) {return std::iscntrl(ch, loc);});
@@ -160,7 +160,7 @@ namespace collin
             container.erase(remove_cntrls(std::begin(container), std::end(container), loc), std::end(container));
         }
 
-        template<class InputIterator>
+        template<collin::concepts::input_iterator InputIterator>
         InputIterator remove_graphicals(InputIterator first, InputIterator last, const std::locale& loc = {})
         {
             return std::remove_if(first, last, [&](auto ch) {return std::isgraph(ch, loc);});
@@ -172,7 +172,7 @@ namespace collin
             container.erase(remove_graphicals(std::begin(container), std::end(container), loc), std::end(container));
         }
 
-        template<class InputIterator>
+        template<collin::concepts::input_iterator InputIterator>
         InputIterator remove_printables(InputIterator first, InputIterator last, const std::locale& loc = {})
         {
             return std::remove_if(first, last, [&](auto ch) {return std::isprint(ch, loc);});
@@ -184,7 +184,7 @@ namespace collin
             container.erase(remove_printables(std::begin(container), std::end(container), loc), std::end(container));
         }
 
-        template<class InputIterator>
+        template<collin::concepts::input_iterator InputIterator>
         InputIterator remove_hexdigits(InputIterator first, InputIterator last, const std::locale& loc = {})
         {
             return std::remove_if(first, last, [&](auto ch) {return std::isxdigit(ch, loc);});
@@ -196,7 +196,7 @@ namespace collin
             container.erase(remove_hexdigits(std::begin(container), std::end(container), loc), std::end(container));
         }
 
-        template<class InputIterator>
+        template<collin::concepts::input_iterator InputIterator>
         InputIterator remove_upper(InputIterator first, InputIterator last, const std::locale& loc = {})
         {
             return std::remove_if(first, last, [&](auto ch) {return std::isupper(ch, loc);});
@@ -208,7 +208,7 @@ namespace collin
             container.erase(remove_upper(std::begin(container), std::end(container), loc), std::end(container));
         }
 
-        template<class InputIterator>
+        template<collin::concepts::input_iterator InputIterator>
         InputIterator remove_lower(InputIterator first, InputIterator last, const std::locale& loc = {})
         {
             return std::remove_if(first, last, [&](auto ch) {return std::islower(ch, loc);});
@@ -220,7 +220,7 @@ namespace collin
             container.erase(remove_lower(std::begin(container), std::end(container), loc), std::end(container));
         }
 
-        template<class InputIterator, class CharT>
+        template<collin::concepts::input_iterator InputIterator, class CharT>
         InputIterator remove_character(InputIterator first, InputIterator last, CharT c)
         {
             return std::remove_if(first, last, [=](auto ch) {return ch == c;});
@@ -232,7 +232,8 @@ namespace collin
             container.erase(remove_character(std::begin(container), std::end(container), c), std::end(container));
         }
 
-        template<class InputIterator, class OutputIterator>
+        template<collin::concepts::input_iterator InputIterator, class OutputIterator>
+            requires(collin::concepts::output_iterator<OutputIterator, typename InputIterator::value_type>)
         OutputIterator uppercase(InputIterator first, InputIterator last, OutputIterator first2, const std::locale& loc = {})
         {
             return std::transform(first, last, first2, [&](auto ch) {return std::toupper(ch, loc);});
@@ -244,7 +245,8 @@ namespace collin
             uppercase(std::begin(container), std::end(container), std::begin(container), loc);
         }
 
-        template<class InputIterator, class OutputIterator>
+        template<collin::concepts::input_iterator InputIterator, class OutputIterator>
+            requires(collin::concepts::output_iterator<OutputIterator, typename InputIterator::value_type>)
         OutputIterator lowercase(InputIterator first, InputIterator last, OutputIterator first2, const std::locale& loc = {})
         {
             return std::transform(first, last, first2, [&](auto ch) {return std::tolower(ch, loc);});
@@ -367,7 +369,7 @@ namespace collin
         }
 
         template<class OutputIterator>
-            requires(type_traits::is_iterator_v<OutputIterator>)
+            requires(collin::concepts::output_iterator<OutputIterator, std::string_view>)
         constexpr void split(std::string_view str, std::string_view delim, OutputIterator it, std::size_t amount=-1) noexcept
         {
             std::size_t last_index {0};
@@ -392,7 +394,7 @@ namespace collin
             return results;
         }
 
-        template<class InputIterator>
+        template<collin::concepts::input_iterator InputIterator>
         std::string join(InputIterator begin, InputIterator end, std::string_view join_string)
         {
             std::stringstream ss;
