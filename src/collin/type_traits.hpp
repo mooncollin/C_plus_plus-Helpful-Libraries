@@ -42,6 +42,15 @@ namespace collin
 		{
 		};
 
+		template<class T, class = void>
+		struct has_type : std::false_type {};
+
+		template<class T>
+		struct has_type<T, std::void_t<decltype(T::type)>> : std::true_type {};
+
+		template<class T>
+		constexpr auto has_type_v = has_type<T>::value;
+
 		template<class T>
 		constexpr bool has_size_v = has_size<T>::value;
 
@@ -87,5 +96,81 @@ namespace collin
 
 		template<typename... T>
 		constexpr auto is_unique_v = is_unique<T...>::value;
+
+		template<typename... T>
+		struct common_type {};
+
+		template<typename T>
+		struct common_type<T> : std::decay_t<T> {};
+
+		template<typename T, typename U>
+		struct common_type<T, U> : std::conditional_t<(std::is_same_v<std::decay_t<T>, T> && std::is_same_v<std::decay_t<U>, U>), 
+													   std::conditional_t<has_type_v<common_type<T, U>>,
+																		  common_type<T, U>, 
+																		  std::decay_t<decltype(false ? std::declval<const T&>() : std::declval<const U&>())>>,
+													   common_type<std::decay_t<T>, std::decay_t<U>>> {};
+
+		template<typename... T>
+		using common_type_t = typename common_type<T...>::type;
+
+		template<typename T, typename U, typename... R>
+		struct common_type<T, U, R...> : common_type_t<common_type_t<T, U>, R...> {};
+
+		template<class T, class U, template<class> class TQual, template<class> class UQual>
+		struct basic_common_reference {};
+
+		namespace details
+		{
+			template<class Function, typename... Args>
+			using invoke = typename Function::template invoke<Args...>;
+
+			template<typename>
+			struct xref
+			{
+				template<typename T>
+				using invoke = T;
+			};
+
+			template<typename T>
+			struct xref<T&&>
+			{
+				template<typename U>
+				using invoke = std::add_rvalue_reference_t<invoke<xref<T>, U>>;
+			};
+
+			template<typename T>
+			struct xref<T&>
+			{
+				template<typename U>
+					using invoke = std::add_lvalue_reference_t<invoke<xref<T>, U>>;
+			};
+
+			template<typename T>
+			struct xref<T const>
+			{
+				template<typename U>
+				using invoke = U const;
+			};
+		}
+
+		template<typename... T>
+		struct common_reference {};
+
+		template<typename T>
+		struct common_reference<T>
+		{
+			using type = T;
+		};
+
+		template<typename T, typename U>
+		struct common_reference<T, U> : std::conditional_t<has_type_v<basic_common_reference<std::remove_cvref_t<T>, std::remove_cvref_t<U>, details::xref<T>::template invoke, details::xref<U>::template invoke>>,
+														   basic_common_reference<std::remove_cvref_t<T>, std::remove_cvref_t<U>, details::xref<T>::template invoke, details::xref<U>::template invoke>,
+														   common_type<T, U>> {};
+
+		template<typename... T>
+		using common_reference_t = typename common_reference<T...>::type;
+
+		template<typename T, typename U, typename... R>
+		struct common_reference<T, U, R...> : common_reference<common_reference_t<T, U>, R...> {};
 	}
 }
