@@ -9,18 +9,13 @@ namespace collin
 	namespace concepts
 	{
 		template<class T, class U>
-		concept same = std::is_same_v<T, U>;
+		concept same = std::is_same_v<T, U> && std::is_same_v<U, T>;
 
 		template<class From, class To>
-		concept convertible_to = std::is_convertible_v<From, To> &&
-			requires(From (&f)())
-		{
-			static_cast<To>(f());
-		};
+		concept convertible_to = std::is_convertible_v<From, To>;
 
 		template<class T, class U>
-		concept derived_from = std::is_base_of_v<U, T> &&
-							   convertible_to<std::remove_cv_t<T>*, std::remove_cv_t<U>*>;
+		concept derived_from = std::is_base_of_v<U, T>;
 
 		template<class T, class U>
 		concept common_reference = same<collin::type_traits::common_reference_t<T, U>, collin::type_traits::common_reference_t<U, T>> &&
@@ -28,20 +23,31 @@ namespace collin
 								   convertible_to<U, collin::type_traits::common_reference_t<T, U>>;
 
 		template<class T, class U>
-		concept common = same<collin::type_traits::common_type_t<T, U>, collin::type_traits::common_type_t<U, T>> &&
-						 convertible_to<T, collin::type_traits::common_type_t<T, U>> &&
-						 convertible_to<U, collin::type_traits::common_type_t<T, U>> &&
-						 common_reference<
-							std::add_lvalue_reference_t<const T>,
-							std::add_lvalue_reference_t<const U>
-						 > &&
-						 common_reference<
-							std::add_lvalue_reference_t<collin::type_traits::common_type_t<T, U>>,
-							collin::type_traits::common_reference_t<
-								std::add_lvalue_reference_t<const T>,
-							std::add_lvalue_reference_t<const U>
-							>
-						 >;
+		concept common =
+			requires(T t, U u)
+		{
+			typename collin::type_traits::common_type_t<T, U>;
+			typename collin::type_traits::common_type_t<U, T>;
+			same<collin::type_traits::common_type_t<U, T>, collin::type_traits::common_type_t<T, U>>;
+			collin::type_traits::common_type_t<T, U>(std::forward<T>(t));
+			collin::type_traits::common_type_t<T, U>(std::forward<U>(u));
+		};
+
+		//template<class T, class U>
+		//concept common = same<collin::type_traits::common_type_t<T, U>, collin::type_traits::common_type_t<U, T>> &&
+		//				 convertible_to<T, collin::type_traits::common_type_t<T, U>> &&
+		//				 convertible_to<U, collin::type_traits::common_type_t<T, U>> &&
+		//				 common_reference<
+		//					std::add_lvalue_reference_t<const T>,
+		//					std::add_lvalue_reference_t<const U>
+		//				 > &&
+		//				 common_reference<
+		//					std::add_lvalue_reference_t<collin::type_traits::common_type_t<T, U>>,
+		//					collin::type_traits::common_reference_t<
+		//						std::add_lvalue_reference_t<const T>,
+		//					std::add_lvalue_reference_t<const U>
+		//					>
+		//				 >;
 
 		template<class T>
 		concept integral = std::is_integral_v<T>;
@@ -239,8 +245,8 @@ namespace collin
 								std::is_reference_v<T>;
 
 		template<class T>
-		concept iterator = copyable<T> &&
-						   swappable<T> &&
+		concept iterator = concepts::copyable<T> &&
+						   concepts::swappable<T> &&
 			requires(T it)
 		{
 			typename std::iterator_traits<T>::value_type;
@@ -249,17 +255,17 @@ namespace collin
 			typename std::iterator_traits<T>::pointer;
 			typename std::iterator_traits<T>::iterator_category;
 
-			{ *it }  -> referenceable;
-			{ ++it } -> convertible_to<T&>;
-			{ *it++ } -> referenceable;
+			{ *it }  -> concepts::referenceable;
+			{ ++it } -> concepts::convertible_to<T&>;
+			{ *it++ } -> concepts::referenceable;
 		};
 
 		template<class T>
 		concept input_iterator = iterator<T> &&
-								 equality_comparable<T> &&
+								 concepts::equality_comparable<T> &&
 			requires(T it, const T const_it)
 		{
-			{ it != const_it }  -> boolean;
+			{ it != const_it }  -> concepts::boolean;
 			{ it.operator->() };
 		};
 
@@ -268,54 +274,54 @@ namespace collin
 								  (std::is_pointer_v<T> || std::is_class_v<T>) &&
 			requires(T it, U&& u)
 		{
-			{ ++it } -> convertible_to<T&>;
-			{ it++ } -> convertible_to<const T&>;
+			{ ++it } -> concepts::convertible_to<T&>;
+			{ it++ } -> concepts::convertible_to<const T&>;
 			{ *it++ = std::forward<U>(u) };
 			{ *it = std::forward<U>(u) };
 		};
 
 		template<class T>
 		concept forward_iterator = input_iterator<T> &&
-								   default_constructible<T> &&
-								   ((output_iterator<T, std::add_lvalue_reference_t<std::iterator_traits<T>::value_type>> && same<std::iterator_traits<T>::reference, std::add_lvalue_reference_t<std::iterator_traits<T>::value_type>>) ||
-									same<std::iterator_traits<T>::reference, const std::add_lvalue_reference_t<std::iterator_traits<T>::value_type>>) &&
+								   concepts::default_constructible<T> &&
+								   ((output_iterator<T, std::add_lvalue_reference_t<std::iterator_traits<T>::value_type>> && concepts::same<std::iterator_traits<T>::reference, std::add_lvalue_reference_t<std::iterator_traits<T>::value_type>>) ||
+									concepts::same<std::iterator_traits<T>::reference, const std::add_lvalue_reference_t<std::iterator_traits<T>::value_type>>) &&
 			requires(T it)
 		{
-			{ it++ }  -> same<T>;
-			{ *it++ } -> same<std::iterator_traits<T>::reference>;
+			{ it++ }  -> concepts::same<T>;
+			{ *it++ } -> concepts::same<std::iterator_traits<T>::reference>;
 		};
 
 		template<class T>
 		concept bidirectional_iterator = forward_iterator<T> &&
 			requires(T a)
 		{
-			{ --a }  -> same<T&>;
-			{ a-- }  -> convertible_to<const T&>;
-			{ *a-- } -> same<std::iterator_traits<T>::reference>;
+			{ --a }  -> concepts::same<T&>;
+			{ a-- }  -> concepts::convertible_to<const T&>;
+			{ *a-- } -> concepts::same<std::iterator_traits<T>::reference>;
 		};
 
 		template<class T>
 		concept random_access_iterator = bidirectional_iterator<T> &&
 			requires(T a, const T b, T& r, typename std::iterator_traits<T>::difference_type n)
 		{
-			{ r += n } -> same<T&>;
-			{ a + n }  -> same<T>;
-			{ n + a }  -> same<T>;
-			{ r -= n } -> same<T&>;
-			{ a - n }  -> same<T>;
-			{ b - a }  -> same<std::iterator_traits<T>::difference_type>;
-			{ a[n] }   -> convertible_to<std::iterator_traits<T>::reference>;
-			{ a < b }  -> boolean;
-			{ a > b }  -> boolean;
-			{ a >= b } -> boolean;
-			{ a <= b } -> boolean;
+			{ r += n } -> concepts::same<T&>;
+			{ a + n }  -> concepts::same<T>;
+			{ n + a }  -> concepts::same<T>;
+			{ r -= n } -> concepts::same<T&>;
+			{ a - n }  -> concepts::same<T>;
+			{ b - a }  -> concepts::same<std::iterator_traits<T>::difference_type>;
+			{ a[n] }   -> concepts::convertible_to<std::iterator_traits<T>::reference>;
+			{ a < b }  -> concepts::boolean;
+			{ a > b }  -> concepts::boolean;
+			{ a >= b } -> concepts::boolean;
+			{ a <= b } -> concepts::boolean;
 		};
 
 		template<class T>
 		concept contiguous_iterator = random_access_iterator<T> &&
 			requires(T a, typename std::iterator_traits<T>::difference_type n)
 		{
-			{ *(a + n) } -> same<decltype(*(std::addressof(*a) + n))>;
+			{ *(a + n) } -> concepts::same<decltype(*(std::addressof(*a) + n))>;
 		};
 
 		template<class T>

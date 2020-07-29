@@ -11,8 +11,37 @@
 
 namespace collin
 {
-	namespace iterator
+	namespace iterators
 	{
+		/*
+		* I have the redefinition of iterator concepts here, because this is where I
+		* want them to eventually be. However, MSVC will not let me move the concepts
+		* out of the concepts header. If I do, then this namespace is hidden for some
+		* reason.
+		*/
+
+
+		template<class T>
+		concept iterator = concepts::iterator<T>;
+
+		template<class T>
+		concept input_iterator = concepts::input_iterator<T>;
+
+		template<class T, class U>
+		concept output_iterator = concepts::output_iterator<T, U>;
+
+		template<class T>
+		concept forward_iterator = concepts::forward_iterator<T>;
+
+		template<class T>
+		concept bidirectional_iterator = concepts::bidirectional_iterator<T>;
+
+		template<class T>
+		concept random_access_iterator = concepts::random_access_iterator<T>;
+
+		template<class T>
+		concept contiguous_iterator = concepts::contiguous_iterator<T>;
+
 		template<class Container>
 		class back_emplace_iterator : public std::iterator<std::output_iterator_tag, typename Container::value_type, typename Container::difference_type, typename Container::pointer, typename Container::reference>
 		{

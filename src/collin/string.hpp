@@ -17,20 +17,18 @@
 #include <utility>
 #include <system_error>
 
+#include "collin/platform.hpp"
 #include "collin/type_traits.hpp"
 #include "collin/utility.hpp"
+#include "collin/iterator.hpp"
 #include "collin/concepts.hpp"
 
 namespace collin
 {
     namespace strings
     {
-        constexpr std::string_view line_terminator =
-        #ifdef _WIN32
-        "\r\n";
-        #else
-        "\n";
-        #endif
+        constexpr std::string_view line_terminator = collin::platform::win32_api ? "\r\n"
+                                                                                 : "\n";
 
         template<class CharT>
         constexpr bool is_vowel(CharT c) noexcept

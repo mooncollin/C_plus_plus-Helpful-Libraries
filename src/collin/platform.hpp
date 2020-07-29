@@ -112,21 +112,21 @@ namespace collin
 		#endif
 		;
 
-		constexpr bool win32_api = operating_system == e_operating_system::win32 ||
-								   operating_system == e_operating_system::win64;
+		constexpr bool win32_api = (operating_system == e_operating_system::win32) ||
+								   (operating_system == e_operating_system::win64);
 
-		constexpr bool posix_api = operating_system == e_operating_system::aix ||
-								   operating_system == e_operating_system::android ||
-								   operating_system == e_operating_system::beos ||
-								   operating_system == e_operating_system::freebsd ||
-								   operating_system == e_operating_system::netbsd ||
-								   operating_system == e_operating_system:: openbsd ||
-								   operating_system == e_operating_system::cygwin ||
-								   operating_system == e_operating_system::dragonfly ||
-								   operating_system == e_operating_system::mac ||
-								   operating_system == e_operating_system::minix ||
-								   operating_system == e_operating_system::gnu ||
-								   operating_system == e_operating_system::linux;
+		constexpr bool posix_api = (operating_system == e_operating_system::aix) ||
+								   (operating_system == e_operating_system::android) ||
+								   (operating_system == e_operating_system::beos) ||
+								   (operating_system == e_operating_system::freebsd) ||
+								   (operating_system == e_operating_system::netbsd) ||
+								   (operating_system == e_operating_system:: openbsd) ||
+								   (operating_system == e_operating_system::cygwin) ||
+								   (operating_system == e_operating_system::dragonfly) ||
+								   (operating_system == e_operating_system::mac) ||
+								   (operating_system == e_operating_system::minix) ||
+								   (operating_system == e_operating_system::gnu) ||
+								   (operating_system == e_operating_system::linux);
 
 		enum class e_architecture
 		{

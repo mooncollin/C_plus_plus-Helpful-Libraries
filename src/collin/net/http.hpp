@@ -488,7 +488,7 @@ namespace collin
 					std::size_t status_code;
 					std::string status_code_message;
 
-					iterator::istream_iterator_sep space_stream {s.socket(), " "};
+					iterators::istream_iterator_sep space_stream {s.socket(), " "};
 
 					if(space_stream->empty())
 					{
@@ -520,7 +520,7 @@ namespace collin
 						return {};
 					}
 
-					iterator::istream_iterator_sep line_stream {s.socket(), "\r\n"};
+					iterators::istream_iterator_sep line_stream {s.socket(), "\r\n"};
 
 					if(line_stream->empty())
 					{

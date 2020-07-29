@@ -4,7 +4,6 @@
 #include <string>
 #include <stdexcept>
 #include <type_traits>
-#include <tuple>
 #include <initializer_list>
 #include <functional>
 #include <iostream>
@@ -12,12 +11,13 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
-#include <iterator>
 #include <chrono>
 #include <iomanip>
-#include <ratio>
 
 #include "collin/concepts.hpp"
+#include "collin/iterator.hpp"
+
+using test = collin::iterators::back_emplace_iterator<std::vector<int>>;
 
 namespace collin
 {
@@ -652,7 +652,7 @@ namespace collin
 			}
 		}
 
-		template<collin::concepts::iterator InputIterator1, collin::concepts::iterator InputIterator2>
+		template<collin::iterators::input_iterator InputIterator1, collin::iterators::input_iterator InputIterator2>
 			requires(collin::concepts::weakly_equality_comparable_with<decltype(*std::declval<InputIterator1>), decltype(*std::declval<InputIterator2>)>)
 		void assert_sequence_equal(InputIterator1 first1, InputIterator1 end1, InputIterator2 first2, std::string_view message = "")
 		{
@@ -664,7 +664,7 @@ namespace collin
 			}
 		}
 
-		template<collin::concepts::iterator InputIterator1, collin::concepts::iterator InputIterator2>
+		template<collin::iterators::input_iterator InputIterator1, collin::iterators::input_iterator InputIterator2>
 			requires(collin::concepts::weakly_equality_comparable_with<decltype(*std::declval<InputIterator1>), decltype(*std::declval<InputIterator2>)>)
 		void assert_sequence_not_equal(InputIterator1 first1, InputIterator1 end1, InputIterator2 first2, std::string_view message = "")
 		{
