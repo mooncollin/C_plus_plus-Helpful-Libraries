@@ -27,7 +27,7 @@ namespace collin
 
 		struct null {};
 
-		template<class BooleanType, class StringType, class IntType, class FloatType>
+		template<class BooleanType, class StringType, class IntType, class FloatType, template<class> class ListType, template<class, class> class ObjectType>
 		struct basic_json_value
 		{
 			using boolean_type = BooleanType;
@@ -35,8 +35,8 @@ namespace collin
 			using int_type = IntType;
 			using float_type = FloatType;
 			using null_type = null;
-			using list_type = std::vector<basic_json_value>;
-			using object_type = std::map<string_type, basic_json_value>;
+			using list_type = ListType<basic_json_value>;
+			using object_type = ObjectType<string_type, basic_json_value>;
 
 			using type = std::variant<null_type, boolean_type, string_type, int_type, float_type, list_type, object_type>;
 
@@ -212,20 +212,20 @@ namespace collin
 			type value {};
 		};
 
-		using json_value = basic_json_value<bool, std::string, std::intmax_t, double>;
+		using json_value = basic_json_value<bool, std::string, std::intmax_t, double, std::vector, std::map>;
 
-		template<class CharT, class BooleanType, class StringType, class IntType, class FloatType>
-		std::basic_istream<CharT>& operator>>(std::basic_istream<CharT>& is, basic_json_value<BooleanType, StringType, IntType, FloatType>& json)
+		template<class CharT, class BooleanType, class StringType, class IntType, class FloatType, template<class> class ListType, template<class, class> class ObjectType>
+		std::basic_istream<CharT>& operator>>(std::basic_istream<CharT>& is, basic_json_value<BooleanType, StringType, IntType, FloatType, ListType, ObjectType>& json)
 		{
-			json_parser<basic_json_value<BooleanType, StringType, IntType, FloatType>> parser {is};
+			json_parser<basic_json_value<BooleanType, StringType, IntType, FloatType, ListType, ObjectType>> parser {is};
 			json = std::move(parser.data());
 			return is;
 		}
 
-		template<class CharT, class BooleanType, class StringType, class IntType, class FloatType>
-		std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os, const basic_json_value<BooleanType, StringType, IntType, FloatType>& json)
+		template<class CharT, class BooleanType, class StringType, class IntType, class FloatType, template<class> class ListType, template<class, class> class ObjectType>
+		std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os, const basic_json_value<BooleanType, StringType, IntType, FloatType, ListType, ObjectType>& json)
 		{
-			using json_t = basic_json_value<BooleanType, StringType, IntType, FloatType>;
+			using json_t = basic_json_value<BooleanType, StringType, IntType, FloatType, ListType, ObjectType>;
 			json_outputter<json_t> outputter {os};
 			outputter(json);
 			return os;
