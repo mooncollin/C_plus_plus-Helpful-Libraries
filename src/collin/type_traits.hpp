@@ -54,15 +54,6 @@ namespace collin
 		template<class T>
 		constexpr bool has_size_v = has_size<T>::value;
 
-		template<class T, typename = void>
-		struct is_iterator : std::false_type {};
-
-		template<class T>
-		struct is_iterator<T, std::void_t<decltype(*std::declval<T>())>> : std::true_type {};
-
-		template<class T>
-		constexpr bool is_iterator_v = is_iterator<T>::value;
-
 		template<typename T>
 		struct function_traits;
 
@@ -172,5 +163,44 @@ namespace collin
 
 		template<typename T, typename U, typename... R>
 		struct common_reference<T, U, R...> : common_reference<common_reference_t<T, U>, R...> {};
+
+		template<bool B, class T, class F, T t, F f>
+		struct conditional_value;
+
+		template<class T, class F, T t, F f>
+		struct conditional_value<true, T, F, t, f>
+		{
+			static constexpr auto value = t;
+		};
+
+		template<class T, class F, T t, F f>
+		struct conditional_value<false, T, F, t, f>
+		{
+			static constexpr auto value = f;
+		};
+
+		template<class T, T t, T t2>
+		struct conditional_value<true, T, T, t, t2>
+		{
+			static constexpr auto value = t;
+		};
+
+		template<class T, T t, T t2>
+		struct conditional_value<false, T, T, t, t2>
+		{
+			static constexpr auto value = t2;
+		};
+
+		template<bool B, class T, class F, T t, F f>
+		constexpr auto conditional_value_v = conditional_value<B, T, F, t, f>::value;
+
+		template<bool B, class T, T t, T t2>
+		constexpr auto conditional_value2_v = conditional_value<B, T, t, t2>::value;
+
+		template<class T>
+		constexpr auto make_unsigned(T&& t) noexcept
+		{
+			return static_cast<std::make_unsigned_t<decltype(std::forward<T>(t))>>(std::forward<T>(t));
+		}
 	}
 }

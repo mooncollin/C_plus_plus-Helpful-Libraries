@@ -115,6 +115,7 @@ namespace collin
 		constexpr bool win32_api = (operating_system == e_operating_system::win32) ||
 								   (operating_system == e_operating_system::win64);
 
+		#pragma warning(disable:6285)
 		constexpr bool posix_api = (operating_system == e_operating_system::aix) ||
 								   (operating_system == e_operating_system::android) ||
 								   (operating_system == e_operating_system::beos) ||
@@ -127,6 +128,8 @@ namespace collin
 								   (operating_system == e_operating_system::minix) ||
 								   (operating_system == e_operating_system::gnu) ||
 								   (operating_system == e_operating_system::linux);
+		#pragma warning(default:6285)
+
 
 		enum class e_architecture
 		{

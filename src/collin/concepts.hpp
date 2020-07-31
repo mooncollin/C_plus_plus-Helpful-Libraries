@@ -8,6 +8,12 @@ namespace collin
 {
 	namespace concepts
 	{
+		template<class T>
+		concept object = std::is_object_v<T>;
+
+		template<class T>
+		concept array = std::is_array_v<T>;
+
 		template<class T, class U>
 		concept same = std::is_same_v<T, U> && std::is_same_v<U, T>;
 
@@ -33,22 +39,6 @@ namespace collin
 			collin::type_traits::common_type_t<T, U>(std::forward<U>(u));
 		};
 
-		//template<class T, class U>
-		//concept common = same<collin::type_traits::common_type_t<T, U>, collin::type_traits::common_type_t<U, T>> &&
-		//				 convertible_to<T, collin::type_traits::common_type_t<T, U>> &&
-		//				 convertible_to<U, collin::type_traits::common_type_t<T, U>> &&
-		//				 common_reference<
-		//					std::add_lvalue_reference_t<const T>,
-		//					std::add_lvalue_reference_t<const U>
-		//				 > &&
-		//				 common_reference<
-		//					std::add_lvalue_reference_t<collin::type_traits::common_type_t<T, U>>,
-		//					collin::type_traits::common_reference_t<
-		//						std::add_lvalue_reference_t<const T>,
-		//					std::add_lvalue_reference_t<const U>
-		//					>
-		//				 >;
-
 		template<class T>
 		concept integral = std::is_integral_v<T>;
 
@@ -63,6 +53,12 @@ namespace collin
 
 		template<class T>
 		concept floating_point = std::is_floating_point_v<T>;
+
+		template<class T>
+		concept integer_like = integral<T> || same<T, long long> || same<T, unsigned long long>;
+
+		template<class T>
+		concept signed_integer_like = signed_integral<T> || same<T, long long>;
 
 		template<class T, class U>
 		concept assignable = std::is_assignable_v<T, U>;
@@ -94,7 +90,12 @@ namespace collin
 		concept constructible = destructible<T> && std::is_constructible_v<T, Args...>;
 
 		template<class T>
-		concept default_constructible = constructible<T>;
+		concept default_constructible = constructible<T> &&
+			requires
+		{
+			T{};
+			::new (static_cast<void*>(nullptr)) T;
+		};
 
 		template<class T>
 		concept move_constructible = constructible<T, T> && convertible_to<T, T>;
@@ -106,7 +107,7 @@ namespace collin
 									 constructible<T, const T> && convertible_to<const T, T>;
 
 		template<class T>
-		concept movable = std::is_object_v<T> &&
+		concept movable = object<T> &&
 						  move_constructible<T> &&
 						  assignable<T&, T> &&
 						  swappable<T>;
@@ -240,11 +241,11 @@ namespace collin
 		concept strict_weak_order = relation<R, T, U>;
 
 		template<class T>
-		concept referenceable = std::is_object_v<T> ||
+		concept referenceable = object<T> ||
 								std::is_function_v<T> ||
 								std::is_reference_v<T>;
 
-		template<class T>
+		/*template<class T>
 		concept iterator = concepts::copyable<T> &&
 						   concepts::swappable<T> &&
 			requires(T it)
@@ -322,7 +323,7 @@ namespace collin
 			requires(T a, typename std::iterator_traits<T>::difference_type n)
 		{
 			{ *(a + n) } -> concepts::same<decltype(*(std::addressof(*a) + n))>;
-		};
+		};*/
 
 		template<class T>
 		concept complete_type = 
