@@ -1222,7 +1222,7 @@ namespace collin
 			#endif
 		}
 
-		template<collin::concepts::same<msgtype> ElementType, std::size_t Extent>
+		template<class ElementType, std::size_t Extent>
 		std::size_t socket_receive(socket_type s, span<ElementType, Extent> buf, int flags, std::error_code& ec)
 		{
 			clear_last_error();
@@ -1282,7 +1282,7 @@ namespace collin
 			#endif
 		}
 
-		template<collin::concepts::same<msgtype> ElementType, std::size_t Extent>
+		template<class ElementType, std::size_t Extent>
 		std::size_t socket_send(socket_type s, const span<ElementType, Extent> buf, int flags, std::error_code& ec)
 		{
 			clear_last_error();
@@ -2249,27 +2249,27 @@ namespace collin
 
 				socket_type accept(std::error_code& ec)
 				{
-					// TODO
+					return accept(collin::net::io_context{}, endpoint_type{}, ec);
 				}
 
 				socket_type accept()
 				{
-					return accept(collin::throw_on_error("basic_socket_acceptor::accept"));
+					return accept(collin::net::io_context{}, endpoint_type{}, collin::throw_on_error("basic_socket_acceptor::accept"));
 				}
 
 				socket_type accept(io_context& ctx)
 				{
-					return accept(ctx, collin::throw_on_error("basic_socket_acceptor::accept"));
+					return accept(ctx, endpoint_type{}, collin::throw_on_error("basic_socket_acceptor::accept"));
 				}
 
 				socket_type accept(endpoint_type& endpoint)
 				{
-					// TODO
+					return acccept(collin::net::io_context{}, endpoint, collin::throw_on_error("basic_socket_acceptor::accept"))
 				}
 
 				socket_type accept(endpoint_type& endpoint, std::error_code& ec)
 				{
-					// TODO
+					return accept(collin::net::io_context{}, endpoint, ec);
 				}
 
 				socket_type accept(io_context& ctx, endpoint_type& endpoint)
@@ -2277,7 +2277,40 @@ namespace collin
 					return accept(ctx, endpoint, collin::throw_on_error("basic_socket_acceptor::accept"));
 				}
 
-				// async_accept TODO
+				std::future<socket_type> async_accept(io_context& ctx, endpoint_type& endpoint, std::error_code& ec, const std::launch l = std::launch::async)
+				{
+					return std::async(l, &basic_socket_acceptor::accept, std::ref(ctx), std::ref(endpoint), std::ref(ec));
+				}
+
+				std::future<socket_type> async_accept(std::error_code& ec, const std::launch l = std::launch::async)
+				{
+					return async_accept(collin::net::io_context{}, endpoint_type{}, ec, l);
+				}
+
+				std::future<socket_type> async_accept(const std::launch l = std::launch::async)
+				{
+					return async_accept(collin::net::io_context{}, endpoint_type{}, collin::throw_on_error("basic_socket_acceptor::async_accept"), l);
+				}
+
+				std::future<socket_type> async_accept(io_context& ctx, const std::launch l = std::launch::async)
+				{
+					return async_accept(ctx, endpoint_type{}, collin::throw_on_error("basic_socket_acceptor::async_accept"), l);
+				}
+
+				std::future<socket_type> async_accept(endpoint_type& endpoint, const std::launch l = std::launch::async)
+				{
+					return async_acccept(collin::net::io_context{}, endpoint, collin::throw_on_error("basic_socket_acceptor::async_accept"), l)
+				}
+
+				std::future<socket_type> async_accept(endpoint_type& endpoint, std::error_code& ec, const std::launch l = std::launch::async)
+				{
+					return async_accept(collin::net::io_context{}, endpoint, ec, l);
+				}
+
+				std::future<socket_type> async_accept(io_context& ctx, endpoint_type& endpoint, const std::launch l = std::launch::async)
+				{
+					return async_accept(ctx, endpoint, collin::throw_on_error("basic_socket_acceptor::async_accept"), l);
+				}
 
 				void shutdown(shutdown_type what, std::error_code& ec)
 				{
@@ -2337,7 +2370,10 @@ namespace collin
 					}
 				}
 
-				// async_connect TODO
+				std::future<void> async_connect(const endpoint_type& endpoint, std::error_code& ec, const std::launch l = std::launch::async)
+				{
+					return std::async(l, &basic_socket_acceptor::connect, std::cref(endpoint), std::ref(ec));
+				}
 
 				int wait(wait_type w, std::error_code& ec)
 				{
@@ -2364,7 +2400,15 @@ namespace collin
 					return wait(w, collin::throw_on_error("basic_socket::wait"));
 				}
 
-				// async_wait TODO
+				std::future<int> async_wait(wait_type w, std::error_code& ec, const std::launch l = std::launch::async)
+				{
+					return std::async(l, &basic_socket_acceptor::wait, w, std::ref(ec));
+				}
+
+				std::future<int> async_wait(wait_type w, const std::launch l = std::launch::async)
+				{
+					return async_wait(w, collin::throw_on_error("basic_socket::async_wait"), l);
+				}
 
 				explicit operator bool() const noexcept
 				{
@@ -2426,7 +2470,23 @@ namespace collin
 					return result;
 				}
 
-				// async_receive TODO
+				template<class ElementType, std::size_t Extent>
+				std::size_t receive(span<ElementType, Extent> buf, int flags = 0)
+				{
+					return receive(buf, collin::throw_on_error{"basic_datagram_socket::receive"}, flags);
+				}
+
+				template<class ElementType, std::size_t Extent>
+				std::future<std::size_t> async_receive(span<ElementType, Extent> buf, std::error_code& ec, int flags = 0, const std::launch l = std::launch::async) noexcept
+				{
+					return std::async(l, &basic_datagram_socket::receive, buf, std::ref(ec), flags);
+				}
+
+				template<class ElementType, std::size_t Extent>
+				std::future<std::size_t> async_receive(span<ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async) noexcept
+				{
+					return async_receive(buf, collin::throw_on_error{"basic_datagram_socket::async_receive"}, flags, l);
+				}
 
 				template<class ElementType, std::size_t Extent>
 				std::size_t send(const span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
@@ -2439,7 +2499,17 @@ namespace collin
 					return result;
 				}
 
-				// async_send TODO
+				template<class ElementType, std::size_t Extent>
+				std::future<std::size_t> async_send(const span<ElementType, Extent> buf, std::error_code& ec, int flags = 0, const std::launch l = std::launch::async) noexcept
+				{
+					return std::async(l, &basic_datagram_socket::send, std::ref(ec), flags);
+				}
+
+				template<class ElementType, std::size_t Extent>
+				std::future<std::size_t> async_send(const span<ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async) noexcept
+				{
+					return async_send(buf, collin::throw_on_error{"basic_datagram_socket::async_send"}, flags, l);
+				}
 		};
 
 		template<class Protocol>
@@ -2495,7 +2565,17 @@ namespace collin
 					return result;
 				}
 
-				// async_receive TODO
+				template<class ElementType, std::size_t Extent>
+				std::future<std::size_t> async_receive(span<ElementType, Extent> buf, std::error_code& ec, int flags = 0, const std::launch l = std::launch::async) noexcept
+				{
+					return std::async(l, &basic_stream_socket::receive, buf, std::ref(ec), flags);
+				}
+
+				template<class ElementType, std::size_t Extent>
+				std::future<std::size_t> async_receive(span<ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async) noexcept
+				{
+					return async_receive(buf, collin::throw_on_error{ "basic_stream_socket::async_receive" }, flags, l);
+				}
 
 				template<class ElementType, std::size_t Extent>
 				std::size_t send(const span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
@@ -2508,7 +2588,17 @@ namespace collin
 					return result;
 				}
 
-				// async_send TODO
+				template<class ElementType, std::size_t Extent>
+				std::future<std::size_t> async_send(const span<ElementType, Extent> buf, std::error_code& ec, int flags = 0, const std::launch l = std::launch::async) noexcept
+				{
+					return std::async(l, &basic_stream_socket::send, std::ref(ec), flags);
+				}
+
+				template<class ElementType, std::size_t Extent>
+				std::future<std::size_t> async_send(const span<ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async) noexcept
+				{
+					return async_send(buf, collin::throw_on_error{ "basic_stream_socket::async_send" }, flags, l);
+				}
 		};
 
 		template<class Protocol>
@@ -2518,7 +2608,6 @@ namespace collin
 				using protocol_type = Protocol;
 				using endpoint_type = typename protocol_type::endpoint;
 
-				
 				basic_socket_streambuf()
 					: socket_(ctx())
 				{
