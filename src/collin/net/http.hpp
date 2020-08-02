@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
+#include <map>
 #include <chrono>
 #include <stdexcept>
 #include <optional>
@@ -170,16 +170,16 @@ namespace collin
 		}
 
 		template<class Owner>
-		class scoped_socket
+		class scoped_http_socket
 		{
 			public:
 				using socket_type = net::basic_socket_iostream<typename Owner::protocol_type>;
 
-				scoped_socket(Owner& own)
+				scoped_http_socket(Owner& own)
 					: owner_(own), s(std::move(own.socket())) {}
 
-				scoped_socket(const scoped_socket&) = delete;
-				scoped_socket& operator=(const scoped_socket&) = delete;
+				scoped_http_socket(const scoped_http_socket&) = delete;
+				scoped_http_socket& operator=(const scoped_http_socket&) = delete;
 
 				net::basic_stream_socket<typename Owner::protocol_type>&& move_socket()
 				{
@@ -197,7 +197,7 @@ namespace collin
 					return &s;
 				}
 
-				~scoped_socket()
+				~scoped_http_socket()
 				{
 					if(!moved)
 					{
@@ -224,7 +224,7 @@ namespace collin
 				basic_http_request& operator=(basic_http_request&&) = default;
 				virtual ~basic_http_request() = default;
 
-				basic_http_request(net::io_context& ctx = net::io_context())
+				basic_http_request(net::io_context& ctx = net::io_context{})
 					: socket_{ctx} {}
 
 				void resource(std::string_view str)
@@ -279,7 +279,7 @@ namespace collin
 					return headers_.at(name.data());
 				}
 
-				const std::unordered_map<std::string, std::string>& headers() const noexcept
+				const std::map<std::string, std::string>& headers() const noexcept
 				{
 					return headers_;
 				}
@@ -288,6 +288,7 @@ namespace collin
 				void timeout(std::chrono::duration<Rep, Period> d) noexcept
 				{
 					timeout_ = d;
+					socket_.set_option(net::socket_base::timeout(timeout_));
 				}
 
 				std::chrono::milliseconds timeout() const noexcept
@@ -326,7 +327,7 @@ namespace collin
 				std::string host_;
 				net::ip::port_type port_ {http_default_port};
 				http_version version_ {http_version::HTTP_1_1};
-				std::unordered_map<std::string, std::string> headers_;
+				std::map<std::string, std::string> headers_;
 				std::chrono::milliseconds timeout_ {std::chrono::milliseconds(200)};
 				socket_type socket_;
 
@@ -365,11 +366,11 @@ namespace collin
 				using endpoint_type = typename protocol_type::endpoint;
 				using socket_type = net::basic_stream_socket<protocol_type>;
 
-				basic_http_response(socket_type&& sock, std::size_t response_code, std::string_view response_code_message, http_version version, std::unordered_map<std::string, std::string>&& headers)
+				basic_http_response(socket_type&& sock, std::size_t response_code, std::string_view response_code_message, http_version version, std::map<std::string, std::string>&& headers)
 					: socket_(std::move(sock)), response_code_(response_code), response_code_message_(response_code_message), version_(version), headers_(std::move(headers)) {}
 
 				basic_http_response(const basic_http_response&) = default;
-				basic_http_response(basic_http_response&&) noexcept = default;
+				basic_http_response(basic_http_response&&) = default;
 				basic_http_response& operator=(const basic_http_response&) = default;
 				basic_http_response& operator=(basic_http_response&&) = default;
 
@@ -383,7 +384,7 @@ namespace collin
 					return version_;
 				}
 
-				const std::unordered_map<std::string, std::string>& headers() const noexcept
+				const std::map<std::string, std::string>& headers() const noexcept
 				{
 					return headers_;
 				}
@@ -414,7 +415,7 @@ namespace collin
 				std::size_t response_code_;
 				std::string response_code_message_;
 				http_version version_;
-				std::unordered_map<std::string, std::string> headers_;
+				std::map<std::string, std::string> headers_;
 				socket_type socket_;
 				std::error_code ec_;
 		};
@@ -424,7 +425,7 @@ namespace collin
 			resp.ec_.clear();
 			if(resp.socket().is_open())
 			{
-				scoped_socket s(resp);
+				scoped_http_socket s(resp);
 				os << s->rdbuf();
 				resp.ec_ = s->error();
 			}
@@ -446,7 +447,7 @@ namespace collin
 				std::optional<basic_http_response> send(HttpRequest& req, std::error_code& ec)
 				{
 					ec.clear();
-					scoped_socket s(req);
+					scoped_http_socket s(req);
 					s->connect(req.host(), std::to_string(req.port()));
 					if (s->error())
 					{
@@ -454,14 +455,33 @@ namespace collin
 						return {};
 					}
 
-					s->socket().set_option(net::socket_base::timeout(req.timeout()));
-
 					s.socket() << req;
 					s->sync();
 
 					return parseResponse(s, ec);
 				}
 
+				template<class HttpRequest>
+				basic_http_response send(HttpRequest& req)
+				{
+					return send(req, collin::throw_on_error{"http_client::send"});
+				}
+
+				template<class HttpRequest>
+				std::future<std::optional<basic_http_response>> async_send(HttpRequest& req, std::error_code& ec, const std::launch l = std::launch::async)
+				{
+					using func_t = std::optional<basic_http_response>(http_client::*)(HttpRequest&, std::error_code&);
+					auto f = static_cast<func_t>(&http_client::send);
+					return std::async(l, f, std::ref(*this), std::ref(req), std::ref(ec));
+				}
+
+				template<class HttpRequest>
+				std::future<basic_http_response> async_send(HttpRequest& req, const std::launch l = std::launch::async)
+				{
+					using func_t = basic_http_response(http_client::*)(HttpRequest&, std::error_code&);
+					auto f = static_cast<func_t>(&http_client::send);
+					return std::async(l, f, std::ref(*this), std::ref(req));
+				}
 			private:
 
 				/*
@@ -481,12 +501,9 @@ namespace collin
 				 *	<h1>My Home page</h1>
 				 */
 				template<class HttpRequest>
-				std::optional<basic_http_response> parseResponse(scoped_socket<HttpRequest>& s, std::error_code& ec)
+				std::optional<basic_http_response> parseResponse(scoped_http_socket<HttpRequest>& s, std::error_code& ec)
 				{
 					ec.clear();
-					http_version version;
-					std::size_t status_code;
-					std::string status_code_message;
 
 					iterators::istream_iterator_sep space_stream {s.socket(), " "};
 
@@ -496,6 +513,7 @@ namespace collin
 						return {};
 					}
 
+					http_version version;
 					try
 					{
 						version = http_version_type(*space_stream);
@@ -513,7 +531,7 @@ namespace collin
 						return {};
 					}
 
-					status_code = strings::from_string<std::size_t>(*space_stream, ec);
+					std::size_t status_code = strings::from_string<std::size_t>(*space_stream, ec);
 					if (ec)
 					{
 						ec = make_error_code(http_errc::malformed_response);
@@ -528,9 +546,9 @@ namespace collin
 						return {};
 					}
 
-					status_code_message = std::move(*line_stream);
+					std::string status_code_message = std::move(*line_stream);
 
-					std::unordered_map<std::string, std::string> headers;
+					std::map<std::string, std::string> headers;
 
 					while (true)
 					{
@@ -557,38 +575,5 @@ namespace collin
 					return std::make_optional<basic_http_response>(std::move(s.move_socket()), status_code, status_code_message, version, std::move(headers));
 				}
 		};
-
-		//template<class Protocol = net::ip::tcp>
-		//class http_acceptor : public net::basic_socket_acceptor<Protocol>
-		//{
-		//	public:
-		//		using protocol_type = Protocol;
-		//		using endpoint_type = typename protocol_type::endpoint;
-		//		using socket_type = typename protocol_type::socket;
-		//	private:
-		//		using base = net::basic_socket_acceptor<protocol_type>;
-		//	public:
-		//		http_acceptor(net::io_context& ctx = net::io_context())
-		//			: base{ctx} {}
-
-		//		http_acceptor(net::io_context& ctx, const protocol_type& protocol)
-		//			: base{ctx, protocol} {}
-
-		//		http_acceptor(net::io_context& ctx, const endpoint_type& endpoint, bool reuse_addr = true)
-		//			: base{ctx, endpoint, reuse_addr} {}
-
-		//		http_acceptor(net::io_context& ctx, const protocol_type& protocol, const base::native_handle_type& handle)
-		//			: base{ctx, protocol, handle} {}
-
-		//		~http_acceptor() = default;
-		//		
-		//		http_acceptor(const http_acceptor&) = delete;
-		//		http_acceptor(http_acceptor&&) = default;
-
-		//		http_acceptor& operator=(const http_acceptor&) = delete;
-		//		http_acceptor& operator=(http_acceptor&&) = delete;
-		//	private:
-		//		std::unordered_map<std::string, 
-		//};
 	}
 }
