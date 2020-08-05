@@ -288,7 +288,6 @@ namespace collin
 				void timeout(std::chrono::duration<Rep, Period> d) noexcept
 				{
 					timeout_ = d;
-					socket_.set_option(net::socket_base::timeout(timeout_));
 				}
 
 				std::chrono::milliseconds timeout() const noexcept
@@ -455,6 +454,7 @@ namespace collin
 						return {};
 					}
 
+					socket_.set_option(net::socket_base::timeout(timeout_)); 
 					s.socket() << req;
 					s->sync();
 
