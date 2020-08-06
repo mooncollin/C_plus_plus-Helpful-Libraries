@@ -17,6 +17,9 @@ namespace collin
 		template<class T, class U>
 		concept same = std::is_same_v<T, U> && std::is_same_v<U, T>;
 
+		template<class T, class U>
+		concept not_same = !same<T, U>;
+
 		template<class From, class To>
 		concept convertible_to = std::is_convertible_v<From, To>;
 

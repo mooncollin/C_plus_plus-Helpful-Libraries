@@ -12,12 +12,6 @@ namespace collin
 	{
 		template<class I>
 		constexpr auto iter_move(I& i) noexcept;
-
-		template<class T>
-		void begin(T& t);
-
-		template<class T>
-		void end(T& t);
 	}
 
 	namespace iterators
@@ -269,5 +263,36 @@ namespace collin
 		{
 			{ *i } -> concepts::referenceable;
 		} && weakly_incrementable<I>;
+
+		struct default_sentinel_t {};
+
+		constexpr default_sentinel_t default_sentinel {};
+
+		template<iterators::input_or_output_iterator I>
+		class counted_iterator
+		{
+			public:
+				using iterator_category = typename std::iterator_traits<I>::iterator_category;
+
+				auto operator*() const
+				{
+					return *it_;
+				}
+
+				counted_iterator& operator++()
+				{
+					++it_;
+					--n_;
+					return *this;
+				}
+
+				friend bool operator==(const counted_iterator& it, default_sentinel_t) noexcept
+				{
+					return it.n_ == 0;
+				}
+			private:
+			I it_;
+			iter_difference_t<I> n_;
+		};
 	}
 }

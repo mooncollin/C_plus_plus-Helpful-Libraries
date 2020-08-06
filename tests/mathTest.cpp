@@ -158,6 +158,18 @@ class rational_test : public collin::test::test_case
 		}
 };
 
+class pow_test : public collin::test::test_case
+{
+	public:
+		pow_test()
+			: collin::test::test_case{"pow_test"} {}
+
+		void operator()() override
+		{
+
+		}
+};
+
 int main()
 {
 	collin::test::test_suite suite;
@@ -165,6 +177,7 @@ int main()
 	suite.add_test_case<is_even_test>();
 	suite.add_test_case<factorial_test>();
 	suite.add_test_case<rational_test>();
+	suite.add_test_case<pow_test>();
 
 	collin::test::text_test_runner runner{std::cout};
 

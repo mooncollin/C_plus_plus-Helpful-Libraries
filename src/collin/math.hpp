@@ -13,7 +13,7 @@ namespace collin
 {
 	namespace math
 	{
-		constexpr std::uintmax_t factorial(std::size_t n)
+		[[nodiscard]] constexpr std::uintmax_t factorial(std::size_t n) noexcept
 		{
 			std::uintmax_t result {1};
 			for(std::size_t i {2}; i <= n; i++)
@@ -25,34 +25,32 @@ namespace collin
 		}
 
 		template<collin::concepts::integral T>
-		constexpr bool is_odd(const T val)
+		[[nodiscard]] constexpr bool is_odd(const T& val) noexcept
 		{
 			return val & 1;
 		}
 
-		template<collin::concepts::integral T>
-		constexpr bool is_even(const T val)
+		template<collin::concepts::arithmetic T>
+		[[nodiscard]] constexpr bool is_even(const T& val) noexcept
 		{
 			return !is_odd(val);
 		}
 
 		template<collin::concepts::integral T>
-		constexpr T gcd(T first, T second)
+		[[nodiscard]] constexpr T gcd(T first, T second) noexcept
 		{
 			while(second != 0)
 			{
-				const auto t = second;
-				second = first % second;
-				first = t;
+				first = std::exchange(second, first % second);
 			}
 
 			return first;
 		}
 
 		template<collin::concepts::arithmetic T>
-		constexpr T abs(T value)
+		[[nodiscard]] constexpr T abs(const T& value) noexcept
 		{
-			return value < T(0) ? -value : value;
+			return value < T{0} ? -value : value;
 		}
 		
 		template<collin::concepts::arithmetic intT>
@@ -107,14 +105,14 @@ namespace collin
 				}
 
 				template<collin::concepts::convertible_to<intT> intT2>
-				constexpr basic_rational operator+(const basic_rational<intT2>& r) const
+				[[nodiscard]] constexpr basic_rational operator+(const basic_rational<intT2>& r) const
 				{
 					return { numerator() * r.denominator() + denominator() * r.numerator(),
 							denominator() * r.denominator() };
 				}
 
 				template<collin::concepts::convertible_to<intT> intT2>
-				constexpr basic_rational operator+(intT2 i) const
+				[[nodiscard]] constexpr basic_rational operator+(intT2 i) const
 				{
 					return *this + basic_rational(i);
 				}
@@ -134,14 +132,14 @@ namespace collin
 				}
 
 				template<collin::concepts::convertible_to<intT> intT2>
-				constexpr basic_rational operator-(const basic_rational<intT2>& r) const
+				[[nodiscard]] constexpr basic_rational operator-(const basic_rational<intT2>& r) const
 				{
 					return { numerator() * r.denominator() - denominator() * r.numerator(),
 							denominator() * r.denominator() };
 				}
 
 				template<collin::concepts::convertible_to<intT> intT2>
-				constexpr basic_rational operator-(intT2 i) const
+				[[nodiscard]] constexpr basic_rational operator-(intT2 i) const
 				{
 					return *this - basic_rational(i);
 				}
@@ -161,13 +159,13 @@ namespace collin
 				}
 
 				template<collin::concepts::convertible_to<intT> intT2>
-				constexpr basic_rational operator*(const basic_rational<intT2>& r) const
+				[[nodiscard]] constexpr basic_rational operator*(const basic_rational<intT2>& r) const
 				{
 					return {numerator() * r.numerator(), denominator() * r.denominator()};
 				}
 
 				template<collin::concepts::convertible_to<intT> intT2>
-				constexpr basic_rational operator*(intT2 i) const
+				[[nodiscard]] constexpr basic_rational operator*(intT2 i) const
 				{
 					return *this * basic_rational(i);
 				}
@@ -187,13 +185,13 @@ namespace collin
 				}
 
 				template<collin::concepts::convertible_to<intT> intT2>
-				constexpr basic_rational operator/(const basic_rational<intT2>& r) const
+				[[nodiscard]] constexpr basic_rational operator/(const basic_rational<intT2>& r) const
 				{
 					return {numerator() * r.denominator(), denominator() * r.numerator()};
 				}
 
 				template<collin::concepts::convertible_to<intT> intT2>
-				constexpr basic_rational operator/(intT2 i) const
+				[[nodiscard]] constexpr basic_rational operator/(intT2 i) const
 				{
 					return *this / basic_rational(i);
 				}
@@ -218,7 +216,7 @@ namespace collin
 					numerator_ = n;
 				}
 
-				constexpr int numerator() const noexcept
+				[[nodiscard]] constexpr int numerator() const noexcept
 				{
 					return numerator_;
 				}
@@ -229,13 +227,13 @@ namespace collin
 					denominator_ = d;
 				}
 
-				constexpr int denominator() const noexcept
+				[[nodiscard]] constexpr int denominator() const noexcept
 				{
 					return denominator_;
 				}
 
 				template<class T>
-				constexpr operator T() const noexcept
+				[[nodiscard]] constexpr explicit operator T() const noexcept
 				{
 					return static_cast<T>(numerator_) / static_cast<T>(denominator_);
 				}
@@ -275,13 +273,13 @@ namespace collin
 		}
 
 		template<class intT>
-		constexpr basic_rational<intT> add_inverse(const basic_rational<intT>& r)
+		[[nodiscard]] constexpr basic_rational<intT> add_inverse(const basic_rational<intT>& r)
 		{
 			return { -r.numerator(), r.denominator() };
 		}
 
 		template<class intT>
-		constexpr basic_rational<intT> mult_inverse(const basic_rational<intT>& r)
+		[[nodiscard]] constexpr basic_rational<intT> mult_inverse(const basic_rational<intT>& r)
 		{
 			return { r.denominator(), r.numerator() };
 		}
@@ -299,116 +297,116 @@ namespace collin
 		}
 
 		template<class intT>
-		constexpr basic_rational<intT> canonical(const basic_rational<intT>& r)
+		[[nodiscard]] constexpr basic_rational<intT> canonical(const basic_rational<intT>& r)
 		{
-			auto gcd_ = gcd(r.numerator(), r.denominator());
+			const auto gcd_ = gcd(r.numerator(), r.denominator());
 			return {r.numerator() / gcd_, r.denominator() / gcd_};
 		}
 
 		template<class intT, class intT2 = intT>
-		constexpr bool operator==(const basic_rational<intT>& first, const basic_rational<intT2>& second)
+		[[nodiscard]] constexpr bool operator==(const basic_rational<intT>& first, const basic_rational<intT2>& second)
 		{
 			return first.numerator() * second.denominator() == first.denominator() * second.numerator();
 		}
 
 		template<class intT>
-		constexpr bool operator==(const basic_rational<intT>& first, const double second)
+		[[nodiscard]] constexpr bool operator==(const basic_rational<intT>& first, const double second)
 		{
 			return static_cast<double>(first) == second;
 		}
 
 		template<class intT, class intT2 = intT>
-		constexpr bool operator==(const basic_rational<intT>& first, const intT2 second)
+		[[nodiscard]] constexpr bool operator==(const basic_rational<intT>& first, const intT2 second)
 		{
 			return canonical(first).numerator() == second;
 		}
 		
 		template<class intT, class intT2 = intT>
-		constexpr bool operator!=(const basic_rational<intT>& first, const basic_rational<intT2>& second)
+		[[nodiscard]] constexpr bool operator!=(const basic_rational<intT>& first, const basic_rational<intT2>& second)
 		{
 			return !(first == second);
 		}
 
 		template<class intT>
-		constexpr bool operator!=(const basic_rational<intT>& first, const double second)
+		[[nodiscard]] constexpr bool operator!=(const basic_rational<intT>& first, const double second)
 		{
 			return !(first == second);
 		}
 
 		template<class intT, class intT2 = intT>
-		constexpr bool operator!=(const basic_rational<intT>& first, const intT2 second)
+		[[nodiscard]] constexpr bool operator!=(const basic_rational<intT>& first, const intT2 second)
 		{
 			return !(first == second);
 		}
 
 		template<class intT, class intT2 = intT>
-		constexpr bool operator<(const basic_rational<intT>& first, const basic_rational<intT2>& second)
+		[[nodiscard]] constexpr bool operator<(const basic_rational<intT>& first, const basic_rational<intT2>& second)
 		{
 			return first.numerator() * second.denominator() < first.denominator() * second.numerator();
 		}
 
 		template<class intT>
-		constexpr bool operator<(const basic_rational<intT>& first, const double second)
+		[[nodiscard]] constexpr bool operator<(const basic_rational<intT>& first, const double second)
 		{
 			return static_cast<double>(first) < second;
 		}
 
 		template<class intT, class intT2 = intT>
-		constexpr bool operator<(const basic_rational<intT>& first, const intT2 second)
+		[[nodiscard]] constexpr bool operator<(const basic_rational<intT>& first, const intT2 second)
 		{
 			return canonical(first).numerator() < second;
 		}
 
 		template<class intT, class intT2 = intT>
-		constexpr bool operator<=(const basic_rational<intT>& first, const basic_rational<intT2>& second)
+		[[nodiscard]] constexpr bool operator<=(const basic_rational<intT>& first, const basic_rational<intT2>& second)
 		{
 			return first.numerator() * second.denominator() <= first.denominator() * second.numerator();
 		}
 
 		template<class intT>
-		constexpr bool operator<=(const basic_rational<intT>& first, const double second)
+		[[nodiscard]] constexpr bool operator<=(const basic_rational<intT>& first, const double second)
 		{
 			return static_cast<double>(first) <= second;
 		}
 
 		template<class intT, class intT2 = intT>
-		constexpr bool operator<=(const basic_rational<intT>& first, const intT2 second)
+		[[nodiscard]] constexpr bool operator<=(const basic_rational<intT>& first, const intT2 second)
 		{
 			return canonical(first).numerator() <= second;
 		}
 
 		template<class intT, class intT2 = intT>
-		constexpr bool operator>(const basic_rational<intT>& first, const basic_rational<intT2>& second)
+		[[nodiscard]] constexpr bool operator>(const basic_rational<intT>& first, const basic_rational<intT2>& second)
 		{
 			return !(first <= second);
 		}
 
 		template<class intT>
-		constexpr bool operator>(const basic_rational<intT>& first, const double second)
+		[[nodiscard]] constexpr bool operator>(const basic_rational<intT>& first, const double second)
 		{
 			return !(first <= second);
 		}
 
 		template<class intT, class intT2 = intT>
-		constexpr bool operator>(const basic_rational<intT>& first, const intT2 second)
+		[[nodiscard]] constexpr bool operator>(const basic_rational<intT>& first, const intT2 second)
 		{
 			return !(first <= second);
 		}
 
 		template<class intT, class intT2 = intT>
-		constexpr bool operator>=(const basic_rational<intT>& first, const basic_rational<intT2>& second)
+		[[nodiscard]] constexpr bool operator>=(const basic_rational<intT>& first, const basic_rational<intT2>& second)
 		{
 			return !(first < second);
 		}
 
 		template<class intT>
-		constexpr bool operator>=(const basic_rational<intT>& first, const double second)
+		[[nodiscard]] constexpr bool operator>=(const basic_rational<intT>& first, const double second)
 		{
 			return !(first < second);
 		}
 
 		template<class intT, class intT2>
-		constexpr bool operator>=(const basic_rational<intT>& first, const intT2 second)
+		[[nodiscard]] constexpr bool operator>=(const basic_rational<intT>& first, const intT2 second)
 		{
 			return !(first < second);
 		}
@@ -420,7 +418,7 @@ namespace collin
 		}
 
 		template<collin::concepts::integral IntT = int, collin::concepts::floating_point Float>
-		constexpr IntT ceil(Float f)
+		[[nodiscard]] constexpr IntT ceil(const Float& f) noexcept
 		{
 			const auto inum = static_cast<IntT>(f);
 			
@@ -433,7 +431,7 @@ namespace collin
 		}
 
 		template<collin::concepts::integral IntT = int, collin::concepts::floating_point Float>
-		constexpr IntT floor(Float f)
+		[[nodiscard]] constexpr IntT floor(const Float& f) noexcept
 		{
 			const auto val_int = static_cast<IntT>(f);
 
@@ -445,30 +443,52 @@ namespace collin
 			return val_int - 1;
 		}
 
-		template<collin::concepts::arithmetic T, collin::concepts::integral T2>
-		constexpr std::common_type_t<T, T2> pow(T base, T2 exp)
+		namespace details
 		{
-			if (exp == 0)
+			template<collin::concepts::arithmetic T, collin::concepts::integral T2, collin::concepts::arithmetic T3>
+			[[nodiscard]] constexpr auto pow2(const T3& y, const T& base, const T2& exp) noexcept
 			{
-				return 1;
+				if (exp < 0)
+				{
+					return pow2(y, 1.0L / base, -exp);
+				}
+				else if (exp == 0)
+				{
+					return y;
+				}
+				else if (exp == 1)
+				{
+					return base * y;
+				}
+				else if (is_even(exp))
+				{
+					return pow2(y, base * base, exp / 2);
+				}
+				else
+				{
+					return pow2(base * y, base * base, (exp - 1) / 2);
+				}
+			}
+		}
+
+		template<collin::concepts::arithmetic T, collin::concepts::integral T2>
+		[[nodiscard]] constexpr auto pow(const T& base, const T2& exp) noexcept
+		{
+			if constexpr (std::numeric_limits<T>::has_quiet_NaN)
+			{
+				if (base == std::numeric_limits<T>::quiet_NaN())
+				{
+					return base;
+				}
 			}
 
-			const auto reverse = exp < 0;
-			if (reverse)
-			{
-				exp = -exp;
-			}
+			return details::pow2(1, base, exp);
+		}
 
-			std::common_type_t<T, T2> common{base};
-
-			while (--exp > 0)
-			{
-				common *= base;
-			}
-
-			return reverse
-				? 1.0L / common
-				: common;
+		template<collin::concepts::arithmetic T, collin::concepts::floating_point T2>
+		[[nodiscard]] inline constexpr auto pow(const T& base, const T2& exp) noexcept
+		{
+			return std::pow(base, exp);
 		}
 	}
 }

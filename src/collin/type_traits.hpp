@@ -195,7 +195,7 @@ namespace collin
 		constexpr auto conditional_value_v = conditional_value<B, T, F, t, f>::value;
 
 		template<bool B, class T, T t, T t2>
-		constexpr auto conditional_value2_v = conditional_value<B, T, t, t2>::value;
+		constexpr auto conditional_value2_v = conditional_value<B, T, T, t, t2>::value;
 
 		template<class T>
 		constexpr auto make_unsigned(T&& t) noexcept

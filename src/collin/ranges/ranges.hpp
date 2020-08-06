@@ -224,13 +224,13 @@ namespace collin
 			public:
 				// The below might be commented because MSVC cannot handle it and will refuse to do Intellisense on the entire project
 
-				//constexpr bool empty() const requires(forward_range<const D>);
+				constexpr bool empty() const requires(forward_range<const D>);
 				//constexpr explicit operator bool() const requires requires { ranges::empty(derived()); };
 
 				//constexpr auto data() requires(contiguous_iterator<iterator_t<D>>);
 				//constexpr auto data() const requires(range<const D> && contiguous_iterator<iterator_t<const D>>);
 
-				//constexpr auto size() const requires(forward_range<const D> && sized_sentinel<sentinel_t<const D>, iterator_t<const D>>);
+				//constexpr auto size() const requires(forward_range<const D> && sized_sentinel_for<sentinel_t<const D>, iterator_t<const D>>);
 
 				//constexpr decltype(auto) front() requires(forward_range<D>);
 				//constexpr decltype(auto) front() const requires(forward_range<const D>);
@@ -271,7 +271,49 @@ namespace collin
 			requires(K == subrange_kind::sized || !sized_sentinel_for<S, I>)
 		class subrange : public view_interface<subrange<I, S, K>>
 		{
+			public:
+				constexpr subrange() = default;
+				constexpr subrange(I&& i, S&& s)
+					: it_{std::forward<I>(i)}, sen_{std::forward<S>(s)} {}
 
+				constexpr bool empty() const
+					requires(forward_range<subrange>)
+				{
+					return it_ == sen_;
+				}
+
+				constexpr explicit operator bool() const
+					requires requires { ranges::empty(derived()); }
+				{
+					return ranges::empty(derived());
+				}
+
+				constexpr auto data()
+					requires(iterators::contiguous_iterator<iterator_t<subrange>>)
+				{
+					return std::addressof(*it_);
+				}
+
+				constexpr auto data() const
+					requires(range<const subrange> && iterators::contiguous_iterator<iterator_t<subrange>>)
+				{
+					return std::addressof(*it_);
+				}
+
+				constexpr auto size() const
+					requires(forward_range<const subrange> && sized_sentinel_for<sentinel_t<const subrange>, iterator_t<const subrange>>)
+				{
+					return sen_ - it_;
+				}
+
+				constexpr auto front()
+					requires(forward_range<D>)
+				{
+					
+				}
+			private:
+				I it_ {};
+				S sen_ {};
 		};
 
 		template<collin::iterators::input_or_output_iterator I, sentinel_for<I> S, subrange_kind K>
@@ -340,11 +382,6 @@ namespace collin
 						{
 							return x.value_ == y.value_;
 						}
-
-						friend constexpr bool operator!=(const iterator& x, const iterator& y)
-						{
-							return !(x == y);
-						}
 					private:
 						W value_;
 				};
@@ -359,21 +396,6 @@ namespace collin
 						friend constexpr bool operator==(const iterator& x, const sentinel& y)
 						{
 							return x.value_ == y.bound_;
-						}
-
-						friend constexpr bool operator==(const sentinel& x, const iterator& y)
-						{
-							return y == x;
-						}
-
-						friend constexpr bool operator!=(const iterator& x, const sentinel& y)
-						{
-							return !(x == y);
-						}
-
-						friend constexpr bool operator!=(const sentinel& x, const iterator& y)
-						{
-							return !(x == y);
 						}
 
 						friend constexpr iterators::iter_difference_t<W>
@@ -418,7 +440,7 @@ namespace collin
 					}
 				}
 
-				constexpr auto end() const
+				constexpr iterator end() const
 					requires(concepts::same<W, Bound>)
 				{
 					return iterator{bound_};
@@ -470,5 +492,105 @@ namespace collin
 
 		template<collin::iterators::weakly_incrementable W, concepts::semi_regular Bound>
 		constexpr bool enable_borrowed_range<iota_view<W, Bound>> = true;
+
+		namespace views
+		{
+			template<class E, class F>
+				requires(iterators::input_or_output_iterator<std::decay_t<E>> &&
+						 concepts::convertible_to<F, iterators::iter_difference_t<std::decay_t<E>>>)
+			constexpr auto counted(E& e, F& f)
+			{
+				using T = std::decay_t<E>;
+
+				if constexpr(iterators::random_access_iterator<T>)
+				{
+					return ranges::subrange{e, static_cast<iterators::iter_difference_t<T>>(f)};
+				}
+				else
+				{
+					return ranges::subrange{iterators::counted_iterator{e, f}, iterators::default_sentinel};
+				}
+			}
+		}
+
+		template<range R>
+			requires(concepts::object<R>)
+		class ref_view : public ranges::view_interface<ref_view<R>>
+		{
+			public:
+				constexpr ref_view() noexcept = default;
+
+				template<class T>
+					requires(concepts::not_same<T, rev_view> && concepts::convertible_to<T, R&>)
+				constexpr ref_view(T&& t)
+					: r_{std::addressof(static_cast<R&>(std::forward<T>(t)))} {}
+
+				constexpr R& base() const
+				{
+					return *r_;
+				}
+
+				constexpr sentinel_t<R> begin() const
+				{
+					return ranges::begin(*r_);
+				}
+
+				constexpr sentinel_t<R> end() const
+				{
+					return ranges::end(*r_);
+				}
+
+				constexpr bool empty() const
+					requires requires { ranges::empty(*r_); }
+				{
+					return ranges::empty(*r_);
+				}
+
+				constexpr auto size() const
+					requires(ranges::sized_range<R>)
+				{
+					return ranges::size(*r_);
+				}
+
+				constexpr auto data() const
+					requires(ranges::contiguous_range<R>)
+				{
+					return ranges::data(*r_);
+				}
+			private:
+				R* r_ {nullptr};
+		};
+
+		template<class R>
+		ref_view(R&) -> ref_view<R>;
+
+		template<class T>
+		constexpr bool enable_borrowed_range<ranges::ref_view<T>> = true;
+
+		namespace views
+		{
+			namespace details
+			{
+				template<class I>
+				concept ref_view_allowed = 
+					requires(I& i)
+				{
+					ranges::ref_view{i};
+				};
+			}
+
+			template<view E>
+			constexpr auto all(E& e)
+			{
+				if constexpr(details::ref_view_allowed<E>)
+				{
+					return ranges::ref_view{e};
+				}
+				else
+				{
+					return ranges::subrange{e};
+				}
+			}
+		}
 	}
 }
