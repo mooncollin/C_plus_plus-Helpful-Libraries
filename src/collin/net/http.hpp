@@ -651,13 +651,57 @@ namespace collin
 					return body_;
 				}
 
+				void connect(std::error_code& ec) noexcept
+				{
+					ec.clear();
+					std::string port_string;
+					if (url_.port())
+					{
+						port_string = std::to_string(url_.port().value());
+					}
+
+					const auto results = protocol_type::resolver(socket_.context()).resolve(url_.host(), port_string);
+					for (const auto& result : results)
+					{
+						socket_.open(result.endpoint().protocol(), ec);
+						if (ec)
+						{
+							continue;
+						}
+
+						socket_.set_option(net::socket_base::timeout(timeout_), ec);
+						if (ec)
+						{
+							continue;
+						}
+
+						socket_.connect(result.endpoint(), ec);
+						if (!ec)
+						{
+							break;
+						}
+						
+						ec.clear();
+						socket_.close(ec);
+						if (ec)
+						{
+							break;
+						}
+					}
+				}
+
+				bool is_open() const noexcept
+				{
+					return socket_.is_open();
+				}
+
 			private:
 				collin::net::web::url url_ {"http", "", default_port};
 				std::string method_ {get};
 				http_version version_ {http_version::HTTP_1_1};
 				std::map<std::string, std::string> headers_;
 				std::istream_iterator<char> body_;
-				std::chrono::milliseconds timeout_ {std::chrono::milliseconds(200)};
+				std::chrono::milliseconds timeout_ {std::chrono::seconds(1)};
 				socket_type socket_;
 
 				void update_host_header()
@@ -770,26 +814,16 @@ namespace collin
 				std::optional<basic_http_response> send(HttpRequest& req, std::error_code& ec) const
 				{
 					ec.clear();
-					scoped_http_socket s(req);
-					if(!(s->socket().is_open()))
+					if (!req.is_open())
 					{
-						if(req.url().port())
-						{
-							s->connect(req.url().host(), std::to_string(req.url().port().value()));
-						}
-						else
-						{
-							ec = make_error_code(http_errc::malformed_request);
-							return {};
-						}
+						req.connect(ec);
 					}
-					if (s->error())
+					if (ec)
 					{
-						ec = s->error();
 						return {};
 					}
 
-					s->socket().set_option(net::socket_base::timeout(req.timeout()));
+					scoped_http_socket s{req};
 					s.socket() << req;
 					s->sync();
 
@@ -806,7 +840,7 @@ namespace collin
 					}
 					catch (const std::bad_optional_access&)
 					{
-
+						throw std::runtime_error{"http_client::send did not properly throw an exception"};
 					}
 				}
 
@@ -909,7 +943,7 @@ namespace collin
 
 						auto key = line_stream->substr(0, colon_loc);
 						auto value = colon_loc + 1 > line_stream->size() ? "" : line_stream->substr(colon_loc + 1);
-						value = strings::trim_front(value, " ");
+						strings::trim_front(value, " ");
 
 						headers[std::move(key)] = std::move(value);
 					}

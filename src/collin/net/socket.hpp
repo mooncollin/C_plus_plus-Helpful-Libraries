@@ -1322,10 +1322,10 @@ namespace collin
 				using native_handle_type = socket_type;
 
 				explicit socket_impl(io_context& ctx)
-					: ctx(std::addressof(ctx)) {}
+					: ctx{ctx} {}
 
 				socket_impl(socket_impl&& rhs) noexcept
-					: ctx(rhs.ctx), sockfd(std::exchange(rhs.sockfd, socket_base::invalid_socket)), bits(std::exchange(rhs.bits, {})) {}
+					: ctx{rhs.ctx}, sockfd{std::exchange(rhs.sockfd, socket_base::invalid_socket)}, bits{std::exchange(rhs.bits, {})} {}
 
 				socket_impl& operator=(socket_impl&& rhs) noexcept
 				{
@@ -1435,7 +1435,7 @@ namespace collin
 					#endif
 				}
 
-				io_context* ctx;
+				std::reference_wrapper<io_context> ctx;
 				native_handle_type sockfd {socket_base::invalid_socket};
 
 				struct
@@ -1456,13 +1456,13 @@ namespace collin
 				using endpoint_type = typename protocol_type::endpoint;
 
 				explicit basic_socket_impl(io_context& ctx)
-					: base(ctx) {}
+					: base{ctx} {}
 
 				basic_socket_impl(basic_socket_impl&&) noexcept = default;
 
 				template<class OtherProtocol>
 				basic_socket_impl(basic_socket_impl<OtherProtocol>&& rhs)
-					: base(std::move(rhs)), protocol_(std::move(rhs.protocol)) {}
+					: base{std::move(rhs)}, protocol_{std::move(rhs.protocol)} {}
 
 				basic_socket_impl& operator=(basic_socket_impl&& rhs) noexcept
 				{
@@ -1544,7 +1544,7 @@ namespace collin
 													 option.level(protocol_),
 													 option.name(protocol_),
 													 static_cast<const char*>(option.data(protocol_)),
-													 option.size(protocol_));
+													 static_cast<int>(option.size(protocol_)));
 
 					if(result == -1)
 					{
@@ -1635,6 +1635,11 @@ namespace collin
 				using native_handle_type = socket_type;
 				using protocol_type = Protocol;
 				using endpoint_type = typename protocol_type::endpoint;
+
+				io_context& context()
+				{
+					return base::ctx.get();
+				}
 
 				native_handle_type native_handle() noexcept
 				{
@@ -1867,7 +1872,7 @@ namespace collin
 						}
 					}
 
-					if(::connect(native_handle(), static_cast<const ::sockaddr*>(endpoint.data()), endpoint.size()) == -1)
+					if(::connect(native_handle(), static_cast<const ::sockaddr*>(endpoint.data()), static_cast<int>(endpoint.size())) == -1)
 					{
 						ec.assign(get_last_error(), std::generic_category());
 					}
@@ -2523,23 +2528,23 @@ namespace collin
 				using endpoint_type = typename protocol_type::endpoint;
 
 				explicit basic_stream_socket(net::io_context& ctx)
-					: base(ctx) {}
+					: base{ctx} {}
 
 				basic_stream_socket(net::io_context& ctx, const protocol_type& protocol)
-					: base(ctx, protocol) {}
+					: base{ctx, protocol} {}
 
 				basic_stream_socket(net::io_context& ctx, const endpoint_type& endpoint)
-					: base(ctx, endpoint) {}
+					: base{ctx, endpoint} {}
 
 				basic_stream_socket(net::io_context& ctx, const protocol_type& protocol, const native_handle_type& handle)
-					: base(ctx, protocol, handle) {}
+					: base{ctx, protocol, handle} {}
 
 				basic_stream_socket(const basic_stream_socket&) = delete;
 				basic_stream_socket(basic_stream_socket&& rhs) noexcept = default;
 
 				template<collin::concepts::convertible_to<Protocol> OtherProtocol>
 				basic_stream_socket(basic_stream_socket<OtherProtocol>&& rhs)
-					: base(std::move(rhs)) {}
+					: base{std::move(rhs)} {}
 
 				~basic_stream_socket() noexcept = default;
 

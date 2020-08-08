@@ -265,6 +265,16 @@ namespace collin
             return s.substr(start_position);
         }
 
+        void trim_front(std::string& s, std::string_view trim_str)
+        {
+            const auto start_position = s.find_first_not_of(trim_str);
+            if (start_position == std::string::npos)
+            {
+                s = "";
+            }
+            s.erase(std::begin(s), std::begin(s) + start_position);
+        }
+
         constexpr std::string_view trim_back(std::string_view s, std::string_view trim_str) noexcept
         {
             const auto end_position = s.find_last_not_of(trim_str);
@@ -276,16 +286,32 @@ namespace collin
             return s.substr(0, end_position);
         }
 
+        void trim_back(std::string& s, std::string_view trim_str)
+        {
+            const auto end_position = s.find_last_not_of(trim_str);
+            if (end_position == std::string::npos)
+            {
+                s = "";
+            }
+            s.erase(end_position);
+        }
+
         constexpr std::string_view trim(std::string_view s, std::string_view trim_str) noexcept
         {
             return trim_back(trim_front(s, trim_str), trim_str);
+        }
+
+        void trim(std::string& s, std::string_view trim_str)
+        {
+            trim_front(s, trim_str);
+            trim_back(s, trim_str);
         }
 
         namespace details
         {
             template<class T>
             concept from_chars_valid = 
-                requires(T t, const char* begin, const char* end)
+                requires(T& t, const char* begin, const char* end)
             {
                 std::from_chars(begin, end, t);
             };
