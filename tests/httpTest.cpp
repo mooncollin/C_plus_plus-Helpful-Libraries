@@ -12,15 +12,14 @@ class http_response_test : public collin::test::test_case
 		void operator()() override
 		{
 			collin::http::http_client c;
-			collin::http::basic_http_request r;
+			collin::net::io_context ctx;
+			collin::http::basic_http_request r{ctx};
 			r.host("www.httpvshttps.com");
-
 			std::error_code ec;
-			auto fut = c.async_send(r, ec);
-			auto op = fut.get();
+			auto op = c.send(r, ec);
 			collin::test::assert_true(op.has_value());
 			collin::test::assert_equal(ec.value(), 0);
-			collin::test::assert_equal(op->response_code(), 200);
+			collin::test::assert_equal(op->status().code, 200);
 		}
 };
 

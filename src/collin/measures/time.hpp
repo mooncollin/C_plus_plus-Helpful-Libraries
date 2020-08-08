@@ -16,6 +16,18 @@ namespace collin
 		template<class Rep, class System, class Ratio = std::ratio<1>>
 		using time = basic_unit<Rep, Ratio, time_values<Rep>, System>;
 
+        template<class T>
+        struct is_time : std::false_type {};
+
+        template<class Rep, class System, class Ratio>
+        struct is_time<time<Rep, System, Ratio>> : std::true_type {};
+
+        template<class T>
+        constexpr bool is_time_v = is_time<T>::value;
+
+        template<class T>
+        concept time_type = is_time_v<T>;
+
         template<class Rep>
         using basic_attoseconds = time<Rep, metric_system, std::atto>;
 
@@ -68,16 +80,16 @@ namespace collin
         using basic_exaseconds = time<Rep, metric_system, std::exa>;
 
         template<class Rep>
-        using basic_minutes = time<Rep, metric_system, std::ratio<60>>;
+        using basic_minutes = time<Rep, metric_system, std::ratio_multiply<std::ratio<60>, typename basic_seconds<Rep>::ratio>>;
 
         template<class Rep>
-        using basic_hours = time<Rep, metric_system, std::ratio<3600>>;
+        using basic_hours = time<Rep, metric_system, std::ratio_multiply<std::ratio<60>, typename basic_minutes<Rep>::ratio>>;
 
         template<class Rep>
-        using basic_days = time<Rep, metric_system, std::ratio<86400>>;
+        using basic_days = time<Rep, metric_system, std::ratio_multiply<std::ratio<24>, typename basic_hours<Rep>::ratio>>;
 
         template<class Rep>
-        using basic_weeks = time<Rep, metric_system, std::ratio<604800>>;
+        using basic_weeks = time<Rep, metric_system, std::ratio_multiply<std::ratio<7>, typename basic_days<Rep>::ratio>>;
 
         template<class Rep>
         using basic_months = time<Rep, metric_system, std::ratio<2629746>>;

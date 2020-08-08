@@ -382,6 +382,17 @@ namespace collin
             *it = str.substr(last_index);
         }
 
+        void find_and_replace(std::string& input, std::string_view find, std::string_view replace)
+        {
+            std::size_t current_location {input.find(find)};
+
+            while (current_location != std::string::npos)
+            {
+                input.replace(current_location, std::size(find), replace);
+                current_location = input.find(find, current_location + 1);
+            }
+        }
+
         std::vector<std::string_view> split(std::string_view str, std::string_view delim, std::size_t amount=-1)
         {
             std::vector<std::string_view> results;

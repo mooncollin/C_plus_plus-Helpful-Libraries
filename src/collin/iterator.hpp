@@ -60,12 +60,12 @@ namespace collin
 		template<class T>
 		concept forward_iterator = input_iterator<T> &&
 								   concepts::default_constructible<T> &&
-								   ((output_iterator<T, std::add_lvalue_reference_t<std::iterator_traits<T>::value_type>> && concepts::same<std::iterator_traits<T>::reference, std::add_lvalue_reference_t<std::iterator_traits<T>::value_type>>) ||
-									concepts::same<std::iterator_traits<T>::reference, const std::add_lvalue_reference_t<std::iterator_traits<T>::value_type>>) &&
+								   ((output_iterator<T, std::add_lvalue_reference_t<typename std::iterator_traits<T>::value_type>> && concepts::same<typename std::iterator_traits<T>::reference, std::add_lvalue_reference_t<typename std::iterator_traits<T>::value_type>>) ||
+									concepts::same<typename std::iterator_traits<T>::reference, const std::add_lvalue_reference_t<typename std::iterator_traits<T>::value_type>>) &&
 			requires(T it)
 		{
 			{ it++ }  -> concepts::same<T>;
-			{ *it++ } -> concepts::same<std::iterator_traits<T>::reference>;
+			{ *it++ } -> concepts::same<typename std::iterator_traits<T>::reference>;
 		};
 
 		template<class T>
@@ -74,7 +74,7 @@ namespace collin
 		{
 			{ --a }  -> concepts::same<T&>;
 			{ a-- }  -> concepts::convertible_to<const T&>;
-			{ *a-- } -> concepts::same<std::iterator_traits<T>::reference>;
+			{ *a-- } -> concepts::same<typename std::iterator_traits<T>::reference>;
 		};
 
 		template<class T>
@@ -86,8 +86,8 @@ namespace collin
 			{ n + a }  -> concepts::same<T>;
 			{ r -= n } -> concepts::same<T&>;
 			{ a - n }  -> concepts::same<T>;
-			{ b - a }  -> concepts::same<std::iterator_traits<T>::difference_type>;
-			{ a[n] }   -> concepts::convertible_to<std::iterator_traits<T>::reference>;
+			{ b - a }  -> concepts::same<typename std::iterator_traits<T>::difference_type>;
+			{ a[n] }   -> concepts::convertible_to<typename std::iterator_traits<T>::reference>;
 			{ a < b }  -> concepts::boolean;
 			{ a > b }  -> concepts::boolean;
 			{ a >= b } -> concepts::boolean;

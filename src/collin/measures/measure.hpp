@@ -41,13 +41,13 @@ namespace collin
         template<class T>
         concept ratio_type = is_ratio_v<T>;
 
-        template<class Rep, ratio_type Ratio, class UnitValues, class System>
+        template<collin::concepts::arithmetic Rep, ratio_type Ratio, class UnitValues, class System>
         class basic_unit;
 
         template<class T>
         struct is_basic_unit : std::false_type {};
 
-        template<class Rep, ratio_type Ratio, class UnitValues, class System>
+        template<collin::concepts::arithmetic Rep, ratio_type Ratio, class UnitValues, class System>
         struct is_basic_unit<basic_unit<Rep, Ratio, UnitValues, System>> : std::true_type {};
 
         template<class T>
@@ -104,14 +104,14 @@ namespace collin
                 size_type size_;
         };
 
-        template<class Rep, ratio_type Ratio, class UnitValues, class System, std::intmax_t Dimension = dynamic_dimension>
+        template<collin::concepts::arithmetic Rep, ratio_type Ratio, class UnitValues, class System, std::intmax_t Dimension = dynamic_dimension>
             requires (Dimension != 0)
         class basic_dimension_unit;
 
         template<class T>
         struct is_basic_dimension_unit : std::false_type {};
 
-        template<class Rep, ratio_type Ratio, class UnitValues, class System, std::intmax_t Dimension>
+        template<collin::concepts::arithmetic Rep, ratio_type Ratio, class UnitValues, class System, std::intmax_t Dimension>
         struct is_basic_dimension_unit<basic_dimension_unit<Rep, Ratio, UnitValues, System, Dimension>> : std::true_type {};
 
         template<class T>
@@ -187,7 +187,7 @@ namespace collin
             }
         }
 
-        template<class Rep, ratio_type Ratio, class UnitValues, class System>
+        template<collin::concepts::arithmetic Rep, ratio_type Ratio, class UnitValues, class System>
         /*
          * Rep is the representation. Usually some large integer type.
          * Ratio is the ratio of the unit. This is generally compared to whatever the base unit is.
@@ -499,7 +499,7 @@ namespace collin
             return unit >= unit.zero() ? unit : -unit;
         }
 
-        template<class Rep, ratio_type Ratio, class UnitValues, class System, std::intmax_t Dimension>
+        template<collin::concepts::arithmetic Rep, ratio_type Ratio, class UnitValues, class System, std::intmax_t Dimension>
             requires (Dimension != 0)
         class basic_dimension_unit
         {

@@ -678,7 +678,7 @@ namespace collin
 
 						void timeout(std::chrono::seconds t) noexcept
 						{
-							value_.l_linger = t.count();
+							value_.l_linger = static_cast<decltype(::linger::l_linger)>(t.count());
 						}
 
 					private:
@@ -1014,11 +1014,11 @@ namespace collin
 					public:
 						timeout() noexcept {}
 						explicit timeout(std::chrono::milliseconds v) noexcept
-							: value_(v.count()) {}
+							: value_(static_cast<int>(v.count())) {}
 
 						timeout& operator=(std::chrono::milliseconds v) noexcept
 						{
-							value_ = v.count();
+							value_ = static_cast<int>(v.count());
 							return *this;
 						}
 
@@ -1203,7 +1203,7 @@ namespace collin
 			#ifdef _WIN32
 			DWORD bytes_transferred = 0;
 			DWORD recv_flags = flags;
-			const auto result = ::WSARecv(s, bufs.data(), bufs.size(), &bytes_transferred, &recv_flags, 0, 0);
+			const auto result = ::WSARecv(s, bufs.data(), static_cast<DWORD>(bufs.size()), &bytes_transferred, &recv_flags, 0, 0);
 			if(result != 0)
 			{
 				ec.assign(get_last_error(), std::generic_category());
@@ -1263,7 +1263,7 @@ namespace collin
 			#ifdef _WIN32
 			DWORD bytes_transferred = 0;
 			DWORD send_flags = flags;
-			const auto result = ::WSASend(s, bufs.data(), bufs.size(), &bytes_transferred, send_flags, 0, 0);
+			const auto result = ::WSASend(s, bufs.data(), static_cast<DWORD>(bufs.size()), &bytes_transferred, send_flags, nullptr, nullptr);
 			if (result != 0)
 			{
 				ec.assign(get_last_error(), std::generic_category());
@@ -1449,7 +1449,7 @@ namespace collin
 		template<class Protocol>
 		class basic_socket_impl : public socket_impl<Protocol>
 		{
-			using base = socket_impl;
+			using base = socket_impl<Protocol>;
 
 			protected:
 				using protocol_type = Protocol;
@@ -1469,7 +1469,7 @@ namespace collin
 					if (this != std::addressof(rhs))
 					{
 						std::error_code ec;
-						close(ec);
+						base::close(ec);
 						base::operator=(std::move(rhs));
 					}
 
@@ -1479,7 +1479,7 @@ namespace collin
 				~basic_socket_impl()
 				{
 					std::error_code ec;
-					close(ec);
+					base::close(ec);
 				}
 
 				basic_socket_impl(const basic_socket_impl&) = delete;
@@ -1487,18 +1487,18 @@ namespace collin
 
 				void open(const protocol_type& protocol, std::error_code& ec)
 				{
-					if (is_open())
+					if (base::is_open())
 					{
 						ec = make_error_code(socket_errc::already_open);
 					}
 					else
 					{
 						protocol_ = protocol;
-						sockfd = ::socket(static_cast<int>(protocol_.family()),
+						base::sockfd = ::socket(static_cast<int>(protocol_.family()),
 										  static_cast<int>(protocol_.type()),
 										  static_cast<int>(protocol_.protocol()));
 
-						if(is_open())
+						if(base::is_open())
 						{
 							ec.clear();
 						}
@@ -1509,18 +1509,18 @@ namespace collin
 					}
 				}
 
-				void assign(const protocol_type& protocol, const native_handle_type& native_sockfd, std::error_code& ec)
+				void assign(const protocol_type& protocol, base::native_handle_type native_sockfd, std::error_code& ec)
 				{
-					if (is_open())
+					if (base::is_open())
 					{
 						ec = make_error_code(socket_errc::already_open);
 					}
 					else
 					{
 						protocol_ = protocol;
-						bits.native_non_blocking = -1;
-						sockfd = native_sockfd;
-						if(is_open())
+						base::bits.native_non_blocking = -1;
+						base::sockfd = native_sockfd;
+						if(base::is_open())
 						{
 							ec.clear();
 						}
@@ -1531,16 +1531,16 @@ namespace collin
 					}
 				}
 
-				native_handle_type release(std::error_code& ec)
+				base::native_handle_type release(std::error_code& ec)
 				{
-					cancel(ec);
-					return std::exchange(sockfd, socket_base::invalid_socket);
+					base::cancel(ec);
+					return std::exchange(base::sockfd, socket_base::invalid_socket);
 				}
 
 				template<class Option>
 				void set_option(const Option option, std::error_code& ec)
 				{
-					const auto result = ::setsockopt(sockfd,
+					const auto result = ::setsockopt(base::sockfd,
 													 option.level(protocol_),
 													 option.name(protocol_),
 													 static_cast<const char*>(option.data(protocol_)),
@@ -1559,7 +1559,7 @@ namespace collin
 				template<class Option>
 				void get_option(Option& option, std::error_code& ec) const
 				{
-					const auto result = ::getsockopt(sockfd,
+					const auto result = ::getsockopt(base::sockfd,
 													 option.level(protocol_),
 													 option.name(protocol_),
 													 option.data(protocol_),
@@ -1580,7 +1580,7 @@ namespace collin
 				{
 					const auto result =
 					#ifdef _WIN32
-					::ioctlsocket(sockfd, control.name(), control.data());
+					::ioctlsocket(base::sockfd, control.name(), control.data());
 					#else
 					::ioctl(sockfd, control.name(), control.data());
 					#endif
@@ -1600,7 +1600,7 @@ namespace collin
 				{
 					endpoint_type endpoint;
 					auto endpoint_len = endpoint.capacity();
-					if(::getsockname(sockfd, static_cast<::sockaddr*>(endpoint.data()), &endpoint_len) == -1)
+					if(::getsockname(base::sockfd, static_cast<::sockaddr*>(endpoint.data()), &endpoint_len) == -1)
 					{
 						ec.assign(get_last_error(), std::generic_category());
 						return endpoint_type{};
@@ -1613,7 +1613,7 @@ namespace collin
 
 				void bind(const endpoint_type& endpoint, std::error_code& ec)
 				{
-					if (::bind(sockfd, static_cast<::sockaddr*>(endpoint.data()), endpoint.size()) == -1)
+					if (::bind(base::sockfd, static_cast<::sockaddr*>(endpoint.data()), endpoint.size()) == -1)
 					{
 						ec.assign(get_last_error(), std::generic_category());
 					}
@@ -1766,9 +1766,9 @@ namespace collin
 				{
 					
 					#ifdef _WIN32
-					const auto result = return ::ioctlsocket(native_handle(), SIOCATMARK);
+					const auto result = ::ioctlsocket(native_handle(), SIOCATMARK);
 					#else
-					const auto result = return ::sockatmark(native_handle());
+					const auto result = ::sockatmark(native_handle());
 					#endif
 
 					if(result == -1)
@@ -1821,7 +1821,7 @@ namespace collin
 
 				void shutdown(shutdown_type what, std::error_code& ec)
 				{	
-					if(::shutdown(native_handle(), static_cast<std::underlying_type_t<shutdown_type>(what)) == -1)
+					if(::shutdown(native_handle(), static_cast<std::underlying_type_t<shutdown_type>>(what)) == -1)
 					{
 						ec.assign(get_last_error(), std::generic_category());
 					}
@@ -1970,10 +1970,10 @@ namespace collin
 				using socket_type = typename protocol_type::socket;
 
 				explicit basic_socket_acceptor(io_context& ctx)
-					: base(ctx), protocol_(endpoint_type{}.protocol()) {}
+					: base(ctx), base::protocol_(endpoint_type{}.protocol()) {}
 
 				basic_socket_acceptor(io_context& ctx, const protocol_type& protocol)
-					: base(ctx), protocol_(protocol)
+					: base(ctx), base::protocol_(protocol)
 				{
 					open(protocol);
 				}
@@ -2023,7 +2023,7 @@ namespace collin
 
 				void open(const protocol_type& protocol = protocol_type())
 				{
-					open(protocol, collin::throw_on_error("basic_socket_acceptor::open"));
+					open(protocol, collin::throw_on_error{"basic_socket_acceptor::open"});
 				}
 
 				void assign(const protocol_type& protocol, const native_handle_type& native_socket, std::error_code& ec)
@@ -2033,7 +2033,7 @@ namespace collin
 
 				void assign(const protocol_type& protocol, const native_handle_type& native_socket)
 				{
-					assign(protocol, native_socket, collin::throw_on_error("basic_socket_acceptor::assign"))
+					assign(protocol, native_socket, collin::throw_on_error{"basic_socket_acceptor::assign"});
 				}
 
 				native_handle_type release(std::error_code& ec)
@@ -2043,7 +2043,7 @@ namespace collin
 
 				native_handle_type release()
 				{
-					return release(collin::throw_on_error("basic_socket_acceptor::release"));
+					return release(collin::throw_on_error{"basic_socket_acceptor::release"});
 				}
 
 				bool is_open() const noexcept
@@ -2058,7 +2058,7 @@ namespace collin
 
 				void close()
 				{
-					close(collin::throw_on_error("basic_socket_acceptor::close"));
+					close(collin::throw_on_error{"basic_socket_acceptor::close"});
 				}
 
 				template<class SettableSocketOption>
@@ -2070,7 +2070,7 @@ namespace collin
 				template<class SettableSocketOption>
 				void set_option(const SettableSocketOption& option)
 				{
-					set_option(option, collin::throw_on_error("basic_socket_acceptor::set_option"));
+					set_option(option, collin::throw_on_error{"basic_socket_acceptor::set_option"});
 				}
 
 				template<class GettableSocketOption>
@@ -2082,7 +2082,7 @@ namespace collin
 				template<class GettableSocketOption>
 				void get_option(GettableSocketOption& option) const
 				{
-					get_option(option, collin::throw_on_error("basic_socket_acceptor::get_option"));
+					get_option(option, collin::throw_on_error{"basic_socket_acceptor::get_option"});
 				}
 
 				template<class IOControlCommand>
@@ -2094,7 +2094,7 @@ namespace collin
 				template<class IOControlCommand>
 				void io_control(IOControlCommand& command)
 				{
-					io_control(command, collin::throw_on_error("basic_socket_acceptor::io_control"));
+					io_control(command, collin::throw_on_error{"basic_socket_acceptor::io_control"});
 				}
 
 				void non_blocking(bool mode, std::error_code& ec)
@@ -2104,7 +2104,7 @@ namespace collin
 
 				void non_blocking(bool mode)
 				{
-					non_blocking(mode, collin::throw_on_error("basic_socket_acceptor::non_blocking"));
+					non_blocking(mode, collin::throw_on_error{"basic_socket_acceptor::non_blocking"});
 				}
 
 				bool non_blocking() const
@@ -2119,7 +2119,7 @@ namespace collin
 
 				void native_non_blocking(bool mode)
 				{
-					native_non_blocking(mode, collin::throw_on_error("basic_socket_acceptor::native_non_blocking"));
+					native_non_blocking(mode, collin::throw_on_error{"basic_socket_acceptor::native_non_blocking"});
 				}
 
 				bool native_non_blocking() const
@@ -2131,9 +2131,9 @@ namespace collin
 				{
 
 					#ifdef _WIN32
-					const auto result = return ::ioctlsocket(native_handle(), SIOCATMARK);
+					const auto result = ::ioctlsocket(native_handle(), SIOCATMARK);
 					#else
-					const auto result = return ::sockatmark(native_handle());
+					const auto result = ::sockatmark(native_handle());
 					#endif
 
 					if (result == -1)
@@ -2181,7 +2181,7 @@ namespace collin
 
 				void bind(const endpoint_type& endpoint)
 				{
-					bind(endpoint, collin::throw_on_error("basic_socket_acceptor::bind"));
+					bind(endpoint, collin::throw_on_error{"basic_socket_acceptor::bind"});
 				}
 
 				void listen(int backlog, std::error_code& ec)
@@ -2198,7 +2198,7 @@ namespace collin
 
 				void listen(int backlog = socket_base::max_listen_connections)
 				{
-					listen(backlog, collin::throw_on_error("basic_socket_acceptor::listen"));
+					listen(backlog, collin::throw_on_error{"basic_socket_acceptor::listen"});
 				}
 
 				void enable_connection_aborted(bool mode)
@@ -2219,7 +2219,7 @@ namespace collin
 						if(h != -1)
 						{
 							ec.clear();
-							return socket_type{ctx, protocol_, h};
+							return socket_type{ctx, base::protocol_, h};
 						}
 					} while(get_last_error() == ECONNABORTED && enable_connection_aborted());
 
@@ -2238,7 +2238,7 @@ namespace collin
 						{
 							ec.clear();
 							endpoint.resize(len);
-							return socket_type{ctx, protocol_, h};
+							return socket_type{ctx, base::protocol_, h};
 						}
 					} while (get_last_error() == ECONNABORTED && enable_connection_aborted());
 
@@ -2254,17 +2254,17 @@ namespace collin
 
 				socket_type accept()
 				{
-					return accept(collin::net::io_context{}, endpoint_type{}, collin::throw_on_error("basic_socket_acceptor::accept"));
+					return accept(collin::net::io_context{}, endpoint_type{}, collin::throw_on_error{"basic_socket_acceptor::accept"});
 				}
 
 				socket_type accept(io_context& ctx)
 				{
-					return accept(ctx, endpoint_type{}, collin::throw_on_error("basic_socket_acceptor::accept"));
+					return accept(ctx, endpoint_type{}, collin::throw_on_error{"basic_socket_acceptor::accept"});
 				}
 
 				socket_type accept(endpoint_type& endpoint)
 				{
-					return acccept(collin::net::io_context{}, endpoint, collin::throw_on_error("basic_socket_acceptor::accept"))
+					return acccept(collin::net::io_context{}, endpoint, collin::throw_on_error{"basic_socket_acceptor::accept"});
 				}
 
 				socket_type accept(endpoint_type& endpoint, std::error_code& ec)
@@ -2274,7 +2274,7 @@ namespace collin
 
 				socket_type accept(io_context& ctx, endpoint_type& endpoint)
 				{
-					return accept(ctx, endpoint, collin::throw_on_error("basic_socket_acceptor::accept"));
+					return accept(ctx, endpoint, collin::throw_on_error{"basic_socket_acceptor::accept"});
 				}
 
 				std::future<socket_type> async_accept(io_context& ctx, endpoint_type& endpoint, std::error_code& ec, const std::launch l = std::launch::async)
@@ -2289,17 +2289,17 @@ namespace collin
 
 				std::future<socket_type> async_accept(const std::launch l = std::launch::async)
 				{
-					return async_accept(collin::net::io_context{}, endpoint_type{}, collin::throw_on_error("basic_socket_acceptor::async_accept"), l);
+					return async_accept(collin::net::io_context{}, endpoint_type{}, collin::throw_on_error{"basic_socket_acceptor::async_accept"}, l);
 				}
 
 				std::future<socket_type> async_accept(io_context& ctx, const std::launch l = std::launch::async)
 				{
-					return async_accept(ctx, endpoint_type{}, collin::throw_on_error("basic_socket_acceptor::async_accept"), l);
+					return async_accept(ctx, endpoint_type{}, collin::throw_on_error{"basic_socket_acceptor::async_accept"}, l);
 				}
 
 				std::future<socket_type> async_accept(endpoint_type& endpoint, const std::launch l = std::launch::async)
 				{
-					return async_acccept(collin::net::io_context{}, endpoint, collin::throw_on_error("basic_socket_acceptor::async_accept"), l)
+					return async_acccept(collin::net::io_context{}, endpoint, collin::throw_on_error{"basic_socket_acceptor::async_accept"}, l);
 				}
 
 				std::future<socket_type> async_accept(endpoint_type& endpoint, std::error_code& ec, const std::launch l = std::launch::async)
@@ -2309,12 +2309,12 @@ namespace collin
 
 				std::future<socket_type> async_accept(io_context& ctx, endpoint_type& endpoint, const std::launch l = std::launch::async)
 				{
-					return async_accept(ctx, endpoint, collin::throw_on_error("basic_socket_acceptor::async_accept"), l);
+					return async_accept(ctx, endpoint, collin::throw_on_error{"basic_socket_acceptor::async_accept"}, l);
 				}
 
 				void shutdown(shutdown_type what, std::error_code& ec)
 				{
-					if (::shutdown(native_handle(), static_cast<std::underlying_type_t<shutdown_type>(what)) == -1)
+					if (::shutdown(native_handle(), static_cast<std::underlying_type_t<shutdown_type>>(what)) == -1)
 					{
 						ec.assign(get_last_error(), std::generic_category());
 					}
@@ -2326,7 +2326,7 @@ namespace collin
 
 				void shutdown(shutdown_type what)
 				{
-					shutdown(what, collin::throw_on_error("basic_socket_acceptor::shutdown"));
+					shutdown(what, collin::throw_on_error{"basic_socket_acceptor::shutdown"});
 				}
 
 				endpoint_type local_endpoint(std::error_code& ec)
@@ -2336,7 +2336,7 @@ namespace collin
 
 				endpoint_type local_endpoint()
 				{
-					return local_endpoint(collin::throw_on_error("basic_socket_acceptor::local_endpoint"));
+					return local_endpoint(collin::throw_on_error{"basic_socket_acceptor::local_endpoint"});
 				}
 
 				endpoint_type remote_endpoint(std::error_code& ec)
@@ -2346,7 +2346,7 @@ namespace collin
 
 				endpoint_type remote_endpoint()
 				{
-					return remote_endpoint(collin::throw_on_error("basic_socket_acceptor::remote_endpoint"));
+					return remote_endpoint(collin::throw_on_error{"basic_socket_acceptor::remote_endpoint"});
 				}
 
 				void connect(const endpoint_type& endpoint, std::error_code& ec)
@@ -2397,7 +2397,7 @@ namespace collin
 
 				int wait(wait_type w)
 				{
-					return wait(w, collin::throw_on_error("basic_socket::wait"));
+					return wait(w, collin::throw_on_error{"basic_socket::wait"});
 				}
 
 				std::future<int> async_wait(wait_type w, std::error_code& ec, const std::launch l = std::launch::async)
@@ -2407,7 +2407,7 @@ namespace collin
 
 				std::future<int> async_wait(wait_type w, const std::launch l = std::launch::async)
 				{
-					return async_wait(w, collin::throw_on_error("basic_socket::async_wait"), l);
+					return async_wait(w, collin::throw_on_error{"basic_socket::async_wait"}, l);
 				}
 
 				explicit operator bool() const noexcept
@@ -2462,10 +2462,10 @@ namespace collin
 				template<class ElementType, std::size_t Extent>
 				std::size_t receive(span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
 				{
-					const auto result = socket_receive(native_handle(), buf, flags, ec);
+					const auto result = socket_receive(base::native_handle(), buf, flags, ec);
 					if (ec)
 					{
-						close();
+						base::close();
 					}
 					return result;
 				}
@@ -2491,10 +2491,10 @@ namespace collin
 				template<class ElementType, std::size_t Extent>
 				std::size_t send(const span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
 				{
-					const auto result = socket_send(native_handle(), buf, flags, ec);
+					const auto result = socket_send(base::native_handle(), buf, flags, ec);
 					if (ec)
 					{
-						close();
+						base::close();
 					}
 					return result;
 				}
@@ -2557,10 +2557,10 @@ namespace collin
 				template<class ElementType, std::size_t Extent>
 				std::size_t receive(span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
 				{
-					const auto result = socket_receive(native_handle(), buf, flags, ec);
+					const auto result = socket_receive(base::native_handle(), buf, flags, ec);
 					if (ec)
 					{
-						close();
+						base::close();
 					}
 					return result;
 				}
@@ -2580,10 +2580,10 @@ namespace collin
 				template<class ElementType, std::size_t Extent>
 				std::size_t send(const span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
 				{
-					const auto result = socket_send(native_handle(), buf, flags, ec);
+					const auto result = socket_send(base::native_handle(), buf, flags, ec);
 					if (ec)
 					{
-						close();
+						base::close();
 					}
 					return result;
 				}
@@ -2693,6 +2693,7 @@ namespace collin
 					if(socket_.is_open())
 					{
 						overflow(std::istream::traits_type::eof());
+						ec_.clear();
 						socket_.close();
 					}
 					return ec_ ? nullptr : this;
@@ -2719,8 +2720,6 @@ namespace collin
 					buffer_sequence seq = {msgbuf(get_buf)};
 					const auto bytes_read = socket_receive(socket_.native_handle(), seq.get_span(), 0, ec_);
 
-
-
 					if (bytes_read > 0)
 					{
 						setg(get_buf.data(), get_buf.data(), get_buf.data() + bytes_read);
@@ -2741,7 +2740,7 @@ namespace collin
 						size = (pptr() - pbase()) * sizeof(std::istream::traits_type::char_type);
 					}
 
-					buffer_sequence seq = {msgbuf(begin, size)};
+					buffer_sequence seq = {msgbuf(begin, static_cast<msgbuf::len_type>(size))};
 					socket_send(socket_.native_handle(), seq.get_span(), 0, ec_);
 
 					if (ec_ && ec_ != make_error_code(socket_errc::try_again))
@@ -2823,10 +2822,7 @@ namespace collin
 
 				basic_socket_iostream(const basic_socket_iostream&) = delete;
 				basic_socket_iostream(basic_socket_iostream&& rhs) noexcept
-					: std::basic_iostream<char>(std::addressof(sb_)), sb_(std::move(rhs.sb_))
-				{
-					//set_rdbuf(std::addressof(sb_));
-				}
+					: std::basic_iostream<char>(std::addressof(sb_)), sb_(std::move(rhs.sb_)) {}
 
 				template<class... Args>
 				explicit basic_socket_iostream(Args&&... args)
@@ -2903,7 +2899,7 @@ namespace collin
 			}
 
 			if(!found)
-				ec = std::make_error_code(socket_errc::not_found);
+				ec = make_error_code(socket_errc::not_found);
 
 			return typename Protocol::endpoint{};
 		}
@@ -2911,7 +2907,7 @@ namespace collin
 		template<class Protocol, class EndpointSequence>
 		typename Protocol::endpoint connect(basic_socket<Protocol>& s, const EndpointSequence& endpoints, std::error_code& ec)
 		{
-			return connect(s, endpoints, [](auto){ return true; }, ec);
+			return connect(s, endpoints, [](auto&, const auto&){ return true; }, ec);
 		}
 
 		template<class Protocol, class EndpointSequence, class ConnectCondition>

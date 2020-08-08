@@ -152,6 +152,9 @@ namespace collin
 		throw_on_error(const throw_on_error&) = delete;
 		throw_on_error& operator=(const throw_on_error&) = delete;
 
+		throw_on_error(throw_on_error&&) = default;
+		throw_on_error& operator=(throw_on_error&&) = default;
+
 		operator std::error_code& () noexcept
 		{
 			return ec;
@@ -173,7 +176,7 @@ namespace collin
 	template<class Function, class... Args>
 	std::invoke_result_t<Function, Args...> invoke(Function&& f, std::tuple<Args...>&& tup)
 	{
-		return details::invoke_helper(std::forward<Function>(f), std::forward<std::tuple<Args...>>(tup), std::make_index_sequence<sizeof...(Args)>{});
+		return details::invoke(std::forward<Function>(f), std::forward<std::tuple<Args...>>(tup), std::make_index_sequence<sizeof...(Args)>{});
 	}
 
 	template<class... Ts>

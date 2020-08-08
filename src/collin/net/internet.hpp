@@ -743,7 +743,7 @@ namespace collin
                     auto addr = make_address_v6(str);
                     return address(addr);
                 }
-                catch(const std::invalid_argument& e)
+                catch(const std::invalid_argument&)
                 {
                     auto addr = make_address_v4(str);
                     return address(addr);
@@ -849,7 +849,7 @@ namespace collin
                     basic_address_iterator& operator++() noexcept
                     {
                         address_v6::BytesType b = address_.to_bytes();
-                        for (int i = std::size(b) - 1; i > 0; i--)
+                        for (std::size_t i = std::size(b) - 1; i > 0; i--)
                         {
                             if(b[i] != 0xff)
                             {
@@ -872,7 +872,7 @@ namespace collin
                     basic_address_iterator& operator--() noexcept
                     {
                         address_v6::BytesType b = address_.to_bytes();
-                        for(int i = 0; i < std::size(b); i++)
+                        for(std::size_t i = 0; i < std::size(b); i++)
                         {
                             if (b[i] != 0)
                             {
@@ -1318,7 +1318,7 @@ namespace collin
                         return std::visit(overloaded {
                             [](const ::sockaddr_in& a) {
                                 return a.sin_port;
-                            }
+                            },
                             [](const ::sockaddr_in6& a) {
                                 return a.sin6_port;
                             }
@@ -1330,7 +1330,7 @@ namespace collin
                         std::visit(overloaded{
                             [](::sockaddr_in& a) {
                                 a.sin_port = port_num;
-                            }
+                            },
                             [](::sockaddr_in6& a) {
                                 a.sin6_port = port_num;
                             }
@@ -1577,6 +1577,7 @@ namespace collin
 
                         if (auto err = ::getaddrinfo(h, s, &hints, &address_results.p) != 0)
                         {
+                            std::cout << net::get_last_error() << '\n';
                             throw std::system_error(err, resolver_category(), "Cannot resolve address");
                         }
 
@@ -1819,7 +1820,7 @@ namespace collin
                 host_name(const Allocator& a)
             {
                 std::array<char, 256 + 1> buf;
-                if (::gethostname(buf.data(), std::size(buf) - 1) == -1)
+                if (::gethostname(buf.data(), static_cast<int>(std::size(buf)) - 1) == -1)
                 {
                     throw std::exception("error fetching host_name");
                 }
