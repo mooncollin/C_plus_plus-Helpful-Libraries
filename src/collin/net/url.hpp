@@ -113,6 +113,12 @@ namespace collin
 					result += url_encode_string(key) + '=' + url_encode_string(value) + '&';
 				}
 
+				if (!map.empty())
+				{
+					// Get rid of the last '&'
+					result.erase(std::end(result) - 1);
+				}
+
 				return result;
 			}
 
@@ -150,13 +156,6 @@ namespace collin
 						std::string result;
 						create_pre_parameter_string(result);
 						result += create_parameter_string(parameters_);
-
-						if (!parameters_.empty())
-						{
-							// Get rid of the last '&'
-							result.erase(std::end(result) - 1);
-						}
-
 						return result;
 					}
 
