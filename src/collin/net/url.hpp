@@ -108,6 +108,12 @@ namespace collin
 			std::string create_parameter_string(const Map& map)
 			{
 				std::string result;
+
+				if (!map.empty())
+				{
+					result += '?';
+				}
+
 				for (const auto& [key, value] : map)
 				{
 					result += url_encode_string(key) + '=' + url_encode_string(value) + '&';
@@ -137,6 +143,11 @@ namespace collin
 						std::string result;
 						create_pre_parameter_string(result);
 
+						if (!parameters_.empty())
+						{
+							result += '?';
+						}
+
 						for (const auto& [key, value] : parameters_)
 						{
 							result += key + '=' + value + '&';
@@ -159,9 +170,14 @@ namespace collin
 						return result;
 					}
 
-					std::optional<std::string>& protocol()
+					void protocol(std::string_view p)
 					{
-						return protocol_;
+						protocol_ = p;
+					}
+
+					void protocol(const std::optional<std::string>& p)
+					{
+						protocol_ = p;
 					}
 
 					const std::optional<std::string>& protocol() const
@@ -189,9 +205,14 @@ namespace collin
 						return resource_;
 					}
 
-					std::optional<collin::net::ip::port_type>& port()
+					void port(const std::optional<collin::net::ip::port_type>& p)
 					{
-						return port_;
+						port_ = p;
+					}
+
+					void port(collin::net::ip::port_type p)
+					{
+						port_ = p;
 					}
 
 					const std::optional<collin::net::ip::port_type>& port() const
@@ -230,11 +251,6 @@ namespace collin
 						}
 
 						str += resource_;
-
-						if (!parameters_.empty())
-						{
-							str += '?';
-						}
 					}
 			};
 		}

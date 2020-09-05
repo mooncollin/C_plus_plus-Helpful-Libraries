@@ -1,5 +1,7 @@
 #pragma once
 
+#include <type_traits>
+
 #include "collin/linear/matrix.hpp"
 #include "collin/math.hpp"
 
@@ -12,9 +14,9 @@ namespace collin
 		{
 			matrix<T> out{m.cols(), m.rows()};
 
-			for (std::size_t i = 0; i < m.rows(); i++)
+			for (std::size_t i {0}; i < m.rows(); ++i)
 			{
-				for (std::size_t j = 0; j < m.cols(); j++)
+				for (std::size_t j {0}; j < m.cols(); ++j)
 				{
 					out(j, i) = m(i, j);
 				}
@@ -24,13 +26,13 @@ namespace collin
 		}
 
 		template<class T, std::size_t Rows, std::size_t Cols>
-		[[nodiscard]] constexpr fixed_matrix<T, Cols, Rows> transpose(const fixed_matrix<T, Rows, Cols>& m)
+		[[nodiscard]] constexpr fixed_matrix<T, Cols, Rows> transpose(const fixed_matrix<T, Rows, Cols>& m) noexcept
 		{
 			fixed_matrix<T, Cols, Rows> out;
 
-			for (std::size_t i{0}; i < Rows; i++)
+			for (std::size_t i {0}; i < Rows; ++i)
 			{
-				for (std::size_t j{0}; j < Cols; j++)
+				for (std::size_t j {0}; j < Cols; ++j)
 				{
 					out(j, i) = m(i, j);
 				}
@@ -53,9 +55,9 @@ namespace collin
 			std::size_t i {0};
 			std::size_t j {0};
 
-			for(std::size_t row{0}; row < size; ++row)
+			for(std::size_t row {0}; row < size; ++row)
 			{
-				for(std::size_t col{0}; col < size; ++col)
+				for(std::size_t col {0}; col < size; ++col)
 				{
 					if(row != p && col != q)
 					{
@@ -74,7 +76,7 @@ namespace collin
 		}
 
 		template<class T, std::size_t S>
-		[[nodiscard]] constexpr square_matrix<T, S - 1> cofactor(const square_matrix<T, S>& m, std::size_t p, std::size_t q)
+		[[nodiscard]] constexpr square_matrix<T, S - 1> cofactor(const square_matrix<T, S>& m, std::size_t p, std::size_t q) noexcept
 		{
 			square_matrix<T, S - 1> out;
 			std::size_t i {0};
@@ -101,7 +103,7 @@ namespace collin
 		}
 
 		template<class Rep>
-		Rep determinant(const matrix<Rep>& m)
+		[[nodiscard]] Rep determinant(const matrix<Rep>& m)
 		{
 			if (!is_square_matrix(m))
 			{
@@ -123,7 +125,7 @@ namespace collin
 			int sign {1};
 			Rep result {0};
 
-			for(std::size_t f{0}; f < size; ++f)
+			for(std::size_t f {0}; f < size; ++f)
 			{
 				result += sign * m(0, f) * determinant(cofactor(m, 0, f));
 				sign = -sign;
@@ -133,7 +135,7 @@ namespace collin
 		}
 
 		template<class Rep, std::size_t S>
-		constexpr Rep determinant(const square_matrix<Rep, S>& m)
+		[[nodiscard]] constexpr Rep determinant(const square_matrix<Rep, S>& m) noexcept
 		{
 			if constexpr (S == 1)
 			{
@@ -191,7 +193,7 @@ namespace collin
 		}
 
 		template<class T, std::size_t S>
-		[[nodiscard]] constexpr square_matrix<T, S> pivot_matrix(const square_matrix<T, S>& m)
+		[[nodiscard]] constexpr square_matrix<T, S> pivot_matrix(const square_matrix<T, S>& m) noexcept
 		{
 			auto pivot = identity_matrix<T, S>();
 
@@ -217,34 +219,34 @@ namespace collin
 
 		template<class T>
 		[[nodiscard]] std::tuple<matrix<T>, matrix<T>, matrix<T>>
-			lu_decomposition(const matrix<T>& a)
+			lu_decomposition(const matrix<T>& a) noexcept
 		{
 			auto p = pivot_matrix(a);
 			matrix<T> l{a.rows(), a.cols()};
 			matrix<T> u{a.rows(), a.cols()};
 			auto pa = p * a;
 
-			for(std::size_t j{0}; j < a.rows(); ++j)
+			for(std::size_t j {0}; j < a.rows(); ++j)
 			{
 				l(j, j) = T{1};
 
-				for(std::size_t i{0}; i < j + 1; ++i)
+				for(std::size_t i {0}; i < j + 1; ++i)
 				{
-					T sum{};
-					for(std::size_t k{0}; k < i; ++k)
+					T sum {0};
+					for(std::size_t k {0}; k < i; ++k)
 					{
-						sum += u(k, j) * l(i, k);
+						sum += l(i, k) * u(k, j);
 					}
 
 					u(i, j) = pa(i, j) - sum;
 				}
 
-				for(std::size_t i{j}; i < a.rows(); ++i)
+				for(std::size_t i {j}; i < a.rows(); ++i)
 				{
-					T sum{};
-					for(std::size_t k{0}; k < j; ++k)
+					T sum {0};
+					for(std::size_t k {0}; k < j; ++k)
 					{
-						sum += u(k, j) * l(i, k);
+						sum += l(i, k) * u(k, j);
 					}
 
 					l(i, j) = (pa(i, j) - sum) / u(j, j);
@@ -256,34 +258,34 @@ namespace collin
 
 		template<class T, std::size_t S>
 		[[nodiscard]] constexpr std::tuple<square_matrix<T, S>, square_matrix<T, S>, square_matrix<T, S>>
-			lu_decomposition(const square_matrix<T, S>& a)
+			lu_decomposition(const square_matrix<T, S>& a) noexcept
 		{
 			square_matrix<T, S> l;
 			square_matrix<T, S> u;
 			auto p = pivot_matrix(a);
 			auto pa = p * a;
 
-			for(std::size_t j{0}; j < S; ++j)
+			for(std::size_t j {0}; j < S; ++j)
 			{
 				l(j, j) = T{1};
 
-				for(std::size_t i{0}; i < j + 1; ++i)
+				for(std::size_t i {0}; i < j + 1; ++i)
 				{
 					T sum{};
-					for(std::size_t k{0}; k < i; ++k)
+					for(std::size_t k {0}; k < i; ++k)
 					{
-						sum += u(k, j) * l(i, k);
+						sum += l(i, k) * u(k, j);
 					}
 
 					u(i, j) = pa(i, j) - sum;
 				}
 
-				for(std::size_t i{j}; i < S; ++i)
+				for(std::size_t i {j}; i < S; ++i)
 				{
 					T sum{};
-					for(std::size_t k{0}; k < j; ++k)
+					for(std::size_t k {0}; k < j; ++k)
 					{
-						sum += u(k, j) * l(i, k);
+						sum += l(i, k) * u(k, j);
 					}
 
 					l(i, j) = (pa(i, j) - sum) / u(j, j);
@@ -335,7 +337,7 @@ namespace collin
 		}
 
 		template<class T, std::size_t S>
-		[[nodiscard]] constexpr square_matrix<T, S> adjugate(const square_matrix<T, S>& m)
+		[[nodiscard]] constexpr square_matrix<T, S> adjugate(const square_matrix<T, S>& m) noexcept
 		{
 			square_matrix<T, S> out;
 

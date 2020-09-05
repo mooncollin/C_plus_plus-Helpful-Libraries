@@ -67,6 +67,9 @@ namespace collin
 		concept assignable = std::is_assignable_v<T, U>;
 
 		template<class T>
+		concept copy_assignable = std::is_copy_assignable_v<T>;
+
+		template<class T>
 		concept swappable = 
 			requires(T& a, T& b)
 		{
@@ -101,19 +104,19 @@ namespace collin
 		};
 
 		template<class T>
-		concept move_constructible = constructible<T, T> && convertible_to<T, T>;
+		concept move_constructible = std::is_move_constructible_v<T>;
 
 		template<class T>
-		concept copy_constructible = move_constructible<T> &&
-									 constructible<T, T&> && convertible_to<T&, T> &&
-									 constructible<T, const T&> && convertible_to<const T&, T> &&
-									 constructible<T, const T> && convertible_to<const T, T>;
+		concept copy_constructible = std::is_copy_constructible_v<T>;
 
 		template<class T>
 		concept movable = object<T> &&
 						  move_constructible<T> &&
 						  assignable<T&, T> &&
 						  swappable<T>;
+
+		template<class T>
+		concept move_assignable = std::is_move_assignable_v<T>;
 
 		template<class T>
 		concept copyable = copy_constructible<T> &&
@@ -124,10 +127,17 @@ namespace collin
 		concept semi_regular = copyable<T> && default_constructible<T>;
 
 		template<class F, class... Args>
-		concept invocable = std::is_invocable_v<F, Args...>;
+		concept invocable = 
+			requires(F&& f, Args&&... args)
+		{
+			std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+		};
 
 		template<class F, class... Args>
 		concept regular_invocable = invocable<F, Args...>;
+
+		template<class F>
+		concept callable = invocable<F>;
 
 		template<class B>
 		concept boolean = movable<std::decay_t<B>> &&
@@ -243,90 +253,13 @@ namespace collin
 		template<class R, class T, class U>
 		concept strict_weak_order = relation<R, T, U>;
 
+		template<class F>
+		concept function = std::is_function_v<F>;
+
 		template<class T>
 		concept referenceable = object<T> ||
-								std::is_function_v<T> ||
+								function<T> ||
 								std::is_reference_v<T>;
-
-		/*template<class T>
-		concept iterator = concepts::copyable<T> &&
-						   concepts::swappable<T> &&
-			requires(T it)
-		{
-			typename std::iterator_traits<T>::value_type;
-			typename std::iterator_traits<T>::difference_type;
-			typename std::iterator_traits<T>::reference;
-			typename std::iterator_traits<T>::pointer;
-			typename std::iterator_traits<T>::iterator_category;
-
-			{ *it }  -> concepts::referenceable;
-			{ ++it } -> concepts::convertible_to<T&>;
-			{ *it++ } -> concepts::referenceable;
-		};
-
-		template<class T>
-		concept input_iterator = iterator<T> &&
-								 concepts::equality_comparable<T> &&
-			requires(T it, const T const_it)
-		{
-			{ it != const_it }  -> concepts::boolean;
-			{ it.operator->() };
-		};
-
-		template<class T, class U>
-		concept output_iterator = iterator<T> &&
-								  (std::is_pointer_v<T> || std::is_class_v<T>) &&
-			requires(T it, U&& u)
-		{
-			{ ++it } -> concepts::convertible_to<T&>;
-			{ it++ } -> concepts::convertible_to<const T&>;
-			{ *it++ = std::forward<U>(u) };
-			{ *it = std::forward<U>(u) };
-		};
-
-		template<class T>
-		concept forward_iterator = input_iterator<T> &&
-								   concepts::default_constructible<T> &&
-								   ((output_iterator<T, std::add_lvalue_reference_t<std::iterator_traits<T>::value_type>> && concepts::same<std::iterator_traits<T>::reference, std::add_lvalue_reference_t<std::iterator_traits<T>::value_type>>) ||
-									concepts::same<std::iterator_traits<T>::reference, const std::add_lvalue_reference_t<std::iterator_traits<T>::value_type>>) &&
-			requires(T it)
-		{
-			{ it++ }  -> concepts::same<T>;
-			{ *it++ } -> concepts::same<std::iterator_traits<T>::reference>;
-		};
-
-		template<class T>
-		concept bidirectional_iterator = forward_iterator<T> &&
-			requires(T a)
-		{
-			{ --a }  -> concepts::same<T&>;
-			{ a-- }  -> concepts::convertible_to<const T&>;
-			{ *a-- } -> concepts::same<std::iterator_traits<T>::reference>;
-		};
-
-		template<class T>
-		concept random_access_iterator = bidirectional_iterator<T> &&
-			requires(T a, const T b, T& r, typename std::iterator_traits<T>::difference_type n)
-		{
-			{ r += n } -> concepts::same<T&>;
-			{ a + n }  -> concepts::same<T>;
-			{ n + a }  -> concepts::same<T>;
-			{ r -= n } -> concepts::same<T&>;
-			{ a - n }  -> concepts::same<T>;
-			{ b - a }  -> concepts::same<std::iterator_traits<T>::difference_type>;
-			{ a[n] }   -> concepts::convertible_to<std::iterator_traits<T>::reference>;
-			{ a < b }  -> concepts::boolean;
-			{ a > b }  -> concepts::boolean;
-			{ a >= b } -> concepts::boolean;
-			{ a <= b } -> concepts::boolean;
-		};
-
-		template<class T>
-		concept contiguous_iterator = random_access_iterator<T> &&
-			requires(T a, typename std::iterator_traits<T>::difference_type n)
-		{
-			{ *(a + n) } -> concepts::same<decltype(*(std::addressof(*a) + n))>;
-		};*/
 
 		template<class T>
 		concept complete_type = 
@@ -340,6 +273,24 @@ namespace collin
 			requires(const T& t, S& s)
 		{
 			{ s << t };
+		};
+
+		template<class A>
+		concept allocator = copy_constructible<A> &&
+							move_constructible<A> &&
+							copy_assignable<A> &&
+							move_assignable<A> &&
+			requires
+		{
+			typename std::allocator_traits<A>;
+			typename A::value_type;
+		} &&
+			requires(A a, typename std::allocator_traits<A>::size_type n, typename std::allocator_traits<A>::pointer p)
+		{
+			{ a.allocate(n) } -> same<typename std::allocator_traits<A>::pointer>;
+			{ a.deallocate(p, n) };
+			{ a == a } -> boolean;
+			{ a != a } -> boolean;
 		};
 	}
 }

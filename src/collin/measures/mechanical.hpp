@@ -15,19 +15,19 @@ namespace collin
 		template<distance_type Distance>
 		using volume = basic_dimension_unit_t<Distance, 3>;
 
-		template<distance_type Distance, mass_type Mass>
-		using newton = basic_derived_unit<basic_dimension_unit_t<Distance, 1>, basic_dimension_unit_t<Mass, 1>, basic_dimension_unit_t<seconds, -2>>;
+		template<distance_type Distance, mass_type Mass, time_type Time = seconds>
+		using newton = basic_derived_unit<std::common_type_t<typename Distance::rep, typename Mass::rep, typename Time::rep>, basic_dimension_unit_t<Distance, 1>, basic_dimension_unit_t<Mass, 1>, basic_dimension_unit_t<Time, -2>>;
+
+		template<distance_type Distance, mass_type Mass, time_type Time = seconds>
+		using momentum = basic_derived_unit<std::common_type_t<typename Distance::rep, typename Mass::rep, typename Time::rep>, basic_dimension_unit_t<Distance, 1>, basic_dimension_unit_t<Mass, 1>, basic_dimension_unit_t<Time, -1>>;
+
+		template<distance_type Distance, mass_type Mass, time_type Time = seconds>
+		using angular_momentum = basic_derived_unit<std::common_type_t<typename Distance::rep, typename Mass::rep, typename Time::rep>, basic_dimension_unit_t<Distance, 2>, basic_dimension_unit_t<Mass, 1>, basic_dimension_unit_t<Time, -1>>;
+
+		template<distance_type Distance, mass_type Mass, time_type Time = seconds>
+		using torque = basic_derived_unit<std::common_type_t<typename Distance::rep, typename Mass::rep, typename Time::rep>, basic_dimension_unit_t<Distance, 2>, basic_dimension_unit_t<Mass, 1>, basic_dimension_unit_t<Time, -2>>;
 
 		template<distance_type Distance, mass_type Mass>
-		using momentum = basic_derived_unit<basic_dimension_unit_t<Distance, 1>, basic_dimension_unit_t<Mass, 1>, basic_dimension_unit_t<seconds, -1>>;
-
-		template<distance_type Distance, mass_type Mass>
-		using angular_momentum = basic_derived_unit<basic_dimension_unit_t<Distance, 2>, basic_dimension_unit_t<Mass, 1>, basic_dimension_unit_t<seconds, -1>>;
-
-		template<distance_type Distance, mass_type Mass>
-		using torque = basic_derived_unit<basic_dimension_unit_t<Distance, 2>, basic_dimension_unit_t<Mass, 1>, basic_dimension_unit_t<seconds, -2>>;
-
-		template<distance_type Distance, mass_type Mass>
-		using density = basic_derived_unit<basic_dimension_unit_t<Mass, 1>, basic_dimension_unit_t<Distance, -3>>;
+		using density = basic_derived_unit<std::common_type_t<typename Distance::rep, typename Mass::rep>, basic_dimension_unit_t<Mass, 1>, basic_dimension_unit_t<Distance, -3>>;
 	}
 }

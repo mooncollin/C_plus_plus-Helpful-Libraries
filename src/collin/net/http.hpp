@@ -21,6 +21,7 @@
 #include "collin/iostream.hpp"
 #include "collin/iterator.hpp"
 #include "collin/string.hpp"
+#include "collin/flat_map.hpp"
 
 namespace collin
 {
@@ -197,147 +198,79 @@ namespace collin
 			constexpr std::string_view not_extended_message{"Not Extended"};
 			constexpr std::string_view network_authentication_required_message{"Network Authentication Required"};
 
-			constexpr std::string_view http_status_code_to_message(unsigned int code)
-			{
-				switch (code)
-				{
-					case 100:
-						return status::continue_message;
-					case 101:
-						return status::switching_protocols_message;
-					case 102:
-						return status::processing_message;
-					case 103:
-						return status::early_hints_message;
-					case 200:
-						return status::ok_message;
-					case 201:
-						return status::created_message;
-					case 202:
-						return status::accepted_message;
-					case 203:
-						return status::non_authoritative_information_message;
-					case 204:
-						return status::no_content_message;
-					case 205:
-						return status::reset_content_message;
-					case 206:
-						return status::partial_content_message;
-					case 207:
-						return status::multi_status_message;
-					case 208:
-						return status::already_reported_message;
-					case 226:
-						return status::im_used_message;
-					case 300:
-						return status::multiple_choices_message;
-					case 301:
-						return status::moved_permanently_message;
-					case 302:
-						return status::found_message;
-					case 303:
-						return status::see_other_message;
-					case 304:
-						return status::not_modified_message;
-					case 305:
-						return status::use_proxy_message;
-					case 306:
-						return status::switch_proxy_message;
-					case 307:
-						return status::temporary_redirect_message;
-					case 308:
-						return status::permanent_redirect_message;
-					case 400:
-						return status::bad_request_message;
-					case 401:
-						return status::unauthorized_message;
-					case 402:
-						return status::payment_required_message;
-					case 403:
-						return status::forbidden_message;
-					case 404:
-						return status::not_found_message;
-					case 405:
-						return status::method_not_allowed_message;
-					case 406:
-						return status::not_acceptable_message;
-					case 407:
-						return status::proxy_authentication_required_message;
-					case 408:
-						return status::request_timeout_message;
-					case 409:
-						return status::conflict_message;
-					case 410:
-						return status::gone_message;
-					case 411:
-						return status::length_required_message;
-					case 412:
-						return status::precondition_failed_message;
-					case 413:
-						return status::payload_too_large_message;
-					case 414:
-						return status::uri_too_long_message;
-					case 415:
-						return status::unsupported_media_type_message;
-					case 416:
-						return status::range_not_satisfiable_message;
-					case 417:
-						return status::expectation_failed_message;
-					case 418:
-						return status::im_a_teapot_message;
-					case 421:
-						return status::misdirected_request_message;
-					case 422:
-						return status::unprocessable_entity_message;
-					case 423:
-						return status::locked_message;
-					case 424:
-						return status::failed_dependency_message;
-					case 425:
-						return status::too_early_message;
-					case 426:
-						return status::upgrade_required_message;
-					case 428:
-						return status::precondition_required_message;
-					case 429:
-						return status::too_many_requests_message;
-					case 431:
-						return status::request_header_fields_too_large_message;
-					case 451:
-						return status::unavailable_for_legal_reasons_message;
-					case 500:
-						return status::internal_server_error_message;
-					case 501:
-						return status::not_implemented_message;
-					case 502:
-						return status::bad_gateway_message;
-					case 503:
-						return status::service_unavailable_message;
-					case 504:
-						return status::gateway_timeout_message;
-					case 505:
-						return status::http_version_not_supported_message;
-					case 506:
-						return status::variant_also_negotiates_message;
-					case 507:
-						return status::insufficient_storage_message;
-					case 508:
-						return status::loop_detected_message;
-					case 510:
-						return status::not_extended_message;
-					case 511:
-						return status::network_authentication_required_message;
-					default:
-						throw std::invalid_argument{"Http status code is invalid"};
-				}
-			}
+			using code_t = unsigned int;
+
+			constexpr auto code_to_message = collin::make_fixed_flat_map(
+				std::pair{100u, status::continue_message},
+				std::pair{101u, status::switching_protocols_message},
+				std::pair{102u, status::processing_message},
+				std::pair{103u, status::early_hints_message},
+				std::pair{200u, status::ok_message},
+				std::pair{201u, status::created_message},
+				std::pair{202u, status::accepted_message},
+				std::pair{203u, status::non_authoritative_information_message},
+				std::pair{204u, status::no_content_message},
+				std::pair{205u, status::reset_content_message},
+				std::pair{206u, status::partial_content_message},
+				std::pair{207u, status::multi_status_message},
+				std::pair{208u, status::already_reported_message},
+				std::pair{226u, status::im_used_message},
+				std::pair{300u, status::multiple_choices_message},
+				std::pair{301u, status::moved_permanently_message},
+				std::pair{302u, status::found_message},
+				std::pair{303u, status::see_other_message},
+				std::pair{304u, status::not_modified_message},
+				std::pair{305u, status::use_proxy_message},
+				std::pair{306u, status::switch_proxy_message},
+				std::pair{307u, status::temporary_redirect_message},
+				std::pair{308u, status::permanent_redirect_message},
+				std::pair{400u, status::bad_request_message},
+				std::pair{401u, status::unauthorized_message},
+				std::pair{402u, status::payment_required_message},
+				std::pair{403u, status::forbidden_message},
+				std::pair{404u, status::not_found_message},
+				std::pair{405u, status::method_not_allowed_message},
+				std::pair{406u, status::not_acceptable_message},
+				std::pair{407u, status::proxy_authentication_required_message},
+				std::pair{408u, status::request_timeout_message},
+				std::pair{409u, status::conflict_message},
+				std::pair{410u, status::gone_message},
+				std::pair{411u, status::length_required_message},
+				std::pair{412u, status::precondition_failed_message},
+				std::pair{413u, status::payload_too_large_message},
+				std::pair{414u, status::uri_too_long_message},
+				std::pair{415u, status::unsupported_media_type_message},
+				std::pair{416u, status::range_not_satisfiable_message},
+				std::pair{417u, status::expectation_failed_message},
+				std::pair{418u, status::im_a_teapot_message},
+				std::pair{421u, status::misdirected_request_message},
+				std::pair{422u, status::unprocessable_entity_message},
+				std::pair{423u, status::locked_message},
+				std::pair{424u, status::failed_dependency_message},
+				std::pair{425u, status::too_early_message},
+				std::pair{426u, status::upgrade_required_message},
+				std::pair{428u, status::precondition_required_message},
+				std::pair{429u, status::too_many_requests_message},
+				std::pair{431u, status::request_header_fields_too_large_message},
+				std::pair{451u, status::unavailable_for_legal_reasons_message},
+				std::pair{500u, status::internal_server_error_message},
+				std::pair{501u, status::not_implemented_message},
+				std::pair{502u, status::bad_gateway_message},
+				std::pair{503u, status::service_unavailable_message},
+				std::pair{504u, status::gateway_timeout_message},
+				std::pair{505u, status::http_version_not_supported_message},
+				std::pair{506u, status::variant_also_negotiates_message},
+				std::pair{507u, status::insufficient_storage_message},
+				std::pair{508u, status::loop_detected_message},
+				std::pair{510u, status::not_extended_message}
+			);
 
 			struct http_status
 			{
 				http_status() = default;
 
 				http_status(unsigned int code)
-					: code{code}, message{http_status_code_to_message(code)} {}
+					: code{code}, message{code_to_message.at(code)} {}
 
 				http_status(unsigned int code, std::string_view message="")
 					: code{code}, message{message} {}
@@ -359,8 +292,6 @@ namespace collin
 				}
 			};
 		}
-
-		
 
 		enum class http_version
 		{
@@ -580,7 +511,7 @@ namespace collin
 				{
 					if(p != url_.port())
 					{
-						url_.port() = p;
+						url_.port(p);
 						update_host_header();
 						socket_.close();
 					}
@@ -596,12 +527,12 @@ namespace collin
 					return method_;
 				}
 
-				void header(std::string_view name, std::string_view value)
+				void add_header(std::string_view name, std::string_view value)
 				{
 					headers_[name.data()] = value;
 				}
 
-				const std::string& header(std::string_view name) const
+				const std::string& get_header(std::string_view name) const
 				{
 					return headers_.at(name.data());
 				}
@@ -654,13 +585,17 @@ namespace collin
 				void connect(std::error_code& ec) noexcept
 				{
 					ec.clear();
-					std::string port_string;
+					std::string service_string;
 					if (url_.port())
 					{
-						port_string = std::to_string(url_.port().value());
+						service_string = std::to_string(url_.port().value());
+					}
+					else if (url_.protocol())
+					{
+						service_string = url_.protocol().value();
 					}
 
-					const auto results = protocol_type::resolver(socket_.context()).resolve(url_.host(), port_string);
+					const auto results = protocol_type::resolver(socket_.context()).resolve(url_.host(), service_string);
 					for (const auto& result : results)
 					{
 						socket_.open(result.endpoint().protocol(), ec);
@@ -720,20 +655,19 @@ namespace collin
 		{
 			stream << req.method();
 			stream << " ";
-			stream << req.url().resource();
+			stream << req.url().resource() << collin::net::web::create_parameter_string(req.url().parameters());
 			stream << " ";
 			stream << http_version_string(req.version());
-			stream << line_terminator;
 
 			for (const auto& [name, value] : req.headers())
 			{
+				stream << "\r\n";
 				stream << name;
 				stream << ": ";
 				stream << value;
-				stream << "\r\n";
 			}
 
-			stream << line_terminator;
+			stream << line_terminator << line_terminator;
 
 			std::copy(req.body(), std::istream_iterator<char>(), std::ostream_iterator<char>(stream));
 
@@ -810,6 +744,12 @@ namespace collin
 				using endpoint_type = protocol_type::endpoint;
 				using socket_type = net::basic_socket_iostream<protocol_type>;
 
+				http_client(collin::net::io_context& ctx)
+					: ctx_{ctx}
+				{
+					collin::net::use_service<collin::net::windows_socket_service>(ctx_.get());
+				}
+
 				template<class HttpRequest>
 				std::optional<basic_http_response> send(HttpRequest& req, std::error_code& ec) const
 				{
@@ -833,15 +773,14 @@ namespace collin
 				template<class HttpRequest>
 				basic_http_response send(HttpRequest& req) const
 				{
-					collin::throw_on_error e{"http_client::send"};
-					try
+					std::error_code ec;
+					auto op = send(req, ec);
+					if (ec)
 					{
-						return send(req, e).value();
+						throw std::system_error{ec};
 					}
-					catch (const std::bad_optional_access&)
-					{
-						throw std::runtime_error{"http_client::send did not properly throw an exception"};
-					}
+
+					return std::move(op).value();
 				}
 
 				template<class HttpRequest>
@@ -860,6 +799,7 @@ namespace collin
 					return std::async(l, f, std::ref(*this), std::ref(req));
 				}
 			private:
+				std::reference_wrapper<collin::net::io_context> ctx_;
 				/*
 				 * We are attempting to parse an HTTP response message. This method is responsible for parsing the headers.
 				 * The message can look like the following:
@@ -894,7 +834,7 @@ namespace collin
 					{
 						version = http_version_type(*space_stream);
 					}
-					catch (const std::invalid_argument&)
+					catch (...)
 					{
 						ec = make_error_code(http_errc::malformed_response);
 						return {};
@@ -907,8 +847,12 @@ namespace collin
 						return {};
 					}
 
-					const unsigned int status_code = strings::from_string<unsigned int>(*space_stream, ec);
-					if (ec)
+					status::code_t status_code;
+					try
+					{
+						status_code = strings::from_string<status::code_t>(std::string_view{*space_stream});
+					}
+					catch (...)
 					{
 						ec = make_error_code(http_errc::malformed_response);
 						return {};
@@ -922,7 +866,7 @@ namespace collin
 						return {};
 					}
 
-					const std::string status_code_message = std::move(*line_stream);
+					auto status_code_message = std::move(*line_stream);
 
 					std::map<std::string, std::string> headers;
 
@@ -933,19 +877,21 @@ namespace collin
 						{
 							break;
 						}
+						
+						const std::string_view line{*line_stream};
 
-						const auto colon_loc = line_stream->find(':');
-						if (colon_loc == std::string::npos)
+						const auto colon_loc = line.find(':');
+						if (colon_loc == std::string_view::npos)
 						{
 							ec = make_error_code(http_errc::malformed_response);
 							return {};
 						}
 
-						auto key = line_stream->substr(0, colon_loc);
-						auto value = colon_loc + 1 > line_stream->size() ? "" : line_stream->substr(colon_loc + 1);
-						strings::trim_front(value, " ");
 
-						headers[std::move(key)] = std::move(value);
+						const auto key = line.substr(0, colon_loc);
+						const auto value = strings::trim_front(colon_loc + 1 > std::size(line) ? std::string_view{""} : line.substr(colon_loc + 1), std::string_view{" "});
+
+						headers[std::string{key}] = value;
 					}
 
 					return std::make_optional<basic_http_response>(std::move(s.move_socket()), status::http_status{status_code, std::move(status_code_message)}, version, std::move(headers));

@@ -95,14 +95,17 @@ namespace collin
                         friend address_v4;
 
                         template<class... T>
-                        explicit constexpr BytesType(T... t)
+                        explicit constexpr BytesType(T... t) noexcept
                             : std::array<unsigned char, 4>{{static_cast<unsigned char>(t)...}} {}
                     };
 
                     constexpr address_v4() noexcept : address{0} {}
                     constexpr address_v4(const address_v4& a) noexcept = default;
                     constexpr address_v4(const address_v4::BytesType& bytes)
-                        : address((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]) // Basically hton on it
+                        : address{(static_cast<uint_type>(bytes[0]) << 24) | 
+                                  (static_cast<uint_type>(bytes[1]) << 16) | 
+                                  (static_cast<uint_type>(bytes[2]) << 8)  | 
+                                   static_cast<uint_type>(bytes[3])} // Basically hton on it
                     {
                         if constexpr(std::numeric_limits<unsigned char>::max() != 0xFF)
                         {
@@ -117,7 +120,7 @@ namespace collin
                     }
 
                     explicit constexpr address_v4(uint_type val)
-                        : address(hton(val))
+                        : address{hton(val)}
                     {
                         if constexpr(std::numeric_limits<uint_type>::max() != 0xFFFFFFFF)
                         {
@@ -128,32 +131,24 @@ namespace collin
                         }
                     }
 
-                    address_v4& operator=(const address_v4& a) noexcept
-                    {
-                        if(this != &a)
-                        {
-                            address = a.address;		
-                        }
+                    constexpr address_v4& operator=(const address_v4& a) noexcept = default;
 
-                        return *this;
-                    }
-
-                    constexpr bool is_unspecified() const noexcept
+                    [[nodiscard]] constexpr bool is_unspecified() const noexcept
                     {
                         return to_uint() == 0;
                     }
 
-                    constexpr bool is_loopback() const noexcept
+                    [[nodiscard]] constexpr bool is_loopback() const noexcept
                     {
                         return (to_uint() & 0xFF000000) == 0x7F000000;
                     }
 
-                    constexpr bool is_multicast() const noexcept
+                    [[nodiscard]] constexpr bool is_multicast() const noexcept
                     {
                         return (to_uint() & 0xF0000000) == 0xE0000000;
                     }
 
-                    constexpr BytesType to_bytes() const noexcept
+                    [[nodiscard]] constexpr BytesType to_bytes() const noexcept
                     {
                         return BytesType((address >> 24) && 0xFF,
                                          (address >> 16) && 0xFF,
@@ -161,18 +156,18 @@ namespace collin
                                           address && 0xFF);
                     }
 
-                    constexpr uint_type to_uint() const noexcept
+                    [[nodiscard]] constexpr uint_type to_uint() const noexcept
                     {
                         return ntoh(address);
                     }
 
                     template<class Allocator = std::allocator<char>>
-                    std::basic_string<char, std::char_traits<char>, Allocator>
+                    [[nodiscard]] std::basic_string<char, std::char_traits<char>, Allocator>
                     to_string(const Allocator& a = Allocator()) const
                     {
                         std::basic_string<char, std::char_traits<char>, Allocator> str;
                         str.resize(inet6_addrstrlen);
-                        if(::inet_ntop(static_cast<int>(Family::inet), &address, str.data(), str.size()))
+                        if(::inet_ntop(static_cast<int>(family_type::inet), &address, str.data(), str.size()))
                         {
                             str.erase(str.find('\0'));
                         }
@@ -184,17 +179,17 @@ namespace collin
                         return str;
                     }
 
-                    static constexpr address_v4 any() noexcept
+                    [[nodiscard]] static constexpr address_v4 any() noexcept
                     {
                         return address_v4{};
                     }
 
-                    static constexpr address_v4 loopback() noexcept
+                    [[nodiscard]] static constexpr address_v4 loopback() noexcept
                     {
                         return address_v4{0x7F000001};
                     }
 
-                    static constexpr address_v4 broadcast() noexcept
+                    [[nodiscard]] static constexpr address_v4 broadcast() noexcept
                     {
                         return address_v4{0xFFFFFFFF};
                     }
@@ -206,37 +201,37 @@ namespace collin
                     uint_type address;
             };
 
-            constexpr bool operator==(const address_v4& a, const address_v4& b) noexcept
+            [[nodiscard]] constexpr bool operator==(const address_v4& a, const address_v4& b) noexcept
             {
                 return a.to_uint() == b.to_uint();
             }
 
-            constexpr bool operator!=(const address_v4& a, const address_v4& b) noexcept
+            [[nodiscard]] constexpr bool operator!=(const address_v4& a, const address_v4& b) noexcept
             {
                 return !(a == b);
             }
 
-            constexpr bool operator<(const address_v4& a, const address_v4& b) noexcept
+            [[nodiscard]] constexpr bool operator<(const address_v4& a, const address_v4& b) noexcept
             {
                 return a.to_uint() < b.to_uint();
             }
 
-            constexpr bool operator>(const address_v4& a, const address_v4& b) noexcept
+            [[nodiscard]] constexpr bool operator>(const address_v4& a, const address_v4& b) noexcept
             {
                 return b < a;
             }
 
-            constexpr bool operator<=(const address_v4& a, const address_v4& b) noexcept
+            [[nodiscard]] constexpr bool operator<=(const address_v4& a, const address_v4& b) noexcept
             {
                 return !(b < a);
             }
 
-            constexpr bool operator>=(const address_v4& a, const address_v4& b) noexcept
+            [[nodiscard]] constexpr bool operator>=(const address_v4& a, const address_v4& b) noexcept
             {
                 return !(a < b);
             }
 
-            address_v4 make_address_v4(std::string_view str)
+            [[nodiscard]] address_v4 make_address_v4(std::string_view str)
             {
                 address_v4::BytesType bytes;
                 std::array<char, inet_addrstrlen> buf;
@@ -248,23 +243,23 @@ namespace collin
 
                 buf[len] = '\0';
 
-                const auto ret = ::inet_pton(static_cast<int>(Family::inet), buf.data(), bytes.data());
+                const auto ret = ::inet_pton(static_cast<int>(family_type::inet), buf.data(), bytes.data());
                 if(ret == -1)
                 {
                     throw std::invalid_argument(str.data());
                 }
 
-                return address_v4(bytes);
+                return address_v4{bytes};
             }
 
-            address_v4 make_address_v4(const address_v4::BytesType& bytes)
+            [[nodiscard]] address_v4 make_address_v4(const address_v4::BytesType& bytes)
             {
-                return address_v4(bytes);
+                return address_v4{bytes};
             }
 
-            address_v4 make_address_v4(address_v4::uint_type val)
+            [[nodiscard]] address_v4 make_address_v4(address_v4::uint_type val)
             {
-                return address_v4(val);
+                return address_v4{val};
             }
 
             template<class CharT, class Traits>
@@ -275,264 +270,207 @@ namespace collin
 
             class address_v6
             {
-            public:
-                struct BytesType : std::array<unsigned char, 16>
-                {
-                    friend address_v6;
-
-                    template<class... T>
-                    explicit constexpr BytesType(T... t);
-                };
-
-                constexpr address_v6() noexcept;
-                constexpr address_v6(const address_v6& a) noexcept;
-                constexpr address_v6(const BytesType& bytes, scope_id_type scope = 0);
-
-                address_v6& operator=(const address_v6& a) noexcept;
-
-                void scope_id(scope_id_type id) noexcept;
-
-                constexpr scope_id_type scope_id() const noexcept;
-
-                constexpr bool is_unspecified() const noexcept;
-
-                constexpr bool is_loopback() const noexcept;
-
-                constexpr bool is_multicast() const noexcept;
-
-                constexpr bool is_link_local() const noexcept;
-
-                constexpr bool is_site_local() const noexcept;
-
-                constexpr bool is_v4_mapped() const noexcept;
-
-                constexpr bool is_multicast_node_local() const noexcept;
-
-                constexpr bool is_multicast_link_local() const noexcept;
-
-                constexpr bool is_multicast_site_local() const noexcept;
-
-                constexpr bool is_multicast_org_local() const noexcept;
-
-                constexpr bool is_multicast_global() const noexcept;
-
-                constexpr BytesType to_bytes() const noexcept;
-
-                template<class Allocator = std::allocator<char>>
-                std::basic_string<char, std::char_traits<char>, Allocator>
-                    to_string(const Allocator& a = Allocator()) const
-                {
-                    std::basic_string<char, std::char_traits<char>, Allocator> str;
-                    str.resize(inet6_addrstrlen);
-                    if (::inet_ntop(static_cast<int>(Family::inet6), address_.data(), str.data(), str.size()))
+                public:
+                    struct BytesType : std::array<unsigned char, 16>
                     {
-                        str.erase(str.find('\0'));
-                    }
-                    else
+                        friend address_v6;
+
+                        template<class... T>
+                        explicit constexpr BytesType(T... t) noexcept
+                            : std::array<unsigned char, 16>{ {static_cast<unsigned char>(t)...}} {}
+                    };
+
+                    constexpr address_v6() noexcept = default;
+                    constexpr address_v6(const address_v6& a) noexcept = default;
+                    constexpr address_v6(const BytesType& bytes, scope_id_type scope = 0)
+                        : address_(bytes), scope_id_(scope)
                     {
-                        str.resize(0);
+                        if constexpr (std::numeric_limits<unsigned char>::max() != 0xFF)
+                        {
+                            for (const auto& byte : bytes)
+                            {
+                                if (byte > 0xFF)
+                                {
+                                    throw std::out_of_range("Address byte is greater than 0xFF");
+                                }
+                            }
+                        }
                     }
 
-                    return str;
-                }
+                    constexpr address_v6& operator=(const address_v6& a) noexcept = default;
 
-                static constexpr address_v6 any() noexcept;
+                    void scope_id(scope_id_type id) noexcept
+                    {
+                        scope_id_ = id;
+                    }
 
-                static constexpr address_v6 loopback() noexcept;
+                    [[nodiscard]] constexpr scope_id_type scope_id() const noexcept
+                    {
+                        return scope_id_;
+                    }
 
-            private:
-                template<class InternetProcotol>
-                friend class basic_endpoint;
+                    [[nodiscard]] constexpr bool is_unspecified() const noexcept
+                    {
+                        return *this == any();
+                    }
 
-                friend constexpr bool operator<(const address_v6& a, const address_v6& b) noexcept;
-                friend constexpr bool operator==(const address_v6& a, const address_v6& b) noexcept;
-                BytesType address_;
-                scope_id_type scope_id_;
+                    [[nodiscard]] constexpr bool is_loopback() const noexcept
+                    {
+                        return *this == loopback();
+                    }
+
+                    [[nodiscard]] constexpr bool is_multicast() const noexcept
+                    {
+                        return address_[0] == 0xFF;
+                    }
+
+                    [[nodiscard]] constexpr bool is_link_local() const noexcept
+                    {
+                        return address_[0] == 0xFE && (address_[1] & 0xC0) == 0x80;
+                    }
+
+                    [[nodiscard]] constexpr bool is_site_local() const noexcept
+                    {
+                        return address_[0] == 0xFE && (address_[1] & 0xC0) == 0xC0;
+                    }
+
+                    [[nodiscard]] constexpr bool is_v4_mapped() const noexcept
+                    {
+                        return address_[0] == 0 && address_[1] == 0 && address_[2] == 0 && address_[3] == 0
+                            && address_[4] == 0 && address_[5] == 0 && address_[6] == 0 && address_[7] == 0
+                            && address_[8] == 0 && address_[9] == 0 && address_[10] == 0xFF && address_[11] == 0xFF;
+                    }
+
+                    [[nodiscard]] constexpr bool is_multicast_node_local() const noexcept
+                    {
+                        return is_multicast() && (address_[1] & 0x0F) == 0x01;
+                    }
+
+                    [[nodiscard]] constexpr bool is_multicast_link_local() const noexcept
+                    {
+                        return is_multicast() && (address_[1] & 0x0F) == 0x02;
+                    }
+
+                    [[nodiscard]] constexpr bool is_multicast_site_local() const noexcept
+                    {
+                        return is_multicast() && (address_[1] & 0x0F) == 0x05;
+                    }
+
+                    [[nodiscard]] constexpr bool is_multicast_org_local() const noexcept
+                    {
+                        return is_multicast() && (address_[1] & 0x0F) == 0x08;
+                    }
+
+                    [[nodiscard]] constexpr bool is_multicast_global() const noexcept
+                    {
+                        return is_multicast() && (address_[1] & 0x0F) == 0x0E;
+                    }
+
+                    [[nodiscard]] constexpr address_v6::BytesType to_bytes() const noexcept
+                    {
+                        return address_;
+                    }
+
+                    template<class Allocator = std::allocator<char>>
+                    [[nodiscard]] std::basic_string<char, std::char_traits<char>, Allocator>
+                        to_string(const Allocator& a = Allocator()) const
+                    {
+                        std::basic_string<char, std::char_traits<char>, Allocator> str;
+                        str.resize(inet6_addrstrlen);
+                        if (::inet_ntop(static_cast<int>(family_type::inet6), address_.data(), str.data(), str.size()))
+                        {
+                            str.erase(str.find('\0'));
+                        }
+                        else
+                        {
+                            str.resize(0);
+                        }
+
+                        return str;
+                    }
+
+                    [[nodiscard]] static constexpr address_v6 any() noexcept
+                    {
+                        return address_v6{};
+                    };
+
+                    [[nodiscard]] static constexpr address_v6 loopback() noexcept
+                    {
+                        address_v6 temp;
+                        temp.address_[15] = 1;
+                        return temp;
+                    }
+
+                    friend constexpr bool operator==(const address_v6& a, const address_v6& b) noexcept
+                    {
+                        return a.address_[0] == b.address_[0] &&
+                            a.address_[1] == b.address_[1] &&
+                            a.address_[2] == b.address_[2] &&
+                            a.address_[3] == b.address_[3] &&
+                            a.address_[4] == b.address_[4] &&
+                            a.address_[5] == b.address_[5] &&
+                            a.address_[6] == b.address_[6] &&
+                            a.address_[7] == b.address_[7] &&
+                            a.address_[8] == b.address_[8] &&
+                            a.address_[9] == b.address_[9] &&
+                            a.address_[10] == b.address_[10] &&
+                            a.address_[11] == b.address_[11] &&
+                            a.address_[12] == b.address_[12] &&
+                            a.address_[13] == b.address_[13] &&
+                            a.address_[14] == b.address_[14] &&
+                            a.address_[15] == b.address_[15] &&
+                            a.scope_id_ == b.scope_id_;
+                    }
+                    
+                    friend constexpr bool operator!=(const address_v6& a, const address_v6& b) noexcept
+                    {
+                        return !(a == b);
+                    }
+
+                    friend constexpr bool operator<(const address_v6& a, const address_v6& b) noexcept
+                    {
+                        for (std::size_t i = 0; i < std::size(a.address_); i++)
+                        {
+                            if (a.address_[i] < b.address_[i])
+                            {
+                                return true;
+                            }
+                            else if (a.address_[i] > b.address_[i])
+                            {
+                                return false;
+                            }
+                        }
+
+                        return a.scope_id_ < b.scope_id_;
+                    }
+
+                    friend constexpr bool operator>(const address_v6& a, const address_v6& b) noexcept
+                    {
+                        return b < a;
+                    }
+
+                    friend constexpr bool operator<=(const address_v6& a, const address_v6& b) noexcept
+                    {
+                        return !(b < a);
+                    }
+
+                    friend constexpr bool operator>=(const address_v6& a, const address_v6& b) noexcept
+                    {
+                        return !(a < b);
+                    }
+
+                private:
+                    template<class InternetProcotol>
+                    friend class basic_endpoint;
+
+                    friend constexpr bool operator<(const address_v6& a, const address_v6& b) noexcept;
+                    BytesType address_ {};
+                    scope_id_type scope_id_ {};
             };
 
             constexpr bool operator==(const address_v6& a, const address_v6& b) noexcept;
             constexpr bool operator!=(const address_v6& a, const address_v6& b) noexcept;
-            constexpr address_v6 make_address_v6(const address_v6::BytesType& bytes, scope_id_type scope_id = 0);
-            constexpr address_v6 make_address_v6(v4_mapped_t, const address_v4& a) noexcept;
-            address_v6 make_address_v6(std::string_view str);
-
-            template<class... T>
-            constexpr address_v6::BytesType::BytesType(T... t)
-                : std::array<unsigned char, 16>{{static_cast<unsigned char>(t)...}} {}
-
-            constexpr address_v6::address_v6() noexcept : address_{}, scope_id_{} {}
-
-            constexpr address_v6::address_v6(const address_v6& a) noexcept = default;
-
-            constexpr address_v6::address_v6(const BytesType& bytes, scope_id_type scope)
-                : address_(bytes), scope_id_(scope)
-            {
-                if constexpr (std::numeric_limits<unsigned char>::max() != 0xFF)
-                {
-                    for (const auto& byte : bytes)
-                    {
-                        if (byte > 0xFF)
-                        {
-                            throw std::out_of_range("Address byte is greater than 0xFF");
-                        }
-                    }
-                }
-            }
-
-            address_v6& address_v6::operator=(const address_v6& a) noexcept
-            {
-                if (this != &a)
-                {
-                    address_ = a.address_;
-                    scope_id_ = a.scope_id_;
-                }
-
-                return *this;
-            }
-
-            void address_v6::scope_id(scope_id_type id) noexcept
-            {
-                scope_id_ = id;
-            }
-
-            constexpr scope_id_type address_v6::scope_id() const noexcept
-            {
-                return scope_id_;
-            }
-
-            constexpr bool address_v6::is_unspecified() const noexcept
-            {
-                return *this == any();
-            }
-
-            constexpr bool address_v6::is_loopback() const noexcept
-            {
-                return *this == loopback();
-            }
-
-            constexpr bool address_v6::is_multicast() const noexcept
-            {
-                return address_[0] == 0xFF;
-            }
-
-            constexpr bool address_v6::is_link_local() const noexcept
-            {
-                return address_[0] == 0xFE && (address_[1] & 0xC0) == 0x80;
-            }
-
-            constexpr bool address_v6::is_site_local() const noexcept
-            {
-                return address_[0] == 0xFE && (address_[1] & 0xC0) == 0xC0;
-            }
-
-            constexpr bool address_v6::is_v4_mapped() const noexcept
-            {
-                return address_[0] == 0 && address_[1] == 0 && address_[2] == 0 && address_[3] == 0
-                    && address_[4] == 0 && address_[5] == 0 && address_[6] == 0 && address_[7] == 0
-                    && address_[8] == 0 && address_[9] == 0 && address_[10] == 0xFF && address_[11] == 0xFF;
-            }
-
-            constexpr bool address_v6::is_multicast_node_local() const noexcept
-            {
-                return is_multicast() && (address_[1] & 0x0F) == 0x01;
-            }
-
-            constexpr bool address_v6::is_multicast_link_local() const noexcept
-            {
-                return is_multicast() && (address_[1] & 0x0F) == 0x02;
-            }
-
-            constexpr bool address_v6::is_multicast_site_local() const noexcept
-            {
-                return is_multicast() && (address_[1] & 0x0F) == 0x05;
-            }
-
-            constexpr bool address_v6::is_multicast_org_local() const noexcept
-            {
-                return is_multicast() && (address_[1] & 0x0F) == 0x08;
-            }
-
-            constexpr bool address_v6::is_multicast_global() const noexcept
-            {
-                return is_multicast() && (address_[1] & 0x0F) == 0x0E;
-            }
-
-            constexpr address_v6::BytesType address_v6::to_bytes() const noexcept
-            {
-                return address_;
-            }
-
-            constexpr address_v6 address_v6::any() noexcept
-            {
-                return address_v6{};
-            };
-
-            constexpr address_v6 address_v6::loopback() noexcept
-            {
-                address_v6 temp;
-                temp.address_[15] = 1;
-                return temp;
-            }
-
-            constexpr bool operator==(const address_v6& a, const address_v6& b) noexcept
-            {
-                return a.address_[0] == b.address_[0] &&
-                       a.address_[1] == b.address_[1] &&
-                       a.address_[2] == b.address_[2] &&
-                       a.address_[3] == b.address_[3] &&
-                       a.address_[4] == b.address_[4] &&
-                       a.address_[5] == b.address_[5] &&
-                       a.address_[6] == b.address_[6] &&
-                       a.address_[7] == b.address_[7] &&
-                       a.address_[8] == b.address_[8] &&
-                       a.address_[9] == b.address_[9] &&
-                       a.address_[10] == b.address_[10] &&
-                       a.address_[11] == b.address_[11] &&
-                       a.address_[12] == b.address_[12] &&
-                       a.address_[13] == b.address_[13] &&
-                       a.address_[14] == b.address_[14] &&
-                       a.address_[15] == b.address_[15] &&
-                       a.scope_id_ == b.scope_id_;
-            }
-
-            constexpr bool operator!=(const address_v6& a, const address_v6& b) noexcept
-            {
-                return !(a == b);
-            }
-
-            constexpr bool operator<(const address_v6& a, const address_v6& b) noexcept
-            {
-                for (std::size_t i = 0; i < std::size(a.address_); i++)
-                {
-                    if (a.address_[i] < b.address_[i])
-                    {
-                        return true;
-                    }
-                    else if (a.address_[i] > b.address_[i])
-                    {
-                        return false;
-                    }
-                }
-
-                return a.scope_id_ < b.scope_id_;
-            }
-
-            constexpr bool operator>(const address_v6& a, const address_v6& b) noexcept
-            {
-                return b < a;
-            }
-
-            constexpr bool operator<=(const address_v6& a, const address_v6& b) noexcept
-            {
-                return !(b < a);
-            }
-
-            constexpr bool operator>=(const address_v6& a, const address_v6& b) noexcept
-            {
-                return !(a < b);
-            }
-
-            constexpr address_v6 make_address_v6(const address_v6::BytesType& bytes, scope_id_type scope_id)
+            constexpr address_v6 make_address_v6(const address_v6::BytesType& bytes, scope_id_type scope_id = 0)
             {
                 return address_v6(bytes, scope_id);
             }
@@ -541,7 +479,7 @@ namespace collin
             {
                 const auto v4b = a.to_bytes();
                 const address_v6::BytesType v6b(0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                            0xFF, 0xFF, v4b[0], v4b[1], v4b[2], v4b[3]);
+                    0xFF, 0xFF, v4b[0], v4b[1], v4b[2], v4b[3]);
 
                 return address_v6(v6b);
             }
@@ -556,7 +494,7 @@ namespace collin
                     throw std::invalid_argument(str.data());
                 }
 
-                auto ret = ::inet_pton(static_cast<int>(Family::inet6), buf.data(), bytes.data());
+                auto ret = ::inet_pton(static_cast<int>(family_type::inet6), buf.data(), bytes.data());
                 if(ret == -1)
                 {
                     throw std::invalid_argument(str.data());
@@ -576,7 +514,7 @@ namespace collin
                 public:
                     BadAddressCast() noexcept {}
 
-                    const char* what() noexcept
+                    const char* what() const noexcept override
                     {
                         return "Bad Address Cast";
                     }
@@ -586,13 +524,15 @@ namespace collin
             {
                 public:
                     constexpr address() noexcept = default;
-                    constexpr address(const address&) = default;
+                    constexpr address(const address&) noexcept = default;
+                    constexpr address(address&&) noexcept = default;
                     constexpr address(const address_v4& a) noexcept
                         : address_{a} {}
                     constexpr address(const address_v6& a) noexcept
                         : address_{a} {}
 
-                    address& operator=(const address&) noexcept = default;
+                    constexpr address& operator=(const address&) noexcept = default;
+                    constexpr address& operator=(address&&) noexcept = default;
 
                     address& operator=(const address_v4& a) noexcept
                     {
@@ -606,37 +546,37 @@ namespace collin
                         return *this;
                     }
 
-                    constexpr bool is_v4() const noexcept
+                    [[nodiscard]] constexpr bool is_v4() const noexcept
                     {
                         return std::holds_alternative<address_v4>(address_);
                     }
 
-                    constexpr bool is_v6() const noexcept
+                    [[nodiscard]] constexpr bool is_v6() const noexcept
                     {
                         return std::holds_alternative<address_v6>(address_);
                     }
 
-                    constexpr address_v4 to_v4() const
+                    [[nodiscard]] constexpr address_v4 to_v4() const
                     {
                         if(!is_v4())
                         {
-                            throw BadAddressCast();
+                            throw BadAddressCast{};
                         }
 
                         return std::get<address_v4>(address_);
                     }
 
-                    constexpr address_v6 to_v6() const
+                    [[nodiscard]] constexpr address_v6 to_v6() const
                     {
                         if(!is_v6())
                         {
-                            throw BadAddressCast();
+                            throw BadAddressCast{};
                         }
 
                         return std::get<address_v6>(address_);
                     }
 
-                    constexpr bool is_unspecified() const noexcept
+                    [[nodiscard]] constexpr bool is_unspecified() const noexcept
                     {
                         return std::visit(
                             [](const auto& address) {
@@ -645,7 +585,7 @@ namespace collin
                         address_);
                     }
 
-                    constexpr bool is_loopback() const noexcept
+                    [[nodiscard]] constexpr bool is_loopback() const noexcept
                     {
                         return std::visit(
                             [](const auto& address) {
@@ -654,7 +594,7 @@ namespace collin
                         address_);
                     }
 
-                    constexpr bool is_multicast() const noexcept
+                    [[nodiscard]] constexpr bool is_multicast() const noexcept
                     {
                         return std::visit(
                             [](const auto& address) {
@@ -664,7 +604,7 @@ namespace collin
                     }
 
                     template<class Allocator = std::allocator<char>>
-                    inline std::basic_string<char, std::char_traits<char>, Allocator>
+                    [[nodiscard]] inline std::basic_string<char, std::char_traits<char>, Allocator>
                     to_string(const Allocator& a = Allocator()) const
                     {
                         return std::visit(
@@ -681,7 +621,7 @@ namespace collin
                     std::variant<address_v4, address_v6> address_ {};
             };
 
-            constexpr bool operator==(const address& a, const address& b) noexcept
+            [[nodiscard]] constexpr bool operator==(const address& a, const address& b) noexcept
             {
                 if(a.is_v4() && !b.is_v4())
                 {
@@ -696,12 +636,12 @@ namespace collin
                 return a.to_v6() == b.to_v6();
             }
 
-            constexpr bool operator!=(const address& a, const address& b) noexcept
+            [[nodiscard]] constexpr bool operator!=(const address& a, const address& b) noexcept
             {
                 return !(a == b);
             }
 
-            constexpr bool operator<(const address& a, const address& b) noexcept
+            [[nodiscard]] constexpr bool operator<(const address& a, const address& b) noexcept
             {
                 if(a.is_v4())
                 {
@@ -721,22 +661,22 @@ namespace collin
                 return a.to_v6() < b.to_v6();
             }
 
-            constexpr bool operator>(const address& a, const address& b) noexcept
+            [[nodiscard]] constexpr bool operator>(const address& a, const address& b) noexcept
             {
                 return b < a;
             }
 
-            constexpr bool operator<=(const address& a, const address& b) noexcept
+            [[nodiscard]] constexpr bool operator<=(const address& a, const address& b) noexcept
             {
                 return !(b < a);
             }
 
-            constexpr bool operator>=(const address& a, const address& b) noexcept
+            [[nodiscard]] constexpr bool operator>=(const address& a, const address& b) noexcept
             {
                 return !(a < b);
             }
 
-            address make_address(std::string_view str)
+            [[nodiscard]] address make_address(std::string_view str)
             {
                 try
                 {
@@ -765,60 +705,60 @@ namespace collin
                 public:
                     using value_type = address_v4;
                     using difference_type = std::ptrdiff_t;
-                    using pointer = const address_v4*;
-                    using reference = const address_v4&;
+                    using pointer = const value_type*;
+                    using reference = const value_type&;
                     using iterator_category = std::input_iterator_tag;
 
-                    basic_address_iterator(const address_v4& a) noexcept
+                    constexpr basic_address_iterator(const address_v4& a) noexcept
                         : address_(a) {}
 
-                    reference operator*() const noexcept
+                    [[nodiscard]] constexpr reference operator*() const noexcept
                     {
                         return address_;
                     }
 
-                    pointer operator->() const noexcept
+                    constexpr pointer operator->() const noexcept
                     {
                         return &address_;
                     }
 
-                    basic_address_iterator& operator++() noexcept
+                    constexpr basic_address_iterator& operator++() noexcept
                     {
-                        address_ = value_type(address_.to_uint() + 1);
+                        address_ = value_type{address_.to_uint() + 1};
                         return *this;
                     }
 
-                    basic_address_iterator operator++(int) noexcept
+                    constexpr basic_address_iterator operator++(int) noexcept
                     {
                         auto temp = *this;
                         ++*this;
                         return temp;
                     }
 
-                    basic_address_iterator& operator--() noexcept
+                    constexpr basic_address_iterator& operator--() noexcept
                     {
-                        address_ = value_type(address_.to_uint() - 1);
+                        address_ = value_type{address_.to_uint() - 1};
                         return *this;
                     }
 
-                    basic_address_iterator operator--(int) noexcept
+                    constexpr basic_address_iterator operator--(int) noexcept
                     {
                         auto temp = *this;
                         --*this;
                         return temp;
                     }
 
-                    bool operator==(const basic_address_iterator& rhs) const noexcept
+                    [[nodiscard]] constexpr bool operator==(const basic_address_iterator& rhs) const noexcept
                     {
                         return address_ == rhs.address_;
                     }
 
-                    bool operator!=(const basic_address_iterator& rhs) const noexcept
+                    [[nodiscard]] constexpr bool operator!=(const basic_address_iterator& rhs) const noexcept
                     {
                         return !(*this == rhs);
                     }
                 private:
-                    address_v4 address_;
+                    value_type address_;
             };
 
             using address_v4_iterator = basic_address_iterator<address_v4>;
@@ -833,20 +773,20 @@ namespace collin
                     using reference = const address_v6&;
                     using iterator_category = std::input_iterator_tag;
 
-                    basic_address_iterator(const address_v6& a) noexcept
+                    constexpr basic_address_iterator(const address_v6& a) noexcept
                         : address_(a) {}
 
-                    reference operator*() const noexcept
+                    [[nodiscard]] constexpr reference operator*() const noexcept
                     {
                         return address_;
                     }
 
-                    pointer operator->() const noexcept
+                    constexpr pointer operator->() const noexcept
                     {
                         return &address_;
                     }
 
-                    basic_address_iterator& operator++() noexcept
+                    constexpr basic_address_iterator& operator++() noexcept
                     {
                         address_v6::BytesType b = address_.to_bytes();
                         for (std::size_t i = std::size(b) - 1; i > 0; i--)
@@ -862,14 +802,14 @@ namespace collin
                         return *this;
                     }
 
-                    basic_address_iterator operator++(int) noexcept
+                    constexpr basic_address_iterator operator++(int) noexcept
                     {
                         auto temp = *this;
                         ++* this;
                         return temp;
                     }
 
-                    basic_address_iterator& operator--() noexcept
+                    constexpr basic_address_iterator& operator--() noexcept
                     {
                         address_v6::BytesType b = address_.to_bytes();
                         for(std::size_t i = 0; i < std::size(b); i++)
@@ -885,19 +825,19 @@ namespace collin
                         return *this;
                     }
 
-                    basic_address_iterator operator--(int) noexcept
+                    constexpr basic_address_iterator operator--(int) noexcept
                     {
                         auto temp = *this;
                         --* this;
                         return temp;
                     }
 
-                    bool operator==(const basic_address_iterator& rhs) const noexcept
+                    [[nodiscard]] constexpr bool operator==(const basic_address_iterator& rhs) const noexcept
                     {
                         return address_ == rhs.address_;
                     }
 
-                    bool operator!=(const basic_address_iterator& rhs) const noexcept
+                    [[nodiscard]] constexpr bool operator!=(const basic_address_iterator& rhs) const noexcept
                     {
                         return !(*this == rhs);
                     }
@@ -916,33 +856,33 @@ namespace collin
                 public:
                     using iterator = basic_address_iterator<address_v4>;
 
-                    basic_address_range() noexcept
+                    constexpr basic_address_range() noexcept
                         : begin_({}), end_({}) {}
 
-                    basic_address_range(const address_v4& first, const address_v4& last) noexcept
+                    constexpr basic_address_range(const address_v4& first, const address_v4& last) noexcept
                         : begin_(first), end_(last) {}
 
-                    iterator begin() const noexcept
+                    [[nodiscard]] constexpr iterator begin() const noexcept
                     {
                         return begin_;
                     }
 
-                    iterator end() const noexcept
+                    [[nodiscard]] constexpr iterator end() const noexcept
                     {
                         return end_;
                     }
 
-                    bool empty() const noexcept
+                    [[nodiscard]] constexpr bool empty() const noexcept
                     {
                         return begin_ == end_;
                     }
 
-                    std::size_t size() const noexcept
+                    [[nodiscard]] constexpr std::size_t size() const noexcept
                     {
                         return end_->to_uint() - begin_->to_uint();
                     }
 
-                    iterator find(const address_v4& addr) const noexcept
+                    [[nodiscard]] constexpr iterator find(const address_v4& addr) const noexcept
                     {
                         if (*begin_ <= addr && addr < *end_)
                         {
@@ -964,28 +904,28 @@ namespace collin
                 public:
                     using iterator = basic_address_iterator<address_v6>;
 
-                    basic_address_range() noexcept
+                    constexpr basic_address_range() noexcept
                         : begin_({}), end_({}) {}
 
-                    basic_address_range(const address_v6& first, const address_v6& last) noexcept
+                    constexpr basic_address_range(const address_v6& first, const address_v6& last) noexcept
                         : begin_(first), end_(last) {}
 
-                    iterator begin() const noexcept
+                    [[nodiscard]] constexpr iterator begin() const noexcept
                     {
                         return begin_;
                     }
 
-                    iterator end() const noexcept
+                    [[nodiscard]] constexpr iterator end() const noexcept
                     {
                         return end_;
                     }
 
-                    bool empty() const noexcept
+                    [[nodiscard]] constexpr bool empty() const noexcept
                     {
                         return begin_ == end_;
                     }
 
-                    iterator find(const address_v6& addr) const noexcept
+                    [[nodiscard]] constexpr iterator find(const address_v6& addr) const noexcept
                     {
                         if (*begin_ <= addr && addr < *end_)
                         {
@@ -1003,7 +943,7 @@ namespace collin
 
             class network_v4;
 
-            bool operator==(const network_v4& a, const network_v4& b) noexcept;
+            [[nodiscard]] constexpr bool operator==(const network_v4& a, const network_v4& b) noexcept;
 
             class network_v4
             {
@@ -1033,17 +973,17 @@ namespace collin
                         }
                     }
 
-                    constexpr address_v4 address() const noexcept
+                    [[nodiscard]] constexpr address_v4 address() const noexcept
                     {
                         return addr_;
                     }
 
-                    constexpr int prefix_length() const noexcept
+                    [[nodiscard]] constexpr int prefix_length() const noexcept
                     {
                         return prefix_len_;
                     }
 
-                    constexpr address_v4 netmask() const noexcept
+                    [[nodiscard]] constexpr address_v4 netmask() const noexcept
                     {
                         auto val = address_v4::broadcast().to_uint();
                         val >>= (32 - prefix_len_);
@@ -1051,27 +991,27 @@ namespace collin
                         return address_v4{val};
                     }
 
-                    constexpr address_v4 network() const noexcept
+                    [[nodiscard]] constexpr address_v4 network() const noexcept
                     {
                         return address_v4{addr_.to_uint() & netmask().to_uint()};
                     }
 
-                    constexpr address_v4 broadcast() const noexcept
+                    [[nodiscard]] constexpr address_v4 broadcast() const noexcept
                     {
                         return address_v4{addr_.to_uint() | ~netmask().to_uint()};
                     }
 
-                    constexpr network_v4 canonical() const noexcept
+                    [[nodiscard]] constexpr network_v4 canonical() const noexcept
                     {
                         return network_v4(network(), prefix_length());
                     }
 
-                    constexpr bool is_host() const noexcept
+                    [[nodiscard]] constexpr bool is_host() const noexcept
                     {
                         return prefix_len_ == 32;
                     }
 
-                    address_v4_range hosts() const noexcept
+                    [[nodiscard]] constexpr address_v4_range hosts() const noexcept
                     {
                         if(is_host())
                         {
@@ -1081,7 +1021,7 @@ namespace collin
                         return {network(), broadcast()};
                     }
 
-                    constexpr bool is_subnet_of(const network_v4& other) const noexcept
+                    [[nodiscard]] constexpr bool is_subnet_of(const network_v4& other) const noexcept
                     {
                         if (other.prefix_length() < prefix_length())
                         {
@@ -1093,7 +1033,7 @@ namespace collin
                     }
 
                     template<typename Allocator = std::allocator<char>>
-                    std::basic_string<char, std::char_traits<char>, Allocator> to_string(const Allocator& a = Allocator()) const
+                    [[nodiscard]] std::basic_string<char, std::char_traits<char>, Allocator> to_string(const Allocator& a = Allocator()) const
                     {
                         return address().to_string() + '/' + std::to_string(prefix_length());
                     }
@@ -1104,7 +1044,7 @@ namespace collin
 
             class network_v6;
 
-            bool operator==(const network_v6& a, const network_v6& b) noexcept;
+            [[nodiscard]] constexpr bool operator==(const network_v6& a, const network_v6& b) noexcept;
 
             class network_v6
             {
@@ -1121,39 +1061,39 @@ namespace collin
                         }
                     }
 
-                    constexpr address_v6 address() const noexcept
+                    [[nodiscard]] constexpr address_v6 address() const noexcept
                     {
                         return addr_;
                     }
 
-                    constexpr int prefix_length() const noexcept
+                    [[nodiscard]] constexpr int prefix_length() const noexcept
                     {
                         return prefix_len_;
                     }
 
                     constexpr address_v6 network() const noexcept; // TODO
 
-                    constexpr network_v6 canonical() const noexcept
+                    [[nodiscard]] constexpr network_v6 canonical() const noexcept
                     {
                         return network_v6(network(), prefix_length());
                     }
 
-                    constexpr bool is_host() const noexcept
+                    [[nodiscard]] constexpr bool is_host() const noexcept
                     {
                         return prefix_len_ == 32;
                     }
 
-                    address_v6_range hosts() const noexcept
+                    [[nodiscard]] constexpr address_v6_range hosts() const noexcept
                     {
                         if (is_host())
                         {
-                            return { address(), *++address_v6_iterator(address()) };
+                            return {address(), *++address_v6_iterator(address())};
                         }
 
                         return {};
                     }
 
-                    constexpr bool is_subnet_of(const network_v6& other) const noexcept
+                    [[nodiscard]] constexpr bool is_subnet_of(const network_v6& other) const noexcept
                     {
                         if (other.prefix_length() < prefix_length())
                         {
@@ -1165,7 +1105,7 @@ namespace collin
                     }
 
                     template<typename Allocator = std::allocator<char>>
-                    std::basic_string<char, std::char_traits<char>, Allocator> to_string(const Allocator& a = Allocator()) const
+                    [[nodiscard]] std::basic_string<char, std::char_traits<char>, Allocator> to_string(const Allocator& a = Allocator()) const
                     {
                         return address().to_string() + '/' + std::to_string(prefix_length());
                     }
@@ -1174,34 +1114,34 @@ namespace collin
                     int prefix_len_;
             };
 
-            inline bool operator==(const network_v4& a, const network_v4& b) noexcept
+            [[nodiscard]] constexpr bool operator==(const network_v4& a, const network_v4& b) noexcept
             {
                 return a.address() == b.address() && a.prefix_length() == b.prefix_length();
             }
 
-            inline bool operator!=(const network_v4& a, const network_v4& b) noexcept
+            [[nodiscard]] constexpr bool operator!=(const network_v4& a, const network_v4& b) noexcept
             {
                 return !(a== b);
             }
 
-            inline bool operator==(const network_v6& a, const network_v6& b) noexcept
+            [[nodiscard]] constexpr bool operator==(const network_v6& a, const network_v6& b) noexcept
             {
                 return a.address() == b.address() && a.prefix_length() == b.prefix_length();
             }
 
-            inline bool operator!=(const network_v6& a, const network_v6& b) noexcept
+            [[nodiscard]] constexpr bool operator!=(const network_v6& a, const network_v6& b) noexcept
             {
                 return !(a == b);
             }
 
-            inline network_v4 make_network_v4(const address_v4& a, int prefix_length)
+            [[nodiscard]] constexpr network_v4 make_network_v4(const address_v4& a, int prefix_length)
             {
                 return network_v4{a, prefix_length};
             }
 
             network_v4 make_network_v4(std::string_view str); // TODO
 
-            inline network_v6 make_network_v6(const address_v6& a, int prefix_length)
+            [[nodiscard]] constexpr network_v6 make_network_v6(const address_v6& a, int prefix_length)
             {
                 return network_v6{a, prefix_length};
             }
@@ -1209,13 +1149,13 @@ namespace collin
             network_v6 make_network_v6(std::string_view str); // TODO
 
             template<class CharT, class Traits>
-            inline std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& os, const network_v4& net)
+            std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& os, const network_v4& net)
             {
                 return os << net.to_string();
             }
 
             template<class CharT, class Traits>
-            inline std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& os, const network_v6& net)
+            std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& os, const network_v6& net)
             {
                 return os << net.to_string();
             }
@@ -1230,13 +1170,13 @@ namespace collin
 
                     constexpr basic_endpoint() noexcept
                     {
-                        std::get<::sockaddr_in>(data_).sin_family = static_cast<int>(protocol_type::v4().family());
+                        std::get<::sockaddr_in>(data_).sin_family = static_cast<decltype(std::get<::sockaddr_in>(data_).sin_family)>(protocol_type::v4().family());
                     }
 
                     constexpr basic_endpoint(const protocol_type& proto, port_type port_num) noexcept
                     {
                         auto& data = std::get<::sockaddr_in>(data_);
-                        data.sin_family = static_cast<int>(proto.family());
+                        data.sin_family = static_cast<int>(proto.family_type());
                         data.sin_port = hton(port_num);
                     }
 
@@ -1245,7 +1185,7 @@ namespace collin
                         if (addr.is_v4())
                         {
                             auto& data = std::get<::sockaddr_in>(data_);
-                            data.sin_family = static_cast<int>(protocol_type::v4().family());
+                            data.sin_family = static_cast<int>(protocol_type::v4().family_type());
                             data.sin_port = hton(port_num);
                             data.sin_addr.s_addr = addr.to_v4().to_uint();
                         }
@@ -1253,14 +1193,14 @@ namespace collin
                         {
                             data_ = ::sockaddr_in6{};
                             auto& data = std::get<::sockaddr_in6>(data_);
-                            data.sin6_family = static_cast<int>(protocol_type::v6().family());
+                            data.sin6_family = static_cast<int>(protocol_type::v6().family_type());
                             data.sin6_port = hton(port_num);
                             std::memcpy(data.sin6_addr.s6_addr, addr.to_v6().address_.data(), 16);
                             data.sin6_scope_id = addr.to_v6().scope_id_;
                         }
                     }
                     
-                    constexpr protocol_type protocol() const noexcept
+                    [[nodiscard]] constexpr protocol_type protocol() const noexcept
                     {
                         return std::visit(collin::overloaded {
                             [](::sockaddr_in) { return protocol_type::v4(); },
@@ -1268,7 +1208,7 @@ namespace collin
                         }, data_);
                     }
 
-                    constexpr address address() const noexcept
+                    [[nodiscard]] constexpr address address() const noexcept
                     {
                         ip::address addr;
 
@@ -1298,7 +1238,7 @@ namespace collin
                             auto& data = std::get<::sockaddr_in6>(data_);
                             auto& address = std::get<address_v6>(addr.address_);
 
-                            data.sin6_family = static_cast<int>(protocol_type::v6().family());
+                            data.sin6_family = static_cast<int>(protocol_type::v6().family_type());
                             std::memcpy(data.sin6_addr.s6_addr, address.address_.data(), 16);
                             data.sin6_scope_id = address.scope_id_;
                         }
@@ -1308,12 +1248,12 @@ namespace collin
                             auto& data = std::get<::sockaddr_in>(data_);
                             auto& address = std::get<address_v4>(addr.address_);
 
-                            data.sin_family = static_cast<int>(protocol_type::v4().family());
+                            data.sin_family = static_cast<int>(protocol_type::v4().family_type());
                             data.sin_addr.s_addr = address.address;
                         }
                     }
 
-                    constexpr port_type port() const noexcept
+                    [[nodiscard]] constexpr port_type port() const noexcept
                     {
                         return std::visit(overloaded {
                             [](const ::sockaddr_in& a) {
@@ -1337,7 +1277,7 @@ namespace collin
                         }, data_);
                     }
 
-                    void* data() noexcept
+                    [[nodiscard]] void* data() noexcept
                     {
                         return std::visit(
                             [](auto& a) {
@@ -1346,7 +1286,7 @@ namespace collin
                         data_);
                     }
 
-                    const void* data() const noexcept
+                    [[nodiscard]] const void* data() const noexcept
                     {
                         return std::visit(
                             [](const auto& a) {
@@ -1355,7 +1295,7 @@ namespace collin
                         data_);
                     }
 
-                    constexpr std::size_t size() const noexcept
+                    [[nodiscard]] constexpr std::size_t size() const noexcept
                     {
                         return std::visit(
                             [](const auto& a) {
@@ -1364,14 +1304,11 @@ namespace collin
                         data_);
                     }
 
-                    void resize(std::size_t s)
-                    {
-                        // ?
-                    }
+                    void resize(std::size_t) noexcept {}
 
-                    constexpr std::size_t capacity() const noexcept
+                    [[nodiscard]] constexpr std::size_t capacity() const noexcept
                     {
-                        return sizeof(::sockaddr_in6);
+                        return std::max(sizeof(::sockaddr_in), sizeof(::sockaddr_in6));
                     }
 
                 private:
@@ -1443,7 +1380,7 @@ namespace collin
                     basic_resolver_entry(const endpoint_type& ep, std::string_view h, std::string_view s)
                         : endpoint_(ep), host_name_(h), service_name_(s) {}
 
-                    endpoint_type endpoint() const
+                    [[nodiscard]] endpoint_type endpoint() const
                     {
                         return endpoint_;
                     }
@@ -1454,14 +1391,14 @@ namespace collin
                     }
 
                     template<class Allocator = std::allocator<char>>
-                    std::basic_string<char, std::char_traits<char>, Allocator>
+                    [[nodiscard]] std::basic_string<char, std::char_traits<char>, Allocator>
                     host_name(const Allocator& a = Allocator()) const
                     {
                         return {host_name_, a};
                     }
 
                     template<class Allocator = std::allocator<char>>
-                    std::basic_string<char, std::char_traits<char>, Allocator>
+                    [[nodiscard]] std::basic_string<char, std::char_traits<char>, Allocator>
                     service_name(const Allocator& a = Allocator()) const
                     {
                         return {service_name_, a};
@@ -1473,13 +1410,13 @@ namespace collin
             };
 
             template<class InternetProtocol>
-            bool operator==(const basic_resolver_entry<InternetProtocol>& a, const basic_resolver_entry<InternetProtocol>& b)
+            [[nodiscard]] bool operator==(const basic_resolver_entry<InternetProtocol>& a, const basic_resolver_entry<InternetProtocol>& b)
             {
                 return a.endpoint() == b.endpoint() && a.host_name() == b.host_name() && a.service_name() == b.service_name();
             }
 
             template<class InternetProtocol>
-            bool operator!=(const basic_resolver_entry<InternetProtocol>& a, const basic_resolver_entry<InternetProtocol>& b)
+            [[nodiscard]] bool operator!=(const basic_resolver_entry<InternetProtocol>& a, const basic_resolver_entry<InternetProtocol>& b)
             {
                 return !(a == b);
             }
@@ -1501,44 +1438,37 @@ namespace collin
                     using difference_type = std::ptrdiff_t;
                     using size_type = std::size_t;
 
-                    basic_resolver_results() = default;
-                    basic_resolver_results(const basic_resolver_results&) = default;
-                    basic_resolver_results(basic_resolver_results&&) noexcept = default;
-                    basic_resolver_results& operator=(const basic_resolver_results&) = default;
-                    basic_resolver_results& operator=(basic_resolver_results&&) = default;
-                    ~basic_resolver_results() = default;
-
-                    size_type size() const noexcept
+                    [[nodiscard]] size_type size() const noexcept
                     {
                         return size_;
                     }
 
-                    size_type max_size() const noexcept
+                    [[nodiscard]] size_type max_size() const noexcept
                     {
                         return results.max_size();
                     }
 
-                    bool empty() const noexcept
+                    [[nodiscard]] bool empty() const noexcept
                     {
                         return size_ == 0;
                     }
 
-                    const_iterator begin() const
+                    [[nodiscard]] const_iterator begin() const noexcept(noexcept(std::cbegin(results)))
                     {
                         return std::cbegin(results);
                     }
 
-                    const_iterator end() const
+                    [[nodiscard]] const_iterator end() const noexcept(noexcept(std::cend(results)))
                     {
                         return std::cend(results);
                     }
 
-                    const_iterator cbegin() const
+                    [[nodiscard]] const_iterator cbegin() const noexcept(noexcept(std::cbegin(results)))
                     {
                         return std::cbegin(results);
                     }
 
-                    const_iterator cend() const
+                    [[nodiscard]] const_iterator cend() const noexcept(noexcept(std::cend(results)))
                     {
                         return std::cend(results);
                     }
@@ -1572,12 +1502,11 @@ namespace collin
                                 }
                             }
 
-                            ::addrinfo* p{ nullptr };
+                            ::addrinfo* p{nullptr};
                         } address_results;
 
-                        if (auto err = ::getaddrinfo(h, s, &hints, &address_results.p) != 0)
+                        if (const auto err = ::getaddrinfo(h, s, &hints, std::addressof(address_results.p)) != 0)
                         {
-                            std::cout << net::get_last_error() << '\n';
                             throw std::system_error(err, resolver_category(), "Cannot resolve address");
                         }
 
@@ -1586,8 +1515,8 @@ namespace collin
 
                         for (auto ai = address_results.p; ai != nullptr; ai = ai->ai_next)
                         {
-                            if (static_cast<Family>(ai->ai_family) == Family::inet ||
-                                static_cast<Family>(ai->ai_family) == Family::inet6)
+                            if (static_cast<family_type>(ai->ai_family) == family_type::inet ||
+                                static_cast<family_type>(ai->ai_family) == family_type::inet6)
                             {
                                 if (ai->ai_addrlen <= ep.capacity())
                                 {
@@ -1606,7 +1535,7 @@ namespace collin
                         std::array<char, 128> service_name;
                         int flags = 0;
 
-                        if(ep.protocol().type() == Type::dgram)
+                        if(ep.protocol().type() == sock_type::dgram)
                         {
                             flags |= NI_DGRAM;
                         }
@@ -1633,13 +1562,13 @@ namespace collin
             };
 
             template<class InternetProtocol>
-            bool operator==(const basic_resolver_results<InternetProtocol>& a, const basic_resolver_results<InternetProtocol>& b)
+            [[nodiscard]] bool operator==(const basic_resolver_results<InternetProtocol>& a, const basic_resolver_results<InternetProtocol>& b) noexcept
             {
                 return a.size() == b.size() && std::equal(a.cbegin(), a.cend(), b.cbegin());
             }
 
             template<class InternetProtocol>
-            bool operator!=(const basic_resolver_results<InternetProtocol>& a, const basic_resolver_results<InternetProtocol>& b)
+            [[nodiscard]] bool operator!=(const basic_resolver_results<InternetProtocol>& a, const basic_resolver_results<InternetProtocol>& b) noexcept
             {
                 return !(a == b);
             }
@@ -1664,43 +1593,39 @@ namespace collin
                     static constexpr flags v4_mapped = flags::flags_v4_mapped;
                     static constexpr flags all_matching = flags::flags_all_matching;
                     static constexpr flags address_configured = flags::flags_address_configured;
-
-                protected:
-                    resolver_base() {}
-                    ~resolver_base() {}
             };
 
-            constexpr resolver_base::flags operator&(resolver_base::flags f1, resolver_base::flags f2)
+            [[nodiscard]] constexpr resolver_base::flags operator&(resolver_base::flags f1, resolver_base::flags f2) noexcept
             {
-                return resolver_base::flags{static_cast<int>(f1) & static_cast<int>(f2)};
+                return resolver_base::flags{ static_cast<int>(f1) & static_cast<int>(f2) };
             }
 
-            constexpr resolver_base::flags operator|(resolver_base::flags f1, resolver_base::flags f2)
+            [[nodiscard]] constexpr resolver_base::flags operator|(resolver_base::flags f1, resolver_base::flags f2) noexcept
             {
-                return resolver_base::flags{static_cast<int>(f1) | static_cast<int>(f2)};
+                return resolver_base::flags{ static_cast<int>(f1) | static_cast<int>(f2) };
             }
 
-            constexpr resolver_base::flags operator^(resolver_base::flags f1, resolver_base::flags f2)
+            [[nodiscard]] constexpr resolver_base::flags operator^(resolver_base::flags f1, resolver_base::flags f2) noexcept
             {
-                return resolver_base::flags{static_cast<int>(f1) ^ static_cast<int>(f2)};
+                return resolver_base::flags{ static_cast<int>(f1) ^ static_cast<int>(f2) };
             }
 
-            constexpr resolver_base::flags operator~(resolver_base::flags f)
+            [[nodiscard]] constexpr resolver_base::flags operator~(resolver_base::flags f) noexcept
             {
                 return resolver_base::flags{~static_cast<int>(f)};
             }
 
-            inline resolver_base::flags operator&=(resolver_base::flags& f1, resolver_base::flags f2)
+            [[nodiscard]] inline resolver_base::flags operator&=(resolver_base::flags& f1, resolver_base::flags f2) noexcept
             {
                 return f1 = (f1 & f2);
             }
 
-            inline resolver_base::flags operator|=(resolver_base::flags& f1, resolver_base::flags f2)
+            [[nodiscard]] inline resolver_base::flags operator|=(resolver_base::flags& f1, resolver_base::flags f2) noexcept
             {
                 return f1 = (f1 | f2);
             }
 
-            inline resolver_base::flags operator^=(resolver_base::flags& f1, resolver_base::flags f2)
+            [[nodiscard]] inline resolver_base::flags operator^=(resolver_base::flags& f1, resolver_base::flags f2) noexcept
             {
                 return f1 = (f1 ^ f2);
             }
@@ -1713,9 +1638,14 @@ namespace collin
                     using endpoint_type = typename InternetProtocol::endpoint;
                     using results_type = basic_resolver_results<InternetProtocol>;
 
-                    explicit basic_resolver(io_context& ctx) {}
+                    explicit basic_resolver(io_context& ctx) noexcept
+                        : ctx_{ctx} {}
                     basic_resolver(const basic_resolver&) = delete;
-                    basic_resolver(basic_resolver&& rhs) noexcept {}
+                    basic_resolver(basic_resolver&& rhs) noexcept
+                        : ctx_{rhs.ctx_}
+                    {
+                        rhs.cancel();
+                    }
 
                     ~basic_resolver()
                     {
@@ -1723,13 +1653,17 @@ namespace collin
                     }
 
                     basic_resolver& operator=(const basic_resolver&) = delete;
-                    basic_resolver& operator=(basic_resolver&& rhs)
+                    basic_resolver& operator=(basic_resolver&& rhs) noexcept
                     {
-                        rhs.cancel();
+                        if(this != std::addressof(rhs))
+                        {
+                            rhs.cancel();
+                            ctx_ = rhs.ctx_;
+                        }
                         return *this;
                     }
 
-                    void cancel()
+                    void cancel() noexcept
                     {
                         // Nothing for now
                     }
@@ -1742,22 +1676,24 @@ namespace collin
                     results_type resolve(std::string_view host_name, std::string_view service_name, flags f)
                     {
                         constexpr auto end = endpoint_type();
-                        constexpr auto family = end.protocol().family();
+                        constexpr auto family_type = end.protocol().family();
                         constexpr auto type = end.protocol().type();
                         constexpr auto protocol = end.protocol().protocol();
 
-                        const auto hints = make_hints(f, family, type, protocol);
+                        const auto hints = make_hints(f, family_type, type, protocol);
                         
                         return get_results(host_name, service_name, hints);
                     }
 
                     std::future<results_type> async_resolve(std::string_view host_name, std::string_view service_name)
                     {
+                        // Eventually use io_context for this
                         return async_resolve(host_name, service_name, resolver_base::flags());
                     }
 
                     std::future<results_type> async_resolve(std::string_view host_name, std::string_view service_name, flags f)
                     {
+                        // Eventually use io_context for this
                         return std::async(resolve, host_name, service_name, f);
                     }
 
@@ -1768,7 +1704,7 @@ namespace collin
 
                     results_type resolve(const protocol_type& protocol, std::string_view host_name, std::string_view service_name, flags f)
                     {
-                        const auto hints = make_hints(f, protocol.family(), protocol.type(), protocol.protocol());
+                        const auto hints = make_hints(f, protocol.family_type(), protocol.type(), protocol.protocol());
                         return get_results(host_name, service_name, hints);
                     }
 
@@ -1783,6 +1719,7 @@ namespace collin
                     }
 
                 private:
+                    std::reference_wrapper<net::io_context> ctx_;
                     enum class name_info_flags
                     {
                         nofqdn = NI_NOFQDN,
@@ -1797,12 +1734,12 @@ namespace collin
                     static constexpr socklen_t host_name_length {1025};
                     static constexpr socklen_t service_name_length {32};
 
-                    constexpr addrinfo make_hints(flags f, Family family, Type type, Protocol protocol)
+                    [[nodiscard]] constexpr addrinfo make_hints(flags f, family_type family_type, sock_type type, protocol protocol) noexcept
                     {
                         addrinfo hints;
                         std::memset(&hints, 0, sizeof(hints));
                         hints.ai_flags = static_cast<int>(f);
-                        hints.ai_family = static_cast<int>(family);
+                        hints.ai_family = static_cast<int>(family_type);
                         hints.ai_socktype = static_cast<int>(type);
                         hints.ai_protocol = static_cast<int>(protocol);
 
@@ -1815,9 +1752,9 @@ namespace collin
                     }
             };
 
-            template<class Allocator>
+            template<class Allocator = std::allocator<char>>
             std::basic_string<char, std::char_traits<char>, Allocator>
-                host_name(const Allocator& a)
+            host_name(const Allocator& a = Allocator{})
             {
                 std::array<char, 256 + 1> buf;
                 if (::gethostname(buf.data(), static_cast<int>(std::size(buf)) - 1) == -1)
@@ -1830,11 +1767,6 @@ namespace collin
                 return {buf.data(), a};
             }
 
-            inline std::string host_name()
-            {
-                return host_name(std::allocator<char>{});
-            }
-
             class tcp
             {
                 public:
@@ -1844,45 +1776,45 @@ namespace collin
                     using acceptor = basic_socket_acceptor<tcp>;
                     using iostream = basic_socket_iostream<tcp>;
 
-                    static inline constexpr tcp v4() noexcept
+                    [[nodiscard]] static constexpr tcp v4() noexcept
                     {
-                        return tcp(Family::inet);
+                        return tcp(family_type::inet);
                     }
 
-                    static inline constexpr tcp v6() noexcept
+                    [[nodiscard]] static constexpr tcp v6() noexcept
                     {
-                        return tcp(Family::inet6);
+                        return tcp(family_type::inet6);
                     }
 
-                    constexpr Family family() const noexcept
+                    [[nodiscard]] constexpr family_type family() const noexcept
                     {
                         return family_;
                     }
 
-                    constexpr Type type() const noexcept
+                    [[nodiscard]] constexpr sock_type type() const noexcept
                     {
-                        return Type::stream;
+                        return sock_type::stream;
                     }
 
-                    constexpr Protocol protocol() const noexcept
+                    [[nodiscard]] constexpr protocol protocol() const noexcept
                     {
-                        return Protocol::tcp;
+                        return protocol::tcp;
                     }
 
                     tcp() = delete;
                 private:
-                    constexpr tcp(Family f)
+                    constexpr tcp(family_type f) noexcept
                         : family_(f) {}
 
-                    Family family_;
+                    family_type family_;
             };
 
-            constexpr bool operator==(const tcp& a, const tcp& b) noexcept
+            [[nodiscard]] constexpr bool operator==(const tcp& a, const tcp& b) noexcept
             {
                 return a.family() == b.family();
             }
 
-            constexpr bool operator!=(const tcp& a, const tcp& b) noexcept
+            [[nodiscard]] constexpr bool operator!=(const tcp& a, const tcp& b) noexcept
             {
                 return !(a == b);
             }
@@ -1894,45 +1826,45 @@ namespace collin
                     using resolver = basic_resolver<udp>;
                     using socket = basic_datagram_socket<udp>;
 
-                    static constexpr udp v4() noexcept
+                    [[nodiscard]] static constexpr udp v4() noexcept
                     {
-                        return udp(Family::inet);
+                        return udp(family_type::inet);
                     }
 
-                    static constexpr udp v6() noexcept
+                    [[nodiscard]] static constexpr udp v6() noexcept
                     {
-                        return udp(Family::inet6);
+                        return udp(family_type::inet6);
                     }
 
-                    constexpr Family family() const noexcept
+                    [[nodiscard]] constexpr family_type family() const noexcept
                     {
                         return family_;
                     }
 
-                    constexpr Type type() const noexcept
+                    [[nodiscard]] constexpr sock_type type() const noexcept
                     {
-                        return Type::dgram;
+                        return sock_type::dgram;
                     }
 
-                    constexpr Protocol protocol() const noexcept
+                    [[nodiscard]] constexpr protocol protocol() const noexcept
                     {
-                        return Protocol::udp;
+                        return protocol::udp;
                     }
 
                     udp() = delete;
                 private:
-                    constexpr udp(Family f)
+                    constexpr udp(family_type f) noexcept
                         : family_(f) {}
 
-                    Family family_;
+                    family_type family_;
             };
 
-            constexpr bool operator==(const udp& a, const udp& b) noexcept
+            [[nodiscard]] constexpr bool operator==(const udp& a, const udp& b) noexcept
             {
                 return a.family() == b.family();
             }
 
-            constexpr bool operator!=(const udp& a, const udp& b) noexcept
+            [[nodiscard]] constexpr bool operator!=(const udp& a, const udp& b) noexcept
             {
                 return !(a == b);
             }
@@ -1948,7 +1880,7 @@ namespace std
         using result_type = std::size_t;
         using argument_type = collin::net::ip::address;
 
-        std::size_t operator()(const argument_type& a) const
+        std::size_t operator()(const argument_type& a) const noexcept
         {
             if (a.is_v4())
             {
@@ -1969,7 +1901,7 @@ namespace std
         using result_type = std::size_t;
         using argument_type = collin::net::ip::address_v4;
 
-        std::size_t operator()(const argument_type& a) const
+        std::size_t operator()(const argument_type& a) const noexcept
         {
             const auto b = a.to_bytes();
             return collin::hash_bytes(b.data(), sizeof(b), 0xc70f6907UL);
@@ -1982,7 +1914,7 @@ namespace std
         using result_type = std::size_t;
         using argument_type = collin::net::ip::address_v6;
 
-        std::size_t operator()(const argument_type& a) const
+        std::size_t operator()(const argument_type& a) const noexcept
         {
             const auto b = a.to_bytes();
             return collin::hash_bytes(b.data(), sizeof(b), 0xc70f6907UL);

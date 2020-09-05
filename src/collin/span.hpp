@@ -17,16 +17,16 @@ namespace collin
 			constexpr extent_type() noexcept = default;
 
 			template<size_type Other>
-			constexpr extent_type(extent_type<Other> ext)
+			constexpr extent_type(extent_type<Other> ext) noexcept
 			{
 				static_assert(Other == Ext);
 			}
 
-			constexpr extent_type(size_type size)
+			constexpr extent_type(size_type) noexcept
 			{
 			}
 
-			constexpr size_type size() const noexcept
+			[[nodiscard]] constexpr size_type size() const noexcept
 			{
 				return Ext;
 			}
@@ -39,10 +39,10 @@ namespace collin
 			using size_type = std::size_t;
 
 			template<size_type Other>
-			explicit constexpr extent_type(extent_type<Other> ext) : size_(ext.size()) {}
-			explicit constexpr extent_type(size_type size) : size_(size) {}
+			explicit constexpr extent_type(extent_type<Other> ext) noexcept : size_(ext.size()) {}
+			explicit constexpr extent_type(size_type size) noexcept : size_(size) {}
 
-			constexpr size_type size() const noexcept
+			[[nodiscard]] constexpr size_type size() const noexcept
 			{
 				return size_;
 			}

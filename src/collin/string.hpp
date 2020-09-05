@@ -16,11 +16,12 @@
 #include <charconv>
 #include <utility>
 #include <system_error>
+#include <concepts>
+#include <limits>
 
 #include "collin/platform.hpp"
 #include "collin/type_traits.hpp"
 #include "collin/utility.hpp"
-#include "collin/iterator.hpp"
 #include "collin/concepts.hpp"
 
 namespace collin
@@ -64,12 +65,14 @@ namespace collin
             return std::any_of(first, last, [&](auto& val){return is_consonant(val);});
         }
 
-        constexpr bool contains_vowel(std::string_view str) noexcept
+        template<class CharT, class Traits>
+        constexpr bool contains_vowel(std::basic_string_view<CharT, Traits> str) noexcept
         {
             return contains_vowel(std::begin(str), std::end(str));
         }
 
-        constexpr bool contains_consonant(std::string_view str) noexcept
+        template<class CharT, class Traits>
+        constexpr bool contains_consonant(std::basic_string_view<CharT, Traits> str) noexcept
         {
             return contains_consonant(std::begin(str), std::end(str));
         }
@@ -254,10 +257,11 @@ namespace collin
             lowercase(std::begin(container), std::end(container), std::begin(container), loc);
         }
 
-        constexpr std::string_view trim_front(std::string_view s, std::string_view trim_str) noexcept
+        template<class CharT, class Traits>
+        constexpr std::basic_string_view<CharT, Traits> trim_front(std::basic_string_view<CharT, Traits> s, std::basic_string_view<CharT, Traits> trim_str) noexcept
         {
             const auto start_position = s.find_first_not_of(trim_str);
-            if (start_position == std::string_view::npos)
+            if (start_position == std::basic_string_view<CharT, Traits>::npos)
             {
                 return "";
             }
@@ -265,20 +269,22 @@ namespace collin
             return s.substr(start_position);
         }
 
-        void trim_front(std::string& s, std::string_view trim_str)
+        template<class CharT, class Traits>
+        void trim_front(std::basic_string<CharT, Traits>& s, std::basic_string_view<CharT, Traits> trim_str)
         {
             const auto start_position = s.find_first_not_of(trim_str);
-            if (start_position == std::string::npos)
+            if (start_position == std::basic_string<CharT, Traits>::npos)
             {
                 s = "";
             }
             s.erase(std::begin(s), std::begin(s) + start_position);
         }
 
-        constexpr std::string_view trim_back(std::string_view s, std::string_view trim_str) noexcept
+        template<class CharT, class Traits>
+        constexpr std::basic_string_view<CharT, Traits> trim_back(std::basic_string_view<CharT, Traits> s, std::basic_string_view<CharT, Traits> trim_str) noexcept
         {
             const auto end_position = s.find_last_not_of(trim_str);
-            if (end_position == std::string_view::npos)
+            if (end_position == std::basic_string_view<CharT, Traits>::npos)
             {
                 return "";
             }
@@ -286,7 +292,8 @@ namespace collin
             return s.substr(0, end_position);
         }
 
-        void trim_back(std::string& s, std::string_view trim_str)
+        template<class CharT, class Traits>
+        void trim_back(std::basic_string<CharT, Traits>& s, std::basic_string_view<CharT, Traits> trim_str)
         {
             const auto end_position = s.find_last_not_of(trim_str);
             if (end_position == std::string::npos)
@@ -296,12 +303,14 @@ namespace collin
             s.erase(end_position);
         }
 
-        constexpr std::string_view trim(std::string_view s, std::string_view trim_str) noexcept
+        template<class CharT, class Traits>
+        constexpr std::basic_string_view<CharT, Traits> trim(std::basic_string_view<CharT, Traits> s, std::basic_string_view<CharT, Traits> trim_str) noexcept
         {
             return trim_back(trim_front(s, trim_str), trim_str);
         }
 
-        void trim(std::string& s, std::string_view trim_str)
+        template<class CharT, class Traits>
+        void trim(std::basic_string<CharT, Traits>& s, std::basic_string_view<CharT, Traits> trim_str)
         {
             trim_front(s, trim_str);
             trim_back(s, trim_str);
@@ -317,86 +326,104 @@ namespace collin
             };
         }
 
-        template<class T>
-        T from_string(std::string_view str, std::error_code& ec)
+        struct bad_string_conversion : std::bad_cast
         {
-            ec.clear();
-            T value;
-            if constexpr(details::from_chars_valid<T>)
+            const char* what() const override
             {
+                return "bad cast from string";
+            }
+        };
+
+        template<class T, class CharT, class Traits>
+        T from_string(std::basic_string_view<CharT, Traits> str)
+        {
+            if constexpr(std::same_as<CharT, char> && details::from_chars_valid<T>)
+            {
+                T value;
                 const auto result = std::from_chars(str.data(), str.data() + std::size(str), value);
-                ec = std::make_error_code(result.ec);
+                if (result.ec != std::errc{})
+                {
+                    throw bad_string_conversion{};
+                }
+                return value;
+            }
+            else if constexpr (std::same_as<T, std::basic_string<CharT, Traits>>)
+            {
+                return std::basic_string<CharT, Traits>{str};
+            }
+            else if constexpr (std::same_as<T, std::basic_string_view<CharT, Traits>>)
+            {
+                return str;
+            }
+            else if constexpr (std::same_as<T, CharT>)
+            {
+                return str.front();
             }
             else
             {
+                T value;
                 std::istringstream ss(str.data());
                 ss >> value;
                 if (!ss)
                 {
-                    ec = std::make_error_code(std::errc::argument_out_of_domain);
+                    throw bad_string_conversion{};
                 }
+                return value;
             }
 
-            return value;
         }
 
-        template<class T>
-        inline T from_string(std::string_view str)
+        namespace details
         {
-            return from_string<T>(str, collin::throw_on_error{"collin::strings::from_string"});
+            template<class T>
+            concept to_chars_valid =
+                requires(T v)
+            {
+                std::numeric_limits<T>::digits10;
+                std::to_chars(std::declval<char*>(), std::declval<char*>(), v);
+            };
         }
 
-        template<>
-        inline std::string from_string(std::string_view str, std::error_code& ec)
+        template<class T, class CharT = char, class Traits = std::char_traits<CharT>>
+        std::basic_string<CharT, Traits> to_string(const T& value)
         {
-            return std::string(str);
+            if constexpr (std::same_as<CharT, char> && details::to_chars_valid<T>)
+            {
+                constexpr std::size_t one_plus_digits10 = 1;
+                constexpr std::size_t minus_sign = 1;
+                constexpr std::size_t max_size = std::numeric_limits<T>::digits10 + one_plus_digits10 + minus_sign;
+
+                std::basic_string<CharT, Traits> str;
+                str.resize(max_size);
+                const auto result = std::to_chars(std::begin(str), std::end(str), value);
+                if (result.ec != std::errc{})
+                {
+                    throw bad_string_conversion{};
+                }
+
+                str.shrink_to_fit();
+                return str;
+            }
+            else
+            {
+                std::basic_ostringstream<CharT, Traits> ss;
+                ss << value;
+                if (!ss)
+                {
+                    throw bad_string_conversion{};
+                }
+                return ss.str();
+            }
         }
 
-        template<>
-        inline std::string from_string(std::string_view str)
-        {
-            return std::string(str);
-        }
-
-        template<>
-        inline std::string_view from_string(std::string_view str, std::error_code& ec)
-        {
-            return str;
-        }
-
-        template<>
-        inline std::string_view from_string(std::string_view str)
-        {
-            return str;
-        }
-
-        template<>
-        inline char from_string(std::string_view str, std::error_code& ec)
-        {
-            return str.front();
-        }
-
-        template<>
-        inline char from_string(std::string_view str)
-        {
-            return str.front();
-        }
-
-        template<class T>
-        std::string to_string(const T& value)
-        {
-            std::ostringstream ss;
-            ss << value;
-            return ss.str();
-        }
-
-        template<class OutputIterator>
-        constexpr void split(std::string_view str, std::string_view delim, OutputIterator it, std::size_t amount=-1) noexcept
+        template<class OutputIterator, class CharT, class Traits>
+            requires(requires(OutputIterator& it, std::basic_string_view<CharT, Traits> c) { *it = c; })
+        constexpr void split(std::basic_string_view<CharT, Traits> str, std::basic_string_view<CharT, Traits> delim, OutputIterator it, std::size_t amount=-1) noexcept
         {
             std::size_t last_index {0};
             std::size_t index {str.find(delim, last_index)};
 
-            while (index != std::string_view::npos && amount != 0)
+            while (index != std::basic_string_view<CharT, Traits>::npos && amount != 0)
             {
                 *it = str.substr(last_index, index - last_index);
                 it++;
@@ -408,28 +435,30 @@ namespace collin
             *it = str.substr(last_index);
         }
 
-        void find_and_replace(std::string& input, std::string_view find, std::string_view replace)
+        template<class CharT, class Traits>
+        void find_and_replace(std::basic_string<CharT, Traits>& input, std::basic_string_view<CharT, Traits> find, std::basic_string_view<CharT, Traits> replace)
         {
             std::size_t current_location {input.find(find)};
 
-            while (current_location != std::string::npos)
+            while (current_location != std::basic_string<CharT, Traits>::npos)
             {
                 input.replace(current_location, std::size(find), replace);
                 current_location = input.find(find, current_location + 1);
             }
         }
 
-        std::vector<std::string_view> split(std::string_view str, std::string_view delim, std::size_t amount=-1)
+        template<class CharT, class Traits>
+        std::vector<std::basic_string_view<CharT, Traits>> split(std::basic_string_view<CharT, Traits> str, std::basic_string_view<CharT, Traits> delim, std::size_t amount=-1)
         {
-            std::vector<std::string_view> results;
+            std::vector<std::basic_string_view<CharT, Traits>> results;
             split(str, delim, std::back_inserter(results), amount);
             return results;
         }
 
-        template<class InputIterator>
-        std::string join(InputIterator begin, InputIterator end, std::string_view join_string)
+        template<class InputIterator, class CharT, class Traits>
+        std::basic_string<CharT, Traits> join(InputIterator begin, InputIterator end, std::basic_string_view<CharT, Traits> join_string)
         {
-            std::stringstream ss;
+            std::basic_stringstream<CharT, Traits> ss;
             while(begin != end)
             {
                 ss << *begin;
@@ -438,14 +467,14 @@ namespace collin
                     ss << join_string;
                 }
 
-                begin++;
+                ++begin;
             }
 
             return ss.str();
         }
 
-        template<class Container>
-        std::string join(const Container& container, std::string_view join_string)
+        template<class Container, class CharT, class Traits>
+        std::basic_string<CharT, Traits> join(const Container& container, std::basic_string_view<CharT, Traits> join_string)
         {
             return join(std::cbegin(container), std::cend(container), join_string);
         }

@@ -4,6 +4,7 @@
 #include "collin/measures/kinematic.hpp"
 #include "collin//measures/mechanical.hpp"
 #include "collin/measures/temperature.hpp"
+#include "collin/measures/constants.hpp"
 #include "collin/test.hpp"
 #include "collin/utility.hpp"
 #include <iostream>
@@ -17,10 +18,6 @@ class measures_suffix_test : public collin::test::test_case
             : collin::test::test_case{"measures_suffix_test"} {}
 
         void operator()() override
-        {
-        }
-
-        void static_asserts()
         {
             static_assert(collin::measures::metric_system::suffix_v<std::atto> == "a");
             static_assert(collin::measures::metric_system::suffix_v<std::femto> == "f");
@@ -38,6 +35,23 @@ class measures_suffix_test : public collin::test::test_case
             static_assert(collin::measures::metric_system::suffix_v<std::tera> == "T");
             static_assert(collin::measures::metric_system::suffix_v<std::peta> == "P");
             static_assert(collin::measures::metric_system::suffix_v<std::exa> == "E");
+
+            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::atto>, "a");
+            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::femto>, "f");
+            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::pico>, "p");
+            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::nano>, "n");
+            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::micro>, "u");
+            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::milli>, "m");
+            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::centi>, "c");
+            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::deci>, "d");
+            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::deca>, "da");
+            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::hecto>, "h");
+            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::kilo>, "k");
+            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::mega>, "M");
+            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::giga>, "G");
+            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::tera>, "T");
+            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::peta>, "P");
+            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::exa>, "E");
         }
 };
 
@@ -169,10 +183,6 @@ class distance_values_test : public collin::test::test_case
             : collin::test::test_case{"distance_values_test"} {}
 
         void operator()() override
-        {
-        }
-
-        void static_asserts()
         {
             static_assert(collin::measures::meters{1} == collin::measures::attometers{1000000000000000000});
             static_assert(collin::measures::meters{1} == collin::measures::femtometers{1000000000000000});
@@ -598,10 +608,6 @@ class dimension_unit_construction_test : public collin::test::test_case
 
         void operator()() override
         {
-        }
-
-        void static_asserts()
-        {
             using type = collin::measures::seconds;
             using type2 = collin::measures::kiloseconds;
 
@@ -656,8 +662,11 @@ class dimension_unit_construction_test : public collin::test::test_case
             static_assert(du2 > du);
             static_assert(du2 >= du);
             static_assert(du <= du2);
+
+            static_assert(du_squared >= du_squared_dynamic);
             static_assert(du_squared <= du_squared_dynamic);
             static_assert(du3 == du_squared2);
+            static_assert(du_squared2 == du3);
             static_assert(du3 != du4);
             static_assert(du3 != du_cubed);
             static_assert(du_squared2 != du_cubed);
@@ -677,6 +686,29 @@ class dimension_unit_construction_test : public collin::test::test_case
             static_assert(type{25} <= du_squared3);
             static_assert(du_squared3 > type{25});
             static_assert(du_squared3 >= type{25});
+            static_information();
+        }
+
+    private:
+        void static_information()
+        {
+            collin::measures::basic_dimension_unit_t<collin::measures::seconds, 1> o1{10};
+            collin::measures::basic_dimension_unit_t<collin::measures::seconds, collin::measures::dynamic_dimension> o2{10, 1};
+
+            constexpr auto size1 = sizeof(o1);
+            constexpr auto size2 = sizeof(o2);
+        }
+};
+
+class dimensional_unit_addition_test : public collin::test::test_case
+{
+    public:
+        dimensional_unit_addition_test()
+            : collin::test::test_case{"dimensional_unit_addition_test"} {}
+
+        void operator()() override
+        {
+
         }
 };
 
@@ -688,11 +720,6 @@ class derived_unit_construction_test : public collin::test::test_case
 
         void operator()() override
         {
-            
-        }
-
-        void static_asserts()
-        {
         }
 };
 
@@ -703,10 +730,6 @@ class speed_construction_test : public collin::test::test_case
             : collin::test::test_case{"speed_construction_test"} {}
 
         void operator()() override
-        {
-        }
-
-        void static_asserts()
         {
             constexpr collin::measures::speed<collin::measures::meters> v{10};
             constexpr collin::measures::speed<collin::measures::meters> v2{50};
@@ -722,13 +745,36 @@ class speed_construction_test : public collin::test::test_case
             static_assert((v - v2) == decltype(v){-40});
             static_assert((v * 10) == decltype(v){100});
             static_assert((v2 / 10) == decltype(v){5});
-            static_assert((v2 % v) == decltype(v){0});
-            static_assert((v2 % 5) == decltype(v){0});
 
             static_assert((v3 + v4) == decltype(v3){2000});
             static_assert((v3 + v4) == decltype(v4){2});
             static_assert((v3 + v4) != decltype(v4){3});
             static_assert((v4 - v3) == decltype(v4){0});
+
+            static_information();
+        }
+    private:
+        void static_information()
+        {
+            constexpr collin::measures::speed<collin::measures::meters> v{10};
+            constexpr collin::measures::speed<collin::measures::exameters> v2{100};
+
+            constexpr auto s1 = sizeof(v);
+            constexpr auto s2 = sizeof(v2);
+        }
+};
+
+class speed_light_test : public collin::test::test_case
+{
+    public:
+        speed_light_test()
+            : collin::test::test_case{"speed_light_test"} {}
+
+        void operator()() override
+        {
+            constexpr auto sol = collin::measures::speed_of_light_vacuum<double>;
+            constexpr auto solh = collin::measures::speed<collin::measures::basic_kilometers<double>, collin::measures::milliseconds>{sol};
+            constexpr auto v = solh.count();
         }
 };
 
@@ -745,6 +791,7 @@ int main()
     suite.add_test_case<dimension_unit_construction_test>();
     suite.add_test_case<derived_unit_construction_test>();
     suite.add_test_case<speed_construction_test>();
+    suite.add_test_case<speed_light_test>();
 
     collin::test::text_test_runner runner(std::cout);
     

@@ -9,6 +9,7 @@
 #include "collin/math.hpp"
 #include "collin/type_traits.hpp"
 #include "collin/concepts.hpp"
+#include "collin/tuple.hpp"
 
 namespace collin
 {
@@ -18,10 +19,10 @@ namespace collin
         struct static_sign : std::integral_constant<intmax_t, (Pn < 0) ? -1 : 1> {};
 
         template<intmax_t Pn>
-        struct static_abs : std::integral_constant<intmax_t, Pn* static_sign<Pn>::value> {};
+        struct static_abs : std::integral_constant<intmax_t, Pn * static_sign<Pn>::value> {};
 
         template<intmax_t Pn, intmax_t Qn>
-        struct static_gcd : static_gcd<Qn, (Pn% Qn)> {};
+        struct static_gcd : static_gcd<Qn, (Pn % Qn)> {};
 
         template<intmax_t Pn>
         struct static_gcd<Pn, 0> : std::integral_constant<intmax_t, static_abs<Pn>::value> {};
@@ -40,6 +41,102 @@ namespace collin
 
         template<class T>
         concept ratio_type = is_ratio_v<T>;
+
+        template<ratio_type...>
+        struct ratio_add_many;
+
+        template<ratio_type R1>
+        struct ratio_add_many<R1>
+        {
+            using type = R1;
+        };
+
+        template<ratio_type R1, ratio_type R2>
+        struct ratio_add_many<R1, R2>
+        {
+            using type = std::ratio_add<R1, R2>;
+        };
+
+        template<ratio_type R1, ratio_type R2, ratio_type... RR>
+        struct ratio_add_many<R1, R2, RR...>
+        {
+            using type = std::ratio_add<R1, typename ratio_add_many<R2, RR...>::type>;
+        };
+
+        template<ratio_type... RR>
+        using ratio_add_many_t = typename ratio_add_many<RR...>::type;
+
+        template<ratio_type...>
+        struct ratio_subtract_many;
+
+        template<ratio_type R1>
+        struct ratio_subtract_many<R1>
+        {
+            using type = R1;
+        };
+
+        template<ratio_type R1, ratio_type R2>
+        struct ratio_subtract_many<R1, R2>
+        {
+            using type = std::ratio_subtract<R1, R2>;
+        };
+
+        template<ratio_type R1, ratio_type R2, ratio_type... RR>
+        struct ratio_subtract_many<R1, R2, RR...>
+        {
+            using type = std::ratio_subtract<R1, typename ratio_subtract_many<R2, RR...>::type>;
+        };
+
+        template<ratio_type... RR>
+        using ratio_subtract_many_t = typename ratio_subtract_many<RR...>::type;
+
+        template<ratio_type...>
+        struct ratio_multiply_many;
+
+        template<ratio_type R1>
+        struct ratio_multiply_many<R1>
+        {
+            using type = R1;
+        };
+
+        template<ratio_type R1, ratio_type R2>
+        struct ratio_multiply_many<R1, R2>
+        {
+            using type = std::ratio_multiply<R1, R2>;
+        };
+
+        template<ratio_type R1, ratio_type R2, ratio_type... RR>
+        struct ratio_multiply_many<R1, R2, RR...>
+        {
+            using type = std::ratio_multiply<R1, typename ratio_multiply_many<R2, RR...>::type>;
+        };
+
+        template<ratio_type... RR>
+        using ratio_multiply_many_t = typename ratio_multiply_many<RR...>::type;
+
+        template<ratio_type...>
+        struct ratio_divide_many;
+
+        template<ratio_type R1>
+        struct ratio_divide_many<R1>
+        {
+            using type = R1;
+        };
+
+        template<ratio_type R1, ratio_type R2>
+        struct ratio_divide_many<R1, R2>
+        {
+            using type = std::ratio_divide<R1, R2>;
+        };
+
+        template<ratio_type R1, ratio_type R2, ratio_type... RR>
+        struct ratio_divide_many<R1, R2, RR...>
+        {
+            using type = std::ratio_divide<R1, typename ratio_divide_many<R2, RR...>::type>;
+        };
+
+        template<ratio_type... RR>
+        using ratio_divide_many_t = typename ratio_divide_many<RR...>::type;
 
         template<collin::concepts::arithmetic Rep, ratio_type Ratio, class UnitValues, class System>
         class basic_unit;
@@ -68,12 +165,12 @@ namespace collin
                 constexpr dimension_type() noexcept = default;
 
                 template<size_type Other>
-                constexpr dimension_type(dimension_type<Other> ext)
+                constexpr dimension_type(dimension_type<Other> ext) noexcept
                 {
                     static_assert(Other == Ext);
                 }
 
-                constexpr dimension_type(size_type size) {}
+                constexpr dimension_type(size_type) noexcept {}
 
                 constexpr size_type size() const noexcept
                 {
@@ -89,10 +186,10 @@ namespace collin
                 static constexpr size_type value = dynamic_dimension;
 
                 template<size_type Other>
-                explicit constexpr dimension_type(dimension_type<Other> ext)
+                explicit constexpr dimension_type(dimension_type<Other> ext) noexcept
                     : size_(ext.size()) {}
 
-                explicit constexpr dimension_type(size_type size)
+                explicit constexpr dimension_type(size_type size) noexcept
                     : size_(size) {}
 
                 constexpr size_type size() const noexcept
@@ -120,7 +217,7 @@ namespace collin
         template<class T>
         concept basic_dimension_unit_type = is_basic_dimension_unit_v<T>;
 
-        template<basic_dimension_unit_type... DimensionUnits>
+        template<collin::concepts::arithmetic Rep, basic_dimension_unit_type... DimensionUnits>
             requires (collin::type_traits::is_unique_v<typename DimensionUnits::unit_values...> &&
                         (... && !collin::concepts::same<typename DimensionUnits::dimension_t, dimension_type<dynamic_dimension>>) &&
                         sizeof...(DimensionUnits) >= 2
@@ -162,20 +259,22 @@ namespace collin
     {
         template<basic_unit_type ToBasicUnit, class Rep, ratio_type Ratio, class UnitValues, class System>
             requires (collin::concepts::same<typename ToBasicUnit::system, System>)
-        constexpr ToBasicUnit unit_cast(const basic_unit<Rep, Ratio, UnitValues, System>& unit) noexcept
+        [[nodiscard]] constexpr ToBasicUnit unit_cast(const basic_unit<Rep, Ratio, UnitValues, System>& unit) noexcept
         {
             using ratio = typename std::ratio_divide<Ratio, typename ToBasicUnit::ratio>::type;
             using common_type = typename std::common_type_t<typename ToBasicUnit::rep, Rep>;
 
             return ToBasicUnit(
                 static_cast<typename ToBasicUnit::rep>(
-                    static_cast<common_type>(unit.count()) * static_cast<common_type>(ratio::num) / static_cast<common_type>(ratio::den)
+                    static_cast<common_type>(unit.count()) * collin::math::rational_ratio<ratio, common_type>
                 )
             );
         }
 
         template<basic_unit_type ToBasicUnit, class Rep, ratio_type Ratio, class UnitValues, class System>
-        constexpr ToBasicUnit system_cast(const basic_unit<Rep, Ratio, UnitValues, System>& unit) noexcept
+            requires(collin::concepts::same<typename ToBasicUnit::system, System> ||
+                    requires(const basic_unit<Rep, Ratio, UnitValues, System>& unit) { UnitValues::system_cast<ToBasicUnit>(unit); })
+        [[nodiscard]] constexpr ToBasicUnit system_cast(const basic_unit<Rep, Ratio, UnitValues, System>& unit)
         {
             if constexpr (std::is_same_v<typename ToBasicUnit::system, System>)
             {
@@ -207,17 +306,17 @@ namespace collin
 
                 static constexpr basic_unit zero() noexcept
                 {
-                    return basic_unit(UnitValues<Rep>::zero());
+                    return basic_unit{UnitValues<Rep>::zero()};
                 }
 
                 static constexpr basic_unit min() noexcept
                 {
-                    return basic_unit(UnitValues<Rep>::min());
+                    return basic_unit{UnitValues<Rep>::min()};
                 }
 
                 static constexpr basic_unit max() noexcept
                 {
-                    return basic_unit(UnitValues<Rep>::max());
+                    return basic_unit{UnitValues<Rep>::max()};
                 }
 
                 constexpr basic_unit() = default;
@@ -227,226 +326,242 @@ namespace collin
                 constexpr basic_unit& operator=(const basic_unit&) = default;
                 constexpr basic_unit& operator=(basic_unit&&) noexcept = default;
 
-                ~basic_unit() noexcept = default;
-
-                template<class Rep2, class Ratio2>
+                template<class Rep2, ratio_type Ratio2>
+                    requires(collin::concepts::constructible<rep, Rep2>)
                 constexpr basic_unit(const basic_unit<Rep2, Ratio2, UnitValues, System>& other)
-                    : amount_(unit_cast<basic_unit>(other).count()) {}
+                    : amount_{unit_cast<basic_unit>(other).count()} {}
 
                 template<class Rep2>
                 constexpr explicit basic_unit(const Rep2& n)
-                    : amount_(static_cast<rep>(n)) {}
+                    : amount_{n} {}
+
+                template<class Rep2, ratio_type Ratio2>
+                constexpr basic_unit& operator=(const basic_unit<Rep2, Ratio2, UnitValues, System>& other)
+                {
+                    amount_ = static_cast<rep>(unit_cast<basic_unit>(other).count());
+                    return *this;
+                }
 
                 [[nodiscard]] constexpr rep count() const noexcept
                 {
                     return amount_;
                 }
 
-                [[nodiscard]] constexpr basic_unit operator+() const
+                [[nodiscard]] constexpr basic_unit operator+() const noexcept
                 {
-                    return basic_unit(*this);
+                    return basic_unit{*this};
                 }
 
-                [[nodiscard]] constexpr basic_unit operator-() const
+                [[nodiscard]] constexpr basic_unit operator-() const noexcept
                 {
-                    return basic_unit(-amount_);
+                    return basic_unit{-amount_};
                 }
 
-                constexpr basic_unit& operator++()
+                constexpr basic_unit& operator++() noexcept
                 {
                     ++amount_;
                     return *this;
                 }
 
-                constexpr basic_unit operator++(int)
+                constexpr basic_unit operator++(int) noexcept
                 {
-                    return basic_unit(amount_++);
+                    return basic_unit{amount_++};
                 }
 
-                constexpr basic_unit& operator--()
+                constexpr basic_unit& operator--() noexcept
                 {
                     --amount_;
                     return *this;
                 }
 
-                constexpr basic_unit& operator+=(const basic_unit& other)
+                constexpr basic_unit& operator--(int) noexcept
                 {
-                    amount_ += other.count();
+                    return basic_unit{amount_--};
+                }
+
+                template<class Rep2, ratio_type Ratio2>
+                    requires(requires(rep r, const Rep2& r2) { r += r2; })
+                constexpr basic_unit& operator+=(const basic_unit<Rep2, Ratio2, UnitValues, System>& other) noexcept
+                {
+                    amount_ += unit_cast<basic_unit>(other).count();
                     return *this;
                 }
 
-                constexpr basic_unit& operator-=(const basic_unit& other)
+                template<class Rep2, ratio_type Ratio2>
+                    requires(requires(rep r, const Rep2& r2) { r -= r2; })
+                constexpr basic_unit& operator-=(const basic_unit<Rep2, Ratio2, UnitValues, System>& other) noexcept
                 {
-                    amount_ -= other.count();
+                    amount_ -= unit_cast<basic_unit>(other).count();
                     return *this;
                 }
 
-                constexpr basic_unit& operator*=(const rep& other)
+                template<class Rep2>
+                    requires(requires(rep r, const Rep2& r2) { r *= r2; })
+                constexpr basic_unit& operator*=(const Rep2& other) noexcept
                 {
                     amount_ *= other;
                     return *this;
                 }
 
-                constexpr basic_unit& operator/=(const rep& other)
+                template<class Rep2>
+                    requires(requires(rep r, const Rep2& r2) { r /= r2; })
+                constexpr basic_unit& operator/=(const Rep2& other) noexcept
                 {
                     amount_ /= other;
                     return *this;
                 }
 
-                constexpr basic_unit& operator %=(const rep& other)
+                template<class Rep2>
+                    requires(requires(rep r, const Rep2& r2) { r %= r2; })
+                constexpr basic_unit& operator %=(const Rep2& other) noexcept
                 {
                     amount_ %= other;
                     return *this;
                 }
 
-                constexpr basic_unit& operator %=(const basic_unit& other)
+                template<class Rep2, ratio_type Ratio2>
+                    requires(requires(rep r, const Rep2& r2) { r %= r2; })
+                constexpr basic_unit& operator %=(const basic_unit<Rep2, Ratio2, UnitValues, System>& other) noexcept
                 {
-                    amount_ %= other.count();
+                    amount_ %= unit_cast<basic_unit>(other).count();
                     return *this;
                 }
 
             private:
-                rep amount_ {0};
+                rep amount_ {};
         };
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System>
-        constexpr
+        [[nodiscard]] constexpr
         typename std::common_type_t<basic_unit<Rep1, Ratio1, UnitValues, System>,
                                     basic_unit<Rep2, Ratio2, UnitValues, System>>
-        operator+(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
+        operator+(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs) noexcept
         {
             using common_type = typename std::common_type_t<basic_unit<Rep1, Ratio1, UnitValues, System>,
                                                             basic_unit<Rep2, Ratio2, UnitValues, System>>;
-            
-            return common_type(common_type(lhs).count() + common_type(rhs).count());
+
+            return common_type{common_type{lhs}.count() + common_type{rhs}.count()};
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System>
-        constexpr
+        [[nodiscard]] constexpr
         typename std::common_type_t<basic_unit<Rep1, Ratio1, UnitValues, System>,
                                     basic_unit<Rep2, Ratio2, UnitValues, System>>
-        operator-(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
+        operator-(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs) noexcept
         {
             using common_type = typename std::common_type_t<basic_unit<Rep1, Ratio1, UnitValues, System>,
                                                             basic_unit<Rep2, Ratio2, UnitValues, System>>;
 
-            return common_type(common_type(lhs).count() - common_type(rhs).count());
+            return common_type{common_type{lhs}.count() - common_type{rhs}.count()};
         }
 
         template<class Rep1, ratio_type Ratio, class UnitValues, class System, class Rep2>
-        constexpr
+        [[nodiscard]] constexpr
         basic_unit<typename std::common_type_t<Rep1, Rep2>, Ratio, UnitValues, System>
-        operator*(const basic_unit<Rep1, Ratio, UnitValues, System>& lhs, const Rep2& rhs)
+        operator*(const basic_unit<Rep1, Ratio, UnitValues, System>& lhs, const Rep2& rhs) noexcept
         {
-            using common_type = std::common_type_t<Rep1, Rep2>;
+            using common_type = typename std::common_type_t<Rep1, Rep2>;
+            using basic_unit_common_type = basic_unit<common_type, Ratio, UnitValues, System>;
 
-            return basic_unit<common_type, Ratio, UnitValues, System>(static_cast<common_type>(lhs.count()) * static_cast<common_type>(rhs));
+            return basic_unit_common_type{basic_unit_common_type{lhs}.count() * rhs};
         }
 
         template<class Rep1, ratio_type Ratio, class UnitValues, class System, class Rep2>
-        constexpr
+        [[nodiscard]] constexpr
         basic_unit<typename std::common_type_t<Rep1, Rep2>, Ratio, UnitValues, System>
-        operator*(const Rep2& rhs, const basic_unit<Rep1, Ratio, UnitValues, System>& lhs)
+        operator*(const Rep2& lhs, const basic_unit<Rep1, Ratio, UnitValues, System>& rhs) noexcept
         {
-            using common_type = std::common_type_t<Rep1, Rep2>;
+            using common_type = typename std::common_type_t<Rep1, Rep2>;
+            using basic_unit_common_type = basic_unit<common_type, Ratio, UnitValues, System>;
 
-            return basic_unit<common_type, Ratio, UnitValues, System>(static_cast<common_type>(lhs.count()) * static_cast<common_type>(rhs));
+            return basic_unit_common_type{lhs * basic_unit_common_type{rhs}.count()};
         }
 
         template<class Rep1, ratio_type Ratio, class UnitValues, class System, class Rep2>
-        constexpr
+        [[nodiscard]] constexpr
         basic_unit<typename std::common_type_t<Rep1, Rep2>, Ratio, UnitValues, System>
-        operator/(const basic_unit<Rep1, Ratio, UnitValues, System>& lhs, const Rep2& rhs)
+        operator/(const basic_unit<Rep1, Ratio, UnitValues, System>& lhs, const Rep2& rhs) noexcept
         {
-            using common_type = std::common_type_t<Rep1, Rep2>;
+            using common_type = typename std::common_type_t<Rep1, Rep2>;
+            using basic_unit_common_type = basic_unit<common_type, Ratio, UnitValues, System>;
 
-            return basic_unit<common_type, Ratio, UnitValues, System>(static_cast<common_type>(lhs.count()) / static_cast<common_type>(rhs));
+            return basic_unit_common_type{basic_unit_common_type{lhs}.count() / rhs};
         }
 
         template<class Rep1, ratio_type Ratio, class UnitValues, class System, class Rep2>
-        constexpr
+        [[nodiscard]] constexpr
         basic_unit<typename std::common_type_t<Rep1, Rep2>, Ratio, UnitValues, System>
-        operator/(const Rep2& rhs, const basic_unit<Rep1, Ratio, UnitValues, System>& lhs)
+        operator%(const basic_unit<Rep1, Ratio, UnitValues, System>& lhs, const Rep2& rhs) noexcept
         {
-            using common_type = std::common_type_t<Rep1, Rep2>;
+            using common_type = typename std::common_type_t<Rep1, Rep2>;
+            using basic_unit_common_type = basic_unit<common_type, Ratio, UnitValues, System>;
 
-            return basic_unit<common_type, Ratio, UnitValues, System>(static_cast<common_type>(lhs.count()) / static_cast<common_type>(rhs));
+            return basic_unit_common_type{basic_unit_common_type{lhs}.count() % rhs};
         }
 
         template<class Rep1, ratio_type Ratio, class UnitValues, class System, class Rep2>
-        constexpr
+        [[nodiscard]] constexpr
         basic_unit<typename std::common_type_t<Rep1, Rep2>, Ratio, UnitValues, System>
-        operator%(const basic_unit<Rep1, Ratio, UnitValues, System>& lhs, const Rep2& rhs)
+        operator%(const Rep2& lhs, const basic_unit<Rep1, Ratio, UnitValues, System>& rhs) noexcept
         {
-            using common_type = std::common_type_t<Rep1, Rep2>;
+            using common_type = typename std::common_type_t<Rep1, Rep2>;
+            using basic_unit_common_type = basic_unit<common_type, Ratio, UnitValues, System>;
 
-            return basic_unit<common_type, Ratio, UnitValues, System>(static_cast<common_type>(lhs.count()) % static_cast<common_type>(rhs));
-        }
-
-        template<class Rep1, ratio_type Ratio, class UnitValues, class System, class Rep2>
-        constexpr
-        basic_unit<typename std::common_type_t<Rep1, Rep2>, Ratio, UnitValues, System>
-        operator%(const Rep2& rhs, const basic_unit<Rep1, Ratio, UnitValues, System>& lhs)
-        {
-            using common_type = std::common_type_t<Rep1, Rep2>;
-
-            return basic_unit<common_type, Ratio, UnitValues, System>(static_cast<common_type>(lhs.count()) % static_cast<common_type>(rhs));
+            return basic_unit_common_type{lhs % basic_unit_common_type{rhs}.count()};
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, class Ratio2, class UnitValues, class System>
-        constexpr
+        [[nodiscard]] constexpr
         typename std::common_type_t<basic_unit<Rep1, Ratio1, UnitValues, System>,
                                     basic_unit<Rep2, Ratio2, UnitValues, System>>
-        operator%(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
+        operator%(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs) noexcept
         {
             using common_type = typename std::common_type_t<basic_unit<Rep1, Ratio1, UnitValues, System>,
-                basic_unit<Rep2, Ratio2, UnitValues, System>>;
+                                                            basic_unit<Rep2, Ratio2, UnitValues, System>>;
 
-            return common_type(common_type(lhs).count() % common_type(rhs).count());
+            return common_type{common_type{lhs}.count() % common_type{rhs}.count()};
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System>
-        constexpr bool operator==(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
+        [[nodiscard]] constexpr bool operator==(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs) noexcept
         {
-            using common_type = std::common_type_t<basic_unit<Rep1, Ratio1, UnitValues, System>, basic_unit<Rep2, Ratio2, UnitValues, System>>;
-
-            return common_type(lhs).count() == common_type(rhs).count();
+            using common_type = typename std::common_type_t<basic_unit<Rep1, Ratio1, UnitValues, System>, basic_unit<Rep2, Ratio2, UnitValues, System>>;
+            return common_type{lhs}.count() == common_type{rhs}.count();
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System>
-        constexpr bool operator!=(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
+        [[nodiscard]] constexpr bool operator!=(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs) noexcept
         {
             return !(lhs == rhs);
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System>
-        constexpr bool operator<(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
+        [[nodiscard]] constexpr bool operator<(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs) noexcept
         {
-            using common_type = std::common_type_t<basic_unit<Rep1, Ratio1, UnitValues, System>, basic_unit<Rep2, Ratio2, UnitValues, System>>;
-
-            return common_type(lhs).count() < common_type(rhs).count();
+            using common_type = typename std::common_type_t<basic_unit<Rep1, Ratio1, UnitValues, System>, basic_unit<Rep2, Ratio2, UnitValues, System>>;
+            return common_type{lhs}.count() < common_type{rhs}.count();
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System>
-        constexpr bool operator>(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
+        [[nodiscard]] constexpr bool operator>(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs) noexcept
         {
-            return rhs < lsh;
+            return rhs < lhs;
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System>
-        constexpr bool operator<=(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
+        [[nodiscard]] constexpr bool operator<=(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs) noexcept
         {
-            return !(rhs < lsh);
+            return !(rhs < lhs);
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System>
-        constexpr bool operator>=(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
+        [[nodiscard]] constexpr bool operator>=(const basic_unit<Rep1, Ratio1, UnitValues, System>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs) noexcept
         {
             return !(lhs < rhs);
         }
 
         template<basic_unit_type ToBasicUnit, class Rep, ratio_type Ratio, class UnitValues, class System>
-        constexpr ToBasicUnit floor(const basic_unit<Rep, Ratio, UnitValues, System>& unit)
+        [[nodiscard]] constexpr ToBasicUnit floor(const basic_unit<Rep, Ratio, UnitValues, System>& unit) noexcept
         {
             const auto unit2 = unit_cast<ToBasicUnit>(unit);
             if (unit2 > unit)
@@ -458,7 +573,7 @@ namespace collin
         }
 
         template<basic_unit_type ToBasicUnit, class Rep, ratio_type Ratio, class UnitValues, class System>
-        constexpr ToBasicUnit ceil(const basic_unit<Rep, Ratio, UnitValues, System>& unit)
+        [[nodiscard]] constexpr ToBasicUnit ceil(const basic_unit<Rep, Ratio, UnitValues, System>& unit) noexcept
         {
             const auto unit2 = unit_cast<ToBasicUnit>(unit);
             if (unit2 < unit)
@@ -470,7 +585,7 @@ namespace collin
         }
 
         template<basic_unit_type ToBasicUnit, class Rep, ratio_type Ratio, class UnitValues, class System>
-        constexpr ToBasicUnit round(const basic_unit<Rep, Ratio, UnitValues, System>& unit)
+        [[nodiscard]] constexpr ToBasicUnit round(const basic_unit<Rep, Ratio, UnitValues, System>& unit) noexcept
         {
             const auto unit0 = floor<ToBasicUnit>(unit);
             const auto unit1 = unit0 + ToBasicUnit{1};
@@ -494,9 +609,9 @@ namespace collin
         }
 
         template<basic_unit_type ToBasicUnit, class Rep, ratio_type Ratio, class UnitValues, class System>
-        constexpr ToBasicUnit abs(const basic_unit<Rep, Ratio, UnitValues, System>& unit)
+        [[nodiscard]] constexpr ToBasicUnit abs(const basic_unit<Rep, Ratio, UnitValues, System>& unit) noexcept
         {
-            return unit >= unit.zero() ? unit : -unit;
+            return unit >= basic_unit<Rep, Ratio, UnitValues, System>::zero() ? unit : -unit;
         }
 
         template<collin::concepts::arithmetic Rep, ratio_type Ratio, class UnitValues, class System, std::intmax_t Dimension>
@@ -511,519 +626,727 @@ namespace collin
                 using dimension_t = dimension_type<Dimension>;
                 using unit_t = basic_unit<rep, ratio, unit_values, system>;
 
-                constexpr basic_dimension_unit() noexcept = default;
+                static constexpr basic_dimension_unit zero() noexcept
+                {
+                    return basic_dimension_unit{UnitValues<Rep>::zero()};
+                }
+
+                static constexpr basic_dimension_unit min() noexcept
+                {
+                    return basic_dimension_unit{UnitValues<Rep>::min()};
+                }
+
+                static constexpr basic_dimension_unit max() noexcept
+                {
+                    return basic_dimension_unit{UnitValues<Rep>::max()};
+                }
+
+                constexpr basic_dimension_unit()
+                    : storage_{0, 1} {}
+
+                constexpr basic_dimension_unit(const basic_dimension_unit&) = default;
+                constexpr basic_dimension_unit(basic_dimension_unit&&) noexcept = default;
+
+                constexpr basic_dimension_unit& operator=(const basic_dimension_unit&) = default;
+                constexpr basic_dimension_unit& operator=(basic_dimension_unit&&) noexcept = default;
 
                 template<class Rep2, class Ratio2>
-                constexpr basic_dimension_unit(const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension>& other)
-                    : unit_{other.unit()} {}
+                constexpr basic_dimension_unit(const basic_dimension_unit<Rep2, Ratio2, unit_values, system, Dimension>& other)
+                    : storage_{other.unit(), other.dimension()} {}
 
-                template<class Rep2>
-                constexpr explicit basic_dimension_unit(const Rep2& n)
-                    : unit_{n} {}
-
-                constexpr typename dimension_t::size_type dimension() const noexcept
+                template<class Rep2, class Ratio2, std::size_t Dimension2>
+                constexpr basic_dimension_unit(const basic_dimension_unit<Rep2, Ratio2, unit_values, system, Dimension2>& other, typename dimension_t::size_type d = 1)
+                    : storage_{0, d}
                 {
-                    return Dimension;
+                    storage_.unit() = convert_dimension(other);
                 }
-
-                constexpr unit_t& unit() noexcept
-                {
-                    return unit_;
-                }
-
-                constexpr const unit_t& unit() const noexcept
-                {
-                    return unit_;
-                }
-
-            private:
-                unit_t unit_ {};
-        };
-
-        template<class Rep, ratio_type Ratio, class UnitValues, class System>
-        class basic_dimension_unit<Rep, Ratio, UnitValues, System, dynamic_dimension>
-        {
-            public:
-                using rep = Rep;
-                using ratio = Ratio;
-                using unit_values = UnitValues;
-                using system = System;
-                using dimension_t = dimension_type<dynamic_dimension>;
-                using unit_t = basic_unit<rep, ratio, unit_values, system>;
-
-                constexpr basic_dimension_unit() noexcept = default;
 
                 template<class Rep2, class Ratio2>
-                constexpr basic_dimension_unit(const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, dynamic_dimension>& other)
-                    : unit_{other.unit()}, dimension_{other.dimension()} {}
-
-                template<class Rep2>
-                constexpr explicit basic_dimension_unit(const Rep2& n, std::intmax_t dim = {1})
-                    : unit_{n}, dimension_{dim} {}
-
-                constexpr typename dimension_t::size_type dimension() const noexcept
+                constexpr basic_dimension_unit& operator=(const basic_dimension_unit<Rep2, Ratio2, unit_values, system, Dimension>& other)
                 {
-                    return dimension_.size();
-                }
-
-                constexpr unit_t& unit() noexcept
-                {
-                    return unit_;
-                }
-
-                constexpr const unit_t& unit() const noexcept
-                {
-                    return unit_;
-                }
-
-            private:
-                unit_t unit_ {};
-                dimension_t dimension_ {1};
-        };
-
-        template<class Rep, ratio_type Ratio, class UnitValues, class System>
-        class basic_dimension_unit<Rep, Ratio, UnitValues, System, 1> : public basic_unit<Rep, Ratio, UnitValues, System>
-        {
-            public:
-                using rep = Rep;
-                using ratio = Ratio;
-                using unit_values = UnitValues;
-                using system = System;
-                using dimension_t = dimension_type<1>;
-                using unit_t = basic_unit<Rep, Ratio, UnitValues, System>;
-
-                constexpr basic_dimension_unit() noexcept = default;
-
-                template<class Rep2>
-                constexpr explicit basic_dimension_unit(const Rep2& n)
-                    : unit_t{n} {}
-
-                template<class Rep2, class Ratio2>
-                constexpr basic_dimension_unit(const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, 1>& other)
-                    : unit_t{other.unit_} {}
-
-                constexpr typename dimension_t::size_type dimension() const noexcept
-                {
-                    return 1;
-                }
-
-                constexpr unit_t& unit() noexcept
-                {
+                    storage_.unit() = other.unit();
                     return *this;
                 }
 
+                template<class Rep2, class Ratio2, std::size_t Dimension2>
+                constexpr basic_dimension_unit& operator=(const basic_dimension_unit<Rep2, Ratio2, unit_values, system, Dimension2>& other)
+                {
+                    storage_.unit() = convert_dimension(other);
+                    return *this;
+                }
+
+                template<class Rep2>
+                constexpr explicit basic_dimension_unit(const Rep2& n, typename dimension_t::size_type d = 1)
+                    : storage_{n, d} {}
+
+                [[nodiscard]] constexpr typename dimension_t::size_type dimension() const noexcept
+                {
+                    return storage_.size();
+                }
+
+                constexpr unit_t& unit() noexcept
+                {
+                    return storage_.unit();
+                }
+
                 constexpr const unit_t& unit() const noexcept
                 {
+                    return storage_.unit();
+                }
+
+                [[nodiscard]] constexpr rep count() const noexcept
+                {
+                    return unit().count();
+                }
+
+                [[nodiscard]] constexpr basic_dimension_unit operator+() const noexcept
+                {
+                    return basic_dimension_unit{unit()};
+                }
+
+                [[nodiscard]] constexpr basic_dimension_unit operator-() const noexcept
+                {
+                    return basic_dimension_unit{-unit()};
+                }
+
+                constexpr basic_dimension_unit& operator++() noexcept
+                {
+                    ++unit();
                     return *this;
+                }
+
+                constexpr basic_dimension_unit operator++(int) noexcept
+                {
+                    return basic_dimension_unit{unit()++};
+                }
+
+                constexpr basic_dimension_unit& operator--() noexcept
+                {
+                    --unit();
+                    return *this;
+                }
+
+                constexpr basic_dimension_unit operator--(int) noexcept
+                {
+                    return basic_dimension_unit{unit()--};
+                }
+
+                template<class Rep2, ratio_type Ratio2, std::size_t Dimension2>
+                    requires(Dimension2 == Dimension && requires(unit_t t, const basic_unit<Rep2, Ratio2, unit_values, system>& t2){ t += t2; })
+                constexpr basic_dimension_unit& operator+=(const basic_dimension_unit<Rep2, Ratio2, unit_values, system, Dimension2>& other) noexcept
+                {
+                    unit() += basic_dimension_unit{correct_type}.unit();
+                    return *this;
+                }
+
+                template<class Rep2, ratio_type Ratio2, std::size_t Dimension2>
+                    requires(requires(unit_t t, const basic_unit<Rep2, Ratio2, unit_values, system>& t2){ t -= t2; })
+                constexpr basic_dimension_unit& operator-=(const basic_dimension_unit<Rep2, Ratio2, unit_values, system, Dimension2>& other) noexcept
+                {
+                    unit() -= basic_dimension_unit{other}.unit();
+                    return *this;
+                }
+
+                template<class Rep2>
+                    requires(requires(unit_t t, const Rep2& r) { t *= r; })
+                constexpr basic_dimension_unit& operator*=(const Rep2& other) noexcept
+                {
+                    unit() *= other;
+                    return *this;
+                }
+
+                template<class Rep2>
+                    requires(requires(unit_t t, const Rep2& r) { t /= r; })
+                constexpr basic_dimension_unit& operator/=(const Rep2& other) noexcept
+                {
+                    unit() /= other;
+                    return *this;
+                }
+
+                template<class Rep2>
+                    requires(requires(unit_t t, const Rep2& r) { t %= r; })
+                constexpr basic_dimension_unit& operator%=(const Rep2& other) noexcept
+                {
+                    unit() %= other;
+                    return *this;
+                }
+
+                template<class Rep2, ratio_type Ratio2, std::size_t Dimension2>
+                    requires(requires(unit_t t, const basic_unit<Rep2, Ratio2, unit_values, system>& t2){ t %= t2; })
+                constexpr basic_dimension_unit& operator%=(const basic_dimension_unit<Rep2, Ratio2, unit_values, system, Dimension2>& other) noexcept
+                {
+                    unit() %= basic_dimension_unit{other}.unit();
+                    return *this;
+                }
+            private:
+                template<class ExtentType>
+                class storage_type : public ExtentType
+                {
+                    public:
+                        template<class Data, class OtherExtentType>
+                            requires(collin::concepts::constructible<unit_t, Data> && collin::concepts::constructible<ExtentType, OtherExtentType>)
+                        constexpr storage_type(Data data, OtherExtentType ext) noexcept(std::is_nothrow_constructible_v<unit_t, Data>)
+                            : ExtentType{ext}, unit_{data} {}
+
+                        constexpr unit_t& unit() noexcept
+                        {
+                            return unit_;
+                        }
+
+                        constexpr const unit_t& unit() const noexcept
+                        {
+                            return unit_;
+                        }
+                    private:
+                        unit_t unit_;
+                };
+
+                storage_type<dimension_t> storage_;
+
+                template<class Rep2, class Ratio2, std::size_t Dimension2>
+                [[nodiscard]] constexpr auto convert_dimension(const basic_dimension_unit<Rep2, Ratio2, unit_values, system, Dimension2>& other) noexcept(std::is_nothrow_copy_constructible_v<unit_t>)
+                {
+                    using common_type = typename std::common_type_t<basic_unit<rep, ratio, unit_values, system>,
+                                                                    basic_unit<Rep2, Ratio2, unit_values, system>>;
+
+                    const auto correct_type = common_type{other.unit()};
+                    if (correct_type.count() != 0)
+                    {
+                        // TODO: Make sure this logic actually makes sense
+                        if (dimension() != other.dimension())
+                        {
+                            const auto difference = collin::math::abs(other.dimension() - dimension());
+                            return common_type{static_cast<typename common_type::rep>(collin::math::pow(correct_type.count(), difference + 1))};
+                        }
+                    }
+
+                    return correct_type;
                 }
         };
 
         template<basic_unit_type T, std::intmax_t Dimension>
         using basic_dimension_unit_t = basic_dimension_unit<typename T::rep, typename T::ratio, typename T::unit_values, typename T::system, Dimension>;
 
-        template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension1, std::intmax_t Dimension2>
-        constexpr bool operator==(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension1>& lhs, const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension2>& rhs)
-        {
-            using common_type = std::common_type_t<basic_unit<Rep1, Ratio1, UnitValues, System>,
-                                                   basic_unit<Rep2, Ratio2, UnitValues, System>>;
+        template<basic_dimension_unit_type DimensionUnit>
+                requires(!collin::concepts::same<typename DimensionUnit::dimension_t, dimension_type<dynamic_dimension>>)
+        struct is_numerator_unit : std::bool_constant<(DimensionUnit::dimension_t::value > 0)> {};
 
-            auto lhs_normalized_unit = common_type{lhs.unit()};
-            auto rhs_normalized_unit = common_type{rhs.unit()};
+        template<basic_dimension_unit_type DimensionUnit>
+        constexpr auto is_numerator_unit_v = is_numerator_unit<DimensionUnit>::value;
+
+        template<basic_dimension_unit_type DimensionUnit>
+                requires(!collin::concepts::same<typename DimensionUnit::dimension_t, dimension_type<dynamic_dimension>>)
+        struct is_denominator_unit : std::bool_constant<(DimensionUnit::dimension_t::value < 0)> {};
+
+        template<basic_dimension_unit_type DimensionUnit>
+        constexpr auto is_denominator_unit_v = is_numerator_unit<DimensionUnit>::value;
+
+        template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension1, std::intmax_t Dimension2>
+        [[nodiscard]] constexpr bool operator==(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension1>& lhs, const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension2>& rhs) noexcept
+        {
             if (lhs.dimension() > rhs.dimension())
             {
-                const auto difference = collin::math::abs(lhs.dimension() - rhs.dimension());
-                lhs_normalized_unit = common_type{collin::math::pow(lhs_normalized_unit.count(), difference + 1)};
+                return basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension2>{lhs, rhs.dimension()}.unit() == rhs.unit();
             }
-            else if (rhs.dimension() > lhs.dimension())
-            {
-                const auto difference = collin::math::abs(lhs.dimension() - rhs.dimension());
-                rhs_normalized_unit = common_type{collin::math::pow(rhs_normalized_unit.count(), difference + 1)};
-            }
-
-            return lhs_normalized_unit == rhs_normalized_unit;
+            return lhs.unit() == basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension1>{rhs, lhs.dimension()}.unit();
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension1, std::intmax_t Dimension2>
-        constexpr bool operator!=(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension1>& lhs, const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension2>& rhs)
+        [[nodiscard]] constexpr bool operator!=(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension1>& lhs, const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension2>& rhs) noexcept
         {
             return !(lhs == rhs);
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension1, std::intmax_t Dimension2>
-        constexpr bool operator<(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension1>& lhs, const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension2>& rhs)
+        [[nodiscard]] constexpr bool operator<(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension1>& lhs, const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension2>& rhs) noexcept
         {
-            using common_type = std::common_type_t<basic_unit<Rep1, Ratio1, UnitValues, System>,
-                                                   basic_unit<Rep2, Ratio2, UnitValues, System>>;
-
-            auto lhs_normalized_unit = common_type{lhs.unit()};
-            auto rhs_normalized_unit = common_type{rhs.unit()};
             if (lhs.dimension() > rhs.dimension())
             {
-                const auto difference = collin::math::abs(lhs.dimension() - rhs.dimension());
-                lhs_normalized_unit = common_type{collin::math::pow(lhs_normalized_unit.count(), difference + 1)};
+                return basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension2>{lhs, rhs.dimension()}.unit() < rhs.unit();
             }
-            else if (rhs.dimension() > lhs.dimension())
-            {
-                const auto difference = collin::math::abs(lhs.dimension() - rhs.dimension());
-                rhs_normalized_unit = common_type{collin::math::pow(rhs_normalized_unit.count(), difference + 1)};
-            }
-            
-            return lhs_normalized_unit < rhs_normalized_unit;
+            return lhs.unit() < basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension1>{rhs, lhs.dimension()}.unit();
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension1, std::intmax_t Dimension2>
-        constexpr bool operator>(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension1>& lhs, const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension2>& rhs)
+        [[nodiscard]] constexpr bool operator>(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension1>& lhs, const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension2>& rhs) noexcept
         {
             return rhs < lhs;
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension1, std::intmax_t Dimension2>
-        constexpr bool operator<=(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension1>& lhs, const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension2>& rhs)
+        [[nodiscard]] constexpr bool operator<=(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension1>& lhs, const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension2>& rhs) noexcept
         {
             return !(rhs < lhs);
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension1, std::intmax_t Dimension2>
-        constexpr bool operator>=(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension1>& lhs, const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension2>& rhs)
+        [[nodiscard]] constexpr bool operator>=(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension1>& lhs, const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension2>& rhs) noexcept
         {
             return !(lhs < rhs);
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension>
-        constexpr bool operator==(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
+        [[nodiscard]] constexpr bool operator==(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs) noexcept
         {
             return lhs == basic_dimension_unit<Rep2, Ratio2, UnitValues, System, 1>{rhs};
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension>
-        constexpr bool operator==(const basic_unit<Rep2, Ratio2, UnitValues, System>& lhs, const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& rhs)
+        [[nodiscard]] constexpr bool operator==(const basic_unit<Rep2, Ratio2, UnitValues, System>& lhs, const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& rhs) noexcept
         {
             return basic_dimension_unit<Rep2, Ratio2, UnitValues, System, 1>{lhs} == rhs;
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension>
-        constexpr bool operator!=(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
+        [[nodiscard]] constexpr bool operator!=(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs) noexcept
         {
             return lhs != basic_dimension_unit<Rep2, Ratio2, UnitValues, System, 1>{rhs};
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension>
-        constexpr bool operator!=(const basic_unit<Rep2, Ratio2, UnitValues, System>& lhs, const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& rhs)
+        [[nodiscard]] constexpr bool operator!=(const basic_unit<Rep2, Ratio2, UnitValues, System>& lhs, const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& rhs) noexcept
         {
             return basic_dimension_unit<Rep2, Ratio2, UnitValues, System, 1>{lhs} != rhs;
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension>
-        constexpr bool operator<(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
+        [[nodiscard]] constexpr bool operator<(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
         {
             return lhs < basic_dimension_unit<Rep2, Ratio2, UnitValues, System, 1>{rhs};
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension>
-        constexpr bool operator<(const basic_unit<Rep2, Ratio2, UnitValues, System>& lhs, const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& rhs)
+        [[nodiscard]] constexpr bool operator<(const basic_unit<Rep2, Ratio2, UnitValues, System>& lhs, const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& rhs)
         {
             return basic_dimension_unit<Rep2, Ratio2, UnitValues, System, 1>{lhs} < rhs;
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension>
-        constexpr bool operator>(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
+        [[nodiscard]] constexpr bool operator>(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
         {
             return lhs > basic_dimension_unit<Rep2, Ratio2, UnitValues, System, 1>{rhs};
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension>
-        constexpr bool operator>(const basic_unit<Rep2, Ratio2, UnitValues, System>& lhs, const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& rhs)
+        [[nodiscard]] constexpr bool operator>(const basic_unit<Rep2, Ratio2, UnitValues, System>& lhs, const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& rhs)
         {
             return basic_dimension_unit<Rep2, Ratio2, UnitValues, System, 1>{lhs} > rhs;
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension>
-        constexpr bool operator<=(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
+        [[nodiscard]] constexpr bool operator<=(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
         {
             return lhs <= basic_dimension_unit<Rep2, Ratio2, UnitValues, System, 1>{rhs};
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension>
-        constexpr bool operator<=(const basic_unit<Rep2, Ratio2, UnitValues, System>& lhs, const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& rhs)
+        [[nodiscard]] constexpr bool operator<=(const basic_unit<Rep2, Ratio2, UnitValues, System>& lhs, const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& rhs)
         {
             return basic_dimension_unit<Rep2, Ratio2, UnitValues, System, 1>{lhs} <= rhs;
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension>
-        constexpr bool operator>=(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
+        [[nodiscard]] constexpr bool operator>=(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System>& rhs)
         {
             return lhs >= basic_dimension_unit<Rep2, Ratio2, UnitValues, System, 1>{rhs};
         }
 
         template<class Rep1, ratio_type Ratio1, class Rep2, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension>
-        constexpr bool operator>=(const basic_unit<Rep2, Ratio2, UnitValues, System>& lhs, const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& rhs)
+        [[nodiscard]] constexpr bool operator>=(const basic_unit<Rep2, Ratio2, UnitValues, System>& lhs, const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& rhs)
         {
             return basic_dimension_unit<Rep2, Ratio2, UnitValues, System, 1>{lhs} >= rhs;
         }
 
-        template<basic_dimension_unit_type... DimensionUnits>
+        template<class Rep1, class Rep2, ratio_type Ratio1, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension1, std::intmax_t Dimension2>
+        [[nodiscard]] constexpr auto operator+(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension1>& lhs, const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension2>& rhs) noexcept
+        {
+            auto r {lhs};
+            r += rhs;
+            return r;
+        }
+
+        template<class Rep1, class Rep2, ratio_type Ratio1, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension1, std::intmax_t Dimension2>
+        [[nodiscard]] constexpr auto operator-(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension1>& lhs, const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension2>& rhs) noexcept
+        {
+            auto r {lhs};
+            r -= rhs;
+            return r;
+        }
+
+        template<class Rep1, class Rep2, ratio_type Ratio1, class UnitValues, class System, std::intmax_t Dimension>
+        [[nodiscard]] constexpr auto operator*(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& lhs, const Rep2& rhs) noexcept
+        {
+            auto r {lhs};
+            r *= rhs;
+            return r;
+        }
+
+        template<class Rep1, class Rep2, ratio_type Ratio1, class UnitValues, class System, std::intmax_t Dimension>
+        [[nodiscard]] constexpr auto operator/(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& lhs, const Rep2& rhs) noexcept
+        {
+            auto r {lhs};
+            r /= rhs;
+            return r;
+        }
+
+        template<class Rep1, class Rep2, ratio_type Ratio1, class UnitValues, class System, std::intmax_t Dimension>
+        [[nodiscard]] constexpr auto operator%(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension>& lhs, const Rep2& rhs) noexcept
+        {
+            auto r {lhs};
+            r %= rhs;
+            return r;
+        }
+
+        template<class Rep1, class Rep2, ratio_type Ratio1, ratio_type Ratio2, class UnitValues, class System, std::intmax_t Dimension1, std::intmax_t Dimension2>
+        [[nodiscard]] constexpr auto operator%(const basic_dimension_unit<Rep1, Ratio1, UnitValues, System, Dimension1>& lhs, const basic_dimension_unit<Rep2, Ratio2, UnitValues, System, Dimension2>& rhs) noexcept
+        {
+            auto r {lhs};
+            r %= rhs;
+            return r;
+        }
+
+        template<collin::concepts::arithmetic Rep, basic_dimension_unit_type... DimensionUnits>
             requires (collin::type_traits::is_unique_v<typename DimensionUnits::unit_values...> &&
                         (... && !collin::concepts::same<typename DimensionUnits::dimension_t, dimension_type<dynamic_dimension>>) &&
                         sizeof...(DimensionUnits) >= 2
                      )
         class basic_derived_unit
         {
+            using storage_t = collin::math::basic_rational<Rep>;
+
+            template<basic_dimension_unit_type... DimensionUnits2>
+                using result_ratio = ratio_multiply_many_t<
+                                        std::conditional_t<is_numerator_unit_v<DimensionUnits>,
+                                            std::ratio_divide<
+                                                typename DimensionUnits2::ratio,
+                                                typename DimensionUnits::ratio
+                                                >,
+                                            std::ratio_divide<
+                                                std::ratio<1, 1>,
+                                                std::ratio_divide<
+                                                    typename DimensionUnits2::ratio,
+                                                    typename DimensionUnits::ratio
+                                                >
+                                            >
+                                        >...
+                                    >;
             public:
+                using rep = Rep;
                 using units = std::tuple<DimensionUnits...>;
-                using main_unit_t = std::tuple_element_t<0, units>;
+                using numerator_units = typename collin::tuples::filter_t<is_numerator_unit, units>;
+                using denominator_units = typename collin::tuples::filter_t<is_denominator_unit, units>;
                 static constexpr auto num_units = sizeof...(DimensionUnits);
+                
+                static constexpr basic_derived_unit zero() noexcept
+                {
+                    return basic_derived_unit{std::tuple_element<0, units>::unit_values<rep>::zero()};
+                }
+
+                static constexpr basic_derived_unit min() noexcept
+                {
+                    return basic_derived_unit{std::tuple_element<0, units>::unit_values<rep>::min()};
+                }
+
+                static constexpr basic_derived_unit max() noexcept
+                {
+                    return basic_derived_unit{std::tuple_element<0, units>::unit_values<rep>::max()};
+                }
 
                 constexpr basic_derived_unit() = default;
-
-                template<class Rep>
-                constexpr explicit basic_derived_unit(const Rep& amount)
-                    : unit_{amount} {}
-
                 constexpr basic_derived_unit(const basic_derived_unit&) = default;
                 constexpr basic_derived_unit(basic_derived_unit&&) noexcept = default;
 
                 constexpr basic_derived_unit& operator=(const basic_derived_unit&) = default;
                 constexpr basic_derived_unit& operator=(basic_derived_unit&&) noexcept = default;
 
-                ~basic_derived_unit() noexcept = default;
+                template<class Rep2>
+                    requires(collin::concepts::constructible<rep, Rep2>)
+                constexpr explicit basic_derived_unit(const Rep2& n, const Rep2& d = 1)
+                    : amount_{n, d} {}
 
-                [[nodiscard]] constexpr auto& main_unit() const noexcept
+                template<class Rep2>
+                constexpr explicit basic_derived_unit(const collin::math::basic_rational<Rep2>& other)
+                    : amount_{other} {}
+
+                template<class Rep2, basic_dimension_unit_type... DimensionUnits2>
+                constexpr basic_derived_unit(const basic_derived_unit<Rep2, DimensionUnits2...>& other)
+                    : basic_derived_unit{other.rational() * collin::math::rational_ratio<result_ratio<DimensionUnits2...>, Rep2>} {}
+
+                [[nodiscard]] constexpr storage_t rational() const noexcept
                 {
-                    return unit_.unit();
+                    return amount_;
                 }
 
-                [[nodiscard]] constexpr auto& main_unit() noexcept
+                [[nodiscard]] constexpr rep count() const noexcept
                 {
-                    return unit_.unit();
+                    return static_cast<rep>(amount_);
                 }
 
-                [[nodiscard]] constexpr auto count() const noexcept
+                [[nodiscard]] constexpr basic_derived_unit operator+() const noexcept
                 {
-                    return main_unit().count();
-                }
-
-                [[nodiscard]] constexpr basic_derived_unit operator+() const
-                {
-                    return basic_derived_unit{*this};
-                }
-
-                [[nodiscard]] constexpr basic_derived_unit operator-() const
-                {
-                    return basic_derived_unit{-count()};
-                }
-
-                constexpr basic_derived_unit& operator++()
-                {
-                    ++main_unit();
                     return *this;
                 }
 
-                constexpr basic_derived_unit operator++(int)
+                [[nodiscard]] constexpr basic_derived_unit operator-() const noexcept
                 {
-                    const auto not_changed = *this;
-                    ++(*this);
-                    return not_changed;
+                    return basic_derived_unit{-amount_};
                 }
 
-                constexpr basic_derived_unit& operator--()
+                constexpr basic_derived_unit& operator++() noexcept
                 {
-                    --main_unit();
+                    ++amount_;
                     return *this;
                 }
 
-                constexpr basic_derived_unit operator--(int)
+                constexpr basic_derived_unit operator++(int) noexcept
                 {
-                    const auto not_changed = *this;
-                    --(*this);
-                    return not_changed;
+                    return basic_derived_unit{amount_++};
                 }
 
-                constexpr basic_derived_unit& operator+=(const basic_derived_unit& other)
+                constexpr basic_derived_unit operator--() noexcept
                 {
-                    main_unit() += other.main_unit();
+                    --amount_;
                     return *this;
                 }
 
-                constexpr basic_derived_unit& operator-=(const basic_derived_unit& other)
+                constexpr basic_derived_unit operator--(int) noexcept
                 {
-                    main_unit() -= other.main_unit();
-                    return *this;
+                    return basic_derived_unit{amount_--};
                 }
-            
-                constexpr basic_derived_unit& operator*=(const typename main_unit_t::rep& other)
+
+                template<class Rep2, basic_dimension_unit_type... DimensionUnits2>
+                    requires(... && (collin::concepts::same<typename DimensionUnits::unit_values, typename DimensionUnits2::unit_values> &&
+                                     collin::concepts::same<typename DimensionUnits::system, typename DimensionUnits2::system>)
+                            )
+                constexpr basic_derived_unit& operator+=(const basic_derived_unit<Rep2, DimensionUnits2...>& other) noexcept
                 {
-                    main_unit() *= other;
+                    using common_type = std::common_type_t<Rep, Rep2>;
+                    using t = result_ratio<DimensionUnits2...>;
+
+                    if constexpr (std::ratio_equal_v<t, std::ratio<1, 1>>)
+                    {
+                        amount_ += other.rational();
+                    }
+                    else
+                    {
+                        amount_ += other.rational() * collin::math::rational_ratio<t, common_type>;
+                    }
+
                     return *this;
                 }
 
-                constexpr basic_derived_unit& operator/=(const typename main_unit_t::rep& other)
+                template<class Rep2, basic_dimension_unit_type... DimensionUnits2>
+                    requires(... && (collin::concepts::same<typename DimensionUnits::unit_values, typename DimensionUnits2::unit_values> &&
+                                     collin::concepts::same<typename DimensionUnits::system, typename DimensionUnits2::system>)
+                            )
+                constexpr basic_derived_unit& operator-=(const basic_derived_unit<Rep2, DimensionUnits2...>& other) noexcept
                 {
-                    main_unit() /= other;
+                    using common_type = std::common_type_t<Rep, Rep2>;
+                    using t = result_ratio<DimensionUnits2...>;
+
+                    if constexpr (std::ratio_equal_v<t, std::ratio<1, 1>>)
+                    {
+                        amount_ -= other.rational();
+                    }
+                    else
+                    {
+                        amount_ -= other.rational() * collin::math::rational_ratio<t, common_type>;
+                    }
+
                     return *this;
                 }
 
-                constexpr basic_derived_unit& operator%=(const typename main_unit_t::rep& other)
+                template<class Rep2>
+                constexpr basic_derived_unit& operator*=(const Rep2& other) noexcept
                 {
-                    main_unit() %= other;
+                    amount_ *= other;
                     return *this;
                 }
 
-                constexpr basic_derived_unit& operator%=(const basic_derived_unit& other)
+                template<class Rep2>
+                constexpr basic_derived_unit& operator/=(const Rep2& other) noexcept
                 {
-                    main_unit() %= other.main_unit();
+                    amount_ /= other;
                     return *this;
                 }
 
+                //template<class Rep2>
+                //constexpr basic_derived_unit& operator%=(const Rep2& other) noexcept
+                //{
+                //    amount_ %= other;
+                //    return *this;
+                //}
+
+                //template<class Rep2, basic_dimension_unit_type... DimensionUnits2>
+                //    requires(... && (collin::concepts::same<typename DimensionUnits::unit_values, typename DimensionUnits2::unit_values> &&
+                //                     collin::concepts::same<typename DimensionUnits::system, typename DimensionUnits2::system>)
+                //            )
+                //constexpr basic_derived_unit& operator%=(const basic_derived_unit<Rep2, DimensionUnits2...>& other) noexcept
+                //{
+                //    using common_type = std::common_type_t<Rep, Rep2>;
+                //    using t = result_ratio<DimensionUnits2...>;
+
+                //    if constexpr (std::ratio_equal_v<t, std::ratio<1, 1>>)
+                //    {
+                //        amount_ %= other.rational();
+                //    }
+                //    else
+                //    {
+                //        amount_ %= other.rational() * collin::math::rational_ratio<t, common_type>;
+                //    }
+
+                //    return *this;
+                //}
+
+                template<class Rep2, basic_dimension_unit_type... DimensionUnits2>
+                    requires((sizeof...(DimensionUnits) == sizeof...(DimensionUnits2))
+                                && (... && (collin::concepts::same<typename DimensionUnits::unit_values, typename DimensionUnits2::unit_values> &&
+                                             collin::concepts::same<typename DimensionUnits::system, typename DimensionUnits2::system>)
+                                    )
+                            )
+                [[nodiscard]] friend constexpr bool operator==(const basic_derived_unit<Rep, DimensionUnits...>& lhs, const basic_derived_unit<Rep2, DimensionUnits2...>& rhs) noexcept
+                {
+                    using t = result_ratio<DimensionUnits2...>;
+
+                    if constexpr (std::ratio_equal_v<t, std::ratio<1, 1>>)
+                    {
+                        return lhs.rational() == rhs.rational();
+                    }
+                    else
+                    {
+                        return lhs.rational() == basic_derived_unit<Rep, DimensionUnits...>{rhs}.rational();
+                    }
+                }
+
+                template<class Rep2, basic_dimension_unit_type... DimensionUnits2>
+                    requires((sizeof...(DimensionUnits) == sizeof...(DimensionUnits2))
+                                && (... && (collin::concepts::same<typename DimensionUnits::unit_values, typename DimensionUnits2::unit_values> &&
+                                             collin::concepts::same<typename DimensionUnits::system, typename DimensionUnits2::system>)
+                                    )
+                            )
+                [[nodiscard]] friend constexpr bool operator!=(const basic_derived_unit<Rep, DimensionUnits...>& lhs, const basic_derived_unit<Rep2, DimensionUnits2...>& rhs) noexcept
+                {
+                    return !(lhs == rhs);
+                }
+
+                template<class Rep2, basic_dimension_unit_type... DimensionUnits2>
+                    requires((sizeof...(DimensionUnits) == sizeof...(DimensionUnits2))
+                                && (... && (collin::concepts::same<typename DimensionUnits::unit_values, typename DimensionUnits2::unit_values> &&
+                                             collin::concepts::same<typename DimensionUnits::system, typename DimensionUnits2::system>)
+                                    )
+                            )
+                [[nodiscard]] friend constexpr bool operator<(const basic_derived_unit<Rep, DimensionUnits...>& lhs, const basic_derived_unit<Rep2, DimensionUnits2...>& rhs) noexcept
+                {
+                    using t = result_ratio<DimensionUnits2...>;
+
+                    if constexpr (std::ratio_equal_v<t, std::ratio<1, 1>>)
+                    {
+                        return lhs.rational() < rhs.rational();
+                    }
+                    else
+                    {
+                        return lhs.rational() < basic_derived_unit<Rep, DimensionUnits...>{rhs}.rational();
+                    }
+                }
+
+                template<class Rep2, basic_dimension_unit_type... DimensionUnits2>
+                    requires((sizeof...(DimensionUnits) == sizeof...(DimensionUnits2))
+                                && (... && (collin::concepts::same<typename DimensionUnits::unit_values, typename DimensionUnits2::unit_values> &&
+                                             collin::concepts::same<typename DimensionUnits::system, typename DimensionUnits2::system>)
+                                    )
+                            )
+                [[nodiscard]] friend constexpr bool operator>(const basic_derived_unit<Rep, DimensionUnits...>& lhs, const basic_derived_unit<Rep2, DimensionUnits2...>& rhs) noexcept
+                {
+                    return rhs < lhs;
+                }
+
+                template<class Rep2, basic_dimension_unit_type... DimensionUnits2>
+                    requires((sizeof...(DimensionUnits) == sizeof...(DimensionUnits2))
+                                && (... && (collin::concepts::same<typename DimensionUnits::unit_values, typename DimensionUnits2::unit_values> &&
+                                             collin::concepts::same<typename DimensionUnits::system, typename DimensionUnits2::system>)
+                                    )
+                            )
+                [[nodiscard]] friend constexpr bool operator<=(const basic_derived_unit<Rep, DimensionUnits...>& lhs, const basic_derived_unit<Rep2, DimensionUnits2...>& rhs) noexcept
+                {
+                    return !(rhs < lhs);
+                }
+
+                template<class Rep2, basic_dimension_unit_type... DimensionUnits2>
+                    requires((sizeof...(DimensionUnits) == sizeof...(DimensionUnits2))
+                                && (... && (collin::concepts::same<typename DimensionUnits::unit_values, typename DimensionUnits2::unit_values> &&
+                                             collin::concepts::same<typename DimensionUnits::system, typename DimensionUnits2::system>)
+                                    )
+                            )
+                [[nodiscard]] friend constexpr bool operator>=(const basic_derived_unit<Rep, DimensionUnits...>& lhs, const basic_derived_unit<Rep2, DimensionUnits2...>& rhs) noexcept
+                {
+                    return !(lhs < rhs);
+                }
             private:
-                main_unit_t unit_ {0};
+                storage_t amount_ {0, 1};
         };
 
-        template<basic_dimension_unit_type... DimensionalUnits, basic_dimension_unit_type... DimensionalUnits2>
-        requires (sizeof...(DimensionalUnits) == sizeof...(DimensionalUnits2) && // Same amount of units
-                   (... && std::is_convertible_v<typename DimensionalUnits::unit_t, typename DimensionalUnits2::unit_t>) && // Units are compatible
-                   (... && (DimensionalUnits::dimension_t::value == DimensionalUnits2::dimension_t::value))) // Dimensions are the same
-        constexpr auto operator+(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
+        template<class Rep1, basic_dimension_unit_type... DimensionUnits1, class Rep2, basic_dimension_unit_type... DimensionUnits2>
+            requires((sizeof...(DimensionUnits1) == sizeof...(DimensionUnits2))
+                        && (... && (collin::concepts::same<typename DimensionUnits1::unit_values, typename DimensionUnits2::unit_values> &&
+                                     collin::concepts::same<typename DimensionUnits1::system, typename DimensionUnits2::system>)
+                            )
+                    )
+        [[nodiscard]] constexpr auto operator+(const basic_derived_unit<Rep1, DimensionUnits1...>& lhs, const basic_derived_unit<Rep2, DimensionUnits2...>& rhs) noexcept
         {
-            using common_type = std::common_type_t<
-                                    basic_unit<
-                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::rep,
-                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::ratio,
-                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::unit_values,
-                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::system>,
-                                    basic_unit<
-                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::rep,
-                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::ratio,
-                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::unit_values,
-                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::system>>;
-
-            return basic_derived_unit<
-                    basic_dimension_unit_t<std::common_type_t<
-                        typename DimensionalUnits::unit_t,
-                        typename DimensionalUnits2::unit_t>
-                    , DimensionalUnits::dimension_t::value>...>{common_type(lhs.main_unit() + rhs.main_unit()).count()};
+            auto r {lhs};
+            r += rhs;
+            return r;
         }
 
-        template<basic_dimension_unit_type... DimensionalUnits, basic_dimension_unit_type... DimensionalUnits2>
-        requires (sizeof...(DimensionalUnits) == sizeof...(DimensionalUnits2) && // Same amount of units
-                   (... && std::is_convertible_v<typename DimensionalUnits::unit_t, typename DimensionalUnits2::unit_t>) && // Units are compatible
-                   (... && (DimensionalUnits::dimension_t::value == DimensionalUnits2::dimension_t::value))) // Dimensions are the same
-        constexpr auto operator-(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
+        template<class Rep1, basic_dimension_unit_type... DimensionUnits1, class Rep2, basic_dimension_unit_type... DimensionUnits2>
+            requires((sizeof...(DimensionUnits1) == sizeof...(DimensionUnits2))
+                        && (... && (collin::concepts::same<typename DimensionUnits1::unit_values, typename DimensionUnits2::unit_values> &&
+                                     collin::concepts::same<typename DimensionUnits1::system, typename DimensionUnits2::system>)
+                            )
+                    )
+        [[nodiscard]] constexpr auto operator-(const basic_derived_unit<Rep1, DimensionUnits1...>& lhs, const basic_derived_unit<Rep2, DimensionUnits2...>& rhs) noexcept
         {
-            using common_type = std::common_type_t<
-                                    basic_unit<
-                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::rep,
-                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::ratio,
-                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::unit_values,
-                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::system>,
-                                    basic_unit<
-                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::rep,
-                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::ratio,
-                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::unit_values,
-                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::system>>;
-
-            return basic_derived_unit<
-                basic_dimension_unit_t<std::common_type_t<
-                typename DimensionalUnits::unit_t,
-                typename DimensionalUnits2::unit_t>
-                , DimensionalUnits::dimension_t::value>...>{common_type(lhs.main_unit() - rhs.main_unit()).count()};
+            auto r {lhs};
+            r -= rhs;
+            return r;
         }
 
-        template<class Rep2, basic_dimension_unit_type... DimensionalUnits>
-        constexpr auto operator*(const basic_derived_unit<DimensionalUnits...>& lhs, const Rep2& rhs)
+        template<class Rep, class Rep2, basic_dimension_unit_type... DimensionUnits>
+        [[nodiscard]] constexpr auto operator*(const basic_derived_unit<Rep, DimensionUnits...>& lhs, const Rep2& rhs) noexcept
         {
-            return basic_derived_unit<DimensionalUnits...>{lhs.count() * rhs};
+            auto r {lhs};
+            r *= rhs;
+            return r;
         }
 
-        template<class Rep2, basic_dimension_unit_type... DimensionalUnits>
-        constexpr auto operator/(const basic_derived_unit<DimensionalUnits...>& lhs, const Rep2& rhs)
+        template<class Rep, class Rep2, basic_dimension_unit_type... DimensionUnits>
+        [[nodiscard]] constexpr auto operator/(const basic_derived_unit<Rep, DimensionUnits...>& lhs, const Rep2& rhs) noexcept
         {
-            return basic_derived_unit<DimensionalUnits...>{lhs.count() / rhs};
+            auto r {lhs};
+            r /= rhs;
+            return r;
         }
 
-        template<class Rep2, basic_dimension_unit_type... DimensionalUnits>
-        constexpr auto operator%(const basic_derived_unit<DimensionalUnits...>& lhs, const Rep2& rhs)
-        {
-            return basic_derived_unit<DimensionalUnits...>{lhs.count() % rhs};
-        }
+        //template<class Rep, class Rep2, basic_dimension_unit_type... DimensionUnits>
+        //[[nodiscard]] constexpr auto operator%(const basic_derived_unit<Rep, DimensionUnits...>& lhs, const Rep2& rhs) noexcept
+        //{
+        //    auto r {lhs};
+        //    r %= rhs;
+        //    return r;
+        //}
 
-        template<class... DimensionalUnits, basic_dimension_unit_type... DimensionalUnits2>
-        requires (sizeof...(DimensionalUnits) == sizeof...(DimensionalUnits2) && // Same amount of units
-                   (... && std::is_convertible_v<typename DimensionalUnits::unit_t, typename DimensionalUnits2::unit_t>) && // Units are compatible
-                   (... && (DimensionalUnits::dimension_t::value == DimensionalUnits2::dimension_t::value))) // Dimensions are the same
-        constexpr auto operator%(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
-        {
-            using common_type = std::common_type_t<
-                                    basic_unit<
-                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::rep,
-                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::ratio,
-                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::unit_values,
-                                        typename basic_derived_unit<DimensionalUnits...>::main_unit_t::system>,
-                                    basic_unit<
-                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::rep,
-                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::ratio,
-                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::unit_values,
-                                        typename basic_derived_unit<DimensionalUnits2...>::main_unit_t::system>>;
-
-            return basic_derived_unit<
-                basic_dimension_unit_t<std::common_type_t<
-                typename DimensionalUnits::unit_t,
-                typename DimensionalUnits2::unit_t>
-                , DimensionalUnits::dimension_t::value>...>{common_type(lhs.main_unit() % rhs.main_unit()).count()};
-        }
-
-        template<basic_dimension_unit_type... DimensionalUnits, basic_dimension_unit_type... DimensionalUnits2>
-        requires (sizeof...(DimensionalUnits) == sizeof...(DimensionalUnits2) && // Same amount of units
-                   (... && std::is_convertible_v<typename DimensionalUnits::unit_t, typename DimensionalUnits2::unit_t>) && // Units are compatible
-                   (... && (DimensionalUnits::dimension_t::value == DimensionalUnits2::dimension_t::value))) // Dimensions are the same
-        constexpr auto operator==(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
-        {
-            return lhs.main_unit() == rhs.main_unit();
-        }
-
-        template<basic_dimension_unit_type... DimensionalUnits, basic_dimension_unit_type... DimensionalUnits2>
-        requires (sizeof...(DimensionalUnits) == sizeof...(DimensionalUnits2) && // Same amount of units
-                   (... && std::is_convertible_v<typename DimensionalUnits::unit_t, typename DimensionalUnits2::unit_t>) && // Units are compatible
-                   (... && (DimensionalUnits::dimension_t::value == DimensionalUnits2::dimension_t::value))) // Dimensions are the same
-        constexpr auto operator!=(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
-        {
-            return !(lhs == rhs);
-        }
-
-        template<basic_dimension_unit_type... DimensionalUnits, basic_dimension_unit_type... DimensionalUnits2>
-        requires (sizeof...(DimensionalUnits) == sizeof...(DimensionalUnits2) && // Same amount of units
-                   (... && std::is_convertible_v<typename DimensionalUnits::unit_t, typename DimensionalUnits2::unit_t>) && // Units are compatible
-                   (... && (DimensionalUnits::dimension_t::value == DimensionalUnits2::dimension_t::value))) // Dimensions are the same
-        constexpr auto operator<(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
-        {
-            return lhs.main_unit() < rhs.main_unit();
-        }
-
-        template<basic_dimension_unit_type... DimensionalUnits, basic_dimension_unit_type... DimensionalUnits2>
-        requires (sizeof...(DimensionalUnits) == sizeof...(DimensionalUnits2) && // Same amount of units
-                   (... && std::is_convertible_v<typename DimensionalUnits::unit_t, typename DimensionalUnits2::unit_t>) && // Units are compatible
-                   (... && (DimensionalUnits::dimension_t::value == DimensionalUnits2::dimension_t::value))) // Dimensions are the same
-        constexpr auto operator>(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
-        {
-            return rhs < lhs;
-        }
-
-        template<basic_dimension_unit_type... DimensionalUnits, basic_dimension_unit_type... DimensionalUnits2>
-        requires (sizeof...(DimensionalUnits) == sizeof...(DimensionalUnits2) && // Same amount of units
-                   (... && std::is_convertible_v<typename DimensionalUnits::unit_t, typename DimensionalUnits2::unit_t>) && // Units are compatible
-                   (... && (DimensionalUnits::dimension_t::value == DimensionalUnits2::dimension_t::value))) // Dimensions are the same
-        constexpr auto operator<=(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
-        {
-            return !(rhs < lhs);
-        }
-
-        template<basic_dimension_unit_type... DimensionalUnits, basic_dimension_unit_type... DimensionalUnits2>
-        requires (sizeof...(DimensionalUnits) == sizeof...(DimensionalUnits2) && // Same amount of units
-                   (... && std::is_convertible_v<typename DimensionalUnits::unit_t, typename DimensionalUnits2::unit_t>) && // Units are compatible
-                   (... && (DimensionalUnits::dimension_t::value == DimensionalUnits2::dimension_t::value))) // Dimensions are the same
-        constexpr auto operator>=(const basic_derived_unit<DimensionalUnits...>& lhs, const basic_derived_unit<DimensionalUnits2...>& rhs)
-        {
-            return !(lhs < rhs);
-        }
+        //template<class Rep1, basic_dimension_unit_type... DimensionUnits1, class Rep2, basic_dimension_unit_type... DimensionUnits2>
+        //    requires((sizeof...(DimensionUnits1) == sizeof...(DimensionUnits2))
+        //                && (... && (collin::concepts::same<typename DimensionUnits1::unit_values, typename DimensionUnits2::unit_values> &&
+        //                             collin::concepts::same<typename DimensionUnits1::system, typename DimensionUnits2::system>)
+        //                    )
+        //            )
+        //[[nodiscard]] constexpr auto operator%(const basic_derived_unit<Rep1, DimensionUnits1...>& lhs, const basic_derived_unit<Rep2, DimensionUnits2...>& rhs) noexcept
+        //{
+        //    auto r {lhs};
+        //    r %= rhs;
+        //    return r;
+        //}
 
         struct metric_system
         {

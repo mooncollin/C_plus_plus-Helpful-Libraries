@@ -38,6 +38,7 @@
 #include "collin/span.hpp"
 #include "collin/utility.hpp"
 #include "collin/concepts.hpp"
+#include "collin/platform.hpp"
 
 #ifdef max
 #undef max
@@ -49,13 +50,13 @@ namespace collin
 	{
 		using socket_type = 
 		#ifdef _WIN32
-		SOCKET
+		::SOCKET
 		#else
 		int
 		#endif
 		;
 
-		constexpr uint16_t swap_bytes(uint16_t data) noexcept
+		[[nodiscard]] constexpr uint16_t swap_bytes(uint16_t data) noexcept
 		{
 			return static_cast<uint16_t>(
 				((data >> 8) & 0xFF) | 
@@ -63,7 +64,7 @@ namespace collin
 			);
 		}
 
-		constexpr uint32_t swap_bytes(uint32_t data) noexcept
+		[[nodiscard]] constexpr uint32_t swap_bytes(uint32_t data) noexcept
 		{
 			return static_cast<uint32_t>(
 				((data & 0xFF000000) >> 24) |
@@ -73,7 +74,7 @@ namespace collin
 			);
 		}
 
-		constexpr uint64_t swap_bytes(uint64_t data) noexcept
+		[[nodiscard]] constexpr uint64_t swap_bytes(uint64_t data) noexcept
 		{
 			return static_cast<uint64_t>(
 				(static_cast<uint64_t>(swap_bytes(static_cast<uint32_t>(data & 0xFFFFFFFF))) << 32) |
@@ -81,12 +82,12 @@ namespace collin
 			);
 		}
 
-		constexpr bool is_network_endianness() noexcept
+		[[nodiscard]] constexpr bool is_network_endianness() noexcept
 		{
 			return std::endian::native == std::endian::big;
 		}
 
-		constexpr uint32_t htonl(uint32_t host) noexcept
+		[[nodiscard]] constexpr uint32_t htonl(uint32_t host) noexcept
 		{
 			if constexpr(is_network_endianness())
 			{
@@ -98,7 +99,7 @@ namespace collin
 			}
 		}
 
-		constexpr uint64_t htonll(uint64_t host) noexcept
+		[[nodiscard]] constexpr uint64_t htonll(uint64_t host) noexcept
 		{
 			if constexpr(is_network_endianness())
 			{
@@ -110,7 +111,7 @@ namespace collin
 			}
 		}
 
-		constexpr uint16_t htons(uint16_t host) noexcept
+		[[nodiscard]] constexpr uint16_t htons(uint16_t host) noexcept
 		{
 			if constexpr(is_network_endianness())
 			{
@@ -123,7 +124,7 @@ namespace collin
 		}
 
 		template<collin::concepts::unsigned_integral T>
-		constexpr T hton(T host) noexcept
+		[[nodiscard]] constexpr T hton(T host) noexcept
 		{
 			if constexpr(sizeof(T) <= sizeof(uint16_t))
 			{
@@ -139,7 +140,7 @@ namespace collin
 			}
 		}
 
-		constexpr uint64_t ntohll(uint64_t network) noexcept
+		[[nodiscard]] constexpr uint64_t ntohll(uint64_t network) noexcept
 		{
 			if constexpr(is_network_endianness())
 			{
@@ -151,7 +152,7 @@ namespace collin
 			}
 		}
 
-		constexpr uint32_t ntohl(uint32_t network) noexcept
+		[[nodiscard]] constexpr uint32_t ntohl(uint32_t network) noexcept
 		{
 			if constexpr(is_network_endianness())
 			{
@@ -163,7 +164,7 @@ namespace collin
 			}
 		}
 		
-		constexpr uint16_t ntohs(uint16_t network) noexcept
+		[[nodiscard]] constexpr uint16_t ntohs(uint16_t network) noexcept
 		{
 			if constexpr(is_network_endianness())
 			{
@@ -176,7 +177,7 @@ namespace collin
 		}
 
 		template<collin::concepts::unsigned_integral T>
-		constexpr T ntoh(T network) noexcept
+		[[nodiscard]] constexpr T ntoh(T network) noexcept
 		{
 			if constexpr(sizeof(T) <= sizeof(uint16_t))
 			{
@@ -192,7 +193,7 @@ namespace collin
 			}
 		}
 
-		inline int get_last_error()
+		inline int get_last_error() noexcept
 		{
 			#ifdef _WIN32
 			return ::WSAGetLastError();
@@ -201,7 +202,7 @@ namespace collin
 			#endif
 		}
 
-		inline void clear_last_error()
+		inline void clear_last_error() noexcept
 		{
 			#ifdef _WIN32
 			::WSASetLastError(0);
@@ -210,7 +211,7 @@ namespace collin
 			#endif
 		}
 
-		enum class Family
+		enum class family_type
 		{
 			#ifdef AF_UNSPEC
 			unspec = AF_UNSPEC,
@@ -298,7 +299,7 @@ namespace collin
 			#endif
 		};
 		
-		enum class Type
+		enum class sock_type
 		{
 			#ifdef SOCK_STREAM
 			stream = SOCK_STREAM,
@@ -320,7 +321,7 @@ namespace collin
 			#endif
 		};
 
-		enum class Protocol
+		enum class protocol
 		{
 			automatic = 0,
 			icmp = IPPROTO_ICMP,
@@ -349,12 +350,12 @@ namespace collin
 		{
 			struct socket_category_impl : std::error_category
 			{
-				virtual const char* name() const noexcept override
+				[[nodiscard]] virtual const char* name() const noexcept override
 				{
 					return "socket";
 				}
 
-				virtual std::string message(int val) const override
+				[[nodiscard]] virtual std::string message(int val) const override
 				{
 					switch(static_cast<socket_errc>(val))
 					{
@@ -374,6 +375,11 @@ namespace collin
 
 					return "socket unknown error";
 				}
+
+				socket_category_impl() = default;
+
+				socket_category_impl(const socket_category_impl&) = delete;
+				socket_category_impl& operator=(const socket_category_impl&) = delete;
 			};
 
 			static socket_category_impl sc;
@@ -381,12 +387,12 @@ namespace collin
 			return sc;
 		}
 
-		std::error_code make_error_code(socket_errc e) noexcept
+		[[nodiscard]] std::error_code make_error_code(socket_errc e) noexcept
 		{
 			return std::error_code(static_cast<int>(e), socket_category());
 		}
 
-		std::error_condition make_error_condition(socket_errc e) noexcept
+		[[nodiscard]] std::error_condition make_error_condition(socket_errc e) noexcept
 		{
 			return std::error_condition(static_cast<int>(e), socket_category());
 		}
@@ -397,8 +403,8 @@ namespace collin
 				class broadcast
 				{
 					public:
-						broadcast() noexcept {}
-						explicit broadcast(bool v) noexcept
+						constexpr broadcast() noexcept = default;
+						constexpr explicit broadcast(bool v) noexcept
 							: value_(static_cast<int>(v)) {}
 
 						broadcast& operator=(bool v) noexcept
@@ -407,42 +413,47 @@ namespace collin
 							return *this;
 						}
 
-						bool value() const noexcept
+						[[nodiscard]] bool value() const noexcept
 						{
 							return value_ != 0;
 						}
 
-						explicit operator bool() const noexcept
+						[[nodiscard]] explicit operator bool() const noexcept
 						{
 							return value();
 						}
 
-						bool operator!() const noexcept
+						[[nodiscard]] bool operator!() const noexcept
 						{
 							return !value();
 						}
 
-						template<class Protocol> int level(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int level(const Protocol& p) const noexcept
 						{
 							return SOL_SOCKET;
 						}
 
-						template<class Protocol> int name(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int name(const Protocol& p) const noexcept
 						{
 							return SO_BROADCAST;
 						}
 
-						template<class Protocol> void* data(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr void* data(const Protocol& p) noexcept
 						{
 							return std::addressof(value_);
 						}
 
-						template<class Protocol> std::size_t size(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr std::size_t size(const Protocol& p) noexcept
 						{
 							return sizeof(value_);
 						}
 
-						template<class Protocol> void resize(const Protocol& p, std::size_t s) {}
+						template<class Protocol>
+						constexpr void resize(const Protocol& p, std::size_t s) {}
 
 					private:
 						int value_ {0};
@@ -451,8 +462,8 @@ namespace collin
 				class debug
 				{
 					public:
-						debug() noexcept {}
-						explicit debug(bool v) noexcept
+						constexpr debug() noexcept = default;
+						constexpr explicit debug(bool v) noexcept
 							: value_(static_cast<int>(v)) {}
 
 						debug& operator=(bool v) noexcept
@@ -461,42 +472,47 @@ namespace collin
 							return *this;
 						}
 
-						bool value() const noexcept
+						[[nodiscard]] constexpr bool value() const noexcept
 						{
 							return value_ != 0;
 						}
 
-						explicit operator bool() const noexcept
+						[[nodiscard]] constexpr explicit operator bool() const noexcept
 						{
 							return value();
 						}
 
-						bool operator!() const noexcept
+						[[nodiscard]] constexpr bool operator!() const noexcept
 						{
 							return !value();
 						}
 
-						template<class Protocol> int level(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int level(const Protocol& p) const noexcept
 						{
 							return SOL_SOCKET;
 						}
 
-						template<class Protocol> int name(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int name(const Protocol& p) const noexcept
 						{
 							return SO_DEBUG;
 						}
 
-						template<class Protocol> void* data(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr void* data(const Protocol& p) noexcept
 						{
 							return std::addressof(value_);
 						}
 
-						template<class Protocol> std::size_t size(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr std::size_t size(const Protocol& p) noexcept
 						{
 							return sizeof(value_);
 						}
 
-						template<class Protocol> void resize(const Protocol& p, std::size_t s) {}
+						template<class Protocol>
+						constexpr void resize(const Protocol& p, std::size_t s) noexcept {}
 
 					private:
 						int value_ {0};
@@ -505,52 +521,57 @@ namespace collin
 				class do_not_route
 				{
 					public:
-						do_not_route() noexcept {}
-						explicit do_not_route(bool v) noexcept
+						constexpr do_not_route() noexcept = default;
+						constexpr explicit do_not_route(bool v) noexcept
 							: value_(static_cast<int>(v)) {}
 
-						do_not_route& operator=(bool v) noexcept
+						constexpr do_not_route& operator=(bool v) noexcept
 						{
 							value_ = static_cast<int>(v);
 							return *this;
 						}
 
-						bool value() const noexcept
+						[[nodiscard]] constexpr bool value() const noexcept
 						{
 							return value_ != 0;
 						}
 
-						explicit operator bool() const noexcept
+						[[nodiscard]] constexpr explicit operator bool() const noexcept
 						{
 							return value();
 						}
 
-						bool operator!() const noexcept
+						[[nodiscard]] constexpr bool operator!() const noexcept
 						{
 							return !value();
 						}
 
-						template<class Protocol> int level(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int level(const Protocol& p) const noexcept
 						{
 							return SOL_SOCKET;
 						}
 
-						template<class Protocol> int name(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int name(const Protocol& p) const noexcept
 						{
 							return SO_DONTROUTE;
 						}
 
-						template<class Protocol> void* data(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr void* data(const Protocol& p) noexcept
 						{
 							return std::addressof(value_);
 						}
 
-						template<class Protocol> std::size_t size(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr std::size_t size(const Protocol& p) noexcept
 						{
 							return sizeof(value_);
 						}
 
-						template<class Protocol> void resize(const Protocol& p, std::size_t s) {}
+						template<class Protocol>
+						constexpr void resize(const Protocol& p, std::size_t s) noexcept {}
 
 					private:
 						int value_ {0};
@@ -559,52 +580,57 @@ namespace collin
 				class keep_alive
 				{
 					public:
-						keep_alive() noexcept {}
-						explicit keep_alive(bool v) noexcept
+						constexpr keep_alive() noexcept = default;
+						constexpr explicit keep_alive(bool v) noexcept
 							: value_(static_cast<int>(v)) {}
 
-						keep_alive& operator=(bool v) noexcept
+						constexpr keep_alive& operator=(bool v) noexcept
 						{
 							value_ = static_cast<int>(v);
 							return *this;
 						}
 
-						bool value() const noexcept
+						[[nodiscard]] constexpr bool value() const noexcept
 						{
 							return value_ != 0;
 						}
 
-						explicit operator bool() const noexcept
+						[[nodiscard]] constexpr explicit operator bool() const noexcept
 						{
 							return value();
 						}
 
-						bool operator!() const noexcept
+						[[nodiscard]] constexpr bool operator!() const noexcept
 						{
 							return !value();
 						}
 
-						template<class Protocol> int level(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int level(const Protocol& p) const noexcept
 						{
 							return SOL_SOCKET;
 						}
 
-						template<class Protocol> int name(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int name(const Protocol& p) const noexcept
 						{
 							return SO_KEEPALIVE;
 						}
 
-						template<class Protocol> void* data(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr void* data(const Protocol& p) noexcept
 						{
 							return std::addressof(value_);
 						}
 
-						template<class Protocol> std::size_t size(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr std::size_t size(const Protocol& p) noexcept
 						{
 							return sizeof(value_);
 						}
 
-						template<class Protocol> void resize(const Protocol& p, std::size_t s) {}
+						template<class Protocol>
+						constexpr void resize(const Protocol& p, std::size_t s) noexcept {}
 
 					private:
 						int value_ {0};
@@ -613,127 +639,137 @@ namespace collin
 				class linger
 				{
 					public:
-						linger() noexcept
+						constexpr linger() noexcept
 							: value_(::linger{0, 0}) {}
-						explicit linger(bool v, std::chrono::seconds t) noexcept
+						constexpr explicit linger(bool v, std::chrono::seconds t) noexcept
 							: value_({v, static_cast<unsigned short>(t.count())}) {}
 
-						linger& operator=(bool v) noexcept
+						constexpr linger& operator=(bool v) noexcept
 						{
 							value_.l_onoff = v;
 							return *this;
 						}
 
-						bool value() const noexcept
+						[[nodiscard]] constexpr bool value() const noexcept
 						{
 							return enabled();
 						}
 
-						explicit operator bool() const noexcept
+						[[nodiscard]] constexpr explicit operator bool() const noexcept
 						{
 							return value();
 						}
 
-						bool operator!() const noexcept
+						[[nodiscard]] constexpr bool operator!() const noexcept
 						{
 							return !value();
 						}
 
-						template<class Protocol> int level(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int level(const Protocol& p) const noexcept
 						{
 							return SOL_SOCKET;
 						}
 
-						template<class Protocol> int name(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int name(const Protocol& p) const noexcept
 						{
 							return SO_LINGER;
 						}
 
-						template<class Protocol> void* data(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr void* data(const Protocol& p) noexcept
 						{
 							return std::addressof(value_);
 						}
 
-						template<class Protocol> std::size_t size(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr std::size_t size(const Protocol& p) noexcept
 						{
 							return sizeof(value_);
 						}
 
-						template<class Protocol> void resize(const Protocol& p, std::size_t s) {}
+						template<class Protocol>
+						constexpr void resize(const Protocol& p, std::size_t s) noexcept {}
 
-						bool enabled() const noexcept
+						[[nodiscard]] constexpr bool enabled() const noexcept
 						{
 							return value_.l_onoff != 0;
 						}
 
-						void enabled(bool e) noexcept
+						constexpr void enabled(bool e) noexcept
 						{
 							value_.l_onoff = e;
 						}
 
-						std::chrono::seconds timeout() const noexcept
+						[[nodiscard]] constexpr std::chrono::seconds timeout() const noexcept
 						{
 							return std::chrono::seconds(value_.l_linger);
 						}
 
-						void timeout(std::chrono::seconds t) noexcept
+						constexpr void timeout(std::chrono::seconds t) noexcept
 						{
 							value_.l_linger = static_cast<decltype(::linger::l_linger)>(t.count());
 						}
 
 					private:
-						::linger value_;
+						::linger value_{};
 				};
 
 				class out_of_band_inline
 				{
 					public:
-						out_of_band_inline() noexcept {}
-						explicit out_of_band_inline(bool v) noexcept
+						constexpr out_of_band_inline() noexcept = default;
+						constexpr explicit out_of_band_inline(bool v) noexcept
 							: value_(static_cast<int>(v)) {}
 
-						out_of_band_inline& operator=(bool v) noexcept
+						constexpr out_of_band_inline& operator=(bool v) noexcept
 						{
 							value_ = static_cast<int>(v);
 							return *this;
 						}
 
-						bool value() const noexcept
+						[[nodiscard]] constexpr bool value() const noexcept
 						{
 							return value_ != 0;
 						}
 
-						explicit operator bool() const noexcept
+						[[nodiscard]] constexpr explicit operator bool() const noexcept
 						{
 							return value();
 						}
 
-						bool operator!() const noexcept
+						[[nodiscard]] constexpr bool operator!() const noexcept
 						{
 							return !value();
 						}
 
-						template<class Protocol> int level(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int level(const Protocol& p) const noexcept
 						{
 							return SOL_SOCKET;
 						}
 
-						template<class Protocol> int name(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int name(const Protocol& p) const noexcept
 						{
 							return SO_OOBINLINE;
 						}
 
-						template<class Protocol> void* data(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr void* data(const Protocol& p) noexcept
 						{
 							return std::addressof(value_);
 						}
 
-						template<class Protocol> std::size_t size(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr std::size_t size(const Protocol& p) noexcept
 						{
 							return sizeof(value_);
 						}
 
-						template<class Protocol> void resize(const Protocol& p, std::size_t s) {}
+						template<class Protocol>
+						constexpr void resize(const Protocol& p, std::size_t s) noexcept {}
 
 					private:
 						int value_ {0};
@@ -742,52 +778,57 @@ namespace collin
 				class receive_buffer_size
 				{
 					public:
-						receive_buffer_size() noexcept {}
-						explicit receive_buffer_size(bool v) noexcept
+						constexpr receive_buffer_size() noexcept = default;
+						constexpr explicit receive_buffer_size(bool v) noexcept
 							: value_(static_cast<int>(v)) {}
 
-						receive_buffer_size& operator=(bool v) noexcept
+						constexpr receive_buffer_size& operator=(bool v) noexcept
 						{
 							value_ = static_cast<int>(v);
 							return *this;
 						}
 
-						bool value() const noexcept
+						[[nodiscard]] constexpr bool value() const noexcept
 						{
 							return value_ != 0;
 						}
 
-						explicit operator bool() const noexcept
+						[[nodiscard]] constexpr explicit operator bool() const noexcept
 						{
 							return value();
 						}
 
-						bool operator!() const noexcept
+						[[nodiscard]] constexpr bool operator!() const noexcept
 						{
 							return !value();
 						}
 
-						template<class Protocol> int level(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int level(const Protocol& p) const noexcept
 						{
 							return SOL_SOCKET;
 						}
 
-						template<class Protocol> int name(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int name(const Protocol& p) const noexcept
 						{
 							return SO_RCVBUF;
 						}
 
-						template<class Protocol> void* data(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr void* data(const Protocol& p) noexcept
 						{
 							return std::addressof(value_);
 						}
 
-						template<class Protocol> std::size_t size(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr std::size_t size(const Protocol& p) noexcept
 						{
 							return sizeof(value_);
 						}
 
-						template<class Protocol> void resize(const Protocol& p, std::size_t s) {}
+						template<class Protocol>
+						constexpr void resize(const Protocol& p, std::size_t s) noexcept {}
 
 					private:
 						int value_ {0};
@@ -796,52 +837,57 @@ namespace collin
 				class receive_low_watermark
 				{
 					public:
-						receive_low_watermark() noexcept {}
-						explicit receive_low_watermark(bool v) noexcept
+						constexpr receive_low_watermark() noexcept = default;
+						constexpr explicit receive_low_watermark(bool v) noexcept
 							: value_(static_cast<int>(v)) {}
 
-						receive_low_watermark& operator=(bool v) noexcept
+						constexpr receive_low_watermark& operator=(bool v) noexcept
 						{
 							value_ = static_cast<int>(v);
 							return *this;
 						}
 
-						bool value() const noexcept
+						[[nodiscard]] constexpr bool value() const noexcept
 						{
 							return value_ != 0;
 						}
 
-						explicit operator bool() const noexcept
+						[[nodiscard]] constexpr explicit operator bool() const noexcept
 						{
 							return value();
 						}
 
-						bool operator!() const noexcept
+						[[nodiscard]] constexpr bool operator!() const noexcept
 						{
 							return !value();
 						}
 
-						template<class Protocol> int level(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int level(const Protocol& p) const noexcept
 						{
 							return SOL_SOCKET;
 						}
 
-						template<class Protocol> int name(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int name(const Protocol& p) const noexcept
 						{
 							return SO_RCVLOWAT;
 						}
 
-						template<class Protocol> void* data(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr void* data(const Protocol& p) noexcept
 						{
 							return std::addressof(value_);
 						}
 
-						template<class Protocol> std::size_t size(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr std::size_t size(const Protocol& p) noexcept
 						{
 							return sizeof(value_);
 						}
 
-						template<class Protocol> void resize(const Protocol& p, std::size_t s) {}
+						template<class Protocol>
+						constexpr void resize(const Protocol& p, std::size_t s) noexcept {}
 
 					private:
 						int value_ {0};
@@ -850,52 +896,57 @@ namespace collin
 				class reuse_address
 				{
 					public:
-						reuse_address() noexcept {}
-						explicit reuse_address(bool v) noexcept
+						constexpr reuse_address() noexcept = default;
+						constexpr explicit reuse_address(bool v) noexcept
 							: value_(static_cast<int>(v)) {}
 
-						reuse_address& operator=(bool v) noexcept
+						constexpr reuse_address& operator=(bool v) noexcept
 						{
 							value_ = static_cast<int>(v);
 							return *this;
 						}
 
-						bool value() const noexcept
+						[[nodiscard]] constexpr bool value() const noexcept
 						{
 							return value_ != 0;
 						}
 
-						explicit operator bool() const noexcept
+						[[nodiscard]] constexpr explicit operator bool() const noexcept
 						{
 							return value();
 						}
 
-						bool operator!() const noexcept
+						[[nodiscard]] constexpr bool operator!() const noexcept
 						{
 							return !value();
 						}
 
-						template<class Protocol> int level(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int level(const Protocol& p) const noexcept
 						{
 							return SOL_SOCKET;
 						}
 
-						template<class Protocol> int name(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int name(const Protocol& p) const noexcept
 						{
 							return SO_REUSEADDR;
 						}
 
-						template<class Protocol> void* data(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr void* data(const Protocol& p) noexcept
 						{
 							return std::addressof(value_);
 						}
 
-						template<class Protocol> std::size_t size(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr std::size_t size(const Protocol& p) noexcept
 						{
 							return sizeof(value_);
 						}
 
-						template<class Protocol> void resize(const Protocol& p, std::size_t s) {}
+						template<class Protocol>
+						constexpr void resize(const Protocol& p, std::size_t s) noexcept {}
 
 					private:
 						int value_ {0};
@@ -904,52 +955,57 @@ namespace collin
 				class send_buffer_size
 				{
 					public:
-						send_buffer_size() noexcept {}
-						explicit send_buffer_size(bool v) noexcept
+						constexpr send_buffer_size() noexcept = default;
+						constexpr explicit send_buffer_size(bool v) noexcept
 							: value_(static_cast<int>(v)) {}
 
-						send_buffer_size& operator=(bool v) noexcept
+						constexpr send_buffer_size& operator=(bool v) noexcept
 						{
 							value_ = static_cast<int>(v);
 							return *this;
 						}
 
-						bool value() const noexcept
+						[[nodiscard]] constexpr bool value() const noexcept
 						{
 							return value_ != 0;
 						}
 
-						explicit operator bool() const noexcept
+						[[nodiscard]] constexpr explicit operator bool() const noexcept
 						{
 							return value();
 						}
 
-						bool operator!() const noexcept
+						[[nodiscard]] constexpr bool operator!() const noexcept
 						{
 							return !value();
 						}
 
-						template<class Protocol> int level(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int level(const Protocol& p) const noexcept
 						{
 							return SOL_SOCKET;
 						}
 
-						template<class Protocol> int name(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int name(const Protocol& p) const noexcept
 						{
 							return SO_SNDBUF;
 						}
 
-						template<class Protocol> void* data(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr void* data(const Protocol& p) noexcept
 						{
 							return std::addressof(value_);
 						}
 
-						template<class Protocol> std::size_t size(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr std::size_t size(const Protocol& p) noexcept
 						{
 							return sizeof(value_);
 						}
 
-						template<class Protocol> void resize(const Protocol& p, std::size_t s) {}
+						template<class Protocol>
+						constexpr void resize(const Protocol& p, std::size_t s) noexcept {}
 
 					private:
 						int value_ {0};
@@ -958,52 +1014,57 @@ namespace collin
 				class send_low_watermark
 				{
 					public:
-						send_low_watermark() noexcept {}
-						explicit send_low_watermark(bool v) noexcept
+						constexpr send_low_watermark() noexcept = default;
+						constexpr explicit send_low_watermark(bool v) noexcept
 							: value_(static_cast<int>(v)) {}
 
-						send_low_watermark& operator=(bool v) noexcept
+						constexpr send_low_watermark& operator=(bool v) noexcept
 						{
 							value_ = static_cast<int>(v);
 							return *this;
 						}
 
-						bool value() const noexcept
+						[[nodiscard]] constexpr bool value() const noexcept
 						{
 							return value_ != 0;
 						}
 
-						explicit operator bool() const noexcept
+						[[nodiscard]] constexpr explicit operator bool() const noexcept
 						{
 							return value();
 						}
 
-						bool operator!() const noexcept
+						[[nodiscard]] constexpr bool operator!() const noexcept
 						{
 							return !value();
 						}
 
-						template<class Protocol> int level(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int level(const Protocol& p) const noexcept
 						{
 							return SOL_SOCKET;
 						}
 
-						template<class Protocol> int name(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int name(const Protocol& p) const noexcept
 						{
 							return SO_SNDLOWAT;
 						}
 
-						template<class Protocol> void* data(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr void* data(const Protocol& p) noexcept
 						{
 							return std::addressof(value_);
 						}
 
-						template<class Protocol> std::size_t size(const Protocol& p) noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr std::size_t size(const Protocol& p) noexcept
 						{
 							return sizeof(value_);
 						}
 
-						template<class Protocol> void resize(const Protocol& p, std::size_t s) {}
+						template<class Protocol>
+						constexpr void resize(const Protocol& p, std::size_t s) noexcept {}
 
 					private:
 						int value_ {0};
@@ -1012,54 +1073,59 @@ namespace collin
 				class timeout
 				{
 					public:
-						timeout() noexcept {}
-						explicit timeout(std::chrono::milliseconds v) noexcept
+						constexpr timeout() noexcept = default;
+						constexpr explicit timeout(std::chrono::milliseconds v) noexcept
 							: value_(static_cast<int>(v.count())) {}
 
-						timeout& operator=(std::chrono::milliseconds v) noexcept
+						constexpr timeout& operator=(std::chrono::milliseconds v) noexcept
 						{
 							value_ = static_cast<int>(v.count());
 							return *this;
 						}
 
-						bool value() const noexcept
+						[[nodiscard]] constexpr bool value() const noexcept
 						{
 							return value_ != 0;
 						}
 
-						explicit operator bool() const noexcept
+						[[nodiscard]] constexpr explicit operator bool() const noexcept
 						{
 							return value();
 						}
 
-						bool operator!() const noexcept
+						[[nodiscard]] constexpr bool operator!() const noexcept
 						{
 							return !value();
 						}
 
-						template<class Protocol> int level(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int level(const Protocol&) const noexcept
 						{
 							return SOL_SOCKET;
 						}
 
-						template<class Protocol> int name(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr int name(const Protocol&) const noexcept
 						{
 							return SO_RCVTIMEO;
 						}
 
-						template<class Protocol> const void* data(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr const void* data(const Protocol&) const noexcept
 						{
 							return reinterpret_cast<const void*>(std::addressof(value_));
 						}
 
-						template<class Protocol> std::size_t size(const Protocol& p) const noexcept
+						template<class Protocol>
+						[[nodiscard]] constexpr std::size_t size(const Protocol&) const noexcept
 						{
 							return sizeof(value_);
 						}
 
-						template<class Protocol> void resize(const Protocol& p, std::size_t s) {}
+						template<class Protocol>
+						constexpr void resize(const protocol&, std::size_t) noexcept {}
 
-						std::chrono::milliseconds timeout_amount() const noexcept
+						[[nodiscard]] constexpr std::chrono::milliseconds timeout_amount() const noexcept
 						{
 							return std::chrono::milliseconds(value_);
 						}
@@ -1154,55 +1220,51 @@ namespace collin
 					-1
 					#endif
 				};
-
-			protected:
-				socket_base() = default;
-				~socket_base() = default;
 		};
 
-		constexpr socket_base::message_flags operator&(socket_base::message_flags f1, socket_base::message_flags f2)
+		constexpr socket_base::message_flags operator&(socket_base::message_flags f1, socket_base::message_flags f2) noexcept
 		{
 			return socket_base::message_flags(static_cast<std::underlying_type_t<socket_base::message_flags>>(f1) & static_cast<std::underlying_type_t<socket_base::message_flags>>(f2));
 		}
 
-		constexpr socket_base::message_flags operator|(socket_base::message_flags f1, socket_base::message_flags f2)
+		constexpr socket_base::message_flags operator|(socket_base::message_flags f1, socket_base::message_flags f2) noexcept
 		{
 			return socket_base::message_flags(static_cast<std::underlying_type_t<socket_base::message_flags>>(f1) | static_cast<std::underlying_type_t<socket_base::message_flags>>(f2));
 		}
 
-		constexpr socket_base::message_flags operator^(socket_base::message_flags f1, socket_base::message_flags f2)
+		constexpr socket_base::message_flags operator^(socket_base::message_flags f1, socket_base::message_flags f2) noexcept
 		{
 			return socket_base::message_flags(static_cast<std::underlying_type_t<socket_base::message_flags>>(f1) ^ static_cast<std::underlying_type_t<socket_base::message_flags>>(f2));
 		}
 
-		constexpr socket_base::message_flags operator~(socket_base::message_flags f)
+		constexpr socket_base::message_flags operator~(socket_base::message_flags f) noexcept
 		{
 			return socket_base::message_flags(~static_cast<std::underlying_type_t<socket_base::message_flags>>(f));
 		}
 
-		inline socket_base::message_flags operator&=(socket_base::message_flags& f1, socket_base::message_flags f2)
+		inline socket_base::message_flags operator&=(socket_base::message_flags& f1, socket_base::message_flags f2) noexcept
 		{
 			return f1 = (f1 & f2);
 		}
 
-		inline socket_base::message_flags operator|=(socket_base::message_flags& f1, socket_base::message_flags f2)
+		inline socket_base::message_flags operator|=(socket_base::message_flags& f1, socket_base::message_flags f2) noexcept
 		{
 			return f1 = (f1 | f2);
 		}
 
-		inline socket_base::message_flags operator^=(socket_base::message_flags& f1, socket_base::message_flags f2)
+		inline socket_base::message_flags operator^=(socket_base::message_flags& f1, socket_base::message_flags f2) noexcept
 		{
 			return f1 = (f1 ^ f2);
 		}
 
 		template<std::size_t Ext>
-		auto socket_receive(socket_type s, span<msgtype, Ext> bufs, int flags, std::error_code& ec)
+		auto socket_receive(socket_type s, span<msgtype, Ext> bufs, int flags, std::error_code& ec) noexcept
 		{
 			clear_last_error();
 			ec.clear();
 			#ifdef _WIN32
 			DWORD bytes_transferred = 0;
-			DWORD recv_flags = flags;
+			DWORD recv_flags = static_cast<DWORD>(flags);
 			const auto result = ::WSARecv(s, bufs.data(), static_cast<DWORD>(bufs.size()), &bytes_transferred, &recv_flags, 0, 0);
 			if(result != 0)
 			{
@@ -1223,7 +1285,7 @@ namespace collin
 		}
 
 		template<class ElementType, std::size_t Extent>
-		std::size_t socket_receive(socket_type s, span<ElementType, Extent> buf, int flags, std::error_code& ec)
+		std::size_t socket_receive(socket_type s, span<ElementType, Extent> buf, int flags, std::error_code& ec) noexcept
 		{
 			clear_last_error();
 			ec.clear();
@@ -1256,13 +1318,13 @@ namespace collin
 		}
 
 		template<std::size_t Ext>
-		auto socket_send(socket_type s, span<msgtype, Ext> bufs, int flags, std::error_code& ec)
+		std::size_t socket_send(socket_type s, span<msgtype, Ext> bufs, int flags, std::error_code& ec) noexcept
 		{
 			clear_last_error();
 			ec.clear();
 			#ifdef _WIN32
 			DWORD bytes_transferred = 0;
-			DWORD send_flags = flags;
+			DWORD send_flags = static_cast<DWORD>(flags);
 			const auto result = ::WSASend(s, bufs.data(), static_cast<DWORD>(bufs.size()), &bytes_transferred, send_flags, nullptr, nullptr);
 			if (result != 0)
 			{
@@ -1283,7 +1345,7 @@ namespace collin
 		}
 
 		template<class ElementType, std::size_t Extent>
-		std::size_t socket_send(socket_type s, const span<ElementType, Extent> buf, int flags, std::error_code& ec)
+		std::size_t socket_send(socket_type s, const span<ElementType, Extent> buf, int flags, std::error_code& ec) noexcept
 		{
 			clear_last_error();
 			ec.clear();
@@ -1315,13 +1377,13 @@ namespace collin
 			return total;
 		}
 
-		template<class Protocol>
+		template<class protocol>
 		class socket_impl
 		{
 			protected:
 				using native_handle_type = socket_type;
 
-				explicit socket_impl(io_context& ctx)
+				explicit socket_impl(io_context& ctx) noexcept
 					: ctx{ctx} {}
 
 				socket_impl(socket_impl&& rhs) noexcept
@@ -1335,22 +1397,20 @@ namespace collin
 					return *this;
 				}
 
-				~socket_impl() noexcept = default;
-
 				socket_impl(const socket_impl&) = delete;
 				socket_impl& operator=(const socket_impl&) = delete;
 
-				native_handle_type native_handle() noexcept
+				[[nodiscard]] native_handle_type native_handle() const noexcept
 				{
 					return sockfd;
 				}
 
-				bool is_open() const noexcept
+				[[nodiscard]] bool is_open() const noexcept
 				{
 					return sockfd != socket_base::invalid_socket;
 				}
 
-				void close(std::error_code& ec)
+				void close(std::error_code& ec) noexcept
 				{
 					if (is_open())
 					{
@@ -1376,22 +1436,22 @@ namespace collin
 					}
 				}
 
-				void cancel(std::error_code& ec)
+				void cancel(std::error_code&) noexcept
 				{
 					// TODO
 				}
 
-				void non_blocking(bool mode, std::error_code& ec)
+				void non_blocking(bool mode, std::error_code& ec) noexcept
 				{
 					bits.non_blocking = mode;
 				}
 
-				bool non_blocking() const
+				bool non_blocking() const noexcept
 				{
 					return bits.non_blocking;
 				}
 
-				void native_non_blocking(bool mode, std::error_code& ec)
+				void native_non_blocking(bool mode, std::error_code& ec) noexcept
 				{
 					#if defined _WIN32
 					auto mode_ul = static_cast<unsigned long>(mode);
@@ -1418,7 +1478,7 @@ namespace collin
 					bits.native_non_blocking = mode;
 				}
 
-				bool native_non_blocking() const
+				[[nodiscard]] bool native_non_blocking() const noexcept
 				{
 					#if defined _WIN32
 					return bits.native_non_blocking;
@@ -1446,13 +1506,13 @@ namespace collin
 				} bits {};
 		};
 
-		template<class Protocol>
-		class basic_socket_impl : public socket_impl<Protocol>
+		template<class protocol>
+		class basic_socket_impl : public socket_impl<protocol>
 		{
-			using base = socket_impl<Protocol>;
+			using base = socket_impl<protocol>;
 
 			protected:
-				using protocol_type = Protocol;
+				using protocol_type = protocol;
 				using endpoint_type = typename protocol_type::endpoint;
 
 				explicit basic_socket_impl(io_context& ctx)
@@ -1461,7 +1521,7 @@ namespace collin
 				basic_socket_impl(basic_socket_impl&&) noexcept = default;
 
 				template<class OtherProtocol>
-				basic_socket_impl(basic_socket_impl<OtherProtocol>&& rhs)
+				basic_socket_impl(basic_socket_impl<OtherProtocol>&& rhs) noexcept
 					: base{std::move(rhs)}, protocol_{std::move(rhs.protocol)} {}
 
 				basic_socket_impl& operator=(basic_socket_impl&& rhs) noexcept
@@ -1485,7 +1545,7 @@ namespace collin
 				basic_socket_impl(const basic_socket_impl&) = delete;
 				basic_socket_impl& operator=(const basic_socket_impl&) = delete;
 
-				void open(const protocol_type& protocol, std::error_code& ec)
+				void open(const protocol_type& protocol, std::error_code& ec) noexcept
 				{
 					if (base::is_open())
 					{
@@ -1509,7 +1569,7 @@ namespace collin
 					}
 				}
 
-				void assign(const protocol_type& protocol, base::native_handle_type native_sockfd, std::error_code& ec)
+				void assign(const protocol_type& protocol, base::native_handle_type native_sockfd, std::error_code& ec) noexcept
 				{
 					if (base::is_open())
 					{
@@ -1531,14 +1591,14 @@ namespace collin
 					}
 				}
 
-				base::native_handle_type release(std::error_code& ec)
+				[[nodiscard]] base::native_handle_type release(std::error_code& ec) noexcept
 				{
 					base::cancel(ec);
 					return std::exchange(base::sockfd, socket_base::invalid_socket);
 				}
 
 				template<class Option>
-				void set_option(const Option option, std::error_code& ec)
+				void set_option(const Option option, std::error_code& ec) noexcept
 				{
 					const auto result = ::setsockopt(base::sockfd,
 													 option.level(protocol_),
@@ -1557,7 +1617,7 @@ namespace collin
 				}
 
 				template<class Option>
-				void get_option(Option& option, std::error_code& ec) const
+				void get_option(Option& option, std::error_code& ec) const noexcept
 				{
 					const auto result = ::getsockopt(base::sockfd,
 													 option.level(protocol_),
@@ -1576,7 +1636,7 @@ namespace collin
 				}
 
 				template<class Control>
-				void io_control(Control& control, std::error_code& ec)
+				void io_control(Control& control, std::error_code& ec) noexcept
 				{
 					const auto result =
 					#ifdef _WIN32
@@ -1596,7 +1656,7 @@ namespace collin
 					}
 				}
 
-				endpoint_type local_endpoint(std::error_code& ec)
+				endpoint_type local_endpoint(std::error_code& ec) noexcept
 				{
 					endpoint_type endpoint;
 					auto endpoint_len = endpoint.capacity();
@@ -1611,7 +1671,7 @@ namespace collin
 					return endpoint;
 				}
 
-				void bind(const endpoint_type& endpoint, std::error_code& ec)
+				void bind(const endpoint_type& endpoint, std::error_code& ec) noexcept
 				{
 					if (::bind(base::sockfd, static_cast<::sockaddr*>(endpoint.data()), endpoint.size()) == -1)
 					{
@@ -1623,30 +1683,30 @@ namespace collin
 					}
 				}
 
-				Protocol protocol_ {endpoint_type{}.protocol()};
+				protocol protocol_ {endpoint_type{}.protocol()};
 		};
 
-		template<class Protocol>
-		class basic_socket : public socket_base, private basic_socket_impl<Protocol>
+		template<class protocol>
+		class basic_socket : public socket_base, private basic_socket_impl<protocol>
 		{
-			using base = basic_socket_impl<Protocol>;
+			using base = basic_socket_impl<protocol>;
 
 			public:
 				using native_handle_type = socket_type;
-				using protocol_type = Protocol;
+				using protocol_type = protocol;
 				using endpoint_type = typename protocol_type::endpoint;
 
-				io_context& context()
+				[[nodiscard]] io_context& context() noexcept
 				{
 					return base::ctx.get();
 				}
 
-				native_handle_type native_handle() noexcept
+				[[nodiscard]] native_handle_type native_handle() const noexcept
 				{
 					return base::native_handle();
 				}
 
-				void open(const protocol_type& protocol, std::error_code& ec)
+				void open(const protocol_type& protocol, std::error_code& ec) noexcept
 				{
 					base::open(protocol, ec);
 				}
@@ -1656,7 +1716,7 @@ namespace collin
 					open(protocol, collin::throw_on_error("basic_socket::open"));
 				}
 
-				void assign(const protocol_type& protocol, const native_handle_type& native_socket, std::error_code& ec)
+				void assign(const protocol_type& protocol, const native_handle_type& native_socket, std::error_code& ec) noexcept
 				{
 					base::assign(protocol, native_socket, ec);
 				}
@@ -1666,22 +1726,22 @@ namespace collin
 					assign(protocol, native_socket, collin::throw_on_error("basic_socket::assign"));
 				}
 
-				native_handle_type release(std::error_code& ec)
+				[[nodiscard]] native_handle_type release(std::error_code& ec) noexcept
 				{
 					return base::release(ec);
 				}
 
-				native_handle_type release()
+				[[nodiscard]] native_handle_type release()
 				{
 					return release(collin::throw_on_error("basic_socket::release"));
 				}
 
-				bool is_open() const noexcept
+				[[nodiscard]] bool is_open() const noexcept
 				{
 					return base::is_open();
 				}
 
-				void close(std::error_code& ec)
+				void close(std::error_code& ec) noexcept
 				{
 					base::close(ec);
 				}
@@ -1691,7 +1751,7 @@ namespace collin
 					close(collin::throw_on_error("basic_socket::close"));
 				}
 
-				void cancel(std::error_code& ec)
+				void cancel(std::error_code& ec) noexcept
 				{
 					base::cancel(ec);
 				}
@@ -1702,7 +1762,7 @@ namespace collin
 				}
 
 				template<class SettableSocketOption>
-				void set_option(const SettableSocketOption& option, std::error_code& ec)
+				void set_option(const SettableSocketOption& option, std::error_code& ec) noexcept
 				{
 					base::set_option(option, ec);
 				}
@@ -1714,7 +1774,7 @@ namespace collin
 				}
 
 				template<class GettableSocketOption>
-				void get_option(GettableSocketOption& option, std::error_code ec) const
+				void get_option(GettableSocketOption& option, std::error_code ec) const noexcept
 				{
 					base::get_option(option, ec);
 				}
@@ -1726,7 +1786,7 @@ namespace collin
 				}
 
 				template<class IOControlCommand>
-				void io_control(IOControlCommand& command, std::error_code& ec)
+				void io_control(IOControlCommand& command, std::error_code& ec) noexcept
 				{
 					base::io_control(command, ec);
 				}
@@ -1737,7 +1797,7 @@ namespace collin
 					io_control(command, collin::throw_on_error("basic_socket::io_control"));
 				}
 
-				void non_blocking(bool mode, std::error_code& ec)
+				void non_blocking(bool mode, std::error_code& ec) noexcept
 				{
 					base::non_blocking(mode, ec);
 				}
@@ -1747,12 +1807,12 @@ namespace collin
 					non_blocking(mode, collin::throw_on_error("basic_socket::non_blocking"));
 				}
 
-				bool non_blocking() const
+				[[nodiscard]] bool non_blocking() const noexcept
 				{
 					return base::non_blocking();
 				}
 
-				void native_non_blocking(bool mode, std::error_code& ec)
+				void native_non_blocking(bool mode, std::error_code& ec) noexcept
 				{
 					base::native_non_blocking(mode, ec);
 				}
@@ -1762,12 +1822,12 @@ namespace collin
 					native_non_blocking(mode, collin::throw_on_error("basic_socket::native_non_blocking"));
 				}
 
-				bool native_non_blocking() const
+				[[nodiscard]] bool native_non_blocking() const noexcept
 				{
 					return base::native_non_blocking();
 				}
 
-				bool at_mark(std::error_code& ec) const
+				[[nodiscard]] bool at_mark(std::error_code& ec) const noexcept
 				{
 					
 					#ifdef _WIN32
@@ -1786,7 +1846,7 @@ namespace collin
 					return static_cast<bool>(result);
 				}
 
-				std::size_t available(std::error_code& ec)
+				[[nodiscard]] std::size_t available(std::error_code& ec) noexcept
 				{
 					if(!is_open())
 					{
@@ -1814,7 +1874,7 @@ namespace collin
 					return bytes_available;
 				}
 
-				void bind(const endpoint_type& endpoint, std::error_code& ec)
+				void bind(const endpoint_type& endpoint, std::error_code& ec) noexcept
 				{
 					return base::bind(endpoint, ec);
 				}
@@ -1824,7 +1884,7 @@ namespace collin
 					return bind(endpoint, collin::throw_on_error("basic_socket::bind"));
 				}
 
-				void shutdown(shutdown_type what, std::error_code& ec)
+				void shutdown(shutdown_type what, std::error_code& ec) noexcept
 				{	
 					if(::shutdown(native_handle(), static_cast<std::underlying_type_t<shutdown_type>>(what)) == -1)
 					{
@@ -1841,7 +1901,7 @@ namespace collin
 					shutdown(what, collin::throw_on_error("basic_socket::shutdown"));
 				}
 
-				endpoint_type local_endpoint(std::error_code& ec)
+				endpoint_type local_endpoint(std::error_code& ec) noexcept
 				{
 					return base::local_endpoint(ec);
 				}
@@ -1851,7 +1911,7 @@ namespace collin
 					return local_endpoint(collin::throw_on_error("basic_socket::local_endpoint"));
 				}
 
-				endpoint_type remote_endpoint(std::error_code& ec)
+				endpoint_type remote_endpoint(std::error_code& ec) noexcept
 				{
 					return base::remote_endpoint(ec);
 				}
@@ -1861,7 +1921,7 @@ namespace collin
 					return remote_endpoint(collin::throw_on_error("basic_socket::remote_endpoint"));
 				}
 
-				void connect(const endpoint_type& endpoint, std::error_code& ec)
+				void connect(const endpoint_type& endpoint, std::error_code& ec) noexcept
 				{
 					if(!is_open())
 					{
@@ -1889,7 +1949,7 @@ namespace collin
 
 				// async_connect() TODO
 
-				int wait(wait_type w, std::error_code& ec)
+				int wait(wait_type w, std::error_code& ec) noexcept
 				{
 					::pollfd p{native_handle(), static_cast<std::underlying_type_t<wait_type>>(w)};
 					#ifdef _WIN32
@@ -1916,7 +1976,7 @@ namespace collin
 
 				// async_wait TODO
 
-				explicit operator bool() const noexcept
+				[[nodiscard]] explicit operator bool() const noexcept
 				{
 					return is_open();
 				}
@@ -1947,8 +2007,9 @@ namespace collin
 				basic_socket(const basic_socket&) = delete;
 				basic_socket(basic_socket&& rhs) = default;
 
-				template<collin::concepts::convertible_to<Protocol> OtherProtocol>
-				basic_socket(basic_socket<OtherProtocol>&& rhs)
+				template<class OtherProtocol>
+					requires(collin::concepts::convertible_to<OtherProtocol, protocol>)
+				basic_socket(basic_socket<OtherProtocol>&& rhs) noexcept
 					: base(std::move(rhs)) {}
 
 				~basic_socket() noexcept = default;
@@ -1956,8 +2017,9 @@ namespace collin
 				basic_socket& operator=(const basic_socket&) = delete;
 				basic_socket& operator=(basic_socket&&) noexcept = default;
 
-				template<collin::concepts::convertible_to<Protocol> OtherProtocol>
-					basic_socket& operator=(basic_socket<OtherProtocol>&& rhs)
+				template<class OtherProtocol>
+					requires(collin::concepts::convertible_to<OtherProtocol, protocol>)
+				basic_socket& operator=(basic_socket<OtherProtocol>&& rhs) noexcept
 				{
 					return *this = basic_socket{std::move(rhs)};
 				}
@@ -2001,27 +2063,25 @@ namespace collin
 					assign(protocol, handle);
 				}
 
-				~basic_socket_acceptor() = default;
-
 				basic_socket_acceptor(const basic_socket_acceptor&) = delete;
-				basic_socket_acceptor(basic_socket_acceptor&&) = default;
+				basic_socket_acceptor(basic_socket_acceptor&&) noexcept = default;
 
 				basic_socket_acceptor& operator=(const basic_socket_acceptor&) = delete;
-				basic_socket_acceptor& operator=(basic_socket_acceptor&&) = default;
+				basic_socket_acceptor& operator=(basic_socket_acceptor&&) noexcept = default;
 
-				template<collin::concepts::convertible_to<Protocol> OtherProtocol>
-				basic_socket_acceptor& operator=(basic_socket_acceptor<OtherProtocol>&& rhs)
+				template<collin::concepts::convertible_to<protocol> OtherProtocol>
+				basic_socket_acceptor& operator=(basic_socket_acceptor<OtherProtocol>&& rhs) noexcept
 				{
 					base::operator=(std::move(rhs));
 					return *this;
 				}
 
-				native_handle_type native_handle()
+				[[nodiscard]] native_handle_type native_handle() noexcept
 				{
 					return base::native_handle();
 				}
 
-				void open(const protocol_type& protocol, std::error_code& ec)
+				void open(const protocol_type& protocol, std::error_code& ec) noexcept
 				{
 					base::open(protocol, ec);
 				}
@@ -2031,7 +2091,7 @@ namespace collin
 					open(protocol, collin::throw_on_error{"basic_socket_acceptor::open"});
 				}
 
-				void assign(const protocol_type& protocol, const native_handle_type& native_socket, std::error_code& ec)
+				void assign(const protocol_type& protocol, const native_handle_type& native_socket, std::error_code& ec) noexcept
 				{
 					base::assign(protocol, native_socket, ec);
 				}
@@ -2041,22 +2101,22 @@ namespace collin
 					assign(protocol, native_socket, collin::throw_on_error{"basic_socket_acceptor::assign"});
 				}
 
-				native_handle_type release(std::error_code& ec)
+				[[nodiscard]] native_handle_type release(std::error_code& ec) noexcept
 				{
 					return base::release(ec);
 				}
 
-				native_handle_type release()
+				[[nodiscard]] native_handle_type release()
 				{
 					return release(collin::throw_on_error{"basic_socket_acceptor::release"});
 				}
 
-				bool is_open() const noexcept
+				[[nodiscard]] bool is_open() const noexcept
 				{
 					return base::is_open();
 				}
 
-				void close(std::error_code& ec)
+				void close(std::error_code& ec) noexcept
 				{
 					base::close(ec);
 				}
@@ -2067,7 +2127,7 @@ namespace collin
 				}
 
 				template<class SettableSocketOption>
-				void set_option(const SettableSocketOption& option, std::error_code& ec)
+				void set_option(const SettableSocketOption& option, std::error_code& ec) noexcept
 				{
 					base::set_option(option, ec);
 				}
@@ -2079,7 +2139,7 @@ namespace collin
 				}
 
 				template<class GettableSocketOption>
-				void get_option(GettableSocketOption& option, std::error_code ec) const
+				void get_option(GettableSocketOption& option, std::error_code ec) const noexcept
 				{
 					base::get_option(option, ec);
 				}
@@ -2091,7 +2151,7 @@ namespace collin
 				}
 
 				template<class IOControlCommand>
-				void io_control(IOControlCommand& command, std::error_code& ec)
+				void io_control(IOControlCommand& command, std::error_code& ec) noexcept
 				{
 					base::io_control(command, ec);
 				}
@@ -2102,7 +2162,7 @@ namespace collin
 					io_control(command, collin::throw_on_error{"basic_socket_acceptor::io_control"});
 				}
 
-				void non_blocking(bool mode, std::error_code& ec)
+				void non_blocking(bool mode, std::error_code& ec) noexcept
 				{
 					base::non_blocking(mode, ec);
 				}
@@ -2112,12 +2172,12 @@ namespace collin
 					non_blocking(mode, collin::throw_on_error{"basic_socket_acceptor::non_blocking"});
 				}
 
-				bool non_blocking() const
+				[[nodiscard]] bool non_blocking() const
 				{
 					return base::non_blocking();
 				}
 
-				void native_non_blocking(bool mode, std::error_code& ec)
+				void native_non_blocking(bool mode, std::error_code& ec) noexcept
 				{
 					base::native_non_blocking(mode, ec);
 				}
@@ -2127,12 +2187,12 @@ namespace collin
 					native_non_blocking(mode, collin::throw_on_error{"basic_socket_acceptor::native_non_blocking"});
 				}
 
-				bool native_non_blocking() const
+				[[nodiscard]] bool native_non_blocking() const noexcept
 				{
 					return base::native_non_blocking();
 				}
 
-				bool at_mark(std::error_code& ec) const
+				bool at_mark(std::error_code& ec) const noexcept
 				{
 
 					#ifdef _WIN32
@@ -2151,7 +2211,7 @@ namespace collin
 					return static_cast<bool>(result);
 				}
 
-				std::size_t available(std::error_code& ec)
+				std::size_t available(std::error_code& ec) noexcept
 				{
 					if (!is_open())
 					{
@@ -2160,10 +2220,10 @@ namespace collin
 					}
 
 					#if defined _WIN32
-					std::size_t bytes_available{ 0 };
+					std::size_t bytes_available{0};
 					const auto err = ioctlsocket(native_handle(), FIONREAD, &bytes_available);
 					#elif defined FIONREAD
-					std::size_t bytes_available{ 0 };
+					std::size_t bytes_available{0};
 					const auto err = ioctl(native_handle(), FIONREAD, &bytes_available);
 					#else
 					return 0;
@@ -2179,7 +2239,7 @@ namespace collin
 					return bytes_available;
 				}
 
-				void bind(const endpoint_type& endpoint, std::error_code& ec)
+				void bind(const endpoint_type& endpoint, std::error_code& ec) noexcept
 				{
 					base::bind(endpoint, ec);
 				}
@@ -2189,7 +2249,7 @@ namespace collin
 					bind(endpoint, collin::throw_on_error{"basic_socket_acceptor::bind"});
 				}
 
-				void listen(int backlog, std::error_code& ec)
+				void listen(int backlog, std::error_code& ec) noexcept
 				{
 					if (::listen(native_handle(), backlog) == -1)
 					{
@@ -2206,17 +2266,17 @@ namespace collin
 					listen(backlog, collin::throw_on_error{"basic_socket_acceptor::listen"});
 				}
 
-				void enable_connection_aborted(bool mode)
+				void enable_connection_aborted(bool mode) noexcept
 				{
 					base::bits.enable_connection_aborted = mode;
 				}
 
-				bool enable_connection_aborted() const
+				[[nodiscard]] bool enable_connection_aborted() const noexcept
 				{
 					return base::bits.enable_connection_aborted;
 				}
 
-				socket_type accept(io_context& ctx, std::error_code& ec)
+				socket_type accept(io_context& ctx, std::error_code& ec) noexcept
 				{
 					do
 					{
@@ -2233,7 +2293,7 @@ namespace collin
 					return socket_type{ctx};
 				}
 
-				socket_type accept(io_context& ctx, endpoint_type& endpoint, std::error_code& ec)
+				[[nodiscard]] socket_type accept(io_context& ctx, endpoint_type& endpoint, std::error_code& ec) noexcept
 				{
 					do
 					{
@@ -2252,72 +2312,72 @@ namespace collin
 					return socket_type{ctx};
 				}
 
-				socket_type accept(std::error_code& ec)
+				[[nodiscard]] socket_type accept(std::error_code& ec) noexcept
 				{
 					return accept(collin::net::io_context{}, endpoint_type{}, ec);
 				}
 
-				socket_type accept()
+				[[nodiscard]] socket_type accept()
 				{
 					return accept(collin::net::io_context{}, endpoint_type{}, collin::throw_on_error{"basic_socket_acceptor::accept"});
 				}
 
-				socket_type accept(io_context& ctx)
+				[[nodiscard]] socket_type accept(io_context& ctx)
 				{
 					return accept(ctx, endpoint_type{}, collin::throw_on_error{"basic_socket_acceptor::accept"});
 				}
 
-				socket_type accept(endpoint_type& endpoint)
+				[[nodiscard]] socket_type accept(endpoint_type& endpoint)
 				{
 					return acccept(collin::net::io_context{}, endpoint, collin::throw_on_error{"basic_socket_acceptor::accept"});
 				}
 
-				socket_type accept(endpoint_type& endpoint, std::error_code& ec)
+				[[nodiscard]] socket_type accept(endpoint_type& endpoint, std::error_code& ec) noexcept
 				{
 					return accept(collin::net::io_context{}, endpoint, ec);
 				}
 
-				socket_type accept(io_context& ctx, endpoint_type& endpoint)
+				[[nodiscard]] socket_type accept(io_context& ctx, endpoint_type& endpoint)
 				{
 					return accept(ctx, endpoint, collin::throw_on_error{"basic_socket_acceptor::accept"});
 				}
 
-				std::future<socket_type> async_accept(io_context& ctx, endpoint_type& endpoint, std::error_code& ec, const std::launch l = std::launch::async)
+				[[nodiscard]] std::future<socket_type> async_accept(io_context& ctx, endpoint_type& endpoint, std::error_code& ec, const std::launch l = std::launch::async) noexcept
 				{
 					return std::async(l, &basic_socket_acceptor::accept, std::ref(ctx), std::ref(endpoint), std::ref(ec));
 				}
 
-				std::future<socket_type> async_accept(std::error_code& ec, const std::launch l = std::launch::async)
+				[[nodiscard]] std::future<socket_type> async_accept(std::error_code& ec, const std::launch l = std::launch::async) noexcept
 				{
 					return async_accept(collin::net::io_context{}, endpoint_type{}, ec, l);
 				}
 
-				std::future<socket_type> async_accept(const std::launch l = std::launch::async)
+				[[nodiscard]] std::future<socket_type> async_accept(const std::launch l = std::launch::async)
 				{
 					return async_accept(collin::net::io_context{}, endpoint_type{}, collin::throw_on_error{"basic_socket_acceptor::async_accept"}, l);
 				}
 
-				std::future<socket_type> async_accept(io_context& ctx, const std::launch l = std::launch::async)
+				[[nodiscard]] std::future<socket_type> async_accept(io_context& ctx, const std::launch l = std::launch::async)
 				{
 					return async_accept(ctx, endpoint_type{}, collin::throw_on_error{"basic_socket_acceptor::async_accept"}, l);
 				}
 
-				std::future<socket_type> async_accept(endpoint_type& endpoint, const std::launch l = std::launch::async)
+				[[nodiscard]] std::future<socket_type> async_accept(endpoint_type& endpoint, const std::launch l = std::launch::async)
 				{
 					return async_acccept(collin::net::io_context{}, endpoint, collin::throw_on_error{"basic_socket_acceptor::async_accept"}, l);
 				}
 
-				std::future<socket_type> async_accept(endpoint_type& endpoint, std::error_code& ec, const std::launch l = std::launch::async)
+				[[nodiscard]] std::future<socket_type> async_accept(endpoint_type& endpoint, std::error_code& ec, const std::launch l = std::launch::async) noexcept
 				{
 					return async_accept(collin::net::io_context{}, endpoint, ec, l);
 				}
 
-				std::future<socket_type> async_accept(io_context& ctx, endpoint_type& endpoint, const std::launch l = std::launch::async)
+				[[nodiscard]] std::future<socket_type> async_accept(io_context& ctx, endpoint_type& endpoint, const std::launch l = std::launch::async)
 				{
 					return async_accept(ctx, endpoint, collin::throw_on_error{"basic_socket_acceptor::async_accept"}, l);
 				}
 
-				void shutdown(shutdown_type what, std::error_code& ec)
+				void shutdown(shutdown_type what, std::error_code& ec) noexcept
 				{
 					if (::shutdown(native_handle(), static_cast<std::underlying_type_t<shutdown_type>>(what)) == -1)
 					{
@@ -2334,7 +2394,7 @@ namespace collin
 					shutdown(what, collin::throw_on_error{"basic_socket_acceptor::shutdown"});
 				}
 
-				endpoint_type local_endpoint(std::error_code& ec)
+				endpoint_type local_endpoint(std::error_code& ec) noexcept
 				{
 					return base::local_endpoint(ec);
 				}
@@ -2344,7 +2404,7 @@ namespace collin
 					return local_endpoint(collin::throw_on_error{"basic_socket_acceptor::local_endpoint"});
 				}
 
-				endpoint_type remote_endpoint(std::error_code& ec)
+				endpoint_type remote_endpoint(std::error_code& ec) noexcept
 				{
 					return base::remote_endpoint(ec);
 				}
@@ -2354,7 +2414,7 @@ namespace collin
 					return remote_endpoint(collin::throw_on_error{"basic_socket_acceptor::remote_endpoint"});
 				}
 
-				void connect(const endpoint_type& endpoint, std::error_code& ec)
+				void connect(const endpoint_type& endpoint, std::error_code& ec) noexcept
 				{
 					if (!is_open())
 					{
@@ -2375,12 +2435,12 @@ namespace collin
 					}
 				}
 
-				std::future<void> async_connect(const endpoint_type& endpoint, std::error_code& ec, const std::launch l = std::launch::async)
+				std::future<void> async_connect(const endpoint_type& endpoint, std::error_code& ec, const std::launch l = std::launch::async) noexcept
 				{
 					return std::async(l, &basic_socket_acceptor::connect, std::cref(endpoint), std::ref(ec));
 				}
 
-				int wait(wait_type w, std::error_code& ec)
+				int wait(wait_type w, std::error_code& ec) noexcept
 				{
 					::pollfd p{ native_handle(), static_cast<std::underlying_type_t<wait_type>>(w) };
 					#ifdef _WIN32
@@ -2405,7 +2465,7 @@ namespace collin
 					return wait(w, collin::throw_on_error{"basic_socket::wait"});
 				}
 
-				std::future<int> async_wait(wait_type w, std::error_code& ec, const std::launch l = std::launch::async)
+				std::future<int> async_wait(wait_type w, std::error_code& ec, const std::launch l = std::launch::async) noexcept
 				{
 					return std::async(l, &basic_socket_acceptor::wait, w, std::ref(ec));
 				}
@@ -2415,20 +2475,20 @@ namespace collin
 					return async_wait(w, collin::throw_on_error{"basic_socket::async_wait"}, l);
 				}
 
-				explicit operator bool() const noexcept
+				[[nodiscard]] explicit operator bool() const noexcept
 				{
 					return is_open();
 				}
 		};
 
-		template<class Protocol>
-		class basic_datagram_socket : public basic_socket<Protocol>
+		template<class protocol>
+		class basic_datagram_socket : public basic_socket<protocol>
 		{
-			using base = basic_socket<Protocol>;
+			using base = basic_socket<protocol>;
 
 			public:
-				using native_handle_type = basic_socket<Protocol>::native_handle_type;
-				using protocol_type = Protocol;
+				using native_handle_type = basic_socket<protocol>::native_handle_type;
+				using protocol_type = protocol;
 				using endpoint_type = typename protocol_type::endpoint;
 
 				explicit basic_datagram_socket(io_context& ctx)
@@ -2445,20 +2505,18 @@ namespace collin
 
 				basic_datagram_socket(const basic_datagram_socket&) = delete;
 
-				basic_datagram_socket(basic_datagram_socket&&) = default;
+				basic_datagram_socket(basic_datagram_socket&&) noexcept = default;
 
-				template<collin::concepts::convertible_to<Protocol> OtherProtocol>
-					basic_datagram_socket(basic_datagram_socket<OtherProtocol>&& rhs)
+				template<collin::concepts::convertible_to<protocol> OtherProtocol>
+					basic_datagram_socket(basic_datagram_socket<OtherProtocol>&& rhs) noexcept
 						: base(std::move(rhs)) {}
-
-				~basic_datagram_socket() = default;
 
 				basic_datagram_socket& operator=(const basic_datagram_socket&) = delete;
 
-				basic_datagram_socket& operator=(basic_datagram_socket&& rhs) = default;
+				basic_datagram_socket& operator=(basic_datagram_socket&& rhs) noexcept = default;
 
-				template<collin::concepts::convertible_to<Protocol> OtherProtocol>
-					basic_datagram_socket & operator=(basic_datagram_socket<OtherProtocol>&& rhs)
+				template<collin::concepts::convertible_to<protocol> OtherProtocol>
+					basic_datagram_socket & operator=(basic_datagram_socket<OtherProtocol>&& rhs) noexcept
 				{
 					base::operator=(std::move(rhs));
 					return *this;
@@ -2488,7 +2546,7 @@ namespace collin
 				}
 
 				template<class ElementType, std::size_t Extent>
-				std::future<std::size_t> async_receive(span<ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async) noexcept
+				std::future<std::size_t> async_receive(span<ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async)
 				{
 					return async_receive(buf, collin::throw_on_error{"basic_datagram_socket::async_receive"}, flags, l);
 				}
@@ -2511,20 +2569,20 @@ namespace collin
 				}
 
 				template<class ElementType, std::size_t Extent>
-				std::future<std::size_t> async_send(const span<ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async) noexcept
+				std::future<std::size_t> async_send(const span<ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async)
 				{
 					return async_send(buf, collin::throw_on_error{"basic_datagram_socket::async_send"}, flags, l);
 				}
 		};
 
-		template<class Protocol>
-		class basic_stream_socket : public basic_socket<Protocol>
+		template<class protocol>
+		class basic_stream_socket : public basic_socket<protocol>
 		{
-			using base = basic_socket<Protocol>;
+			using base = basic_socket<protocol>;
 
 			public:
-				using native_handle_type = basic_socket<Protocol>::native_handle_type;
-				using protocol_type = Protocol;
+				using native_handle_type = basic_socket<protocol>::native_handle_type;
+				using protocol_type = protocol;
 				using endpoint_type = typename protocol_type::endpoint;
 
 				explicit basic_stream_socket(net::io_context& ctx)
@@ -2542,8 +2600,9 @@ namespace collin
 				basic_stream_socket(const basic_stream_socket&) = delete;
 				basic_stream_socket(basic_stream_socket&& rhs) noexcept = default;
 
-				template<collin::concepts::convertible_to<Protocol> OtherProtocol>
-				basic_stream_socket(basic_stream_socket<OtherProtocol>&& rhs)
+				template<class OtherProtocol>
+					requires(collin::concepts::convertible_to<OtherProtocol, protocol>)
+				basic_stream_socket(basic_stream_socket<OtherProtocol>&& rhs) noexcept
 					: base{std::move(rhs)} {}
 
 				~basic_stream_socket() noexcept = default;
@@ -2552,8 +2611,9 @@ namespace collin
 
 				basic_stream_socket& operator=(basic_stream_socket &&) noexcept = default;
 
-				template<collin::concepts::convertible_to<Protocol> OtherProtocol>
-					basic_stream_socket & operator=(basic_stream_socket<OtherProtocol>&& rhs)
+				template<class OtherProtocol>
+					requires(collin::concepts::convertible_to<OtherProtocol, protocol>)
+				basic_stream_socket& operator=(basic_stream_socket<OtherProtocol>&& rhs) noexcept
 				{
 					base::operator=(std::move(rhs));
 					return *this;
@@ -2577,7 +2637,7 @@ namespace collin
 				}
 
 				template<class ElementType, std::size_t Extent>
-				std::future<std::size_t> async_receive(span<ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async) noexcept
+				std::future<std::size_t> async_receive(span<ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async)
 				{
 					return async_receive(buf, collin::throw_on_error{ "basic_stream_socket::async_receive" }, flags, l);
 				}
@@ -2600,7 +2660,7 @@ namespace collin
 				}
 
 				template<class ElementType, std::size_t Extent>
-				std::future<std::size_t> async_send(const span<ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async) noexcept
+				std::future<std::size_t> async_send(const span<ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async)
 				{
 					return async_send(buf, collin::throw_on_error{ "basic_stream_socket::async_send" }, flags, l);
 				}
@@ -2614,20 +2674,20 @@ namespace collin
 				using endpoint_type = typename protocol_type::endpoint;
 
 				basic_socket_streambuf()
-					: socket_(ctx())
+					: socket_{ctx()}
 				{
 					set_buffers();
 				}
 
-				explicit basic_socket_streambuf(basic_stream_socket<protocol_type>&& s)
-					: socket_(std::move(s))
+				explicit basic_socket_streambuf(basic_stream_socket<protocol_type>&& s) noexcept
+					: socket_{std::move(s)}
 				{
 					set_buffers();
 				}
 
 				basic_socket_streambuf(const basic_socket_streambuf&) = delete;
 
-				basic_socket_streambuf(basic_socket_streambuf&& rhs)
+				basic_socket_streambuf(basic_socket_streambuf&& rhs) noexcept
 					: std::basic_streambuf<char>(std::move(rhs)), socket_(std::move(rhs.socket_))
 				{
 					set_buffers();
@@ -2643,7 +2703,7 @@ namespace collin
 				}
 
 				basic_socket_streambuf& operator=(const basic_socket_streambuf&) = delete;
-				basic_socket_streambuf& operator=(basic_socket_streambuf&& rhs)
+				basic_socket_streambuf& operator=(basic_socket_streambuf&& rhs) noexcept
 				{
 					if (this != &rhs)
 					{
@@ -2704,12 +2764,12 @@ namespace collin
 					return ec_ ? nullptr : this;
 				}
 
-				basic_stream_socket<protocol_type>& socket()
+				basic_stream_socket<protocol_type>& socket() noexcept
 				{
 					return socket_;
 				}
 
-				std::error_code error() const
+				std::error_code error() const noexcept
 				{
 					return ec_;
 				}
@@ -2722,7 +2782,7 @@ namespace collin
 						return std::istream::traits_type::eof();
 					}
 
-					buffer_sequence seq = {msgbuf(get_buf)};
+					buffer_sequence seq {msgbuf(get_buf)};
 					const auto bytes_read = socket_receive(socket_.native_handle(), seq.get_span(), 0, ec_);
 
 					if (bytes_read > 0)
@@ -2785,9 +2845,9 @@ namespace collin
 					return nullptr;
 				}
 			private:
-				static inline constexpr std::size_t buffer_size {4096};
+				static constexpr std::size_t buffer_size {4096};
 
-				static io_context& ctx()
+				static io_context& ctx() noexcept
 				{
 					static io_context ctx_;
 					return ctx_;
@@ -2806,11 +2866,11 @@ namespace collin
 				}
 		};
 
-		template<class Protocol>
+		template<class protocol>
 		class basic_socket_iostream : public std::basic_iostream<char>
 		{
 			public:
-				using protocol_type = Protocol;
+				using protocol_type = protocol;
 				using endpoint_type = typename protocol_type::endpoint;
 
 				basic_socket_iostream()
@@ -2819,7 +2879,7 @@ namespace collin
 					setf(std::ios_base::unitbuf);
 				}
 
-				explicit basic_socket_iostream(basic_stream_socket<protocol_type>&& s)
+				explicit basic_socket_iostream(basic_stream_socket<protocol_type>&& s) noexcept
 					: std::basic_iostream<char>(&sb_), sb_(std::move(s))
 				{
 					setf(std::ios_base::unitbuf);
@@ -2838,7 +2898,7 @@ namespace collin
 				}
 
 				basic_socket_iostream& operator=(const basic_socket_iostream&) = delete;
-				basic_socket_iostream& operator=(basic_socket_iostream&& rhs)
+				basic_socket_iostream& operator=(basic_socket_iostream&& rhs) noexcept
 				{
 					if (this != &rhs)
 					{
@@ -2869,12 +2929,12 @@ namespace collin
 					return const_cast<decltype(sb_)*>(std::addressof(sb_));
 				}
 
-				basic_stream_socket<protocol_type>& socket()
+				basic_stream_socket<protocol_type>& socket() noexcept
 				{
 					return rdbuf()->socket();
 				}
 
-				std::error_code error() const
+				std::error_code error() const noexcept
 				{
 					return rdbuf()->error();
 				}
@@ -2884,7 +2944,7 @@ namespace collin
 		};
 
 		template<class Protocol, class EndpointSequence, class ConnectCondition>
-		typename Protocol::endpoint connect(basic_socket<Protocol>& s, const EndpointSequence& endpoints, ConnectCondition c, std::error_code& ec)
+		[[nodiscard]] typename Protocol::endpoint connect(basic_socket<Protocol>& s, const EndpointSequence& endpoints, ConnectCondition c, std::error_code& ec) noexcept
 		{
 			ec.clear();
 			auto found = false;
@@ -2910,19 +2970,19 @@ namespace collin
 		}
 
 		template<class Protocol, class EndpointSequence>
-		typename Protocol::endpoint connect(basic_socket<Protocol>& s, const EndpointSequence& endpoints, std::error_code& ec)
+		[[nodiscard]] typename Protocol::endpoint connect(basic_socket<Protocol>& s, const EndpointSequence& endpoints, std::error_code& ec) noexcept
 		{
 			return connect(s, endpoints, [](auto&, const auto&){ return true; }, ec);
 		}
 
 		template<class Protocol, class EndpointSequence, class ConnectCondition>
-		std::future<typename Protocol::endpoint> async_connect(basic_socket<Protocol>& s, const EndpointSequence& endpoints, ConnectCondition c)
+		[[nodiscard]] std::future<typename Protocol::endpoint> async_connect(basic_socket<Protocol>& s, const EndpointSequence& endpoints, ConnectCondition c, std::error_code& ec) noexcept
 		{
-			return std::async(connect, std::ref(s), std::ref(endpoints), c);
+			return std::async(connect, std::ref(s), std::ref(endpoints), c, std::ref(ec));
 		}
 
 		template<class Protocol, class EndpointSequence>
-		typename Protocol::endpoint async_connect(basic_socket<Protocol>& s, const EndpointSequence& endpoints)
+		[[nodiscard]] typename Protocol::endpoint async_connect(basic_socket<Protocol>& s, const EndpointSequence& endpoints)
 		{
 			return async_connect(s, endpoints, [](auto){ return true; });
 		}

@@ -123,7 +123,7 @@ namespace collin
 					return *this;
 				}
 
-				const dimensions_t& dimensions() const noexcept
+				[[nodiscard]] const dimensions_t& dimensions() const noexcept
 				{
 					return dimensions_;
 				}
@@ -141,90 +141,90 @@ namespace collin
 				}
 
 				template<class... Indexes>
-				reference get(Indexes&&... indexes)
+				reference get(Indexes&&... indexes) noexcept
 				{
 					static_assert((sizeof...(Indexes) > 0));
 					return data_[index(std::forward<Indexes>(indexes)...)];
 				}
 
 				template<class... Indexes>
-				const_reference get(Indexes&&... indexes) const
+				const_reference get(Indexes&&... indexes) const noexcept
 				{
 					static_assert((sizeof...(Indexes) > 0));
 					return data_[index(std::forward<Indexes>(indexes)...)];
 				}
 
-				pointer data() const noexcept
+				[[nodiscard]] pointer data() const noexcept
 				{
 					return data_.data();
 				}
 
-				pointer data() noexcept
+				[[nodiscard]] pointer data() noexcept
 				{
 					return data_.data();
 				}
 
-				iterator begin() noexcept
+				[[nodiscard]] iterator begin() noexcept
 				{
 					return std::begin(data_);
 				}
 
-				const_iterator begin() const noexcept
+				[[nodiscard]] const_iterator begin() const noexcept
 				{
 					return std::begin(data_);
 				}
 
-				const_iterator cbegin() const noexcept
+				[[nodiscard]] const_iterator cbegin() const noexcept
 				{
 					return std::cbegin(data_);
 				}
 
-				iterator end() noexcept
+				[[nodiscard]] iterator end() noexcept
 				{
 					return std::end(data_);
 				}
 
-				const_iterator end() const noexcept
+				[[nodiscard]] const_iterator end() const noexcept
 				{
 					return std::end(data_);
 				}
 
-				const_iterator cend() const noexcept
+				[[nodiscard]] const_iterator cend() const noexcept
 				{
 					return std::cend(data_);
 				}
 
-				reverse_iterator rbegin() noexcept
+				[[nodiscard]] reverse_iterator rbegin() noexcept
 				{
 					return std::rbegin(data_);
 				}
 
-				reverse_iterator rbegin() const noexcept
+				[[nodiscard]] reverse_iterator rbegin() const noexcept
 				{
 					return std::rbegin(data_);
 				}
 
-				const_reverse_iterator crbegin() const noexcept
+				[[nodiscard]] const_reverse_iterator crbegin() const noexcept
 				{
 					return std::crbegin(data_);
 				}
 
-				reverse_iterator rend() noexcept
+				[[nodiscard]] reverse_iterator rend() noexcept
 				{
 					return std::rend(data_);
 				}
 
-				reverse_iterator rend() const noexcept
+				[[nodiscard]] reverse_iterator rend() const noexcept
 				{
 					return std::rend(data_);
 				}
 
-				const_reverse_iterator crend() const noexcept
+				[[nodiscard]] const_reverse_iterator crend() const noexcept
 				{
 					return std::crend(data_);
 				}
 
-				size_type size() const noexcept
+				[[nodiscard]] size_type size() const noexcept
 				{
 					return std::size(data_);
 				}
@@ -319,7 +319,7 @@ namespace collin
 				fixed_multidimensional_array& operator=(const fixed_multidimensional_array&) = default;
 				fixed_multidimensional_array& operator=(fixed_multidimensional_array&&) noexcept = default;
 
-				fixed_multidimensional_array& operator=(std::initializer_list<T> elements)
+				fixed_multidimensional_array& operator=(std::initializer_list<T> elements) noexcept(std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_default_constructible_v<T>)
 				{
 					std::copy(std::begin(elements), std::end(elements), std::begin(data_));
 					std::fill(std::begin(data_) + std::size(elements), std::end(data_), T{});
@@ -336,7 +336,7 @@ namespace collin
 					return *this;
 				}
 
-				const dimensions_t& dimensions() const noexcept
+				[[nodiscard]] const dimensions_t& dimensions() const noexcept
 				{
 					return dimensions_;
 				}
@@ -353,90 +353,90 @@ namespace collin
 				}
 
 				template<class... Indexes>
-				reference get(Indexes&&... indexes)
+				[[nodiscard]] reference get(Indexes&&... indexes) noexcept
 				{
 					static_assert((sizeof...(Indexes) > 0) && (sizeof...(Indexes) <= Dimensions));
 					return data_[index(std::forward<Indexes>(indexes)...)];
 				}
 
 				template<class... Indexes>
-				const_reference get(Indexes&&... indexes) const
+				[[nodiscard]] const_reference get(Indexes&&... indexes) const noexcept
 				{
 					static_assert((sizeof...(Indexes) > 0) && (sizeof...(Indexes) <= Dimensions));
 					return data_[index(std::forward<Indexes>(indexes)...)];
 				}
 
-				const_pointer data() const noexcept
+				[[nodiscard]] const_pointer data() const noexcept
 				{
 					return data_.data();
 				}
 
-				pointer data() noexcept
+				[[nodiscard]] pointer data() noexcept
 				{
 					return data_.data();
 				}
 
-				iterator begin() noexcept
+				[[nodiscard]] iterator begin() noexcept
 				{
 					return std::begin(data_);
 				}
 
-				const_iterator begin() const noexcept
+				[[nodiscard]] const_iterator begin() const noexcept
 				{
 					return std::begin(data_);
 				}
 
-				const_iterator cbegin() const noexcept
+				[[nodiscard]] const_iterator cbegin() const noexcept
 				{
 					return std::cbegin(data_);
 				}
 
-				iterator end() noexcept
+				[[nodiscard]] iterator end() noexcept
 				{
 					return std::end(data_);
 				}
 
-				const_iterator end() const noexcept
+				[[nodiscard]] const_iterator end() const noexcept
 				{
 					return std::end(data_);
 				}
 
-				const_iterator cend() const noexcept
+				[[nodiscard]] const_iterator cend() const noexcept
 				{
 					return std::cend(data_);
 				}
 
-				reverse_iterator rbegin() noexcept
+				[[nodiscard]] reverse_iterator rbegin() noexcept
 				{
 					return std::rbegin(data_);
 				}
 
-				reverse_iterator rbegin() const noexcept
+				[[nodiscard]] reverse_iterator rbegin() const noexcept
 				{
 					return std::rbegin(data_);
 				}
 
-				const_reverse_iterator crbegin() const noexcept
+				[[nodiscard]] const_reverse_iterator crbegin() const noexcept
 				{
 					return std::crbegin(data_);
 				}
 
-				reverse_iterator rend() noexcept
+				[[nodiscard]] reverse_iterator rend() noexcept
 				{
 					return std::rend(data_);
 				}
 
-				reverse_iterator rend() const noexcept
+				[[nodiscard]] reverse_iterator rend() const noexcept
 				{
 					return std::rend(data_);
 				}
 
-				const_reverse_iterator crend() const noexcept
+				[[nodiscard]] const_reverse_iterator crend() const noexcept
 				{
 					return std::crend(data_);
 				}
 
-				size_type size() const noexcept
+				[[nodiscard]] size_type size() const noexcept
 				{
 					return std::size(data_);
 				}
@@ -446,13 +446,13 @@ namespace collin
 				std::array<std::size_t, Dimensions - 1> dimensions_cache_ {};
 
 				template<std::size_t Index = 0, class... Indexes>
-				inline std::size_t index(std::size_t current_index, Indexes&&... indexes) const noexcept
+				[[nodiscard]] inline std::size_t index(std::size_t current_index, Indexes&&... indexes) const noexcept
 				{
 					return current_index * dimensions_cache_[Index] + index<Index + 1>(std::forward<Indexes>(indexes)...);
 				}
 
 				template<std::size_t TupleIndex>
-				inline std::size_t index(std::size_t current_index) const noexcept
+				[[nodiscard]] inline std::size_t index(std::size_t current_index) const noexcept
 				{
 					return current_index;
 				}
@@ -493,21 +493,21 @@ namespace collin
 				using reverse_iterator = typename storage_t::reverse_iterator;
 				using const_reverse_iterator = typename storage_t::const_reverse_iterator;
 
-				constexpr constant_multidimensional_array() noexcept(std::is_nothrow_constructible_v<T>) {}
+				constexpr constant_multidimensional_array() noexcept(std::is_nothrow_default_constructible_v<T>) {}
 
 				template<collin::concepts::convertible_to<T> T2>
-				constexpr constant_multidimensional_array(const constant_multidimensional_array<T2>& other)
+				constexpr constant_multidimensional_array(const constant_multidimensional_array<T2>& other) noexcept(std::is_nothrow_copy_constructible_v<T>)
 					: data_{other.data_} {}
 
 				template<collin::concepts::convertible_to<T>... Elements>
 				constexpr constant_multidimensional_array(Elements&&... elements) noexcept(std::is_nothrow_constructible_v<T>)
 					: data_{static_cast<T>(std::forward<Elements>(elements))...} {}
 
-				constexpr constant_multidimensional_array(const constant_multidimensional_array&) = default;
+				constexpr constant_multidimensional_array(const constant_multidimensional_array&) noexcept(std::is_nothrow_copy_constructible_v<T>) = default;
 				constexpr constant_multidimensional_array(constant_multidimensional_array&&) noexcept = default;
 
 				template<collin::concepts::convertible_to<T> T2>
-				constexpr constant_multidimensional_array& operator=(const constant_multidimensional_array<T2>& other)
+				constexpr constant_multidimensional_array& operator=(const constant_multidimensional_array<T2>& other) noexcept(std::is_nothrow_copy_assignable_v<T>)
 				{
 					if (this != std::addressof(other))
 					{
@@ -517,99 +517,99 @@ namespace collin
 					return *this;
 				}
 
-				constexpr constant_multidimensional_array& operator=(const constant_multidimensional_array&) = default;
+				constexpr constant_multidimensional_array& operator=(const constant_multidimensional_array&) noexcept(std::is_nothrow_copy_assignable_v<T>) = default;
 				constexpr constant_multidimensional_array& operator=(constant_multidimensional_array&&) noexcept = default;
 
-				constexpr const auto dimensions() const noexcept
+				[[nodiscard]] constexpr const auto dimensions() const noexcept
 				{
 					return constant_multidimensional_array::dimensions_;
 				}
 
 				template<class... Indexes>
-				constexpr reference get(Indexes&&... indexes)
+				constexpr reference get(Indexes&&... indexes) noexcept
 				{
 					static_assert(sizeof...(Indexes) == constant_multidimensional_array::dimensions_size);
 					return data_[constant_multidimensional_array::index(std::forward<Indexes>(indexes)...)];
 				}
 
 				template<class... Indexes>
-				constexpr const_reference get(Indexes&&... indexes) const
+				constexpr const_reference get(Indexes&&... indexes) const noexcept
 				{
 					static_assert(sizeof...(Indexes) == constant_multidimensional_array::dimensions_size);
 					return data_[constant_multidimensional_array::index(std::forward<Indexes>(indexes)...)];
 				}
 
-				constexpr const_pointer data() const noexcept
+				[[nodiscard]] constexpr const_pointer data() const noexcept
 				{
 					return data_.data();
 				}
 
-				constexpr pointer data() noexcept
+				[[nodiscard]] constexpr pointer data() noexcept
 				{
 					return data_.data();
 				}
 
-				constexpr iterator begin() noexcept
+				[[nodiscard]] constexpr iterator begin() noexcept
 				{
 					return std::begin(data_);
 				}
 
-				constexpr const_iterator begin() const noexcept
+				[[nodiscard]] constexpr const_iterator begin() const noexcept
 				{
 					return std::begin(data_);
 				}
 
-				constexpr const_iterator cbegin() const noexcept
+				[[nodiscard]] constexpr const_iterator cbegin() const noexcept
 				{
 					return std::cbegin(data_);
 				}
 
-				constexpr iterator end() noexcept
+				[[nodiscard]] constexpr iterator end() noexcept
 				{
 					return std::end(data_);
 				}
 
-				constexpr const_iterator end() const noexcept
+				[[nodiscard]] constexpr const_iterator end() const noexcept
 				{
 					return std::end(data_);
 				}
 
-				constexpr const_iterator cend() const noexcept
+				[[nodiscard]] constexpr const_iterator cend() const noexcept
 				{
 					return std::cend(data_);
 				}
 
-				constexpr reverse_iterator rbegin() noexcept
+				[[nodiscard]] constexpr reverse_iterator rbegin() noexcept
 				{
 					return std::rbegin(data_);
 				}
 
-				constexpr reverse_iterator rbegin() const noexcept
+				[[nodiscard]] constexpr reverse_iterator rbegin() const noexcept
 				{
 					return std::rbegin(data_);
 				}
 
-				constexpr const_reverse_iterator crbegin() const noexcept
+				[[nodiscard]] constexpr const_reverse_iterator crbegin() const noexcept
 				{
 					return std::crbegin(data_);
 				}
 
-				constexpr reverse_iterator rend() noexcept
+				[[nodiscard]] constexpr reverse_iterator rend() noexcept
 				{
 					return std::rend(data_);
 				}
 
-				constexpr reverse_iterator rend() const noexcept
+				[[nodiscard]] constexpr reverse_iterator rend() const noexcept
 				{
 					return std::rend(data_);
 				}
 
-				constexpr const_reverse_iterator crend() const noexcept
+				[[nodiscard]] constexpr const_reverse_iterator crend() const noexcept
 				{
 					return std::crend(data_);
 				}
 
-				constexpr size_type size() const noexcept
+				[[nodiscard]] constexpr size_type size() const noexcept
 				{
 					return constant_multidimensional_array::size_;
 				}
@@ -617,14 +617,14 @@ namespace collin
 				storage_t data_ {};
 
 				template<std::size_t Index = 0, class... Indexes>
-				static constexpr std::size_t index(std::size_t current_index, Indexes&&... indexes) noexcept
+				[[nodiscard]] static constexpr std::size_t index(std::size_t current_index, Indexes&&... indexes) noexcept
 				{
 					return current_index * constant_multidimensional_array::dimension_multiplier<Index + 1>::value
 						+ constant_multidimensional_array::index<Index + 1>(std::forward<Indexes>(indexes)...);
 				}
 
 				template<std::size_t TupleIndex>
-				static constexpr std::size_t index(std::size_t current_index) noexcept
+				[[nodiscard]] static constexpr std::size_t index(std::size_t current_index) noexcept
 				{
 					return current_index;
 				}

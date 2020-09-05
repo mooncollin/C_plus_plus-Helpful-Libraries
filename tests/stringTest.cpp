@@ -90,12 +90,12 @@ class contains_vowel_test : public collin::test::test_case
 
         void operator()() override
         {
-            collin::test::assert_true(collin::strings::contains_vowel("Hello"));
-            collin::test::assert_false(collin::strings::contains_vowel("My"));
-            collin::test::assert_true(collin::strings::contains_vowel("cool"));
-            collin::test::assert_true(collin::strings::contains_vowel("vowels"));
-            collin::test::assert_true(collin::strings::contains_vowel("is"));
-            collin::test::assert_false(collin::strings::contains_vowel("ghjbnj"));
+            collin::test::assert_true(collin::strings::contains_vowel(std::string_view{"Hello"}));
+            collin::test::assert_false(collin::strings::contains_vowel(std::string_view{"My"}));
+            collin::test::assert_true(collin::strings::contains_vowel(std::string_view{"cool"}));
+            collin::test::assert_true(collin::strings::contains_vowel(std::string_view{"vowels"}));
+            collin::test::assert_true(collin::strings::contains_vowel(std::string_view{"is"}));
+            collin::test::assert_false(collin::strings::contains_vowel(std::string_view{"ghjbnj"}));
         }
 };
 
@@ -107,13 +107,13 @@ class contains_consonant_test : public collin::test::test_case
 
         void operator()() override
         {
-            collin::test::assert_true(collin::strings::contains_consonant("Hello"));
-            collin::test::assert_true(collin::strings::contains_consonant("My"));
-            collin::test::assert_true(collin::strings::contains_consonant("cool"));
-            collin::test::assert_true(collin::strings::contains_consonant("vowels"));
-            collin::test::assert_true(collin::strings::contains_consonant("is"));
-            collin::test::assert_true(collin::strings::contains_consonant("ghjbnj"));
-            collin::test::assert_false(collin::strings::contains_consonant("iiii"));
+            collin::test::assert_true(collin::strings::contains_consonant(std::string_view{"Hello"}));
+            collin::test::assert_true(collin::strings::contains_consonant(std::string_view{"My"}));
+            collin::test::assert_true(collin::strings::contains_consonant(std::string_view{"cool"}));
+            collin::test::assert_true(collin::strings::contains_consonant(std::string_view{"vowels"}));
+            collin::test::assert_true(collin::strings::contains_consonant(std::string_view{"is"}));
+            collin::test::assert_true(collin::strings::contains_consonant(std::string_view{"ghjbnj"}));
+            collin::test::assert_false(collin::strings::contains_consonant(std::string_view{"iiii"}));
         }
 };
 
@@ -336,16 +336,17 @@ class split_test : public collin::test::test_case
 
         void operator()() override
         {
-            collin::test::assert_equal(collin::strings::split("Here are words", " "), std::vector<std::string_view>{ "Here", "are", "words"});
-            collin::test::assert_equal(collin::strings::split("Here!are!words", "!"), std::vector<std::string_view>{ "Here", "are", "words" });
-            collin::test::assert_equal(collin::strings::split("Here are words", " ", 1), std::vector<std::string_view>{ "Here", "are words" });
-            collin::test::assert_equal(collin::strings::split("Here are words", " ", 2), std::vector<std::string_view>{ "Here", "are", "words" });
-            collin::test::assert_equal(collin::strings::split("Here are words", " ", 3), std::vector<std::string_view>{ "Here", "are", "words" });
-            collin::test::assert_equal(collin::strings::split("Here are words", " ", 99), std::vector<std::string_view>{ "Here", "are", "words" });
-            collin::test::assert_equal(collin::strings::split("Here are words", " ", 0), std::vector<std::string_view>{ "Here are words" });
+            const auto v = collin::strings::split(std::string_view{"Here are words"}, std::string_view{" "});
+            collin::test::assert_equal(collin::strings::split(std::string_view{"Here are words"}, std::string_view{" "}), std::vector<std::string_view>{ "Here", "are", "words"});
+            collin::test::assert_equal(collin::strings::split(std::string_view{"Here!are!words"}, std::string_view{"!"}), std::vector<std::string_view>{ "Here", "are", "words" });
+            collin::test::assert_equal(collin::strings::split(std::string_view{"Here are words"}, std::string_view{" "}, 1), std::vector<std::string_view>{ "Here", "are words" });
+            collin::test::assert_equal(collin::strings::split(std::string_view{"Here are words"}, std::string_view{" "}, 2), std::vector<std::string_view>{ "Here", "are", "words" });
+            collin::test::assert_equal(collin::strings::split(std::string_view{"Here are words"}, std::string_view{" "}, 3), std::vector<std::string_view>{ "Here", "are", "words" });
+            collin::test::assert_equal(collin::strings::split(std::string_view{"Here are words"}, std::string_view{" "}, 99), std::vector<std::string_view>{ "Here", "are", "words" });
+            collin::test::assert_equal(collin::strings::split(std::string_view{"Here are words"}, std::string_view{" "}, 0), std::vector<std::string_view>{ "Here are words" });
 
             std::array<std::string_view, 3> results;
-            collin::strings::split("I like,csv,files", ",", std::begin(results), 3);
+            collin::strings::split(std::string_view{"I like,csv,files"}, std::string_view{","}, std::begin(results), 3);
 
             collin::test::assert_equal(results, std::array<std::string_view, 3>{"I like", "csv", "files"});
         }
@@ -359,13 +360,13 @@ class join_test : public collin::test::test_case
 
         void operator()() override
         {
-            collin::test::assert_equal(collin::strings::join(std::vector {"These", "are", "words"}, " "), "These are words", "join strings space delimiter");
-            collin::test::assert_equal(collin::strings::join(std::vector{ "These", "are", "words" }, "\n"), "These\nare\nwords", "join strings newline delimiter");
+            collin::test::assert_equal(collin::strings::join(std::vector{"These", "are", "words"}, std::string_view{" "}), std::string_view{"These are words"}, std::string_view{"join strings space delimiter"});
+            collin::test::assert_equal(collin::strings::join(std::vector{"These", "are", "words"}, std::string_view{"\n"}), std::string_view{"These\nare\nwords"}, std::string_view{"join strings newline delimiter"});
 
             const std::vector words {"Look", "at", "these", "strings"};
 
-            collin::test::assert_equal(collin::strings::join(std::begin(words), std::end(words), " "), "Look at these strings", "join iterators space delimiter");
-            collin::test::assert_equal(collin::strings::join(std::begin(words), std::end(words), "$$$$"), "Look$$$$at$$$$these$$$$strings", "join iterators '$' delimiter");
+            collin::test::assert_equal(collin::strings::join(std::begin(words), std::end(words), std::string_view{" "}), std::string_view{"Look at these strings"}, std::string_view{"join iterators space delimiter"});
+            collin::test::assert_equal(collin::strings::join(std::begin(words), std::end(words), std::string_view{"$$$$"}), std::string_view{"Look$$$$at$$$$these$$$$strings"}, std::string_view{"join iterators '$' delimiter"});
         }
 };
 
@@ -377,24 +378,24 @@ class from_string_test : public collin::test::test_case
 
         void operator()() override
         {
-            collin::test::assert_equal(collin::strings::from_string<int>("1"), 1);
-            collin::test::assert_equal(collin::strings::from_string<int>("1223"), 1223);
-            collin::test::assert_equal(collin::strings::from_string<int>("-2391"), -2391);
-            collin::test::assert_equal(collin::strings::from_string<int>("37943"), 37943);
-            collin::test::assert_equal(collin::strings::from_string<int>("0"), 0);
+            collin::test::assert_equal(collin::strings::from_string<int>(std::string_view{"1"}), 1);
+            collin::test::assert_equal(collin::strings::from_string<int>(std::string_view{"1223"}), 1223);
+            collin::test::assert_equal(collin::strings::from_string<int>(std::string_view{"-2391"}), -2391);
+            collin::test::assert_equal(collin::strings::from_string<int>(std::string_view{"37943"}), 37943);
+            collin::test::assert_equal(collin::strings::from_string<int>(std::string_view{"0"}), 0);
 
-            collin::test::assert_almost_equal(collin::strings::from_string<double>("1.5"), 1.5, 0.000001);
-            collin::test::assert_almost_equal(collin::strings::from_string<double>("-2.23478"), -2.23478, 0.000001);
-            collin::test::assert_almost_equal(collin::strings::from_string<double>("0"), 0.0, 0.000001);
-            collin::test::assert_almost_equal(collin::strings::from_string<double>("1"), 1.0, 0.000001);
+            collin::test::assert_almost_equal(collin::strings::from_string<double>(std::string_view{"1.5"}), 1.5, 0.000001);
+            collin::test::assert_almost_equal(collin::strings::from_string<double>(std::string_view{"-2.23478"}), -2.23478, 0.000001);
+            collin::test::assert_almost_equal(collin::strings::from_string<double>(std::string_view{"0"}), 0.0, 0.000001);
+            collin::test::assert_almost_equal(collin::strings::from_string<double>(std::string_view{"1"}), 1.0, 0.000001);
 
-            collin::test::assert_equal(collin::strings::from_string<char>("c"), 'c');
-            collin::test::assert_equal(collin::strings::from_string<char>("38hs9f"), '3');
+            collin::test::assert_equal(collin::strings::from_string<char>(std::string_view{"c"}), 'c');
+            collin::test::assert_equal(collin::strings::from_string<char>(std::string_view{"38hs9f"}), '3');
 
-            collin::test::assert_equal(collin::strings::from_string<std::string>("Hello!"), "Hello!");
-            collin::test::assert_equal(collin::strings::from_string<std::string_view>("Hello!"), "Hello!");
+            collin::test::assert_equal(collin::strings::from_string<std::string>(std::string_view{"Hello!"}), "Hello!");
+            collin::test::assert_equal(collin::strings::from_string<std::string_view>(std::string_view{"Hello!"}), "Hello!");
 
-            collin::test::assert_equal(collin::strings::from_string<bool>("1"), true);
+            collin::test::assert_equal(collin::strings::from_string<bool>(std::string_view{"1"}), true);
         }
 };
 

@@ -534,7 +534,7 @@ class determinant_test : public collin::test::test_case
 
 			collin::test::assert_throws(std::invalid_argument{"can only find the determinant of a square matrix"}, []() {
 				collin::linear::matrix<int> wrong_mat {2, 3};
-				collin::linear::determinant(wrong_mat);
+				(void) collin::linear::determinant(wrong_mat);
 			});
 
 			collin::test::assert_equal(collin::linear::determinant(mat1), 6);
@@ -566,6 +566,11 @@ class row_test : public collin::test::test_case
 				2, 8, 7
 			};
 
+			auto mat4 = mat3;
+			auto mat5 = mat3;
+			auto mat6 = mat3;
+			auto mat7 = mat3;
+
 			auto first_row = mat3.get_row(0);
 			collin::test::assert_equal(first_row[0], 6);
 			collin::test::assert_equal(first_row[1], 1);
@@ -591,6 +596,30 @@ class row_test : public collin::test::test_case
 			collin::test::assert_equal(third_row[2], 7);
 
 			collin::test::assert_equal(std::accumulate(std::begin(third_row), std::end(third_row), 0), 17);
+
+			auto row1 = mat4.get_row(0);
+			row1 += mat4.get_row(1);
+			collin::test::assert_equal(row1[0], 10);
+			collin::test::assert_equal(row1[1], -1);
+			collin::test::assert_equal(row1[2], 6);
+
+			auto row2 = mat5.get_row(0);
+			row2 -= mat5.get_row(1);
+			collin::test::assert_equal(row2[0], 2);
+			collin::test::assert_equal(row2[1], 3);
+			collin::test::assert_equal(row2[2], -4);
+
+			auto row3 = mat6.get_row(0);
+			row3 *= 5;
+			collin::test::assert_equal(row3[0], 30);
+			collin::test::assert_equal(row3[1], 5);
+			collin::test::assert_equal(row3[2], 5);
+
+			auto row4 = mat7.get_row(0);
+			row4 /= 2;
+			collin::test::assert_equal(row4[0], 3);
+			collin::test::assert_equal(row4[1], 0);
+			collin::test::assert_equal(row4[2], 0);
 		}
 
 	private:
@@ -642,13 +671,21 @@ class column_test : public collin::test::test_case
 			collin::test::assert_equal(third_column[2], 7);
 
 			collin::test::assert_equal(std::accumulate(std::begin(third_column), std::end(third_column), 0), 13);
+
+			static_information();
 		}
 	private:
 		void static_information()
 		{
 			collin::linear::matrix<int> mat3 {3, 3};
+			collin::linear::fixed_matrix<int, 3, 3> mat4;
+			collin::linear::fixed_matrix<int, 3, 4> mat5;
 			const auto c = mat3.get_column(0);
+			constexpr auto c2 = mat4.get_column(0);
+			constexpr auto c3 = mat5.get_column(0);
 			constexpr auto column_size = sizeof(c);
+			constexpr auto column_size_constant = sizeof(c2);
+			constexpr auto column_size_constant2 = sizeof(c3);
 		}
 };
 
@@ -776,6 +813,7 @@ class diagonal_test : public collin::test::test_case
 
 			auto main_d = collin::linear::main_diagonal(mat);
 			auto main_d_it = std::begin(main_d);
+			auto main_d_copy = main_d; // Making sure this works
 
 			collin::test::assert_equal(main_d[0], 6);
 			collin::test::assert_equal(main_d[1], -2);
@@ -889,11 +927,60 @@ class lu_decomposition_test : public collin::test::test_case
 				2, -4, -1, 6
 			};
 
+			collin::linear::matrix<double> mat2{mat};
+
+			constexpr double delta = 0.0000000001;
+
 			constexpr auto decomp = collin::linear::lu_decomposition(mat);
 
-			constexpr auto p = std::get<0>(decomp);
-			constexpr auto l = std::get<1>(decomp);
-			constexpr auto u = std::get<2>(decomp);
+			constexpr auto& p = std::get<0>(decomp);
+			constexpr auto& l = std::get<1>(decomp);
+			constexpr auto& u = std::get<2>(decomp);
+
+			auto decomp2 = collin::linear::lu_decomposition(mat2);
+			auto& p2 = std::get<0>(decomp2);
+			auto& l2 = std::get<1>(decomp2);
+			auto& u2 = std::get<2>(decomp2);
+
+			const auto test_lu = [delta](const auto& in_l, const auto in_u)
+			{
+				collin::test::assert_almost_equal(in_l(0, 0), 1, delta);
+				collin::test::assert_almost_equal(in_l(0, 1), 0, delta);
+				collin::test::assert_almost_equal(in_l(0, 2), 0, delta);
+				collin::test::assert_almost_equal(in_l(0, 3), 0, delta);
+				collin::test::assert_almost_equal(in_l(1, 0), 0.42857142857143, delta);
+				collin::test::assert_almost_equal(in_l(1, 1), 1, delta);
+				collin::test::assert_almost_equal(in_l(1, 2), 0, delta);
+				collin::test::assert_almost_equal(in_l(1, 3), 0, delta);
+				collin::test::assert_almost_equal(in_l(2, 0), -0.14285714285714, delta);
+				collin::test::assert_almost_equal(in_l(2, 1), 0.21276595744681, delta);
+				collin::test::assert_almost_equal(in_l(2, 2), 1, delta);
+				collin::test::assert_almost_equal(in_l(2, 3), 0, delta);
+				collin::test::assert_almost_equal(in_l(3, 0), 0.28571428571429, delta);
+				collin::test::assert_almost_equal(in_l(3, 1), -0.72340425531915, delta);
+				collin::test::assert_almost_equal(in_l(3, 2), 0.089820359281438, delta);
+				collin::test::assert_almost_equal(in_l(3, 3), 1, delta);
+
+				collin::test::assert_almost_equal(in_u(0, 0), 7, delta);
+				collin::test::assert_almost_equal(in_u(0, 1), 3, delta);
+				collin::test::assert_almost_equal(in_u(0, 2), -1, delta);
+				collin::test::assert_almost_equal(in_u(0, 3), 2, delta);
+				collin::test::assert_almost_equal(in_u(1, 0), 0, delta);
+				collin::test::assert_almost_equal(in_u(1, 1), 6.7142857142857, delta);
+				collin::test::assert_almost_equal(in_u(1, 2), 1.4285714285714, delta);
+				collin::test::assert_almost_equal(in_u(1, 3), -4.8571428571429, delta);
+				collin::test::assert_almost_equal(in_u(2, 0), 0, delta);
+				collin::test::assert_almost_equal(in_u(2, 1), 0, delta);
+				collin::test::assert_almost_equal(in_u(2, 2), 3.5531914893617, delta);
+				collin::test::assert_almost_equal(in_u(2, 3), 0.31914893617022, delta);
+				collin::test::assert_almost_equal(in_u(3, 0), 0, delta);
+				collin::test::assert_almost_equal(in_u(3, 1), 0, delta);
+				collin::test::assert_almost_equal(in_u(3, 2), 0, delta);
+				collin::test::assert_almost_equal(in_u(3, 3), 1.8862275449102, delta);
+			};
+
+			test_lu(l, u);
+			test_lu(l2, u2);
 		}
 };
 
@@ -973,18 +1060,13 @@ class inverse_test : public collin::test::test_case
 				0.0454545, 0.0454545, 0.227273, 0.136364
 			};
 
+			constexpr double delta = 0.00001;
+
 			constexpr auto constexpr_test = collin::linear::inverse(fixed_input_data);
 			const auto test = collin::linear::inverse(input_data);
 
-			auto i_it = std::begin(test);
-			auto fixed_i_it = std::begin(constexpr_test);
-			auto goal_it = std::begin(goal);
-
-			for(; fixed_i_it != std::end(constexpr_test); ++fixed_i_it, ++goal_it, ++i_it)
-			{
-				collin::test::assert_almost_equal(*i_it, *goal_it, 0.00001);
-				collin::test::assert_almost_equal(*fixed_i_it, *goal_it, 0.00001);
-			}
+			collin::test::assert_sequence_almost_equal(std::begin(test), std::end(test), std::begin(goal), delta);
+			collin::test::assert_sequence_almost_equal(std::begin(constexpr_test), std::end(constexpr_test), std::begin(goal), delta);
 		}
 };
 
@@ -1014,6 +1096,7 @@ int main()
 	suite.add_test_case<identity_matrix_test>();
 	suite.add_test_case<adjugate_test>();
 	suite.add_test_case<inverse_test>();
+	suite.add_test_case<lu_decomposition_test>();
 
 	collin::test::text_test_runner runner{std::cout};
 	return !runner.run(suite);

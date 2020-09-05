@@ -71,8 +71,8 @@ namespace collin
 			constexpr msgbuf(span<ElementType, Extent> s)
 				: msgbuf{static_cast<pointer_type>(s.data()), static_cast<len_type>(s.size())} {}
 
-			template<class Type, std::size_t N>
-			constexpr msgbuf(std::array<Type, N> & a)
+			template<class sock_type, std::size_t N>
+			constexpr msgbuf(std::array<sock_type, N> & a)
 				: msgbuf{static_cast<pointer_type>(a.data()), static_cast<len_type>(N)} {}
 
 			constexpr operator span<data_type, collin::dynamic_extent>() const

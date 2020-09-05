@@ -81,6 +81,7 @@ namespace collin
 					: name_{str} {}
 
 				virtual void set_up() {}
+				virtual ~test_case() {}
 
 				test_result run()
 				{
@@ -198,6 +199,12 @@ namespace collin
 			public:
 				text_test_runner(std::ostream& out)
 					: out_{out} {}
+
+				text_test_runner(const text_test_runner&) = delete;
+				text_test_runner(text_test_runner&&) = delete;
+
+				text_test_runner& operator=(const text_test_runner&) = delete;
+				text_test_runner& operator=(text_test_runner&&) = delete;
 
 				bool run(test_case& t_case) override
 				{
@@ -329,12 +336,12 @@ namespace collin
 					const auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
 					if (seconds.count() > 0)
 					{
-						out_.get() << (seconds.count() + (milliseconds.count() / static_cast<double>(std::milli::den)));
+						out_.get() << (static_cast<long double>(seconds.count()) + (static_cast<long double>(milliseconds.count()) / static_cast<long double>(std::milli::den)));
 						out_.get() << "s";
 					}
 					else if(milliseconds.count() > 0)
 					{
-						out_.get() << (milliseconds.count() + (nanoseconds.count() / static_cast<double>(std::nano::den)));
+						out_.get() << (static_cast<long double>(milliseconds.count()) + (static_cast<long double>(nanoseconds.count()) / static_cast<long double>(std::nano::den)));
 						out_.get() << "ms";
 					}
 					else
@@ -522,7 +529,7 @@ namespace collin
 				ss << "assert_throws failed: " << message << '\n';
 				throw assert_exception(ss.str());
 			}
-			catch (decltype(exception) e)
+			catch (decltype(exception))
 			{
 				// Do nothing, it passed.
 			}
@@ -661,6 +668,52 @@ namespace collin
 				std::ostringstream ss;
 				ss << "assert_sequence_equal failed: " << message << '\n';
 				throw assert_exception(ss.str());
+			}
+		}
+
+		template<class InputIterator1, class InputIterator2>
+		void assert_sequence_almost_equal(InputIterator1 first1, InputIterator1 end1, InputIterator2 first2, decltype(std::abs(*std::declval<InputIterator1>() - *std::declval<InputIterator2>())) delta, std::string_view message = "")
+		{
+			for(; first1 != end1; ++first1, ++first2)
+			{
+				const auto first = *first1;
+				const auto second = *first2;
+				const auto difference = std::abs(first - second);
+				if (difference > delta)
+				{
+					std::ostringstream ss;
+					ss << "assert_sequence_almost_equal failed: " << message << '\n';
+					if constexpr (concepts::stream_writable<decltype(*std::declval<InputIterator1>()), decltype(ss)> &&
+						concepts::stream_writable<decltype(*std::declval<InputIterator2>()), decltype(ss)>)
+					{
+						ss << "First:\n" << first << '\n';
+						ss << "Second:\n" << second << '\n';
+					}
+					throw assert_exception(ss.str());
+				}
+			}
+		}
+
+		template<class InputIterator1, class InputIterator2>
+		void assert_sequence_not_almost_equal(InputIterator1 first1, InputIterator1 end1, InputIterator2 first2, decltype(std::abs(*std::declval<InputIterator1>() - *std::declval<InputIterator2>())) delta, std::string_view message = "")
+		{
+			for(; first1 != end1; ++first1, ++first2)
+			{
+				const auto first = *first1;
+				const auto second = *first2;
+				const auto difference = std::abs(first - second);
+				if (difference <= delta)
+				{
+					std::ostringstream ss;
+					ss << "assert_sequence_not_almost_equal failed: " << message << '\n';
+					if constexpr (concepts::stream_writable<decltype(*std::declval<InputIterator1>()), decltype(ss)> &&
+						concepts::stream_writable<decltype(*std::declval<InputIterator2>()), decltype(ss)>)
+					{
+						ss << "First:\n" << first << '\n';
+						ss << "Second:\n" << second << '\n';
+					}
+					throw assert_exception(ss.str());
+				}
 			}
 		}
 
