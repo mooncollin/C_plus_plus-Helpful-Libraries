@@ -154,7 +154,7 @@ namespace collin
                 return std::numeric_limits<Rep>::max();
             }
 
-            template<mass_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, ratio_type Ratio>
+            template<mass_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio>
                 requires(collin::concepts::same<ToSystem, metric_system>)
             static constexpr ToBasicUnit system_cast(const mass<Rep, imperial_system, Ratio>& unit) noexcept
             {
@@ -164,7 +164,7 @@ namespace collin
                 return ToBasicUnit{nanograms_conversion};
             }
 
-            template<mass_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, ratio_type Ratio>
+            template<mass_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio>
                 requires(collin::concepts::same<ToSystem, imperial_system>)
             static constexpr ToBasicUnit system_cast(const mass<Rep, metric_system, Ratio>& unit) noexcept
             {

@@ -154,6 +154,16 @@ namespace collin
 					return data_[index(std::forward<Indexes>(indexes)...)];
 				}
 
+				reference operator[](std::size_t index) noexcept
+				{
+					return data_[index];
+				}
+
+				const_reference operator[](std::size_t index) const noexcept
+				{
+					return data_[index];
+				}
+
 				[[nodiscard]] pointer data() const noexcept
 				{
 					return data_.data();
@@ -353,17 +363,27 @@ namespace collin
 				}
 
 				template<class... Indexes>
-				[[nodiscard]] reference get(Indexes&&... indexes) noexcept
+				reference get(Indexes&&... indexes) noexcept
 				{
 					static_assert((sizeof...(Indexes) > 0) && (sizeof...(Indexes) <= Dimensions));
 					return data_[index(std::forward<Indexes>(indexes)...)];
 				}
 
 				template<class... Indexes>
-				[[nodiscard]] const_reference get(Indexes&&... indexes) const noexcept
+				const_reference get(Indexes&&... indexes) const noexcept
 				{
 					static_assert((sizeof...(Indexes) > 0) && (sizeof...(Indexes) <= Dimensions));
 					return data_[index(std::forward<Indexes>(indexes)...)];
+				}
+
+				reference operator[](std::size_t index) noexcept
+				{
+					return data_[index];
+				}
+
+				const_reference operator[](std::size_t index) const noexcept
+				{
+					return data_[index];
 				}
 
 				[[nodiscard]] const_pointer data() const noexcept
@@ -537,6 +557,16 @@ namespace collin
 				{
 					static_assert(sizeof...(Indexes) == constant_multidimensional_array::dimensions_size);
 					return data_[constant_multidimensional_array::index(std::forward<Indexes>(indexes)...)];
+				}
+
+				constexpr reference operator[](std::size_t index) noexcept
+				{
+					return data_[index];
+				}
+
+				constexpr const_reference operator[](std::size_t index) const noexcept
+				{
+					return data_[index];
 				}
 
 				[[nodiscard]] constexpr const_pointer data() const noexcept

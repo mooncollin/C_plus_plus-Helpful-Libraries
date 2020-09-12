@@ -681,7 +681,7 @@ namespace collin
 				//
 				// It is rather strange to hold the owner who makes the iterator
 				// but unfortunately, when we iterate through the diagonal, we have
-				// a tedency to iterate far past the end, which doesn't work well
+				// a tendency to iterate far past the end, which doesn't work well
 				// in constexpr conditions. We use the owner to make sure our current
 				// pointer does not go too far past the beginning or end of the container.
 				//
@@ -973,6 +973,16 @@ namespace collin
 				const_reference operator()(std::size_t r, std::size_t c) const noexcept
 				{	
 					return data_.get(r, c);
+				}
+
+				reference operator[](std::size_t index) noexcept
+				{
+					return data_[index];
+				}
+
+				const_reference operator[](std::size_t index) const noexcept
+				{
+					return data_[index];
 				}
 
 				[[nodiscard]] row<value_type, std::dynamic_extent> get_row(std::size_t i) noexcept
@@ -1624,6 +1634,7 @@ namespace collin
 		}
 
 		template<matrix_type Matrix, class Other>
+			requires(!matrix_type<Other>)
 		[[nodiscard]] constexpr Matrix operator*(const Matrix& lhs, const Other& rhs) noexcept
 		{
 			auto m {lhs};
@@ -1660,6 +1671,15 @@ namespace collin
 			{
 				return details::mult_std(lhs, rhs);
 			}
+		}
+
+		template<matrix_type Matrix, class Other>
+			requires(!matrix_type<Other>)
+		[[nodiscard]] constexpr Matrix operator/(const Matrix& lhs, const Other& rhs) noexcept
+		{
+			auto m{lhs};
+			m /= rhs;
+			return m;
 		}
 
 		template<class Rep, std::size_t Rows, std::size_t Cols>
@@ -1730,6 +1750,16 @@ namespace collin
 				constexpr const_reference operator()(std::size_t r, std::size_t c) const noexcept
 				{	
 					return data_.get(r, c);
+				}
+
+				constexpr reference operator[](std::size_t index) noexcept
+				{
+					return data_[index];
+				}
+
+				constexpr const_reference operator[](std::size_t index) const noexcept
+				{
+					return data_[index];
 				}
 
 				[[nodiscard]] constexpr row<value_type, Cols> get_row(std::size_t i) noexcept

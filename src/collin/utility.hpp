@@ -210,6 +210,21 @@ namespace collin
 
 	template<class... Ts>
 	overloaded(Ts...) -> overloaded<Ts...>;
+
+	template<class Required, std::size_t Min, std::size_t Max, class... T>
+	struct basic_static_initializer_list : public std::bool_constant<
+				 sizeof...(T) >= Min &&
+				 sizeof...(T) <= Max &&
+				 (... && std::is_convertible_v<T, Required>)> {};
+
+	template<class Required, class... T>
+	using unbounded_static_initializer_list = basic_static_initializer_list<Required, 0, std::numeric_limits<std::size_t>::max(), T...>;
+
+	template<class Required, std::size_t Min, class... T>
+	using minimum_static_initializer_list = basic_static_initializer_list<Required, Min, std::numeric_limits<std::size_t>::max(), T...>;
+
+	template<class Required, std::size_t Max, class... T>
+	using maximum_static_initializer_list = basic_static_initializer_list<Required, 0, Max, T...>;
 }
 
 #endif

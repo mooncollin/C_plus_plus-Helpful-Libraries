@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <ratio>
 
+#include "collin/measures/measure.hpp"
 #include "collin/measures/time.hpp"
 
 namespace collin

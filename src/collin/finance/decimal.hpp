@@ -637,14 +637,14 @@ namespace collin
 					}
 
 					{
-						auto c = collin::math::gcd(a_dec, divisor);
+						auto c = std::gcd(a_dec, divisor);
 						if (c != 1)
 						{
 							a_dec /= c;
 							divisor /= c;
 						}
 
-						c = collin::math::gcd(b_dec, divisor);
+						c = std::gcd(b_dec, divisor);
 						if (c != 1)
 						{
 							b_dec /= c;

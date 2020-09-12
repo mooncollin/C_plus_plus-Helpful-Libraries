@@ -6,8 +6,9 @@
 #include <iostream>
 #include <sstream>
 #include <cstdint>
-#include "measure.hpp"
-#include "..\math.hpp"
+#include "collin/measures/measure.hpp"
+#include "collin/math.hpp"
+#include "collin/ratio.hpp"
 
 namespace collin
 {
@@ -16,13 +17,13 @@ namespace collin
         template<class Rep>
         struct distance_values;
 
-        template<class Rep, class System, class Ratio = std::ratio<1>>
+        template<class Rep, class System, collin::ratio::ratio_type Ratio = std::ratio<1>>
         using distance = basic_unit<Rep, Ratio, distance_values<Rep>, System>;
 
         template<class T>
         struct is_distance : std::false_type {};
 
-        template<class Rep, class System, class Ratio>
+        template<class Rep, class System, collin::ratio::ratio_type Ratio>
         struct is_distance<distance<Rep, System, Ratio>> : std::true_type {};
 
         template<class T>
@@ -135,7 +136,7 @@ namespace collin
                 return std::numeric_limits<Rep>::max();
             }
 
-            template<distance_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, ratio_type Ratio>
+            template<distance_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio>
                 requires (collin::concepts::same<ToSystem, metric_system>)
             static constexpr ToBasicUnit system_cast(const distance<Rep, imperial_system, Ratio>& unit) noexcept
             {
@@ -145,7 +146,7 @@ namespace collin
                 return ToBasicUnit{nanometer_conversion};
             }
 
-            template<distance_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, ratio_type Ratio>
+            template<distance_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio>
                 requires(collin::concepts::same<ToSystem, imperial_system>)
             static constexpr ToBasicUnit system_cast(const distance<Rep, metric_system, Ratio>& unit) noexcept
             {

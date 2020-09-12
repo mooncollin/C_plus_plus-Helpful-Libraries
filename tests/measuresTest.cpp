@@ -1,3 +1,8 @@
+#include <iostream>
+#include <ratio>
+#include <sstream>
+
+#include "collin/measures/measure.hpp"
 #include "collin/measures/distance.hpp"
 #include "collin/measures/mass.hpp"
 #include "collin/measures/time.hpp"
@@ -7,9 +12,6 @@
 #include "collin/measures/constants.hpp"
 #include "collin/test.hpp"
 #include "collin/utility.hpp"
-#include <iostream>
-#include <ratio>
-#include <sstream>
 
 class measures_suffix_test : public collin::test::test_case
 {
@@ -651,41 +653,41 @@ class dimension_unit_construction_test : public collin::test::test_case
                 typename type::ratio, typename type::unit_values,
                 typename type::system> du_cubed2{25, 3};
 
-            static_assert(du == type{});
-            static_assert(du2 == type{15});
-            static_assert(du2 != type{10});
-            static_assert(du != du2);
-            static_assert(du_squared == du);
-            static_assert(du_squared == du_squared_dynamic);
-            static_assert(du2 != du_squared);
-            static_assert(du < du2);
-            static_assert(du2 > du);
-            static_assert(du2 >= du);
-            static_assert(du <= du2);
+            collin::test::assert_equal(du, type{});
+            collin::test::assert_equal(du2, type{15});
+            collin::test::assert_not_equal(du2, type{10});
+            collin::test::assert_not_equal(du, du2);
+            collin::test::assert_equal(du_squared, du);
+            collin::test::assert_equal(du_squared, du_squared_dynamic);
+            collin::test::assert_not_equal(du2, du_squared);
+            collin::test::assert_less(du, du2);
+            collin::test::assert_greater(du2, du);
+            collin::test::assert_greater_equal(du2, du);
+            collin::test::assert_less_equal(du, du2);
 
-            static_assert(du_squared >= du_squared_dynamic);
-            static_assert(du_squared <= du_squared_dynamic);
-            static_assert(du3 == du_squared2);
-            static_assert(du_squared2 == du3);
-            static_assert(du3 != du4);
-            static_assert(du3 != du_cubed);
-            static_assert(du_squared2 != du_cubed);
-            static_assert(du_cubed == du4);
+            collin::test::assert_greater_equal(du_squared, du_squared_dynamic);
+            collin::test::assert_less_equal(du_squared, du_squared_dynamic);
+            collin::test::assert_equal(du3, du_squared2);
+            collin::test::assert_equal(du_squared2, du3);
+            collin::test::assert_not_equal(du3, du4);
+            collin::test::assert_not_equal(du3, du_cubed);
+            collin::test::assert_not_equal(du_squared2, du_cubed);
+            collin::test::assert_equal(du_cubed, du4);
 
-            static_assert(du < du2);
-            static_assert(du3 > du_squared);
-            static_assert(du_squared2 < du4);
-            static_assert(du4 <= du_cubed2);
-            static_assert(du_cubed2 > du4);
-            static_assert(du_squared < du2);
-            static_assert(du_cubed2 != type{});
-            static_assert(type{} != du_cubed2);
-            static_assert(type{15625} == du_cubed2);
-            static_assert(type{1000000} == du_squared3);
-            static_assert(type{25} < du_squared3);
-            static_assert(type{25} <= du_squared3);
-            static_assert(du_squared3 > type{25});
-            static_assert(du_squared3 >= type{25});
+            collin::test::assert_less(du, du2);
+            collin::test::assert_greater(du3, du_squared);
+            collin::test::assert_less(du_squared2, du4);
+            collin::test::assert_less_equal(du4, du_cubed2);
+            collin::test::assert_greater(du_cubed2, du4);
+            collin::test::assert_less(du_squared, du2);
+            collin::test::assert_not_equal(du_cubed2, type{});
+            collin::test::assert_not_equal(type{}, du_cubed2);
+            collin::test::assert_equal(type{15625}, du_cubed2);
+            collin::test::assert_equal(type{1000000}, du_squared3);
+            collin::test::assert_less(type{25}, du_squared3);
+            collin::test::assert_less_equal(type{25}, du_squared3);
+            collin::test::assert_greater(du_squared3, type{25});
+            collin::test::assert_greater_equal(du_squared3, type{25});
             static_information();
         }
 
@@ -772,9 +774,9 @@ class speed_light_test : public collin::test::test_case
 
         void operator()() override
         {
-            constexpr auto sol = collin::measures::speed_of_light_vacuum<double>;
-            constexpr auto solh = collin::measures::speed<collin::measures::basic_kilometers<double>, collin::measures::milliseconds>{sol};
-            constexpr auto v = solh.count();
+            constexpr auto sol = collin::measures::speed_of_light_vacuum<>;
+            constexpr auto solh = collin::measures::speed<collin::measures::kilometers, collin::measures::hours>{sol};
+            static_assert(solh.count() == 1'079'252'848);
         }
 };
 

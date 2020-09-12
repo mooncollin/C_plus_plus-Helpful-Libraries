@@ -70,7 +70,7 @@ namespace collin
 				return std::numeric_limits<Rep>::max();
 			}
 
-			template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, ratio_type Ratio>
+			template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio>
 			static constexpr ToBasicUnit system_cast(const temperature<Rep, fahrenheit_scale, Ratio>& unit) noexcept
 			{
 				constexpr auto rational_5_9 = collin::math::basic_rational<typename ToBasicUnit::rep>{5, 9};
@@ -84,7 +84,7 @@ namespace collin
 				}
 			}
 
-			template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, ratio_type Ratio>
+			template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio>
 			static constexpr ToBasicUnit system_cast(const temperature<Rep, kelvin_scale, Ratio>& unit) noexcept
 			{
 				if constexpr (collin::concepts::same<ToSystem, celsius_scale>)
@@ -98,7 +98,7 @@ namespace collin
 				}
 			}
 
-			template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, ratio_type Ratio>
+			template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio>
 			static constexpr ToBasicUnit system_cast(const temperature<Rep, celsius_scale, Ratio>& unit) noexcept
 			{
 				if constexpr(collin::concepts::same<ToSystem, fahrenheit_scale>)
