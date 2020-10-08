@@ -30,6 +30,8 @@ namespace collin
 			{
 				return Ext;
 			}
+
+			constexpr void swap(extent_type& other) noexcept {}
 	};
 
 	template<>
@@ -45,6 +47,11 @@ namespace collin
 			[[nodiscard]] constexpr size_type size() const noexcept
 			{
 				return size_;
+			}
+
+			constexpr void swap(extent_type& other) noexcept
+			{
+				std::swap(size_, other.size_);
 			}
 		private:
 			size_type size_;

@@ -65,5 +65,30 @@ namespace collin
 				}
 			}
 		}
+
+		template<class InputIterator1, class InputIterator2>
+		constexpr int sequence_compare(InputIterator1 first1, InputIterator1 last1, InputIterator2 first2, InputIterator2 last2)
+		{
+			for (; (first1 != last1) && (first2 != last2); ++first1, ++first2)
+			{
+				if (*first1 < *first2) return -1;
+				if (*first2 < *first1) return 1;
+			}
+
+			return ((first1 == last1) && (first2 != last2)) ? -1 :
+				   ((first1 != last1) && (first2 == last2)) ?  1 : 0;
+		}
+
+		template<class InputIterator1, class InputIterator2>
+		constexpr int sequence_compare(InputIterator1 first1, InputIterator2 first2, std::size_t amount)
+		{
+			for (; amount-- > 0; ++first1, ++first2)
+			{
+				if (*first1 < *first2) return -1;
+				if (*first2 < *first1) return 1;
+			}
+
+			return 0;
+		}
 	}
 }

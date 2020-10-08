@@ -1,5 +1,4 @@
-#ifndef COLLIN_UTILITY
-#define COLLIN_UTILITY
+#pragma once
 
 #include <iterator>
 #include <exception>
@@ -226,5 +225,3 @@ namespace collin
 	template<class Required, std::size_t Max, class... T>
 	using maximum_static_initializer_list = basic_static_initializer_list<Required, 0, Max, T...>;
 }
-
-#endif

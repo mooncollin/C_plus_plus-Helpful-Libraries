@@ -134,6 +134,7 @@ namespace collin
 
 			public:
 				template<class T, class... Args>
+					requires(collin::concepts::derived_from<T, test_case>)
 				void add_test_case(Args&&... args)
 				{
 					cases.push_back(std::make_unique<T>(std::forward<Args>(args)...));
@@ -141,7 +142,7 @@ namespace collin
 
 				void add_test_suite(test_suite&& suite)
 				{
-					for (auto&& case_ : suite.cases)
+					for (auto& case_ : suite.cases)
 					{
 						cases.push_back(std::move(case_));
 					}
@@ -152,6 +153,7 @@ namespace collin
 				std::vector<test_result> run_all()
 				{
 					std::vector<test_result> results;
+					results.reserve(cases.size());
 					for (auto& t_case : cases)
 					{
 						results.push_back(t_case->run());
@@ -316,7 +318,9 @@ namespace collin
 				{
 					const auto time_now = std::chrono::system_clock::now();
 					const auto t_c = std::chrono::system_clock::to_time_t(time_now);
-					out_.get() << "Starting testing at " << std::put_time(std::localtime(&t_c), "%F %T");
+					::tm t;
+					::localtime_s(std::addressof(t), std::addressof(t_c));
+					out_.get() << "Starting testing at " << std::put_time(std::addressof(t), "%F %T");
 
 					return time_now;
 				}
@@ -324,24 +328,25 @@ namespace collin
 				void print_footer(const std::chrono::system_clock::time_point& before)
 				{
 					const auto time_now = std::chrono::system_clock::now();
-					const auto t_c = std::chrono::system_clock::to_time_t(time_now);
 					const auto duration = time_now - before;
+					const auto t_c = std::chrono::system_clock::to_time_t(time_now);
+					::tm t;
+					::localtime_s(std::addressof(t), std::addressof(t_c));
 
-
-					out_.get() << "Ending testing at " << std::put_time(std::localtime(&t_c), "%F %T");
+					out_.get() << "Ending testing at " << std::put_time(std::addressof(t), "%F %T");
 					out_.get() << " : ";
 
-					const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
-					const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-					const auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
-					if (seconds.count() > 0)
+					const auto seconds = std::chrono::duration_cast<std::chrono::duration<double>>(duration);
+					const auto milliseconds = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(duration);
+					const auto nanoseconds = std::chrono::duration_cast<std::chrono::duration<double, std::nano>>(duration);
+					if (seconds.count() > 1)
 					{
-						out_.get() << (static_cast<long double>(seconds.count()) + (static_cast<long double>(milliseconds.count()) / static_cast<long double>(std::milli::den)));
+						out_.get() << seconds.count();
 						out_.get() << "s";
 					}
-					else if(milliseconds.count() > 0)
+					else if(milliseconds.count() > 1)
 					{
-						out_.get() << (static_cast<long double>(milliseconds.count()) + (static_cast<long double>(nanoseconds.count()) / static_cast<long double>(std::nano::den)));
+						out_.get() << milliseconds.count();
 						out_.get() << "ms";
 					}
 					else

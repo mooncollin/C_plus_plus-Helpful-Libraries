@@ -10,6 +10,10 @@
 #include <functional>
 #include <span>
 #include <algorithm>
+#include <execution>
+#include <iterator>
+#include <functional>
+#include <utility>
 
 #include "collin/concepts.hpp"
 
@@ -238,6 +242,139 @@ namespace collin
 				{
 					return std::size(data_);
 				}
+
+				void swap(multidimensional_array& other) noexcept
+				{
+					std::swap(data_, other.data_);
+					std::swap(dimensions_, other.dimensions_);
+					std::swap(dimensions_cache_, other.dimensions_cache_);
+				}
+
+				template<class F>
+				multidimensional_array& apply(F&& f)
+				{
+					using return_t = std::invoke_result_t<F, T>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(begin(), end(), std::forward<F>(f));
+					}
+					else
+					{
+						std::transform(begin(), end(), begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				template<class InputIterator, class F>
+				multidimensional_array& apply(InputIterator first, F&& f)
+				{
+					using return_t = std::invoke_result_t<F, T, typename std::iterator_traits<InputIterator>::value_type>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(begin(), end(), [f2 = std::forward<F>(f), &first](auto& v) { f2(v, *first); ++first; });
+					}
+					else
+					{
+						std::transform(begin(), end(), first, begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				template<class ExecutionPolicy, class F>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				multidimensional_array& apply(ExecutionPolicy p, F&& f)
+				{
+					using return_t = std::invoke_result_t<F, T>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(p, begin(), end(), std::forward<F>(f));
+					}
+					else
+					{
+						std::transform(p, begin(), end(), begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				template<class ExecutionPolicy, class InputIterator, class F>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				multidimensional_array& apply(ExecutionPolicy p, InputIterator first, F&& f)
+				{
+					using return_t = std::invoke_result_t<F, T, typename std::iterator_traits<InputIterator>::value_type>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(p, begin(), end(), [f2 = std::forward<F>(f), &first](auto& v) { f2(v, *first); ++first; });
+					}
+					else
+					{
+						std::transform(p, begin(), end(), first, begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				[[nodiscard]] T sum() const
+				{
+					return std::reduce(begin(), end(), T{ 0 }, std::plus<>{});
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] T sum(ExecutionPolicy p) const
+				{
+					return std::reduce(p, begin(), end(), T{ 0 }, std::plus<>{});
+				}
+
+				[[nodiscard]] T product() const
+				{
+					return std::reduce(begin(), end(), T{ 1 }, std::multiplies<>{});
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] T product(ExecutionPolicy p) const
+				{
+					return std::reduce(p, begin(), end(), T{ 1 }, std::multiplies<>{});
+				}
+
+				[[nodiscard]] T min() const
+				{
+					return std::min_element(begin(), end());
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] T min(ExecutionPolicy p) const
+				{
+					return std::min_element(p, begin(), end());
+				}
+
+				[[nodiscard]] T max() const
+				{
+					return std::max_element(begin(), end());
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] T max(ExecutionPolicy p) const
+				{
+					return std::max_element(p, begin(), end());
+				}
+
+				[[nodiscard]] std::pair<T, T> min_max() const
+				{
+					return std::minmax_element(begin(), end());
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] std::pair<T, T> min_max(ExecutionPolicy p) const
+				{
+					return std::minmax_element(p, begin(), end());
+				}
 			private:
 				storage_t data_;
 				dimensions_t dimensions_;
@@ -313,19 +450,6 @@ namespace collin
 				fixed_multidimensional_array(const fixed_multidimensional_array&) = default;
 				fixed_multidimensional_array(fixed_multidimensional_array&&) noexcept = default;
 
-				template<collin::concepts::convertible_to<T> T2>
-				fixed_multidimensional_array& operator=(const fixed_multidimensional_array<T2, Dimensions, Allocator>& other)
-				{
-					if (this != std::addressof(other))
-					{
-						data_ = other.data_;
-						dimensions_ = other.dimensions_;
-						dimensions_cache_ = other.dimensions_cache_;
-					}
-
-					return *this;
-				}
-
 				fixed_multidimensional_array& operator=(const fixed_multidimensional_array&) = default;
 				fixed_multidimensional_array& operator=(fixed_multidimensional_array&&) noexcept = default;
 
@@ -336,8 +460,8 @@ namespace collin
 					return *this;
 				}
 
-				template<collin::concepts::convertible_to<T> T2, std::size_t... OtherDimensions>
-				fixed_multidimensional_array& operator=(const constant_multidimensional_array<T2, OtherDimensions...>& other)
+				template<std::size_t... OtherDimensions>
+				fixed_multidimensional_array& operator=(const constant_multidimensional_array<T, OtherDimensions...>& other)
 				{
 					dimensions_ = {OtherDimensions...};
 					fill_cache();
@@ -459,6 +583,139 @@ namespace collin
 				[[nodiscard]] size_type size() const noexcept
 				{
 					return std::size(data_);
+				}
+
+				void swap(fixed_multidimensional_array& other) noexcept
+				{
+					std::swap(data_, other.data_);
+					std::swap(dimensions_, other.dimensions_);
+					std::swap(dimensions_cache_, other.dimensions_cache_);
+				}
+
+				template<class F>
+				constexpr fixed_multidimensional_array& apply(F&& f)
+				{
+					using return_t = std::invoke_result_t<F, T>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(begin(), end(), std::forward<F>(f));
+					}
+					else
+					{
+						std::transform(begin(), end(), begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				template<class InputIterator, class F>
+				constexpr fixed_multidimensional_array& apply(InputIterator first, F&& f)
+				{
+					using return_t = std::invoke_result_t<F, T, typename std::iterator_traits<InputIterator>::value_type>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(begin(), end(), [f2 = std::forward<F>(f), &first](auto& v) { f2(v, *first); ++first; });
+					}
+					else
+					{
+						std::transform(begin(), end(), first, begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				template<class ExecutionPolicy, class F>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				fixed_multidimensional_array& apply(ExecutionPolicy p, F&& f)
+				{
+					using return_t = std::invoke_result_t<F, T>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(p, begin(), end(), std::forward<F>(f));
+					}
+					else
+					{
+						std::transform(p, begin(), end(), begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				template<class ExecutionPolicy, class InputIterator, class F>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				fixed_multidimensional_array& apply(ExecutionPolicy p, InputIterator first, F&& f)
+				{
+					using return_t = std::invoke_result_t<F, T, typename std::iterator_traits<InputIterator>::value_type>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(p, begin(), end(), [f2 = std::forward<F>(f), &first](auto& v) { f2(v, *first); ++first; });
+					}
+					else
+					{
+						std::transform(p, begin(), end(), first, begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				[[nodiscard]] T sum() const
+				{
+					return std::reduce(begin(), end(), T{ 0 }, std::plus<>{});
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] T sum(ExecutionPolicy p) const
+				{
+					return std::reduce(p, begin(), end(), T{ 0 }, std::plus<>{});
+				}
+
+				[[nodiscard]] T product() const
+				{
+					return std::reduce(begin(), end(), T{ 1 }, std::multiplies<>{});
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] T product(ExecutionPolicy p) const
+				{
+					return std::reduce(p, begin(), end(), T{ 1 }, std::multiplies<>{});
+				}
+
+				[[nodiscard]] T min() const
+				{
+					return std::min_element(begin(), end());
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] T min(ExecutionPolicy p) const
+				{
+					return std::min_element(p, begin(), end());
+				}
+
+				[[nodiscard]] T max() const
+				{
+					return std::max_element(begin(), end());
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] T max(ExecutionPolicy p) const
+				{
+					return std::max_element(p, begin(), end());
+				}
+
+				[[nodiscard]] std::pair<T, T> min_max() const
+				{
+					return std::minmax_element(begin(), end());
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] std::pair<T, T> min_max(ExecutionPolicy p) const
+				{
+					return std::minmax_element(p, begin(), end());
 				}
 			private:
 				storage_t data_;
@@ -643,6 +900,137 @@ namespace collin
 				{
 					return constant_multidimensional_array::size_;
 				}
+
+				void swap(constant_multidimensional_array& other) noexcept
+				{
+					std::swap(data_, other.data_);
+				}
+
+				template<class F>
+				constexpr constant_multidimensional_array& apply(F&& f)
+				{
+					using return_t = std::invoke_result_t<F, T>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(begin(), end(), std::forward<F>(f));
+					}
+					else
+					{
+						std::transform(begin(), end(), begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				template<class InputIterator, class F>
+				constexpr constant_multidimensional_array& apply(InputIterator first, F&& f)
+				{
+					using return_t = std::invoke_result_t<F, T, typename std::iterator_traits<InputIterator>::value_type>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(begin(), end(), [f2 = std::forward<F>(f), &first](auto& v) { f2(v, *first); ++first; });
+					}
+					else
+					{
+						std::transform(begin(), end(), first, begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				template<class ExecutionPolicy, class F>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				constant_multidimensional_array& apply(ExecutionPolicy p, F&& f)
+				{
+					using return_t = std::invoke_result_t<F, T>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(p, begin(), end(), std::forward<F>(f));
+					}
+					else
+					{
+						std::transform(p, begin(), end(), begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				template<class ExecutionPolicy, class InputIterator, class F>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				constant_multidimensional_array& apply(ExecutionPolicy p, InputIterator first, F&& f)
+				{
+					using return_t = std::invoke_result_t<F, T, typename std::iterator_traits<InputIterator>::value_type>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(p, begin(), end(), [f2 = std::forward<F>(f), &first](auto& v) { f2(v, *first); ++first; });
+					}
+					else
+					{
+						std::transform(p, begin(), end(), first, begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				[[nodiscard]] constexpr T sum() const
+				{
+					return std::reduce(begin(), end(), T{ 0 }, std::plus<>{});
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] T sum(ExecutionPolicy p) const
+				{
+					return std::reduce(p, begin(), end(), T{ 0 }, std::plus<>{});
+				}
+
+				[[nodiscard]] constexpr T product() const
+				{
+					return std::reduce(begin(), end(), T{ 1 }, std::multiplies<>{});
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] T product(ExecutionPolicy p) const
+				{
+					return std::reduce(p, begin(), end(), T{ 1 }, std::multiplies<>{});
+				}
+
+				[[nodiscard]] constexpr T min() const
+				{
+					return std::min_element(begin(), end());
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] T min(ExecutionPolicy p) const
+				{
+					return std::min_element(p, begin(), end());
+				}
+
+				[[nodiscard]] constexpr T max() const
+				{
+					return std::max_element(begin(), end());
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] T max(ExecutionPolicy p) const
+				{
+					return std::max_element(p, begin(), end());
+				}
+
+				[[nodiscard]] constexpr std::pair<T, T> min_max() const
+				{
+					return std::minmax_element(begin(), end());
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] std::pair<T, T> min_max(ExecutionPolicy p) const
+				{
+					return std::minmax_element(p, begin(), end());
+				}
 			private:
 				storage_t data_ {};
 
@@ -671,5 +1059,26 @@ namespace collin
 					static constexpr std::size_t value {1};
 				};
 		};
+	}
+}
+
+namespace std
+{
+	template<class T, class Allocator>
+	void swap(collin::multidimensional::multidimensional_array<T, Allocator>& lhs, collin::multidimensional::multidimensional_array<T, Allocator>& rhs) noexcept
+	{
+		lhs.swap(rhs);
+	}
+
+	template<class T, std::size_t Dimensions, class Allocator>
+	void swap(collin::multidimensional::fixed_multidimensional_array<T, Dimensions, Allocator>& lhs, collin::multidimensional::fixed_multidimensional_array<T, Dimensions, Allocator>& rhs) noexcept
+	{
+		lhs.swap(rhs);
+	}
+
+	template<class T, std::size_t... Dimensions>
+	void swap(collin::multidimensional::constant_multidimensional_array<T, Dimensions...>& lhs, collin::multidimensional::constant_multidimensional_array<T, Dimensions...>& rhs) noexcept
+	{
+		lhs.swap(rhs);
 	}
 }

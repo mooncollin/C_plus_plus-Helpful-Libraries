@@ -7,20 +7,44 @@ namespace collin
 {
 	namespace tuples
 	{
-		template<typename... Ts, class Function>
-		void for_each(const std::tuple<Ts...>& t, Function func)
+		template<class Tuple, class Function>
+		void for_each(Tuple&& t, Function&& func)
 		{
-			std::apply([&](const auto& ...x) {
-				(..., func(x));
-			}, t);
+			std::apply([f = std::forward<Function>(func)](auto&& ...x) {
+				(f(std::forward<decltype(x)>(x)), ...);
+			}, std::forward<Tuple>(t));
 		}
 
-		template<typename... Ts, class Function>
-		void for_each(std::tuple<Ts...>& t, Function func)
+		template<class Tuple, class Function>
+		bool all_of(Tuple&& t, Function&& Func)
 		{
-			std::apply([&](auto& ...x) {
-				(..., func(x));
-				}, t);
+			return std::apply([f = std::forward<Function>(func)](auto&& ...x) {
+				return (f(std::forward<decltype(x)>(x)) && ...);
+			}, std::forward<Tuple>(t));
+		}
+
+		template<class Tuple, class Function>
+		bool any_of(Tuple&& t, Function&& Func)
+		{
+			return std::apply([f = std::forward<Function>(func)](auto&& ...x) {
+				return (f(std::forward<decltype(x)>(x)) || ...);
+			}, std::forward<Tuple>(t));
+		}
+
+		template<class Tuple, class Function>
+		bool none_of(Tuple&& t, Function&& Func)
+		{
+			return std::apply([f = std::forward<Function>(func)](auto&& ...x) {
+				return (!f(std::forward<decltype(x)>(x)) && ...);
+			}, std::forward<Tuple>(t));
+		}
+
+		template<class Tuple, class OutputIterator, class Function>
+		void transform(Tuple&& t, OutputIterator out, Function&& Func)
+		{
+			return std::apply([f = std::forward<Function>(func), out](auto&& ...x) {
+				(*out++ = f(std::forward<decltype(x)>(x)), ...);
+			}, std::forward<Tuple>(t));
 		}
 
 		template<class... Ts>

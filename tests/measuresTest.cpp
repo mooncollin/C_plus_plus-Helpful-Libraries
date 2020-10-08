@@ -6,10 +6,10 @@
 #include "collin/measures/distance.hpp"
 #include "collin/measures/mass.hpp"
 #include "collin/measures/time.hpp"
-#include "collin/measures/kinematic.hpp"
-#include "collin//measures/mechanical.hpp"
+//#include "collin/measures/kinematic.hpp"
+//#include "collin//measures/mechanical.hpp"
 #include "collin/measures/temperature.hpp"
-#include "collin/measures/constants.hpp"
+//#include "collin/measures/constants.hpp"
 #include "collin/test.hpp"
 #include "collin/utility.hpp"
 
@@ -220,6 +220,14 @@ class distance_values_test : public collin::test::test_case
             static_assert(collin::measures::system_cast<collin::measures::meters>(collin::measures::inches{10000}) == collin::measures::meters{254});
             static_assert(collin::measures::system_cast<collin::measures::centimeters>(collin::measures::yards{100}) == collin::measures::centimeters{9144});
             static_assert(collin::measures::system_cast<collin::measures::feet>(collin::measures::centimeters{10000}) == collin::measures::feet{328});
+
+            static_information();
+        }
+
+    private:
+        void static_information()
+        {
+            constexpr auto size = sizeof(collin::measures::meters);
         }
 };
 
@@ -613,104 +621,24 @@ class dimension_unit_construction_test : public collin::test::test_case
             using type = collin::measures::seconds;
             using type2 = collin::measures::kiloseconds;
 
-            constexpr collin::measures::basic_dimension_unit<typename type::rep,
-                typename type::ratio, typename type::unit_values,
-                typename type::system, 1> du;
+            constexpr type s1{10};
+            constexpr auto s2 = s1 * s1;
+            constexpr auto s3 = (s2 / s1) / s1;
+            constexpr auto s4 = 1000 / s1;
 
-            constexpr collin::measures::basic_dimension_unit<typename type::rep,
-                typename type::ratio, typename type::unit_values,
-                typename type::system, 1> du2{15};
+            static_assert(s2.count() == 100);
+            static_assert(s2.dimension == 2);
+            static_assert(s3 == 1);
+            static_assert(s4.count() == 100);
 
-            constexpr collin::measures::basic_dimension_unit<typename type::rep,
-                typename type::ratio, typename type::unit_values,
-                typename type::system, 2> du_squared;
-
-            constexpr collin::measures::basic_dimension_unit<typename type::rep,
-                typename type::ratio, typename type::unit_values,
-                typename type::system> du_squared_dynamic{0, 2};
-
-            constexpr collin::measures::basic_dimension_unit<typename type::rep,
-                typename type::ratio, typename type::unit_values,
-                typename type::system> du3{25};
-
-            constexpr collin::measures::basic_dimension_unit<typename type::rep,
-                typename type::ratio, typename type::unit_values,
-                typename type::system, 2> du_squared2{5};
-
-            constexpr collin::measures::basic_dimension_unit<typename type2::rep,
-                typename type2::ratio, typename type2::unit_values,
-                typename type2::system, 2> du_squared3{1};
-
-            constexpr collin::measures::basic_dimension_unit<typename type::rep,
-                typename type::ratio, typename type::unit_values,
-                typename type::system> du4{125};
-
-            constexpr collin::measures::basic_dimension_unit<typename type::rep,
-                typename type::ratio, typename type::unit_values,
-                typename type::system> du_cubed{5, 3};
-
-            constexpr collin::measures::basic_dimension_unit<typename type::rep,
-                typename type::ratio, typename type::unit_values,
-                typename type::system> du_cubed2{25, 3};
-
-            collin::test::assert_equal(du, type{});
-            collin::test::assert_equal(du2, type{15});
-            collin::test::assert_not_equal(du2, type{10});
-            collin::test::assert_not_equal(du, du2);
-            collin::test::assert_equal(du_squared, du);
-            collin::test::assert_equal(du_squared, du_squared_dynamic);
-            collin::test::assert_not_equal(du2, du_squared);
-            collin::test::assert_less(du, du2);
-            collin::test::assert_greater(du2, du);
-            collin::test::assert_greater_equal(du2, du);
-            collin::test::assert_less_equal(du, du2);
-
-            collin::test::assert_greater_equal(du_squared, du_squared_dynamic);
-            collin::test::assert_less_equal(du_squared, du_squared_dynamic);
-            collin::test::assert_equal(du3, du_squared2);
-            collin::test::assert_equal(du_squared2, du3);
-            collin::test::assert_not_equal(du3, du4);
-            collin::test::assert_not_equal(du3, du_cubed);
-            collin::test::assert_not_equal(du_squared2, du_cubed);
-            collin::test::assert_equal(du_cubed, du4);
-
-            collin::test::assert_less(du, du2);
-            collin::test::assert_greater(du3, du_squared);
-            collin::test::assert_less(du_squared2, du4);
-            collin::test::assert_less_equal(du4, du_cubed2);
-            collin::test::assert_greater(du_cubed2, du4);
-            collin::test::assert_less(du_squared, du2);
-            collin::test::assert_not_equal(du_cubed2, type{});
-            collin::test::assert_not_equal(type{}, du_cubed2);
-            collin::test::assert_equal(type{15625}, du_cubed2);
-            collin::test::assert_equal(type{1000000}, du_squared3);
-            collin::test::assert_less(type{25}, du_squared3);
-            collin::test::assert_less_equal(type{25}, du_squared3);
-            collin::test::assert_greater(du_squared3, type{25});
-            collin::test::assert_greater_equal(du_squared3, type{25});
             static_information();
         }
 
     private:
         void static_information()
         {
-            collin::measures::basic_dimension_unit_t<collin::measures::seconds, 1> o1{10};
-            collin::measures::basic_dimension_unit_t<collin::measures::seconds, collin::measures::dynamic_dimension> o2{10, 1};
-
-            constexpr auto size1 = sizeof(o1);
-            constexpr auto size2 = sizeof(o2);
-        }
-};
-
-class dimensional_unit_addition_test : public collin::test::test_case
-{
-    public:
-        dimensional_unit_addition_test()
-            : collin::test::test_case{"dimensional_unit_addition_test"} {}
-
-        void operator()() override
-        {
-
+            constexpr auto size1 = sizeof(collin::measures::basic_seconds<std::intmax_t, 2>);
+            constexpr auto size2 = sizeof(collin::measures::basic_seconds<std::intmax_t, -2>);
         }
 };
 
@@ -722,63 +650,35 @@ class derived_unit_construction_test : public collin::test::test_case
 
         void operator()() override
         {
+            using t = collin::measures::meters;
+            using t2 = collin::measures::basic_seconds<std::intmax_t, -1>;
+
+            using t3 = collin::measures::kilometers;
+
+            using derived_t = collin::measures::basic_derived_unit<std::intmax_t, t, t2>;
+            using derived_t2 = collin::measures::basic_derived_unit<std::intmax_t, t3, t2>;
+            using derived_t3 = collin::measures::basic_derived_unit<std::intmax_t,
+                                    collin::measures::basic_meters<std::intmax_t, -1>,
+                                    collin::measures::basic_seconds<std::intmax_t, 1>>;
+
+            derived_t derived {10};
+            derived *= 10;
+            derived += derived;
+
+            derived_t2 derived2 {5};
+
+            derived += derived2;
+
+            const auto derived3 = derived * t{2};
+            const auto derived4 = derived * collin::measures::basic_seconds<std::intmax_t, 1>{1};
+            const auto derived5 = derived4 * collin::measures::basic_meters<std::intmax_t, -1>{1};
+            const auto derived6 = derived / t2{1};
+            const auto derived7 = derived * derived;
+            const auto derived8 = derived * derived_t3{1};
         }
 };
 
-class speed_construction_test : public collin::test::test_case
-{
-    public:
-        speed_construction_test()
-            : collin::test::test_case{"speed_construction_test"} {}
 
-        void operator()() override
-        {
-            constexpr collin::measures::speed<collin::measures::meters> v{10};
-            constexpr collin::measures::speed<collin::measures::meters> v2{50};
-            constexpr collin::measures::speed<collin::measures::meters> v3{1000};
-            constexpr collin::measures::speed<collin::measures::kilometers> v4{1};
-            constexpr collin::measures::speed<collin::measures::exameters> v5{100};
-
-            static_assert(v.count() == 10);
-            static_assert((+v) == v);
-            static_assert((-v) == decltype(v){-10});
-
-            static_assert((v + v2) == decltype(v){60});
-            static_assert((v - v2) == decltype(v){-40});
-            static_assert((v * 10) == decltype(v){100});
-            static_assert((v2 / 10) == decltype(v){5});
-
-            static_assert((v3 + v4) == decltype(v3){2000});
-            static_assert((v3 + v4) == decltype(v4){2});
-            static_assert((v3 + v4) != decltype(v4){3});
-            static_assert((v4 - v3) == decltype(v4){0});
-
-            static_information();
-        }
-    private:
-        void static_information()
-        {
-            constexpr collin::measures::speed<collin::measures::meters> v{10};
-            constexpr collin::measures::speed<collin::measures::exameters> v2{100};
-
-            constexpr auto s1 = sizeof(v);
-            constexpr auto s2 = sizeof(v2);
-        }
-};
-
-class speed_light_test : public collin::test::test_case
-{
-    public:
-        speed_light_test()
-            : collin::test::test_case{"speed_light_test"} {}
-
-        void operator()() override
-        {
-            constexpr auto sol = collin::measures::speed_of_light_vacuum<>;
-            constexpr auto solh = collin::measures::speed<collin::measures::kilometers, collin::measures::hours>{sol};
-            static_assert(solh.count() == 1'079'252'848);
-        }
-};
 
 int main()
 {
@@ -792,8 +692,6 @@ int main()
     suite.add_test_case<time_values_test>();
     suite.add_test_case<dimension_unit_construction_test>();
     suite.add_test_case<derived_unit_construction_test>();
-    suite.add_test_case<speed_construction_test>();
-    suite.add_test_case<speed_light_test>();
 
     collin::test::text_test_runner runner(std::cout);
     

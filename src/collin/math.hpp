@@ -12,6 +12,7 @@
 #include <limits>
 #include <algorithm>
 #include <execution>
+#include <cinttypes>
 
 #include "collin/concepts.hpp"
 
@@ -42,6 +43,19 @@ namespace collin
 
 		template<std::uintmax_t N>
 		struct static_pow<N, 0> : std::integral_constant<std::uintmax_t, 1> {};
+
+		template<collin::concepts::integral T>
+		[[nodiscard]] constexpr T power_of_10(T n) noexcept
+		{
+			T result {1};
+			while (n)
+			{
+				result *= T{10};
+				--n;
+			}
+
+			return result;
+		}
 
 		[[nodiscard]] constexpr std::uintmax_t factorial(std::size_t n) noexcept
 		{

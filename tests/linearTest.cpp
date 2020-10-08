@@ -169,6 +169,7 @@ class matrix_transpose_test : public collin::test::test_case
 			};
 
 			collin::test::assert_equal(collin::linear::transpose(mat), mat2);
+			collin::test::assert_equal(collin::linear::transpose(mat2), mat);
 		}
 };
 
@@ -313,8 +314,18 @@ class fixed_matrix_transpose_test : public collin::test::test_case
 				3, 7
 			};
 
+			const collin::linear::fixed_matrix<int, 2, 3> mat3{mat};
+			const collin::linear::fixed_matrix<int, 3, 2> mat4{mat2};
+
 			static_assert(collin::linear::transpose(mat) == mat2);
 			collin::test::assert_equal(collin::linear::transpose(mat), mat2);
+
+			static_assert(collin::linear::transpose(mat2) == mat);
+			collin::test::assert_equal(collin::linear::transpose(mat2), mat);
+
+			collin::test::assert_equal(collin::linear::transpose(mat3), mat4);
+
+			collin::test::assert_equal(collin::linear::transpose(mat4), mat3);
 		}
 };
 
@@ -458,11 +469,11 @@ class mixed_matrix_multiply_test : public collin::test::test_case
 		}
 };
 
-class cofactor_test : public collin::test::test_case
+class sub_matrix_test : public collin::test::test_case
 {
 	public:
-		cofactor_test()
-			: collin::test::test_case{"cofactor_test"} {}
+		sub_matrix_test()
+			: collin::test::test_case{"sub_matrix_test"} {}
 
 		void operator()() override
 		{
@@ -499,20 +510,20 @@ class cofactor_test : public collin::test::test_case
 				2, 0
 			};
 
-			static_assert(collin::linear::cofactor(fixed_input_data, 0, 0) == goal1);
-			static_assert(collin::linear::cofactor(fixed_input_data, 0, 1) == goal2);
-			static_assert(collin::linear::cofactor(fixed_input_data, 2, 1) == goal3);
-			static_assert(collin::linear::cofactor(fixed_input_data, 2, 2) == goal4);
+			static_assert(collin::linear::sub_matrix(fixed_input_data, 0, 0) == goal1);
+			static_assert(collin::linear::sub_matrix(fixed_input_data, 0, 1) == goal2);
+			static_assert(collin::linear::sub_matrix(fixed_input_data, 2, 1) == goal3);
+			static_assert(collin::linear::sub_matrix(fixed_input_data, 2, 2) == goal4);
 
-			collin::test::assert_equal(collin::linear::cofactor(fixed_input_data, 0, 0), goal1);
-			collin::test::assert_equal(collin::linear::cofactor(fixed_input_data, 0, 1), goal2);
-			collin::test::assert_equal(collin::linear::cofactor(fixed_input_data, 2, 1), goal3);
-			collin::test::assert_equal(collin::linear::cofactor(fixed_input_data, 2, 2), goal4);
+			collin::test::assert_equal(collin::linear::sub_matrix(fixed_input_data, 0, 0), goal1);
+			collin::test::assert_equal(collin::linear::sub_matrix(fixed_input_data, 0, 1), goal2);
+			collin::test::assert_equal(collin::linear::sub_matrix(fixed_input_data, 2, 1), goal3);
+			collin::test::assert_equal(collin::linear::sub_matrix(fixed_input_data, 2, 2), goal4);
 
-			collin::test::assert_equal(collin::linear::cofactor(input_data, 0, 0), goal1);
-			collin::test::assert_equal(collin::linear::cofactor(input_data, 0, 1), goal2);
-			collin::test::assert_equal(collin::linear::cofactor(input_data, 2, 1), goal3);
-			collin::test::assert_equal(collin::linear::cofactor(input_data, 2, 2), goal4);
+			collin::test::assert_equal(collin::linear::sub_matrix(input_data, 0, 0), goal1);
+			collin::test::assert_equal(collin::linear::sub_matrix(input_data, 0, 1), goal2);
+			collin::test::assert_equal(collin::linear::sub_matrix(input_data, 2, 1), goal3);
+			collin::test::assert_equal(collin::linear::sub_matrix(input_data, 2, 2), goal4);
 		}
 };
 
@@ -894,96 +905,6 @@ class identity_matrix_test : public collin::test::test_case
 		}
 };
 
-class pivot_matrix_test : public collin::test::test_case
-{
-	public:
-		pivot_matrix_test()
-			: collin::test::test_case{"pivot_matrix_test"} {}
-
-		void operator()() override
-		{
-			constexpr collin::linear::fixed_matrix<int, 3, 3> mat = {
-				6, 1, 1, 
-				4, -2, 5, 
-				2, 8, 7
-			};
-
-			constexpr auto pivot = collin::linear::pivot_matrix(mat);
-		}
-};
-
-class lu_decomposition_test : public collin::test::test_case
-{
-	public:
-		lu_decomposition_test()
-			: collin::test::test_case{"lu_decomposition_test"} {}
-
-		void operator()() override
-		{
-			constexpr collin::linear::fixed_matrix<double, 4, 4> mat = {
-				7, 3, -1, 2,
-				3, 8, 1, -4,
-				-1, 1, 4, -1,
-				2, -4, -1, 6
-			};
-
-			collin::linear::matrix<double> mat2{mat};
-
-			constexpr double delta = 0.0000000001;
-
-			constexpr auto decomp = collin::linear::lu_decomposition(mat);
-
-			constexpr auto& p = std::get<0>(decomp);
-			constexpr auto& l = std::get<1>(decomp);
-			constexpr auto& u = std::get<2>(decomp);
-
-			auto decomp2 = collin::linear::lu_decomposition(mat2);
-			auto& p2 = std::get<0>(decomp2);
-			auto& l2 = std::get<1>(decomp2);
-			auto& u2 = std::get<2>(decomp2);
-
-			const auto test_lu = [delta](const auto& in_l, const auto in_u)
-			{
-				collin::test::assert_almost_equal(in_l(0, 0), 1, delta);
-				collin::test::assert_almost_equal(in_l(0, 1), 0, delta);
-				collin::test::assert_almost_equal(in_l(0, 2), 0, delta);
-				collin::test::assert_almost_equal(in_l(0, 3), 0, delta);
-				collin::test::assert_almost_equal(in_l(1, 0), 0.42857142857143, delta);
-				collin::test::assert_almost_equal(in_l(1, 1), 1, delta);
-				collin::test::assert_almost_equal(in_l(1, 2), 0, delta);
-				collin::test::assert_almost_equal(in_l(1, 3), 0, delta);
-				collin::test::assert_almost_equal(in_l(2, 0), -0.14285714285714, delta);
-				collin::test::assert_almost_equal(in_l(2, 1), 0.21276595744681, delta);
-				collin::test::assert_almost_equal(in_l(2, 2), 1, delta);
-				collin::test::assert_almost_equal(in_l(2, 3), 0, delta);
-				collin::test::assert_almost_equal(in_l(3, 0), 0.28571428571429, delta);
-				collin::test::assert_almost_equal(in_l(3, 1), -0.72340425531915, delta);
-				collin::test::assert_almost_equal(in_l(3, 2), 0.089820359281438, delta);
-				collin::test::assert_almost_equal(in_l(3, 3), 1, delta);
-
-				collin::test::assert_almost_equal(in_u(0, 0), 7, delta);
-				collin::test::assert_almost_equal(in_u(0, 1), 3, delta);
-				collin::test::assert_almost_equal(in_u(0, 2), -1, delta);
-				collin::test::assert_almost_equal(in_u(0, 3), 2, delta);
-				collin::test::assert_almost_equal(in_u(1, 0), 0, delta);
-				collin::test::assert_almost_equal(in_u(1, 1), 6.7142857142857, delta);
-				collin::test::assert_almost_equal(in_u(1, 2), 1.4285714285714, delta);
-				collin::test::assert_almost_equal(in_u(1, 3), -4.8571428571429, delta);
-				collin::test::assert_almost_equal(in_u(2, 0), 0, delta);
-				collin::test::assert_almost_equal(in_u(2, 1), 0, delta);
-				collin::test::assert_almost_equal(in_u(2, 2), 3.5531914893617, delta);
-				collin::test::assert_almost_equal(in_u(2, 3), 0.31914893617022, delta);
-				collin::test::assert_almost_equal(in_u(3, 0), 0, delta);
-				collin::test::assert_almost_equal(in_u(3, 1), 0, delta);
-				collin::test::assert_almost_equal(in_u(3, 2), 0, delta);
-				collin::test::assert_almost_equal(in_u(3, 3), 1.8862275449102, delta);
-			};
-
-			test_lu(l, u);
-			test_lu(l2, u2);
-		}
-};
-
 class adjugate_test : public collin::test::test_case
 {
 	public:
@@ -1062,11 +983,57 @@ class inverse_test : public collin::test::test_case
 
 			constexpr double delta = 0.00001;
 
-			constexpr auto constexpr_test = collin::linear::inverse(fixed_input_data);
+			auto constexpr_test = collin::linear::inverse(fixed_input_data);
+			const auto const_test2 = collin::linear::inverse(fixed_input_data);
 			const auto test = collin::linear::inverse(input_data);
 
 			collin::test::assert_sequence_almost_equal(std::begin(test), std::end(test), std::begin(goal), delta);
+			collin::test::assert_sequence_almost_equal(std::begin(const_test2), std::end(const_test2), std::begin(goal), delta);
 			collin::test::assert_sequence_almost_equal(std::begin(constexpr_test), std::end(constexpr_test), std::begin(goal), delta);
+		}
+};
+
+class elimination_test : public collin::test::test_case
+{
+	public:
+		elimination_test()
+			: collin::test::test_case{"elimination_test"} {}
+
+		void operator()() override
+		{
+			constexpr double delta = 0.00000000000001;
+			constexpr collin::linear::fixed_matrix<double, 3, 3> starting_const {2, 1, -1,
+																			    -3, -1, 2,
+																			    -2, 1, 2};
+
+			constexpr collin::linear::fixed_matrix<double, 3, 1> b_const {8,
+																		 -11,
+																		 -3};
+
+			collin::linear::matrix<double> starting {starting_const};
+			collin::linear::matrix<double> b {b_const};
+
+			collin::linear::fixed_matrix<double, 3, 3> start2 {starting_const};
+			collin::linear::fixed_matrix<double, 3, 1> b2 {b_const};
+
+			collin::linear::fixed_matrix<double, 3, 3> start3 {starting_const};
+			collin::linear::matrix<double> b3 {b_const};
+
+			collin::linear::matrix<double> start4 {starting_const};
+			collin::linear::fixed_matrix<double, 3, 1> b4 {b_const};
+
+			const auto result = collin::linear::gaussian_elimination(starting, b);
+			const auto result2 = collin::linear::gaussian_elimination(start2, b2);
+			const auto result3 = collin::linear::gaussian_elimination(start3, b3);
+			const auto result4 = collin::linear::gaussian_elimination(start4, b4);
+
+			collin::test::assert_almost_equal(result[0], 2, delta);
+			collin::test::assert_almost_equal(result[1], 3, delta);
+			collin::test::assert_almost_equal(result[2], -1, delta);
+
+			collin::test::assert_equal(result, result2);
+			collin::test::assert_equal(result2, result3);
+			collin::test::assert_equal(result3, result4);
 		}
 };
 
@@ -1087,7 +1054,7 @@ int main()
 	suite.add_test_case<mixed_matrix_add_test>();
 	suite.add_test_case<mixed_matrix_minus_test>();
 	suite.add_test_case<mixed_matrix_multiply_test>();
-	suite.add_test_case<cofactor_test>();
+	suite.add_test_case<sub_matrix_test>();
 	suite.add_test_case<determinant_test>();
 	suite.add_test_case<row_test>();
 	suite.add_test_case<column_test>();
@@ -1095,8 +1062,8 @@ int main()
 	suite.add_test_case<diagonal_test>();
 	suite.add_test_case<identity_matrix_test>();
 	suite.add_test_case<adjugate_test>();
+	suite.add_test_case<elimination_test>();
 	suite.add_test_case<inverse_test>();
-	suite.add_test_case<lu_decomposition_test>();
 
 	collin::test::text_test_runner runner{std::cout};
 	return !runner.run(suite);

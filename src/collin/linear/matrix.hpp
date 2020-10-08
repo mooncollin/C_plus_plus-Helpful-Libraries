@@ -13,6 +13,7 @@
 #include <execution>
 #include <functional>
 #include <future>
+#include <variant>
 
 #include "collin/type_traits.hpp"
 #include "collin/concepts.hpp"
@@ -82,7 +83,7 @@ namespace collin
 				using iterator = typename base::iterator;
 				using reverse_iterator = typename base::reverse_iterator;
 
-				constexpr row(T* first, std::size_t size)
+				constexpr row(pointer first, std::size_t size)
 					: base{first, size} {}
 
 				[[nodiscard]] constexpr iterator begin() const noexcept
@@ -135,114 +136,222 @@ namespace collin
 					return base::empty();
 				}
 
+				template<size_type Count>
+				[[nodiscard]] constexpr row<element_type, Count> first() const noexcept
+				{
+					return {data(), Count};
+				}
+
+				[[nodiscard]] constexpr row<element_type, std::dynamic_extent> first(size_type count) const noexcept
+				{
+					return {data(), count};
+				}
+
+				template<size_type Count>
+				[[nodiscard]] constexpr row<element_type, Count> last() const noexcept
+				{
+					return {data() + (size() - Count), Count};
+				}
+
+				[[nodiscard]] constexpr row<element_type, std::dynamic_extent> last(size_type count) const noexcept
+				{
+					return {data() + (size() - count), count};
+				}
+
+				template<size_type Offset, size_type Count = std::dynamic_extent>
+				[[nodiscard]] constexpr row<element_type, (Count != std::dynamic_extent) ? Count : (Extent != std::dynamic_extent) ? Extent - Offset : std::dynamic_extent>
+					subrow() const noexcept
+				{
+					return {data() + Offset, (Count == std::dynamic_extent) ? size() - Offset : Count};
+				}
+
+				[[nodiscard]] constexpr row<element_type, std::dynamic_extent> subrow(size_type offset, size_type count = std::dynamic_extent) const noexcept
+				{
+					return {data() + offset, (count == std::dynamic_extent) ? size() - offset : count};
+				}
+
 				template<class T2>
-					requires(requires(const T& t, const T2& t2) { { t + t2 } -> collin::concepts::convertible_to<T>; })
+					requires(requires(const_reference t, const T2& t2) { { t + t2 } -> collin::concepts::convertible_to<T>; })
 				constexpr row& operator+=(const row<T2, Extent>& other) noexcept
 				{
-					transform_with(other, std::plus<>{});
+					apply(other.begin(), std::plus<>{});
 					return *this;
 				}
 
 				template<class T2>
-					requires(requires(const T& t, const T2& t2) { { t - t2 } -> collin::concepts::convertible_to<T>; })
+					requires(requires(const_reference t, const T2& t2) { { t - t2 } -> collin::concepts::convertible_to<T>; })
 				constexpr row& operator-=(const row<T2, Extent>& other) noexcept
 				{
-					transform_with(other, std::minus<>{});
+					apply(other.begin(), std::minus<>{});
 					return *this;
 				}
 
-				template<class T2>
-				requires(requires(const T& t, const T2& t2) { { t * t2 } -> collin::concepts::convertible_to<T>; })
-				constexpr row& operator*=(const T2& other) noexcept
+				constexpr row& operator*=(const_reference other) noexcept
 				{
-					transform_with(other, std::multiplies<>{});
+					apply([&other](const auto& v) { return v * other; });
 					return *this;
 				}
 
-				template<class T2>
-					requires(requires(const T& t, const T2& t2) { { t / t2 } -> collin::concepts::convertible_to<T>; })
-				constexpr row& operator/=(const T2& other) noexcept
+				constexpr row& operator/=(const_reference other) noexcept
 				{
-					transform_with(other, std::divides<>{});
+					apply([&other](const auto& v) { return v / other; });
 					return *this;
 				}
 
-				template<class T2>
-					requires(requires(const T& t, const T2& t2) { { t % t2 } -> collin::concepts::convertible_to<T>; })
-				constexpr row& operator%=(const T2& other) noexcept
+				constexpr row& operator%=(const_reference other) noexcept
 				{
-					transform_with(other, std::modulus<>{});
+					apply([&other](const auto& v) { return v % other; });
 					return *this;
 				}
 
-				constexpr void swap(row& other) noexcept
+				template<class F>
+				constexpr row& apply(F&& f)
 				{
-					if constexpr(std::is_constant_evaluated())
+					using return_t = std::invoke_result_t<F, element_type>;
+					if constexpr (std::is_void_v<return_t>)
 					{
-						std::swap_ranges(begin(), end(), other.begin());
+						std::for_each(begin(), end(), std::forward<F>(f));
 					}
 					else
 					{
-						std::swap_ranges(std::execution::par_unseq, begin(), end(), other.begin());
+						std::transform(begin(), end(), begin(), std::forward<F>(f));
 					}
-				}
-			private:
-				template<class T2, class F>
-				constexpr void transform_with(const T2& other, F&& f) noexcept
-				{
-					if constexpr (std::is_constant_evaluated())
-					{
-						std::transform(begin(), end(), begin(), std::bind(std::forward<F>(f), std::placeholders::_1, other));
-					}
-					else
-					{
-						std::transform(std::execution::par_unseq, begin(), end(), begin(), std::bind(std::forward<F>(f), std::placeholders::_1, other));
-					}
+
+					return *this;
 				}
 
-				template<class T2, class F>
-				constexpr void transform_with(const row<T2, Extent>& other, F&& f) noexcept
+				template<class InputIterator, class F>
+				constexpr row& apply(InputIterator first, F&& f)
 				{
-					if constexpr (std::is_constant_evaluated())
+					using return_t = std::invoke_result_t<F, element_type, typename std::iterator_traits<InputIterator>::value_type>;
+					if constexpr (std::is_void_v<return_t>)
 					{
-						std::transform(begin(), end(), other.begin(), begin(), std::forward<F>(f));
+						std::for_each(begin(), end(), [f2 = std::forward<F>(f), first](auto& v) mutable { f2(v, *first); ++first; });
 					}
 					else
 					{
-						std::transform(std::execution::par_unseq, begin(), end(), other.begin(), begin(), std::forward<F>(f));
+						std::transform(begin(), end(), first, begin(), std::forward<F>(f));
 					}
+
+					return *this;
+				}
+
+				template<class ExecutionPolicy, class F>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				row& apply(ExecutionPolicy p, F&& f)
+				{
+					using return_t = std::invoke_result_t<F, element_type>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(p, begin(), end(), std::forward<F>(f));
+					}
+					else
+					{
+						std::transform(p, begin(), end(), begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				template<class ExecutionPolicy, class InputIterator, class F>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				row& apply(ExecutionPolicy p, InputIterator first, F&& f)
+				{
+					using return_t = std::invoke_result_t<F, element_type, typename std::iterator_traits<InputIterator>::value_type>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(p, begin(), end(), [f2 = std::forward<F>(f), first](auto& v) { f2(v, *first); ++first; });
+					}
+					else
+					{
+						std::transform(p, begin(), end(), first, begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				[[nodiscard]] constexpr element_type sum() const
+				{ 
+					return std::reduce(begin(), end(), element_type{0}, std::plus<>{});
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] element_type sum(ExecutionPolicy p) const
+				{
+					return std::reduce(p, begin(), end(), element_type {0}, std::plus<>{});
+				}
+
+				[[nodiscard]] constexpr element_type product() const
+				{
+					return std::reduce(begin(), end(), element_type {1}, std::multiplies<>{});
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] element_type product(ExecutionPolicy p) const
+				{
+					return std::reduce(p, begin(), end(), element_type {1}, std::multiplies<>{});
+				}
+
+				[[nodiscard]] constexpr element_type min() const
+				{
+					return std::min_element(begin(), end());
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] element_type min(ExecutionPolicy p) const
+				{
+					return std::min_element(p, begin(), end());
+				}
+
+				[[nodiscard]] constexpr element_type max() const
+				{
+					return std::max_element(begin(), end());
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] element_type max(ExecutionPolicy p) const
+				{
+					return std::max_element(p, begin(), end());
+				}
+
+				[[nodiscard]] constexpr std::pair<element_type, element_type> min_max() const
+				{
+					return std::minmax_element(begin(), end());
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] std::pair<element_type, element_type> min_max(ExecutionPolicy p) const
+				{
+					return std::minmax_element(p, begin(), end());
+				}
+
+				constexpr void swap(row rhs) noexcept
+				{
+					std::swap_ranges(begin(), end(), rhs.begin());
+				}
+
+				[[nodiscard]] constexpr operator row<const T, Extent>() const noexcept
+				{
+					return {data(), size()};
 				}
 		};
-
-		template<class T, std::size_t Size>
-		constexpr void swap(row<T, Size>& lhs, row<T, Size>& rhs) noexcept
-		{
-			lhs.swap(rhs);
-		}
 
 		template<class T, class T2, std::size_t Extent, std::size_t Extent2>
 			requires(requires(const T& t, const T2& t2){ {t == t2} -> collin::concepts::boolean; })
 		[[nodiscard]] constexpr bool operator==(const row<T, Extent>& lhs, const row<T2, Extent2>& rhs) noexcept
 		{
-			if constexpr (Extent != Extent2)
+			if constexpr (Extent != Extent2 && (Extent != dynamic_extent && Extent2 != dynamic_extent))
 			{
 				return false;
 			}
 			else
 			{
-				if(std::size(lhs) != std::size(rhs))
-				{
-					return false;
-				}
-
-				if constexpr (std::is_constant_evaluated())
-				{
-					return std::equal(std::begin(lhs), std::end(lhs), std::begin(rhs));
-				}
-				else
-				{
-					return std::equal(std::execution::par_unseq, std::begin(lhs), std::end(lhs), std::begin(rhs));
-				}
+				return std::equal(std::begin(lhs), std::end(lhs), std::begin(rhs), std::end(rhs));
 			}
 		}
 
@@ -257,7 +366,7 @@ namespace collin
 		class column_iterator
 		{
 			public:
-				using iterator_category = std::random_access_iterator_tag;
+				using iterator_category = std::bidirectional_iterator_tag;
 				using value_type = T;
 				using difference_type = std::ptrdiff_t;
 				using pointer = value_type*;
@@ -285,19 +394,24 @@ namespace collin
 					return *this;
 				}
 
-				[[nodiscard]] friend constexpr column_iterator operator-(const column_iterator& lhs, std::size_t amount) noexcept
+				[[nodiscard]] constexpr column_iterator operator-(difference_type amount) noexcept
 				{
-					auto c_it{lhs};
+					auto c_it{*this};
 					c_it -= amount;
 					return c_it;
 				}
 
-				[[nodiscard]] friend constexpr difference_type operator-(const column_iterator& lhs, const column_iterator& rhs) noexcept
+				[[nodiscard]] constexpr difference_type operator-(const column_iterator& rhs) noexcept
 				{
-					return (lhs.storage_.data_ - rhs.storage_.data_) / lhs.storage_.size();
+					return (storage_.data_ - rhs.storage_.data_) / storage_.size();
 				}
 
-				[[nodiscard]] constexpr typename reference operator*() noexcept
+				constexpr reference operator*() noexcept
+				{
+					return *storage_.data_;
+				}
+
+				constexpr const reference operator*() const noexcept
 				{
 					return *storage_.data_;
 				}
@@ -321,9 +435,9 @@ namespace collin
 					return *this;
 				}
 
-				[[nodiscard]] friend constexpr column_iterator operator+(const column_iterator& lhs, std::size_t amount) noexcept
+				[[nodiscard]] constexpr column_iterator operator+(std::size_t amount) noexcept
 				{
-					auto c_it{lhs};
+					auto c_it{*this};
 					c_it += amount;
 					return c_it;
 				}
@@ -338,9 +452,49 @@ namespace collin
 					return !(*this == other);
 				}
 
-				constexpr typename pointer operator->()
+				[[nodiscard]] constexpr bool operator<(const column_iterator& other) const noexcept
+				{
+					return storage_.data_ < other.storage_.data_;
+				}
+
+				[[nodiscard]] constexpr bool operator>(const column_iterator& other) const noexcept
+				{
+					return other < *this;
+				}
+
+				[[nodiscard]] constexpr bool operator<=(const column_iterator& other) const noexcept
+				{
+					return !(other < *this);
+				}
+
+				[[nodiscard]] constexpr bool operator>=(const column_iterator& other) const noexcept
+				{
+					return !(*this < other);
+				}
+
+				constexpr pointer operator->()
 				{
 					return storage_.data_;
+				}
+
+				constexpr const pointer operator->() const
+				{
+					return storage_.data_;
+				}
+
+				constexpr reference operator[](difference_type amount) noexcept
+				{
+					return *(*this + amount);
+				}
+
+				constexpr const reference operator[](difference_type amount) const noexcept
+				{
+					return *(*this + amount);
+				}
+
+				constexpr void swap(column_iterator& rhs) noexcept
+				{
+					std::swap(storage_, rhs.storage_);
 				}
 			private:
 				template<class ExtentType>
@@ -351,6 +505,12 @@ namespace collin
 						: ExtentType(ext), data_(data) {}
 
 					pointer data_;
+
+					constexpr friend void swap(storage_type& lhs, storage_type& rhs) noexcept
+					{
+						std::swap(static_cast<ExtentType&>(lhs), static_cast<ExtentType&>(other));
+						std::swap(lhs.data_, other.data_);
+					}
 				};
 
 				storage_type<collin::extent_type<RowSize>> storage_;
@@ -361,18 +521,17 @@ namespace collin
 		{
 			public:
 				using element_type = T;
-				using value_type = std::remove_cv_t<T>;
+				using value_type = std::remove_cv_t<element_type>;
 				using size_type = std::size_t;
 				using difference_type = std::ptrdiff_t;
-				using pointer = T*;
-				using const_pointer = const T*;
-				using reference = T&;
-				using const_reference = const T&;
-				using iterator = column_iterator<T, RowSize>;
+				using pointer = element_type*;
+				using const_pointer = const element_type*;
+				using reference = element_type&;
+				using const_reference = const element_type&;
+				using iterator = column_iterator<element_type, RowSize>;
 				using reverse_iterator = std::reverse_iterator<iterator>;
 
 				constexpr column(pointer first, size_type size, size_type row_size) noexcept
-					//: first_{first}, size_{size}, row_size_{row_size} {}
 					: storage_{first, size, row_size} {}
 
 				[[nodiscard]] constexpr iterator begin() const noexcept
@@ -387,12 +546,12 @@ namespace collin
 
 				[[nodiscard]] constexpr reverse_iterator rbegin() const noexcept
 				{
-					return {end()};
+					return std::make_reverse_iterator(end());
 				}
 
 				[[nodiscard]] constexpr reverse_iterator rend() const noexcept
 				{
-					return {begin()};
+					return std::make_reverse_iterator(begin());
 				}
 
 				[[nodiscard]] constexpr reference front() const noexcept
@@ -412,19 +571,16 @@ namespace collin
 
 				[[nodiscard]] constexpr pointer data() const noexcept
 				{
-					//return first_;
 					return storage_.data_;
 				}
 
 				[[nodiscard]] constexpr size_type size() const noexcept
 				{
-					//return size_;
 					return storage_.main_size();
 				}
 
 				[[nodiscard]] constexpr size_type row_size() const noexcept
 				{
-					//return row_size_;
 					return storage_.row_size();
 				}
 
@@ -433,56 +589,208 @@ namespace collin
 					return size() == 0;
 				}
 
+				template<size_type Count>
+				[[nodiscard]] constexpr column<element_type, Count, RowSize> first() const noexcept
+				{
+					return {data(), Count, row_size()};
+				}
+
+				[[nodiscard]] constexpr column<element_type, std::dynamic_extent, RowSize> first(size_type count) const noexcept
+				{
+					return {data(), count, row_size()};
+				}
+
+				template<size_type Count>
+				[[nodiscard]] constexpr column<element_type, Count, RowSize> last() const noexcept
+				{
+					return {data() + ((size() - Count) * row_size()), Count, row_size()};
+				}
+
+				[[nodiscard]] constexpr column<element_type, std::dynamic_extent, RowSize> last(size_type count) const noexcept
+				{
+					return {data() + ((size() - count) * row_size()), count, row_size()};
+				}
+
+				template<size_type Offset, size_type Count = std::dynamic_extent>
+				[[nodiscard]] constexpr column<element_type, (Count != std::dynamic_extent) ? Count : (Extent != std::dynamic_extent) ? Extent - Offset : std::dynamic_extent, RowSize>
+					subcolumn() const noexcept
+				{
+					return {data() + Offset * row_size(), (Count == std::dynamic_extent) ? size() - Offset : Count, row_size()};
+				}
+
+				[[nodiscard]] constexpr column<element_type, std::dynamic_extent, RowSize> subcolumn(size_type offset, size_type count = std::dynamic_extent) const noexcept
+				{
+					return {data() + offset * row_size(), (count == std::dynamic_extent) ? size() - offset : count, row_size()};
+				}
+
 				template<class T2>
-					requires(requires(const T& t, const T2& t2) { { t + t2 } -> collin::concepts::convertible_to<T>; })
+					requires(requires(const_reference t, const T2& t2) { { t + t2 } -> collin::concepts::convertible_to<T>; })
 				constexpr column& operator+=(const column<T2, Extent, RowSize>& other) noexcept
 				{
-					transform_with(other, std::plus<>{});
+					apply(other.begin(), std::plus<>{});
 					return *this;
 				}
 
 				template<class T2>
-					requires(requires(const T& t, const T2& t2) { { t - t2 } -> collin::concepts::convertible_to<T>; })
+					requires(requires(const_reference t, const T2& t2) { { t - t2 } -> collin::concepts::convertible_to<T>; })
 				constexpr column& operator-=(const column<T2, Extent, RowSize>& other) noexcept
 				{
-					transform_with(other, std::minus<>{});
+					apply(other.begin(), std::minus<>{});
 					return *this;
 				}
 
-				template<class T2>
-					requires(requires(const T& t, const T2& t2) { { t * t2 } -> collin::concepts::convertible_to<T>; })
-				constexpr column& operator*=(const T2& other) noexcept
+				constexpr column& operator*=(const_reference other) noexcept
 				{
-					transform_with(other, std::multiplies<>{});
+					apply([&other](const auto& v) { return v * other; });
 					return *this;
 				}
 
-				template<class T2>
-					requires(requires(const T& t, const T2& t2) { { t / t2 } -> collin::concepts::convertible_to<T>; })
-				constexpr column& operator/=(const T2& other) noexcept
+				constexpr column& operator/=(const_reference other) noexcept
 				{
-					transform_with(other, std::divides<>{});
+					apply([&other](const auto& v) { return v / other; });
 					return *this;
 				}
 
-				template<class T2>
-					requires(requires(const T& t, const T2& t2) { { t % t2 } -> collin::concepts::convertible_to<T>; })
-				constexpr column& operator%=(const T2& other) noexcept
+				constexpr column& operator%=(const_reference other) noexcept
 				{
-					transform_with(other, std::modulus<>{});
+					apply([&other](const auto& v) { return v % other; });
 					return *this;
 				}
 
-				constexpr void swap(column& other) noexcept
+				template<class F>
+				constexpr column& apply(F&& f)
 				{
-					if constexpr (std::is_constant_evaluated())
+					using return_t = std::invoke_result_t<F, element_type>;
+					if constexpr (std::is_void_v<return_t>)
 					{
-						std::swap_ranges(begin(), end(), other.begin());
+						std::for_each(begin(), end(), std::forward<F>(f));
 					}
 					else
 					{
-						std::swap_ranges(std::execution::par_unseq, begin(), end(), other.begin());
+						std::transform(begin(), end(), begin(), std::forward<F>(f));
 					}
+
+					return *this;
+				}
+
+				template<class InputIterator, class F>
+				constexpr column& apply(InputIterator first, F&& f)
+				{
+					using return_t = std::invoke_result_t<F, element_type, typename std::iterator_traits<InputIterator>::value_type>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(begin(), end(), [f2 = std::forward<F>(f), first](auto& v) { f2(v, *first); ++first; });
+					}
+					else
+					{
+						std::transform(begin(), end(), first, begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				template<class ExecutionPolicy, class F>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				column& apply(ExecutionPolicy p, F&& f)
+				{
+					using return_t = std::invoke_result_t<F, element_type>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(p, begin(), end(), std::forward<F>(f));
+					}
+					else
+					{
+						std::transform(p, begin(), end(), begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				template<class ExecutionPolicy, class InputIterator, class F>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				column& apply(ExecutionPolicy p, InputIterator first, F&& f)
+				{
+					using return_t = std::invoke_result_t<F, element_type, typename std::iterator_traits<InputIterator>::value_type>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(p, begin(), end(), [f2 = std::forward<F>(f), &first](auto& v) { f2(v, *first); ++first; });
+					}
+					else
+					{
+						std::transform(p, begin(), end(), first, begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				[[nodiscard]] constexpr element_type sum() const
+				{
+					return std::reduce(begin(), end(), element_type{0}, std::plus<>{});
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] element_type sum(ExecutionPolicy p) const
+				{
+					return std::reduce(p, begin(), end(), element_type{0}, std::plus<>{});
+				}
+
+				[[nodiscard]] constexpr element_type product() const
+				{
+					return std::reduce(begin(), end(), element_type{1}, std::multiplies<>{});
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] element_type product(ExecutionPolicy p) const
+				{
+					return std::reduce(p, begin(), end(), element_type{1}, std::multiplies<>{});
+				}
+
+				[[nodiscard]] constexpr element_type min() const
+				{
+					return std::min_element(begin(), end());
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] element_type min(ExecutionPolicy p) const
+				{
+					return std::min_element(p, begin(), end());
+				}
+
+				[[nodiscard]] constexpr element_type max() const
+				{
+					return std::max_element(begin(), end());
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] element_type max(ExecutionPolicy p) const
+				{
+					return std::max_element(p, begin(), end());
+				}
+
+				[[nodiscard]] constexpr std::pair<element_type, element_type> min_max() const
+				{
+					return std::minmax_element(begin(), end());
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] std::pair<element_type, element_type> min_max(ExecutionPolicy p) const
+				{
+					return std::minmax_element(p, begin(), end());
+				}
+
+				constexpr void swap(column rhs) noexcept
+				{
+					std::swap_ranges(begin(), end(), rhs.begin());
+				}
+
+				[[nodiscard]] constexpr operator column<const value_type, Extent, RowSize>() const noexcept
+				{
+					return {data(), size(), row_size()};
 				}
 			private:
 
@@ -504,9 +812,9 @@ namespace collin
 						return ex2_.size();
 					}
 
-					pointer data_;
 					ExtentType ex_;
 					ExtentType2 ex2_;
+					pointer data_;
 				};
 
 				// Compile time extents
@@ -531,49 +839,17 @@ namespace collin
 				};
 
 				// Optimizing away size and row-size if those are compile-time.
-				// Technically, both sizes should be either dynamic or compile-time.
-				std::conditional_t<Extent == dynamic_extent || RowSize == dynamic_extent,
+				// Technically, both sizes should either be dynamic or compile-time.
+				std::conditional_t<Extent == std::dynamic_extent || RowSize == std::dynamic_extent,
 					storage_type<collin::extent_type<Extent>, collin::extent_type<RowSize>>,
 					storage_type2<collin::extent_type<Extent>, collin::extent_type<RowSize>>> storage_;
-
-				template<class T2, class F>
-				constexpr void transform_with(const T2& other, F&& f) noexcept
-				{
-					if constexpr (std::is_constant_evaluated())
-					{
-						std::transform(begin(), end(), begin(), std::bind(std::forward<F>(f), std::placeholders::_1, other));
-					}
-					else
-					{
-						std::transform(std::execution::par_unseq, begin(), end(), begin(), std::bind(std::forward<F>(f), std::placeholders::_1, other));
-					}
-				}
-
-				template<class T2, class F>
-				constexpr void transform_with(const column<T2, Extent, RowSize>& other, F&& f) noexcept
-				{
-					if constexpr (std::is_constant_evaluated())
-					{
-						std::transform(begin(), end(), other.begin(), begin(), std::forward<F>(f));
-					}
-					else
-					{
-						std::transform(std::execution::par_unseq, begin(), end(), other.begin(), begin(), std::forward<F>(f));
-					}
-				}
 		};
-
-		template<class T, std::size_t Size, std::size_t RowSize>
-		constexpr void swap(column<T, Size, RowSize>& lhs, column<T, Size, RowSize>& rhs) noexcept
-		{
-			lhs.swap(rhs);
-		}
 
 		template<class T, class T2, std::size_t Extent, std::size_t RowSize, std::size_t Extent2, std::size_t RowSize2>
 			requires(requires(const T& t, const T2& t2){ {t == t2} -> collin::concepts::boolean; })
 		[[nodiscard]] constexpr bool operator==(const column<T, Extent, RowSize>& lhs, const column<T2, Extent2, RowSize2>& rhs) noexcept
 		{
-			if constexpr (Extent != Extent2 || RowSize != RowSize2)
+			if constexpr ((Extent != Extent2 || RowSize != RowSize2) && (Extent != dynamic_extent && Extent2 != dynamic_extent) && (RowSize != dynamic_extent && RowSize2 != dynamic_extent))
 			{
 				return false;
 			}
@@ -584,14 +860,7 @@ namespace collin
 					return false;
 				}
 
-				if constexpr (std::is_constant_evaluated())
-				{
-					return std::equal(std::begin(lhs), std::end(lhs), std::begin(rhs));
-				}
-				else
-				{
-					return std::equal(std::execution::par_unseq, std::begin(lhs), std::end(lhs), std::begin(rhs));
-				}
+				return std::equal(std::begin(lhs), std::end(lhs), std::begin(rhs));
 			}
 		}
 
@@ -609,21 +878,24 @@ namespace collin
 		class diagonal_iterator
 		{
 			public:
-				using iterator_category = std::random_access_iterator_tag;
+				using iterator_category = std::bidirectional_iterator_tag;
 				using value_type = T;
 				using difference_type = std::ptrdiff_t;
 				using pointer = value_type*;
 				using reference = value_type&;
 
-				constexpr diagonal_iterator(pointer item, const diagonal<T, RowSize>& owner) noexcept
-					: current_{item}, owner_{&owner} {}
+				constexpr diagonal_iterator() = default;
+
+				constexpr diagonal_iterator(pointer item, const diagonal<T, RowSize>* owner) noexcept
+					: current_{item}, owner_{owner} {}
 
 				constexpr diagonal_iterator& operator--() noexcept
 				{
 					current_ -= 1;
-					if (*this != std::begin(*owner_))
+					if (distance_to_beginning() != -1 &&
+						distance_to_end() != -1)
 					{
-						current_ -= std::size(*owner_);
+						current_ -= owner_->size();
 					}
 
 					return *this;
@@ -636,7 +908,12 @@ namespace collin
 					return temp;
 				}
 
-				[[nodiscard]] constexpr typename reference operator*() noexcept
+				[[nodiscard]] constexpr reference operator*() noexcept
+				{
+					return *current_;
+				}
+
+				[[nodiscard]] constexpr const reference operator*() const noexcept
 				{
 					return *current_;
 				}
@@ -644,9 +921,11 @@ namespace collin
 				constexpr diagonal_iterator& operator++() noexcept
 				{
 					current_ += 1;
-					if (*this != std::end(*owner_))
+
+					if (distance_to_beginning() != 0 &&
+						distance_to_end() != 0)
 					{
-						current_ += std::size(*owner_);
+						current_ += owner_->size();
 					}
 
 					return *this;
@@ -659,6 +938,47 @@ namespace collin
 					return temp;
 				}
 
+				constexpr diagonal_iterator& operator-=(difference_type amount) noexcept
+				{
+					const auto max_back = std::min(distance_to_beginning(), amount * static_cast<difference_type>(owner_->size()) - amount);
+					if (distance_to_end() == 0 && max_back != distance_to_beginning())
+					{
+						current_ -= 1;
+					}
+					current_ -= max_back;
+					return *this;
+				}
+
+				[[nodiscard]] constexpr diagonal_iterator operator-(difference_type amount) const noexcept
+				{
+					auto result {*this};
+					result -= amount;
+					return result;
+				}
+
+				[[nodiscard]] constexpr difference_type operator-(const diagonal_iterator& other) const noexcept
+				{
+					return (current_ - other.current_ + 1) / owner_->size();
+				}
+
+				constexpr diagonal_iterator& operator+=(difference_type amount) noexcept
+				{
+					const auto max_forward = std::min(distance_to_end(), amount * static_cast<difference_type>(owner_->size()) + amount);
+					if (distance_to_beginning() == -1 && max_forward != distance_to_end())
+					{
+						current_ += 1;
+					}
+					current_ += max_forward;
+					return *this;
+				}
+
+				[[nodiscard]] constexpr diagonal_iterator operator+(difference_type amount) const noexcept
+				{
+					auto result {*this};
+					result += amount;
+					return result;
+				}
+
 				[[nodiscard]] constexpr bool operator==(const diagonal_iterator& other) const noexcept
 				{
 					return current_ == other.current_;
@@ -669,12 +989,63 @@ namespace collin
 					return !(*this == other);
 				}
 
+				[[nodiscard]] constexpr bool operator<(const diagonal_iterator& other) const noexcept
+				{
+					return current_ < other.current_;
+				}
+
+				[[nodiscard]] constexpr bool operator>(const diagonal_iterator& other) const noexcept
+				{
+					return other < *this;
+				}
+
+				[[nodiscard]] constexpr bool operator<=(const diagonal_iterator& other) const noexcept
+				{
+					return !(other < *this);
+				}
+
+				[[nodiscard]] constexpr bool operator>=(const diagonal_iterator& other) const noexcept
+				{
+					return !(*this < other);
+				}
+
 				constexpr pointer operator->()
 				{
 					return current_;
-				} 
+				}
+
+				constexpr const pointer operator->() const
+				{
+					return current_;
+				}
+
+				constexpr reference operator[](difference_type i) noexcept
+				{
+					return *(*this + i);
+				}
+
+				constexpr const reference operator[](difference_type i) const noexcept
+				{
+					return *(*this + i);
+				}
+
+				constexpr void swap(diagonal_iterator& rhs) noexcept
+				{
+					std::swap(current_, rhs.current_);
+					std::swap(owner_, rhs.owner_);
+				}
 			private:
 				pointer current_;
+
+				[[nodiscard]] constexpr difference_type distance_to_beginning() const noexcept
+				{
+					return current_ - owner_->begin().current_;
+				}
+
+				[[nodiscard]] constexpr difference_type distance_to_end() const noexcept
+				{
+					return current_ - owner_->end().current_;
+				}
 
 				// C++20 gives constexpr std::reference_wrapper,
 				// so we's gotta wait until then and use a crappy pointer.
@@ -684,24 +1055,25 @@ namespace collin
 				// a tendency to iterate far past the end, which doesn't work well
 				// in constexpr conditions. We use the owner to make sure our current
 				// pointer does not go too far past the beginning or end of the container.
-				//
-				// mutable const?! Yes.
-				mutable const diagonal<T, RowSize>* owner_;
+				
+				const diagonal<T, RowSize>* owner_;
 		};
 
+		// We are assuming a square matrix. Maybe I'm kind enough
+		// to make this work for MxN matrix sometime.
 		template<class T, std::size_t Size>
 		class diagonal
 		{
 			public:
 				using element_type = T;
-				using value_type = std::remove_cv_t<T>;
+				using value_type = std::remove_cv_t<element_type>;
 				using size_type = std::size_t;
 				using difference_type = std::ptrdiff_t;
-				using pointer = T*;
-				using const_pointer = const T*;
-				using reference = T&;
-				using const_reference = const T&;
-				using iterator = diagonal_iterator<T, Size>;
+				using pointer = element_type*;
+				using const_pointer = const pointer;
+				using reference = element_type&;
+				using const_reference = const reference;
+				using iterator = diagonal_iterator<element_type, Size>;
 				using reverse_iterator = std::reverse_iterator<iterator>;
 
 				constexpr diagonal(pointer first, size_type size)
@@ -709,22 +1081,22 @@ namespace collin
 
 				[[nodiscard]] constexpr iterator begin() const noexcept
 				{
-					return {data(), *this};
+					return {data(),this};
 				}
 
 				[[nodiscard]] constexpr iterator end() const noexcept
 				{
-					return {data() + storage_.size() * storage_.size(), *this};
+					return {data() + storage_.size() * storage_.size(), this};
 				}
 
 				[[nodiscard]] constexpr reverse_iterator rbegin() const noexcept
 				{
-					return {end()};
+					return std::make_reverse_iterator(end());
 				}
 
 				[[nodiscard]] constexpr reverse_iterator rend() const noexcept
 				{
-					return {begin()};
+					return std::make_reverse_iterator(begin());
 				}
 
 				[[nodiscard]] constexpr reference front() const noexcept
@@ -757,56 +1129,208 @@ namespace collin
 					return size() == 0;
 				}
 
+				template<size_type Count>
+				[[nodiscard]] constexpr diagonal<element_type, Count> first() const noexcept
+				{
+					return {data(), Count};
+				}
+
+				[[nodiscard]] constexpr diagonal<element_type, std::dynamic_extent> first(size_type count) const noexcept
+				{
+					return {data(), count};
+				}
+
+				template<size_type Count>
+				[[nodiscard]] constexpr diagonal<element_type, std::dynamic_extent> last() const noexcept
+				{
+					return {data() + ((size() - Count) * size()), Count};
+				}
+
+				[[nodiscard]] constexpr diagonal<element_type, std::dynamic_extent> last(size_type count) const noexcept
+				{
+					return {data() + ((size() - count) * size()), count};
+				}
+
+				template<size_type Offset, size_type Count = std::dynamic_extent>
+				[[nodiscard]] constexpr diagonal<element_type, (Count != std::dynamic_extent) ? Count : (Size != std::dynamic_extent) ? Size - Offset : std::dynamic_extent>
+					subdiagonal() const noexcept
+				{
+					return {data() + Offset * size(), (Count == std::dynamic_extent) ? size() - Offset : Count};
+				}
+
+				[[nodiscard]] constexpr diagonal<element_type, std::dynamic_extent> subdiagonal(size_type offset, size_type count = std::dynamic_extent) const noexcept
+				{
+					return {data() + offset * size(), (count == std::dynamic_extent) ? size() - offset : count};
+				}
+
 				template<class T2>
-					requires(requires(const T& t, const T2& t2) { { t + t2 } -> collin::concepts::convertible_to<T>; })
+					requires(requires(const_reference t, const T2& t2) { { t + t2 } -> collin::concepts::convertible_to<T>; })
 				constexpr diagonal& operator+=(const diagonal<T2, Size>& other) noexcept
 				{
-					transform_with(other, std::plus<>{});
+					apply(other.begin(), std::plus<>{});
 					return *this;
 				}
 
 				template<class T2>
-					requires(requires(const T& t, const T2& t2) { { t - t2 } -> collin::concepts::convertible_to<T>; })
+					requires(requires(const_reference t, const T2& t2) { { t - t2 } -> collin::concepts::convertible_to<T>; })
 				constexpr diagonal& operator-=(const diagonal<T2, Size>& other) noexcept
 				{
-					transform_with(other, std::minus<>{});
+					apply(other.begin(), std::minus<>{});
 					return *this;
 				}
 
-				template<class T2>
-					requires(requires(const T& t, const T2& t2) { { t * t2 } -> collin::concepts::convertible_to<T>; })
-				constexpr diagonal& operator*=(const T2& other) noexcept
+				constexpr diagonal& operator*=(const_reference other) noexcept
 				{
-					transform_with(other, std::multiplies<>{});
+					apply([&other](const auto& v) { return v * other; });
 					return *this;
 				}
 
-				template<class T2>
-					requires(requires(const T& t, const T2& t2) { { t / t2 } -> collin::concepts::convertible_to<T>; })
-				constexpr diagonal& operator/=(const T2& other) noexcept
+				constexpr diagonal& operator/=(const_reference other) noexcept
 				{
-					transform_with(other, std::divides<>{});
+					apply([&other](const auto& v) { return v / other; });
 					return *this;
 				}
 
-				template<class T2>
-					requires(requires(const T& t, const T2& t2) { { t % t2 } -> collin::concepts::convertible_to<T>; })
-				constexpr diagonal& operator%=(const T2& other) noexcept
+				constexpr diagonal& operator%=(const_reference other) noexcept
 				{
-					transform_with(other, std::modulus<>{});
+					apply([&other](const auto& v) { return v % other; });
 					return *this;
 				}
 
-				constexpr void swap(diagonal& other) noexcept
+				template<class F>
+				constexpr diagonal& apply(F&& f)
 				{
-					if constexpr (std::is_constant_evaluated())
+					using return_t = std::invoke_result_t<F, element_type>;
+					if constexpr (std::is_void_v<return_t>)
 					{
-						std::swap_ranges(begin(), end(), other.begin());
+						std::for_each(begin(), end(), std::forward<F>(f));
 					}
 					else
 					{
-						std::swap_ranges(std::execution::par_unseq, begin(), end(), other.begin());
+						std::transform(begin(), end(), begin(), std::forward<F>(f));
 					}
+
+					return *this;
+				}
+
+				template<class InputIterator, class F>
+				constexpr diagonal& apply(InputIterator first, F&& f)
+				{
+					using return_t = std::invoke_result_t<F, element_type, typename std::iterator_traits<InputIterator>::value_type>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(begin(), end(), [f2 = std::forward<F>(f), first](auto& v) { f2(v, *first); ++first; });
+					}
+					else
+					{
+						std::transform(begin(), end(), first, begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				template<class ExecutionPolicy, class F>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				diagonal& apply(ExecutionPolicy p, F&& f)
+				{
+					using return_t = std::invoke_result_t<F, T>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(p, begin(), end(), std::forward<F>(f));
+					}
+					else
+					{
+						std::transform(p, begin(), end(), begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				template<class ExecutionPolicy, class InputIterator, class F>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				diagonal& apply(ExecutionPolicy p, InputIterator first, F&& f)
+				{
+					using return_t = std::invoke_result_t<F, element_type, typename std::iterator_traits<InputIterator>::value_type>;
+					if constexpr (std::is_void_v<return_t>)
+					{
+						std::for_each(p, begin(), end(), [f2 = std::forward<F>(f), first](auto& v) { f2(v, *first); ++first; });
+					}
+					else
+					{
+						std::transform(p, begin(), end(), first, begin(), std::forward<F>(f));
+					}
+
+					return *this;
+				}
+
+				[[nodiscard]] constexpr element_type sum() const
+				{
+					return std::reduce(begin(), end(), element_type{0}, std::plus<>{});
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] element_type sum(ExecutionPolicy p) const
+				{
+					return std::reduce(p, begin(), end(), element_type{0}, std::plus<>{});
+				}
+
+				[[nodiscard]] constexpr element_type product() const
+				{
+					return std::reduce(begin(), end(), element_type{1}, std::multiplies<>{});
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] element_type product(ExecutionPolicy p) const
+				{
+					return std::reduce(p, begin(), end(), element_type{1}, std::multiplies<>{});
+				}
+
+				[[nodiscard]] constexpr element_type min() const
+				{
+					return std::min_element(begin(), end());
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] element_type min(ExecutionPolicy p) const
+				{
+					return std::min_element(p, begin(), end());
+				}
+
+				[[nodiscard]] constexpr element_type max() const
+				{
+					return std::max_element(begin(), end());
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] element_type max(ExecutionPolicy p) const
+				{
+					return std::max_element(p, begin(), end());
+				}
+
+				[[nodiscard]] constexpr std::pair<element_type, element_type> min_max() const
+				{
+					return std::minmax_element(begin(), end());
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] std::pair<element_type, element_type> min_max(ExecutionPolicy p) const
+				{
+					return std::minmax_element(p, begin(), end());
+				}
+
+				constexpr void swap(diagonal rhs) noexcept
+				{
+					std::swap_ranges(begin(), end(), rhs.begin());
+				}
+
+				[[nodiscard]] constexpr operator diagonal<const T, Size>() const noexcept
+				{
+					return {data(), size()};
 				}
 			private:
 				template<class ExtentType>
@@ -820,45 +1344,13 @@ namespace collin
 				};
 
 				storage_type<collin::extent_type<Size>> storage_;
-
-				template<class T2, class F>
-				constexpr void transform_with(const T2& other, F&& f) noexcept
-				{
-					if constexpr (std::is_constant_evaluated())
-					{
-						std::transform(begin(), end(), begin(), std::bind(std::forward<F>(f), std::placeholders::_1, other));
-					}
-					else
-					{
-						std::transform(std::execution::par_unseq, begin(), end(), begin(), std::bind(std::forward<F>(f), std::placeholders::_1, other));
-					}
-				}
-
-				template<class T2, class F>
-				constexpr void transform_with(const diagonal<T2, Size>& other, F&& f) noexcept
-				{
-					if constexpr (std::is_constant_evaluated())
-					{
-						std::transform(begin(), end(), other.begin(), begin(), std::forward<F>(f));
-					}
-					else
-					{
-						std::transform(std::execution::par_unseq, begin(), end(), other.begin(), begin(), std::forward<F>(f));
-					}
-				}
 		};
-
-		template<class T, std::size_t S>
-		constexpr void swap(diagonal<T, S>& lhs, diagonal<T, S>& rhs) noexcept
-		{
-			lhs.swap(rhs);
-		}
 
 		template<class T, class T2, std::size_t Size, std::size_t Size2>
 			requires(requires(const T& t, const T2& t2){ {t == t2} -> collin::concepts::boolean; })
 		[[nodiscard]] constexpr bool operator==(const diagonal<T, Size>& lhs, const diagonal<T2, Size2>& rhs) noexcept
 		{
-			if constexpr(Size != Size2)
+			if constexpr(Size != Size2 && (Size != dynamic_extent && Size2 != dynamic_extent))
 			{
 				return false;
 			}
@@ -869,14 +1361,7 @@ namespace collin
 					return false;
 				}
 
-				if constexpr (std::is_constant_evaluated())
-				{
-					return std::equal(std::begin(lhs), std::end(lhs), std::begin(rhs));
-				}
-				else
-				{
-					return std::equal(std::execution::par_unseq, std::begin(lhs), std::end(lhs), std::begin(rhs));
-				}
+				return std::equal(std::begin(lhs), std::end(lhs), std::begin(rhs));
 			}
 		}
 
@@ -887,10 +1372,405 @@ namespace collin
 			return !(lhs == rhs);
 		}
 
+		template<class T, std::size_t Extent>
+		class rows_iterator
+		{
+			public:
+				using iterator_category = std::random_access_iterator_tag;
+				using difference_type = std::ptrdiff_t;
+				using value_type = row<T, Extent>;
+				using pointer = value_type*;
+				using reference = value_type&;
+
+				constexpr rows_iterator(value_type start)
+					: position_{start} {}
+
+				constexpr rows_iterator& operator--() noexcept
+				{
+					position_ = value_type{position_.data() - position_.size(), position_.size()};
+					return *this;
+				}
+
+				constexpr rows_iterator operator--(int) noexcept
+				{
+					auto temp {*this};
+					--(*this);
+					return temp;
+				}
+
+				constexpr rows_iterator& operator-=(difference_type amount) noexcept
+				{
+					position_ = value_type{position_.data() - (position_.size() * amount), position_.size()};
+					return *this;
+				}
+
+				[[nodiscard]] friend constexpr rows_iterator operator-(const rows_iterator& lhs, difference_type amount) noexcept
+				{
+					auto result {lhs};
+					result -= amount;
+					return result;
+				}
+
+				constexpr rows_iterator& operator++() noexcept
+				{
+					position_ = value_type{position_.data() + position_.size(), position_.size()};
+					return *this;
+				}
+
+				constexpr rows_iterator operator++(int) noexcept
+				{
+					auto temp {*this};
+					++(*this);
+					return temp;
+				}
+
+				constexpr rows_iterator& operator+=(difference_type amount) noexcept
+				{
+					position_ = value_type{position_.data() + (position_.size() * amount), position_.size()};
+					return *this;
+				}
+
+				[[nodiscard]] friend constexpr rows_iterator operator+(const rows_iterator& lhs, difference_type amount) noexcept
+				{
+					auto result {lhs};
+					result += amount;
+					return result;
+				}
+
+				constexpr reference operator*() noexcept
+				{
+					return position_;
+				}
+
+				constexpr const reference operator*() const noexcept
+				{
+					return position_;
+				}
+
+				constexpr pointer operator->()
+				{
+					return std::addressof(position_);
+				}
+
+				constexpr const pointer operator->() const
+				{
+					return std::addressof(position_);
+				}
+
+				[[nodiscard]] constexpr bool operator==(const rows_iterator& other) const noexcept
+				{
+					return position_.data() == other.position_.data();
+				}
+
+				[[nodiscard]] constexpr bool operator!=(const rows_iterator& other) const noexcept
+				{
+					return !(*this == other);
+				}
+			private:
+				value_type position_;
+		};
+
+		template<class T, std::size_t Size, std::size_t Extent>
+		class rows_slice
+		{
+			public:
+				using value_type = row<T, Extent>;
+				using size_type = std::size_t;
+				using difference_type = std::ptrdiff_t;
+				using reference = value_type&;
+				using const_reference = const reference;
+				using pointer = value_type*;
+				using const_pointer = const pointer;
+				using iterator = rows_iterator<T, Extent>;
+				using reverse_iterator = std::reverse_iterator<iterator>;
+
+				constexpr rows_slice(value_type start, size_type size)
+					: storage_{start, size} {}
+
+				constexpr reference operator[](size_type pos) const noexcept
+				{
+					return *(begin() + pos);
+				}
+
+				constexpr reference at(size_type pos) const
+				{
+					if (pos >= size())
+					{
+						throw std::out_of_range{};
+					}
+
+					return operator[](pos);
+				}
+				
+				constexpr reference front() const noexcept
+				{
+					return storage_.data_;
+				}
+
+				constexpr reference back() const noexcept
+				{
+					return *(end() - 1);
+				}
+
+				[[nodiscard]] constexpr iterator begin() const noexcept
+				{
+					return iterator{storage_.data_};
+				}
+
+				[[nodiscard]] constexpr iterator end() const noexcept
+				{
+					return iterator{storage_.data_} + size();
+				}
+
+				[[nodiscard]] constexpr reverse_iterator rbegin() const noexcept
+				{
+					return reverse_iterator{end()};
+				}
+
+				[[nodiscard]] constexpr reverse_iterator rend() const noexcept
+				{
+					return reverse_iterator{begin()};
+				}
+
+				[[nodiscard]] constexpr bool empty() const noexcept
+				{
+					return size() == 0;
+				}
+
+				[[nodiscard]] constexpr size_type size() const noexcept
+				{
+					return storage_.size();
+				}
+
+				[[nodiscard]] constexpr size_type row_size() const noexcept
+				{
+					return storage_.data_.size();
+				}
+
+				[[nodiscard]] constexpr operator rows_slice<const T, Size, Extent>() const noexcept
+				{
+					return {storage_.data_, size()};
+				}
+			private:
+				template<class ExtentType>
+				struct storage_type : public ExtentType
+				{
+					template<class OtherExtentType>
+					constexpr storage_type(value_type data, OtherExtentType ex)
+						: ExtentType{ex}, data_{data} {}
+
+					value_type data_;
+				};
+
+				storage_type<collin::extent_type<Size>> storage_;
+		};
+
+		template<class T, std::size_t Extent, std::size_t RowSize>
+		class columns_iterator
+		{
+			public:
+				using iterator_category = std::random_access_iterator_tag;
+				using difference_type = std::ptrdiff_t;
+				using value_type = column<T, Extent, RowSize>;
+				using pointer = value_type*;
+				using reference = value_type&;
+
+				constexpr columns_iterator(value_type start)
+					: position_{start} {}
+
+				constexpr columns_iterator& operator--() noexcept
+				{
+					position_ = value_type{position_.data() - 1, position_.size(), position_.row_size()};
+					return *this;
+				}
+
+				constexpr columns_iterator operator--(int) noexcept
+				{
+					auto temp {*this};
+					--(*this);
+					return temp;
+				}
+
+				constexpr columns_iterator& operator-=(difference_type amount) noexcept
+				{
+					position_ = value_type{position_.data() - amount, position_.size(), position_.row_size()};
+					return *this;
+				}
+
+				[[nodiscard]] friend constexpr columns_iterator operator-(const columns_iterator& lhs, difference_type amount) noexcept
+				{
+					auto result {lhs};
+					result -= amount;
+					return result;
+				}
+
+				constexpr columns_iterator& operator++() noexcept
+				{
+					position_ = value_type{position_.data() + 1, position_.size(), position_.row_size()};
+					return *this;
+				}
+
+				constexpr columns_iterator operator++(int) noexcept
+				{
+					auto temp {*this};
+					++(*this);
+					return temp;
+				}
+
+				constexpr columns_iterator& operator+=(difference_type amount) noexcept
+				{
+					position_ = value_type{position_.data() + amount, position_.size(), position_.row_size()};
+					return *this;
+				}
+
+				[[nodiscard]] friend constexpr columns_iterator operator+(const columns_iterator& lhs, difference_type amount) noexcept
+				{
+					auto result {lhs};
+					result += amount;
+					return result;
+				}
+
+				constexpr reference operator*() noexcept
+				{
+					return position_;
+				}
+
+				constexpr const reference operator*() const noexcept
+				{
+					return position_;
+				}
+
+				constexpr pointer operator->()
+				{
+					return std::addressof(position_);
+				}
+
+				constexpr const pointer operator->() const
+				{
+					return std::addressof(position_);
+				}
+
+				[[nodiscard]] constexpr bool operator==(const columns_iterator& other) const noexcept
+				{
+					return position_.data() == other.position_.data();
+				}
+
+				[[nodiscard]] constexpr bool operator!=(const columns_iterator& other) const noexcept
+				{
+					return !(*this == other);
+				}
+			private:
+				value_type position_;
+		};
+		
+		template<class T, std::size_t Size, std::size_t Extent, std::size_t RowSize>
+		class columns_slice
+		{
+			public:
+				using value_type = column<T, Extent, RowSize>;
+				using size_type = std::size_t;
+				using difference_type = std::ptrdiff_t;
+				using reference = value_type&;
+				using const_reference = const reference;
+				using pointer = value_type*;
+				using const_pointer = const pointer;
+				using iterator = columns_iterator<T, Extent, RowSize>;
+				using reverse_iterator = std::reverse_iterator<iterator>;
+
+				constexpr columns_slice(value_type start, size_type size)
+					: storage_{start, size} {}
+
+				constexpr reference operator[](size_type pos) const noexcept
+				{
+					return *(begin() + pos);
+				}
+
+				constexpr reference at(size_type pos) const
+				{
+					if (pos >= size())
+					{
+						throw std::out_of_range{};
+					}
+
+					return operator[](pos);
+				}
+				
+				constexpr reference front() const noexcept
+				{
+					return storage_.data_;
+				}
+
+				constexpr reference back() const noexcept
+				{
+					return *(end() - 1);
+				}
+
+				[[nodiscard]] constexpr iterator begin() const noexcept
+				{
+					return iterator{storage_.data_};
+				}
+
+				[[nodiscard]] constexpr iterator end() const noexcept
+				{
+					return iterator{storage_.data_} + size();
+				}
+
+				[[nodiscard]] constexpr reverse_iterator rbegin() const noexcept
+				{
+					return reverse_iterator{end()};
+				}
+
+				[[nodiscard]] constexpr reverse_iterator rend() const noexcept
+				{
+					return reverse_iterator{begin()};
+				}
+
+				[[nodiscard]] constexpr bool empty() const noexcept
+				{
+					return size() == 0;
+				}
+
+				[[nodiscard]] constexpr size_type size() const noexcept
+				{
+					return storage_.size();
+				}
+
+				[[nodiscard]] constexpr size_type row_size() const noexcept
+				{
+					return storage_.data_.row_size();
+				}
+
+				[[nodiscard]] constexpr size_type column_size() const noexcept
+				{
+					return storage_.data_.size();
+				}
+
+				[[nodiscard]] constexpr operator columns_slice<const T, Size, Extent, RowSize>() const noexcept
+				{
+					return {storage_.data_, size(), column_size(), row_size()};
+				}
+			private:
+
+				template<class ExtentType>
+				struct storage_type : public ExtentType
+				{
+					template<class OtherExtentType>
+					constexpr storage_type(value_type data, OtherExtentType ex)
+						: ExtentType{ex}, data_{data} {}
+
+					value_type data_;
+				};
+
+				storage_type<collin::extent_type<Size>> storage_;
+		};
+
 		template<class Rep>
 		class matrix
 		{
 			using storage_t = multidimensional::fixed_multidimensional_array<Rep, 2>;
+
+			template<class Rep2>
+			friend class matrix;
 
 			public:
 				using value_type = typename storage_t::value_type;
@@ -913,26 +1793,11 @@ namespace collin
 
 				matrix(const matrix&) = default;
 
-				template<collin::concepts::convertible_to<Rep> Rep2>
-				matrix(const matrix<Rep2>& other)
-					: data_{other.data_} {}
-
-				template<collin::concepts::convertible_to<Rep> Rep2, std::size_t R, std::size_t C>
-				matrix(const fixed_matrix<Rep2, R, C>& other)
+				template<std::size_t R, std::size_t C>
+				matrix(const fixed_matrix<Rep, R, C>& other)
 					: data_{other.data_} {}
 
 				matrix(matrix&&) noexcept = default;
-
-				template<collin::concepts::convertible_to<Rep> Rep2>
-				matrix& operator=(const matrix<Rep2>& other)
-				{
-					if (this != std::addressof(other))
-					{
-						data_ = other.data_;
-					}
-
-					return *this;
-				}
 
 				matrix& operator=(const matrix&) = default;
 				matrix& operator=(matrix&&) noexcept = default;
@@ -943,8 +1808,8 @@ namespace collin
 					return *this;
 				}
 
-				template<collin::concepts::convertible_to<Rep> Rep2, std::size_t R, std::size_t C>
-				matrix& operator=(const fixed_matrix<Rep2, R, C>& other)
+				template<std::size_t R, std::size_t C>
+				matrix& operator=(const fixed_matrix<Rep, R, C>& other)
 				{
 					data_ = other.data_;
 					return *this;
@@ -985,24 +1850,68 @@ namespace collin
 					return data_[index];
 				}
 
+				template<std::size_t Count = std::dynamic_extent>
+				[[nodiscard]] rows_slice<value_type, Count, std::dynamic_extent> get_rows_slice(std::size_t start = 0) noexcept
+				{
+					return {get_row(start), Count == std::dynamic_extent ? rows() : Count};
+				}
+
+				template<std::size_t Count = std::dynamic_extent>
+				[[nodiscard]] rows_slice<const value_type, Count, std::dynamic_extent> get_rows_slice(std::size_t start = 0) const noexcept
+				{
+					return {get_row(start), Count == std::dynamic_extent ? rows() : Count};
+				}
+
+				[[nodiscard]] rows_slice<value_type, std::dynamic_extent, std::dynamic_extent> get_rows_slice(std::size_t start = 0, std::size_t count = std::dynamic_extent) noexcept
+				{
+					return {get_row(start), count == std::dynamic_extent ? rows() : count};
+				}
+
+				[[nodiscard]] rows_slice<const value_type, std::dynamic_extent, std::dynamic_extent> get_rows_slice(std::size_t start = 0, std::size_t count = std::dynamic_extent) const noexcept
+				{
+					return {get_row(start), count == std::dynamic_extent ? rows() : count};
+				}
+
+				template<std::size_t Count = std::dynamic_extent>
+				[[nodiscard]] columns_slice<value_type, Count, std::dynamic_extent, std::dynamic_extent> get_columns_slice(std::size_t start = 0) noexcept
+				{
+					return {get_column(start), Count == std::dynamic_extent ? rows() : Count};
+				}
+
+				template<std::size_t Count = std::dynamic_extent>
+				[[nodiscard]] columns_slice<const value_type, Count, std::dynamic_extent, std::dynamic_extent> get_columns_slice(std::size_t start = 0) const noexcept
+				{
+					return {get_column(start), Count == std::dynamic_extent ? rows() : Count};
+				}
+
+				[[nodiscard]] columns_slice<value_type, std::dynamic_extent, std::dynamic_extent, std::dynamic_extent> get_columns_slice(std::size_t start = 0, std::size_t count = std::dynamic_extent) noexcept
+				{
+					return {get_column(start), count == std::dynamic_extent ? rows() : count};
+				}
+
+				[[nodiscard]] columns_slice<const value_type, std::dynamic_extent, std::dynamic_extent, std::dynamic_extent> get_columns_slice(std::size_t start = 0, std::size_t count = std::dynamic_extent) const noexcept
+				{
+					return {get_column(start), count == std::dynamic_extent ? rows() : count};
+				}
+
 				[[nodiscard]] row<value_type, std::dynamic_extent> get_row(std::size_t i) noexcept
 				{
-					return {&data_.get(i, 0), cols()};
+					return {std::addressof(data_.get(i, 0)), cols()};
 				}
 
 				[[nodiscard]] row<const value_type, std::dynamic_extent> get_row(std::size_t i) const noexcept
 				{
-					return {&data_.get(i, 0), cols()};
+					return {std::addressof(data_.get(i, 0)), cols()};
 				}
 
 				[[nodiscard]] column<value_type, std::dynamic_extent, std::dynamic_extent> get_column(std::size_t i) noexcept
 				{
-					return {&data_.get(0, i), rows(), cols()};
+					return {std::addressof(data_.get(0, i)), rows(), cols()};
 				}
 
 				[[nodiscard]] column<const value_type, std::dynamic_extent, std::dynamic_extent> get_column(std::size_t i) const noexcept
 				{
-					return {&data_.get(0, i), rows(), cols()};
+					return {std::addressof(data_.get(0, i)), rows(), cols()};
 				}
 
 				[[nodiscard]] const_pointer data() const noexcept
@@ -1088,7 +1997,7 @@ namespace collin
 					{
 						throw std::invalid_argument{"cannot add matrices of different dimension sizes"};
 					}
-					transform_with(other, std::plus<>{});
+					apply(other.begin(), std::plus<>{});
 					return *this;
 				}
 
@@ -1100,7 +2009,7 @@ namespace collin
 					{
 						throw std::invalid_argument{"cannot add matrices of different dimension sizes"};
 					}
-					transform_with(other, std::plus<>{});
+					apply(other.begin(), std::plus<>{});
 					return *this;
 				}
 
@@ -1112,7 +2021,7 @@ namespace collin
 					{
 						throw std::invalid_argument{"cannot subtract matrices of different dimension sizes"};
 					}
-					transform_with(other, std::minus<>{});
+					apply(other.begin(), std::minus<>{});
 					return *this;
 				}
 				
@@ -1124,7 +2033,7 @@ namespace collin
 					{
 						throw std::invalid_argument{"cannot subtract matrices of different dimension sizes"};
 					}
-					transform_with(other, std::minus<>{});
+					apply(other.begin(), std::minus<>{});
 					return *this;
 				}
 
@@ -1132,7 +2041,7 @@ namespace collin
 					requires(requires(const Rep& t, const Rep2& t2) { { t * t2 } -> collin::concepts::convertible_to<Rep>; })
 				matrix& operator*=(const Rep2& other) noexcept
 				{
-					transform_with(other, std::multiplies<>{});
+					apply(std::bind(std::multiplies<>{}, std::placeholders::_1, other));
 					return *this;
 				}
 
@@ -1140,7 +2049,7 @@ namespace collin
 					requires(requires(const Rep& t, const Rep2& t2) { { t / t2 } -> collin::concepts::convertible_to<Rep>; })
 				matrix& operator/=(const Rep2& other) noexcept
 				{
-					transform_with(other, std::divides<>{});
+					apply(std::bind(std::divides<>{}, std::placeholders::_1, other));
 					return *this;
 				}
 
@@ -1148,29 +2057,101 @@ namespace collin
 					requires(requires(const Rep& t, const Rep2& t2) { { t% t2 } -> collin::concepts::convertible_to<Rep>; })
 				matrix& operator%=(const Rep2& other) noexcept
 				{
-					transform_with(other, std::modulus<>{});
+					apply(std::bind(std::modulus<>{}, std::placeholders::_1, other));
 					return *this;
+				}
+
+				template<class F>
+				constexpr matrix& apply(F&& f)
+				{
+					data_.apply(std::forward<F>(f));
+					return *this;
+				}
+
+				template<class InputIterator, class F>
+				constexpr matrix& apply(InputIterator first, F&& f)
+				{
+					data_.apply(first, std::forward<F>(f));
+					return *this;
+				}
+
+				template<class ExecutionPolicy, class F>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				matrix& apply(ExecutionPolicy p, F&& f)
+				{
+					data_.apply(p, std::forward<F>(f));
+					return *this;
+				}
+
+				template<class ExecutionPolicy, class InputIterator, class F>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				matrix& apply(ExecutionPolicy p, InputIterator first, F&& f)
+				{
+					data_.apply(p, first, std::forward<F>(f));
+					return *this;
+				}
+
+				[[nodiscard]] Rep sum() const
+				{
+					return data_.sum();
+				}
+
+				[[nodiscard]] Rep product() const
+				{
+					return data_.product();
+				}
+
+				[[nodiscard]] Rep min() const
+				{
+					return data_.min();
+				}
+
+				[[nodiscard]] Rep max() const
+				{
+					return data_.max();
+				}
+
+				[[nodiscard]] std::pair<Rep, Rep> min_max() const
+				{
+					return data_.min_max();
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] Rep sum(ExecutionPolicy p) const
+				{
+					return data_.sum(p);
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] Rep product(ExecutionPolicy p) const
+				{
+					return data_.product(p);
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] Rep min(ExecutionPolicy p) const
+				{
+					return data_.min(p);
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] Rep max(ExecutionPolicy p) const
+				{
+					return data_.max(p);
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] std::pair<Rep, Rep> min_max(ExecutionPolicy p) const
+				{
+					return data_.min_max(p);
 				}
 			private:
 				storage_t data_;
-
-				template<class Rep2, class F>
-				void transform_with(const matrix<Rep2>& other, F&& f) noexcept
-				{
-					std::transform(std::execution::par_unseq, begin(), end(), other.begin(), begin(), std::forward<F>(f));
-				}
-
-				template<class Rep2, std::size_t Rows, std::size_t Cols, class F>
-				void transform_with(const fixed_matrix<Rep2, Rows, Cols>& other, F&& f) noexcept
-				{
-					std::transform(std::execution::par_unseq, begin(), end(), other.begin(), begin(), std::forward<F>(f));
-				}
-
-				template<class T2, class F>
-				void transform_with(const T2& other, F&& f) noexcept
-				{
-					std::transform(std::execution::par_unseq, begin(), end(), begin(), std::bind(std::forward<F>(f), std::placeholders::_1, other));
-				}
 		};
 
 		template<matrix_type Matrix1, matrix_type Matrix2>
@@ -1181,14 +2162,7 @@ namespace collin
 				return false;
 			}
 
-			if constexpr (std::is_constant_evaluated())
-			{
-				return std::equal(std::begin(lhs), std::end(lhs), std::begin(rhs));
-			}
-			else
-			{
-				return std::equal(std::execution::par_unseq, std::begin(lhs), std::end(lhs), std::begin(rhs));
-			}
+			return std::equal(std::begin(lhs), std::end(lhs), std::begin(rhs));
 		}
 
 		template<matrix_type Matrix1, matrix_type Matrix2>
@@ -1271,37 +2245,20 @@ namespace collin
 				}
 			}
 
-			template<matrix_type M1, matrix_type M2>
-			[[nodiscard]] constexpr auto mult_std(const M1& lhs, const M2& rhs) noexcept
+			template<matrix_type M1, matrix_type M2, matrix_type M3>
+			[[nodiscard]] constexpr auto mult_std_impl(const M1& lhs, const M2& rhs, M3& m)
 			{
-				using common_type = std::common_type_t<typename M1::value_type, typename M2::value_type>;
+				const auto rows = lhs.rows();
+				const auto columns = rhs.cols();
+				const auto columns2 = lhs.cols();
 
-				matrix<common_type> m {lhs.rows(), rhs.cols()};
-				for (std::size_t i {0}; i < lhs.rows(); ++i)
+				for (std::size_t i {0}; i < rows; ++i)
 				{
-					for (std::size_t j {0}; j < rhs.cols(); ++j)
+					for (std::size_t j {0}; j < columns; ++j)
 					{
-						m(i, j) = std::transform_reduce(std::begin(lhs.get_row(i)),
-														std::begin(lhs.get_row(i)) + lhs.cols(),
-														std::begin(rhs.get_column(j)), common_type{0});
-					}
-				}
-
-				return m;
-			}
-
-			template<class T, class T2, std::size_t Rows, std::size_t Cols, std::size_t Cols2>
-			[[nodiscard]] constexpr auto mult_std(const fixed_matrix<T, Rows, Cols>& lhs, const fixed_matrix<T2, Cols, Cols2>& rhs) noexcept
-			{
-				fixed_matrix<std::common_type_t<T, T2>, Rows, Cols2> m;
-
-				for (std::size_t i {0}; i < Rows; ++i)
-				{
-					for (std::size_t j {0}; j < Cols2; ++j)
-					{
-						if constexpr (std::is_constant_evaluated())
+						if (std::is_constant_evaluated())
 						{
-							for (std::size_t n {0}; n < Cols; ++n)
+							for (std::size_t n {0}; n < columns2; ++n)
 							{
 								m(i, j) += lhs(i, n) * rhs(n, j);
 							}
@@ -1309,12 +2266,27 @@ namespace collin
 						else
 						{
 							m(i, j) = std::transform_reduce(std::begin(lhs.get_row(i)),
-															std::begin(lhs.get_row(i)) + lhs.cols(),
-															std::begin(rhs.get_column(j)), common_type{0});
+															std::end(lhs.get_row(i)),
+															std::begin(rhs.get_column(j)), std::common_type_t<typename M3::value_type>{0});
 						}
 					}
 				}
+			}
 
+			template<matrix_type M1, matrix_type M2>
+			[[nodiscard]] constexpr auto mult_std(const M1& lhs, const M2& rhs) noexcept
+			{
+				using common_type = std::common_type_t<typename M1::value_type, typename M2::value_type>;
+				matrix<common_type> m {lhs.rows(), rhs.cols()};
+				mult_std_impl(lhs, rhs, m);
+				return m;
+			}
+
+			template<class T, class T2, std::size_t Rows, std::size_t Cols, std::size_t Cols2>
+			[[nodiscard]] constexpr auto mult_std(const fixed_matrix<T, Rows, Cols>& lhs, const fixed_matrix<T2, Cols, Cols2>& rhs) noexcept
+			{
+				fixed_matrix<std::common_type_t<T, T2>, Rows, Cols2> m;
+				mult_std_impl(lhs, rhs, m);
 				return m;
 			}
 
@@ -1332,15 +2304,15 @@ namespace collin
 				using f_t = matrix<common_type>(*)(decltype(a), decltype(b));
 				using set_part_f_t = void(*)(std::size_t, std::size_t, matrix<common_type>&, const matrix<common_type>&);
 
-				auto a11_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 0, 0, std::ref(a));
-				auto a12_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 0, 1, std::ref(a));
-				auto a21_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 1, 0, std::ref(a));
-				auto a22_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 1, 1, std::ref(a));
+				auto a11_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 0, 0, std::cref(a));
+				auto a12_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 0, 1, std::cref(a));
+				auto a21_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 1, 0, std::cref(a));
+				auto a22_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 1, 1, std::cref(a));
 
-				auto b11_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::ref(b));
-				auto b12_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::ref(b));
-				auto b21_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::ref(b));
-				auto b22_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::ref(b));
+				auto b11_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::cref(b));
+				auto b12_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 1, std::cref(b));
+				auto b21_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 1, 0, std::cref(b));
+				auto b22_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 1, 1, std::cref(b));
 
 				const auto a11 = a11_future.get();
 				const auto a22 = a22_future.get();
@@ -1350,17 +2322,17 @@ namespace collin
 				auto m1_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a11 + a22, b11 + b22);
 
 				const auto a21 = a21_future.get();
-				auto m2_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a21 + a22, std::ref(b11));
+				auto m2_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a21 + a22, std::cref(b11));
 
 				const auto b12 = b12_future.get();
-				auto m3_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), std::ref(a11), b12 - b22);
+				auto m3_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), std::cref(a11), b12 - b22);
 				auto m6_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a21 - a11, b11 + b12);
 
 				const auto a12 = a12_future.get();
-				auto m5_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a11 + a12, std::ref(b22));
+				auto m5_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a11 + a12, std::cref(b22));
 
 				const auto b21 = b21_future.get();
-				auto m4_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), std::ref(a22), b21 - b11);
+				auto m4_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), std::cref(a22), b21 - b11);
 				auto m7_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a12 - a22, b21 + b22);
 
 				matrix<common_type> c{a.rows(), a.cols()};
@@ -1403,15 +2375,15 @@ namespace collin
 					using f_t = matrix<common_type>(*)(decltype(a), decltype(b));
 					using set_part_f_t = void(*)(std::size_t, std::size_t, matrix<common_type>&, const matrix<common_type>&);
 
-					auto a11_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 0, 0, std::ref(a));
-					auto a12_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 0, 1, std::ref(a));
-					auto a21_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 1, 0, std::ref(a));
-					auto a22_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 1, 1, std::ref(a));
+					auto a11_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 0, 0, std::cref(a));
+					auto a12_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 0, 1, std::cref(a));
+					auto a21_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 1, 0, std::cref(a));
+					auto a22_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 1, 1, std::cref(a));
 
-					auto b11_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::ref(b));
-					auto b12_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::ref(b));
-					auto b21_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::ref(b));
-					auto b22_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::ref(b));
+					auto b11_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::cref(b));
+					auto b12_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 1, std::cref(b));
+					auto b21_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 1, 0, std::cref(b));
+					auto b22_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 1, 1, std::cref(b));
 
 					const auto a11 = a11_future.get();
 					const auto a22 = a22_future.get();
@@ -1421,17 +2393,17 @@ namespace collin
 					auto m1_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a11 + a22, b11 + b22);
 
 					const auto a21 = a21_future.get();
-					auto m2_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a21 + a22, std::ref(b11));
+					auto m2_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a21 + a22, std::cref(b11));
 
 					const auto b12 = b12_future.get();
-					auto m3_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), std::ref(a11), b12 - b22);
+					auto m3_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), std::cref(a11), b12 - b22);
 					auto m6_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a21 - a11, b11 + b12);
 
 					const auto a12 = a12_future.get();
-					auto m5_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a11 + a12, std::ref(b22));
+					auto m5_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a11 + a12, std::cref(b22));
 
 					const auto b21 = b21_future.get();
-					auto m4_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), std::ref(a22), b21 - b11);
+					auto m4_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), std::cref(a22), b21 - b11);
 					auto m7_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a12 - a22, b21 + b22);
 
 					matrix<common_type> c {a.rows(), a.cols()};
@@ -1475,15 +2447,15 @@ namespace collin
 					using f_t = matrix<common_type>(*)(decltype(a), decltype(b));
 					using set_part_f_t = void(*)(std::size_t, std::size_t, matrix<common_type>&, const matrix<common_type>&);
 
-					auto a11_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 0, 0, std::ref(a));
-					auto a12_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 0, 1, std::ref(a));
-					auto a21_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 1, 0, std::ref(a));
-					auto a22_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 1, 1, std::ref(a));
+					auto a11_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 0, 0, std::cref(a));
+					auto a12_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 0, 1, std::cref(a));
+					auto a21_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 1, 0, std::cref(a));
+					auto a22_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 1, 1, std::cref(a));
 
-					auto b11_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::ref(b));
-					auto b12_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::ref(b));
-					auto b21_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::ref(b));
-					auto b22_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::ref(b));
+					auto b11_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::cref(b));
+					auto b12_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 1, std::cref(b));
+					auto b21_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 1, 0, std::cref(b));
+					auto b22_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 1, 1, std::cref(b));
 
 					const auto a11 = a11_future.get();
 					const auto a22 = a22_future.get();
@@ -1493,17 +2465,17 @@ namespace collin
 					auto m1_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a11 + a22, b11 + b22);
 
 					const auto a21 = a21_future.get();
-					auto m2_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a21 + a22, std::ref(b11));
+					auto m2_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a21 + a22, std::cref(b11));
 
 					const auto b12 = b12_future.get();
-					auto m3_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), std::ref(a11), b12 - b22);
+					auto m3_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), std::cref(a11), b12 - b22);
 					auto m6_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a21 - a11, b11 + b12);
 
 					const auto a12 = a12_future.get();
-					auto m5_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a11 + a12, std::ref(b22));
+					auto m5_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a11 + a12, std::cref(b22));
 
 					const auto b21 = b21_future.get();
-					auto m4_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), std::ref(a22), b21 - b11);
+					auto m4_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), std::cref(a22), b21 - b11);
 					auto m7_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a12 - a22, b21 + b22);
 
 					matrix<common_type> c {a.rows(), a.cols()};
@@ -1539,96 +2511,75 @@ namespace collin
 				{
 					return mult_std(a, b);
 				}
-				else if constexpr(std::is_constant_evaluated())
-				{
-					const auto a11 = get_part(0, 0, a);
-					const auto a12 = get_part(0, 1, a);
-					const auto a21 = get_part(1, 0, a);
-					const auto a22 = get_part(1, 1, a);
-
-					const auto b11 = get_part(0, 0, b);
-					const auto b12 = get_part(0, 1, b);
-					const auto b21 = get_part(1, 0, b);
-					const auto b22 = get_part(1, 1, b);
-
-					const auto m1 = mult_strassen(a11 + a22, b11 + b22);
-					const auto m2 = mult_strassen(a21 + a22, b11);
-					const auto m3 = mult_strassen(a11, b12 - b22);
-					const auto m4 = mult_strassen(a22, b21 - b11);
-					const auto m5 = mult_strassen(a11 + a12, b22);
-					const auto m6 = mult_strassen(a21 - a11, b11 + b12);
-					const auto m7 = mult_strassen(a12 - a22, b21 + b22);
-
-					square_matrix<std::common_type_t<T, T2>, Rows> c;
-					set_part(0, 0, c, m1 + m4 - m5 + m7);
-					set_part(0, 1, c, m3 + m5);
-					set_part(1, 0, c, m2 + m4);
-					set_part(1, 1, c, m1 - m2 + m3 + m6);
-
-					return c;
-				}
 				else
 				{
-					using get_part_a_t = std::remove_cvref_t<decltype(a)>(*)(std::size_t, std::size_t, decltype(a));
-					using get_part_b_t = std::remove_cvref_t<decltype(b)>(*)(std::size_t, std::size_t, decltype(b));
-					using common_type = std::common_type_t<T, T2>;
-					using f_t = matrix<common_type>(*)(decltype(a), decltype(b));
-					using set_part_f_t = void(*)(std::size_t, std::size_t, matrix<common_type>&, const matrix<common_type>&);
+					if (std::is_constant_evaluated())
+					{
+						return mult_std(a, b);
+					}
+					else
+					{
+						using get_part_a_t = std::remove_cvref_t<decltype(a)>(*)(std::size_t, std::size_t, decltype(a));
+						using get_part_b_t = std::remove_cvref_t<decltype(b)>(*)(std::size_t, std::size_t, decltype(b));
+						using common_type = std::common_type_t<T, T2>;
+						using f_t = matrix<common_type>(*)(decltype(a), decltype(b));
+						using set_part_f_t = void(*)(std::size_t, std::size_t, matrix<common_type>&, const matrix<common_type>&);
 
-					auto a11_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 0, 0, std::ref(a));
-					auto a12_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 0, 1, std::ref(a));
-					auto a21_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 1, 0, std::ref(a));
-					auto a22_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 1, 1, std::ref(a));
+						auto a11_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 0, 0, std::cref(a));
+						auto a12_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 0, 1, std::cref(a));
+						auto a21_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 1, 0, std::cref(a));
+						auto a22_future = std::async(std::launch::async, static_cast<get_part_a_t>(get_part), 1, 1, std::cref(a));
 
-					auto b11_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::ref(b));
-					auto b12_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::ref(b));
-					auto b21_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::ref(b));
-					auto b22_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::ref(b));
+						auto b11_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 0, std::cref(b));
+						auto b12_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 0, 1, std::cref(b));
+						auto b21_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 1, 0, std::cref(b));
+						auto b22_future = std::async(std::launch::async, static_cast<get_part_b_t>(get_part), 1, 1, std::cref(b));
 
-					const auto a11 = a11_future.get();
-					const auto a22 = a22_future.get();
+						const auto a11 = a11_future.get();
+						const auto a22 = a22_future.get();
 
-					const auto b11 = b11_future.get();
-					const auto b22 = b22_future.get();
-					auto m1_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a11 + a22, b11 + b22);
+						const auto b11 = b11_future.get();
+						const auto b22 = b22_future.get();
+						auto m1_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a11 + a22, b11 + b22);
 
-					const auto a21 = a21_future.get();
-					auto m2_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a21 + a22, std::ref(b11));
+						const auto a21 = a21_future.get();
+						auto m2_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a21 + a22, std::cref(b11));
 
-					const auto b12 = b12_future.get();
-					auto m3_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), std::ref(a11), b12 - b22);
-					auto m6_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a21 - a11, b11 + b12);
+						const auto b12 = b12_future.get();
+						auto m3_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), std::cref(a11), b12 - b22);
+						auto m6_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a21 - a11, b11 + b12);
 
-					const auto a12 = a12_future.get();
-					auto m5_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a11 + a12, std::ref(b22));
+						const auto a12 = a12_future.get();
+						auto m5_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a11 + a12, std::cref(b22));
 
-					const auto b21 = b21_future.get();
-					auto m4_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), std::ref(a22), b21 - b11);
-					auto m7_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a12 - a22, b21 + b22);
+						const auto b21 = b21_future.get();
+						auto m4_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), std::cref(a22), b21 - b11);
+						auto m7_future = std::async(std::launch::async, static_cast<f_t>(mult_strassen), a12 - a22, b21 + b22);
 
-					square_matrix<std::common_type_t<T, T2>, Rows> c;
+						square_matrix<std::common_type_t<T, T2>, Rows> c;
 
-					const auto m1 = m1_future.get();
-					const auto m4 = m4_future.get();
-					const auto m5 = m5_future.get();
-					const auto m7 = m7_future.get();
-					const auto v1 = std::async(std::launch::async, static_cast<set_part_f_t>(set_part), 0, 0, std::ref(c), m1 + m4 - m5 + m7);
+						const auto m1 = m1_future.get();
+						const auto m4 = m4_future.get();
+						const auto m5 = m5_future.get();
+						const auto m7 = m7_future.get();
+						const auto v1 = std::async(std::launch::async, static_cast<set_part_f_t>(set_part), 0, 0, std::ref(c), m1 + m4 - m5 + m7);
 
-					const auto m3 = m3_future.get();
-					const auto v2 = std::async(std::launch::async, static_cast<set_part_f_t>(set_part), 0, 1, std::ref(c), m3 + m5);
+						const auto m3 = m3_future.get();
+						const auto v2 = std::async(std::launch::async, static_cast<set_part_f_t>(set_part), 0, 1, std::ref(c), m3 + m5);
 
-					const auto m2 = m2_future.get();
-					const auto v3 = std::async(std::launch::async, static_cast<set_part_f_t>(set_part), 1, 0, std::ref(c), m2 + m4);
+						const auto m2 = m2_future.get();
+						const auto v3 = std::async(std::launch::async, static_cast<set_part_f_t>(set_part), 1, 0, std::ref(c), m2 + m4);
 
-					const auto m6 = m6_future.get();
-					const auto v4 = std::async(std::launch::async, static_cast<set_part_f_t>(set_part), 1, 1, std::ref(c), m1 - m2 + m3 + m6);
+						const auto m6 = m6_future.get();
+						const auto v4 = std::async(std::launch::async, static_cast<set_part_f_t>(set_part), 1, 1, std::ref(c), m1 - m2 + m3 + m6);
 
-					v1.wait();
-					v2.wait();
-					v3.wait();
-					v4.wait();
+						v1.wait();
+						v2.wait();
+						v3.wait();
+						v4.wait();
 
-					return c;
+						return c;
+					}
 				}
 			}
 		}
@@ -1647,7 +2598,7 @@ namespace collin
 		{
 			if (lhs.cols() != rhs.rows())
 			{
-				throw std::invalid_argument {"cannot multiply matrices that do not share columns with rows"};
+				throw std::invalid_argument {"cannot multiplies matrices that do not share columns with rows"};
 			}
 
 			if (is_square_matrix(lhs) && is_square_matrix(rhs))
@@ -1707,27 +2658,12 @@ namespace collin
 
 				constexpr fixed_matrix(const fixed_matrix&) = default;
 
-				template<collin::concepts::convertible_to<Rep> Rep2>
-				constexpr fixed_matrix(const fixed_matrix<Rep2, Rows, Cols>& other)
-					: data_{other.data_} {}
-
 				constexpr fixed_matrix(fixed_matrix&&) noexcept = default;
 
 				template<collin::concepts::convertible_to<Rep>... Elements>
 					requires (sizeof...(Elements) > 0)
 				constexpr fixed_matrix(Elements&&... elements)
 					: data_{std::forward<Elements>(elements)...} {}
-
-				template<collin::concepts::convertible_to<Rep> Rep2>
-				constexpr fixed_matrix& operator=(const fixed_matrix<Rep2, Rows, Cols>& other)
-				{
-					if (this != std::addressof(other))
-					{
-						data_ = other.data_;
-					}
-
-					return *this;
-				}
 
 				constexpr fixed_matrix& operator=(const fixed_matrix&) = default;
 				constexpr fixed_matrix& operator=(fixed_matrix&&) noexcept = default;
@@ -1764,22 +2700,22 @@ namespace collin
 
 				[[nodiscard]] constexpr row<value_type, Cols> get_row(std::size_t i) noexcept
 				{
-					return {&data_.get(i, 0), Cols};
+					return {std::addressof(data_.get(i, 0)), Cols};
 				}
 
 				[[nodiscard]] constexpr row<const value_type, Cols> get_row(std::size_t i) const noexcept
 				{
-					return {&data_.get(i, 0), Cols};
+					return {std::addressof(data_.get(i, 0)), Cols};
 				}
 
 				[[nodiscard]] constexpr column<value_type, Rows, Cols> get_column(std::size_t i) noexcept
 				{
-					return {&data_.get(0, i), Rows, Cols};
+					return {std::addressof(data_.get(0, i)), Rows, Cols};
 				}
 
 				[[nodiscard]] constexpr column<const value_type, Rows, Cols> get_column(std::size_t i) const noexcept
 				{
-					return {&data_.get(0, i), Rows, Cols};
+					return {std::addressof(data_.get(0, i)), Rows, Cols};
 				}
 
 				[[nodiscard]] constexpr const_pointer data() const noexcept
@@ -1857,106 +2793,189 @@ namespace collin
 					return data_.size();
 				}
 
-				template<class Rep2>
-					requires(requires(const Rep& t, const Rep2& t2) { { t + t2 } -> collin::concepts::convertible_to<Rep>; })
-				fixed_matrix& operator+=(const matrix<Rep2>& other)
+				template<std::size_t Count = std::dynamic_extent>
+				[[nodiscard]] rows_slice<value_type, Count, Cols> get_rows_slice(std::size_t start = 0) noexcept
+				{
+					return {get_row(start), Count == std::dynamic_extent ? rows() : Count};
+				}
+
+				template<std::size_t Count = std::dynamic_extent>
+				[[nodiscard]] rows_slice<const value_type, Count, Cols> get_rows_slice(std::size_t start = 0) const noexcept
+				{
+					return {get_row(start), Count == std::dynamic_extent ? rows() : Count};
+				}
+
+				[[nodiscard]] rows_slice<value_type, std::dynamic_extent, Cols> get_rows_slice(std::size_t start = 0, std::size_t count = std::dynamic_extent) noexcept
+				{
+					return {get_row(start), count == std::dynamic_extent ? rows() : count};
+				}
+
+				[[nodiscard]] rows_slice<const value_type, std::dynamic_extent, Cols> get_rows_slice(std::size_t start = 0, std::size_t count = std::dynamic_extent) const noexcept
+				{
+					return {get_row(start), count == std::dynamic_extent ? rows() : count};
+				}
+
+				template<std::size_t Count = std::dynamic_extent>
+				[[nodiscard]] columns_slice<value_type, Count, std::dynamic_extent, Cols> get_columns_slice(std::size_t start = 0) noexcept
+				{
+					return {get_column(start), Count == std::dynamic_extent ? rows() : Count};
+				}
+
+				template<std::size_t Count = std::dynamic_extent>
+				[[nodiscard]] columns_slice<const value_type, Count, Rows, Cols> get_columns_slice(std::size_t start = 0) const noexcept
+				{
+					return {get_column(start), Count == std::dynamic_extent ? rows() : Count};
+				}
+
+				[[nodiscard]] columns_slice<value_type, std::dynamic_extent, Rows, Cols> get_columns_slice(std::size_t start = 0, std::size_t count = std::dynamic_extent) noexcept
+				{
+					return {get_column(start), count == std::dynamic_extent ? rows() : count};
+				}
+
+				[[nodiscard]] columns_slice<const value_type, std::dynamic_extent, Rows, Cols> get_columns_slice(std::size_t start = 0, std::size_t count = std::dynamic_extent) const noexcept
+				{
+					return {get_column(start), count == std::dynamic_extent ? rows() : count};
+				}
+
+				fixed_matrix& operator+=(const matrix<Rep>& other)
 				{
 					if (Rows != other.rows() || Cols != other.cols())
 					{
 						throw std::invalid_argument{"cannot add matrices of different dimension sizes"};
 					}
-					transform_with(other, std::plus<>{});
+					apply(other.begin(), std::plus<>{});
 					return *this;
 				}
 
-				template<class Rep2>
-					requires(requires(const Rep& t, const Rep2& t2) { { t + t2 } -> collin::concepts::convertible_to<Rep>; })
-				constexpr fixed_matrix& operator+=(const fixed_matrix<Rep2, Rows, Cols>& other) noexcept
+				constexpr fixed_matrix& operator+=(const fixed_matrix<Rep, Rows, Cols>& other) noexcept
 				{
-					transform_with(other, std::plus<>{});
+					apply(other.begin(), std::plus<>{});
 					return *this;
 				}
 
-				template<class Rep2>
-					requires(requires(const Rep& t, const Rep2& t2) { { t - t2 } -> collin::concepts::convertible_to<Rep>; })
-				fixed_matrix& operator-=(const matrix<Rep2>& other)
+				fixed_matrix& operator-=(const matrix<Rep>& other)
 				{
 					if (Rows != other.rows() || Cols != other.cols())
 					{
 						throw std::invalid_argument{"cannot subtract matrices of different dimension sizes"};
 					}
-					transform_with(other, std::minus<>{});
+					apply(other.begin(), std::minus<>{});
 					return *this;
 				}
 
-				template<class Rep2>
-					requires(requires(const Rep& t, const Rep2& t2) { { t - t2 } -> collin::concepts::convertible_to<Rep>; })
-				constexpr fixed_matrix& operator-=(const fixed_matrix<Rep2, Rows, Cols>& other) noexcept
+				constexpr fixed_matrix& operator-=(const fixed_matrix<Rep, Rows, Cols>& other) noexcept
 				{
-					transform_with(other, std::minus<>{});
+					apply(other.begin(), std::minus<>{});
 					return *this;
 				}
 
-				template<class Rep2>
-					requires(requires(const Rep& t, const Rep2& t2) { { t * t2 } -> collin::concepts::convertible_to<Rep>; })
-				constexpr fixed_matrix& operator*=(const Rep2& other) noexcept
+				constexpr fixed_matrix& operator*=(const Rep& other) noexcept
 				{
-					transform_with(other, std::multiplies<>{});
+					apply([&other](const auto& v) { return v * other; });
 					return *this;
 				}
 
-				template<class Rep2>
-					requires(requires(const Rep& t, const Rep2& t2) { { t / t2 } -> collin::concepts::convertible_to<Rep>; })
-				constexpr fixed_matrix& operator/=(const Rep2& other) noexcept
+				constexpr fixed_matrix& operator/=(const Rep& other) noexcept
 				{
-					transform_with(other, std::divides<>{});
+					apply([&other](const auto& v) { return v / other; });
 					return *this;
 				}
 
-				template<class Rep2>
-					requires(requires(const Rep& t, const Rep2& t2) { { t % t2 } -> collin::concepts::convertible_to<Rep>; })
-				constexpr fixed_matrix& operator%=(const Rep2& other) noexcept
+				constexpr fixed_matrix& operator%=(const Rep& other) noexcept
 				{
-					transform_with(other, std::modulus<>{});
+					apply([&other](const auto& v) { return v % other; });
 					return *this;
+				}
+
+				template<class F>
+				constexpr fixed_matrix& apply(F&& f)
+				{
+					data_.apply(std::forward<F>(f));
+					return *this;
+				}
+
+				template<class InputIterator, class F>
+				constexpr fixed_matrix& apply(InputIterator first, F&& f)
+				{
+					data_.apply(first, std::forward<F>(f));
+					return *this;
+				}
+
+				template<class ExecutionPolicy, class F>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				fixed_matrix& apply(ExecutionPolicy p, F&& f)
+				{
+					data_.apply(p, std::forward<F>(f));
+					return *this;
+				}
+
+				template<class ExecutionPolicy, class InputIterator, class F>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				fixed_matrix& apply(ExecutionPolicy p, InputIterator first, F&& f)
+				{
+					data_.apply(p, first, std::forward<F>(f));
+					return *this;
+				}
+
+				[[nodiscard]] constexpr Rep sum() const
+				{
+					return data_.sum();
+				}
+
+				[[nodiscard]] constexpr Rep product() const
+				{
+					return data_.product();
+				}
+
+				[[nodiscard]] constexpr Rep min() const
+				{
+					return data_.min();
+				}
+
+				[[nodiscard]] constexpr Rep max() const
+				{
+					return data_.max();
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] Rep sum(ExecutionPolicy p) const
+				{
+					return data_.sum(p);
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] Rep product(ExecutionPolicy p) const
+				{
+					return data_.product(p);
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] Rep min(ExecutionPolicy p) const
+				{
+					return data_.min(p);
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] Rep max(ExecutionPolicy p) const
+				{
+					return data_.max(p);
+				}
+
+				template<class ExecutionPolicy>
+					requires(std::is_execution_policy_v<ExecutionPolicy>)
+				[[nodiscard]] std::pair<Rep, Rep> min_max(ExecutionPolicy p) const
+				{
+					return data_.min_max(p);
 				}
 			private:
 				storage_t data_;
 
 				template<class T>
 				friend class matrix;
-
-				template<class Rep2, class F>
-				constexpr void transform_with(const matrix<Rep2>& other, F&& f) noexcept
-				{
-					std::transform(std::execution::par_unseq, begin(), end(), other.begin(), begin(), std::forward<F>(f));
-				}
-
-				template<class Rep2, class F>
-				constexpr void transform_with(const fixed_matrix<Rep2, Rows, Cols>& other, F&& f) noexcept
-				{
-					if constexpr (std::is_constant_evaluated())
-					{
-						std::transform(begin(), end(), other.begin(), begin(), std::forward<F>(f));
-					}
-					else
-					{
-						std::transform(std::execution::par_unseq, begin(), end(), other.begin(), begin(), std::forward<F>(f));
-					}
-				}
-
-				template<class T2, class F>
-				constexpr void transform_with(const T2& other, F&& f) noexcept
-				{
-					if constexpr (std::is_constant_evaluated())
-					{
-						std::transform(begin(), end(), begin(), [&other, f2 = std::forward<F>(f)](const auto& v) { return f2(v, other); });
-					}
-					else
-					{
-						std::transform(std::execution::par_unseq, begin(), end(), begin(), [&other, f2 = std::forward<F>(f)](const auto& v) { return f2(v, other); });
-					}
-				}
 		};
 
 		template<class T>
@@ -2024,5 +3043,38 @@ namespace collin
 
 			return m;
 		}
+	}
+}
+
+namespace std
+{
+	template<class T, std::size_t Size>
+	constexpr void swap(collin::linear::diagonal<T, Size> lhs, collin::linear::diagonal<T, Size> rhs) noexcept
+	{
+		lhs.swap(rhs);
+	}
+
+	template<class T, std::size_t Size>
+	constexpr void swap(collin::linear::diagonal_iterator<T, Size>& lhs, collin::linear::diagonal_iterator<T, Size>& rhs) noexcept
+	{
+		lhs.swap(rhs);
+	}
+
+	template<class T, std::size_t Extent, std::size_t RowSize>
+	constexpr void swap(collin::linear::column<T, Extent, RowSize> lhs, collin::linear::column<T, Extent, RowSize> rhs) noexcept
+	{
+		lhs.swap(rhs);
+	}
+
+	template<class T, std::size_t RowSize>
+	constexpr void swap(collin::linear::column_iterator<T, RowSize>& lhs, collin::linear::column_iterator<T, RowSize>& rhs) noexcept
+	{
+		lhs.swap(rhs);
+	}
+
+	template<class T, std::size_t Extent>
+	constexpr void swap(collin::linear::row<T, Extent> lhs, collin::linear::row<T, Extent> rhs) noexcept
+	{
+		lhs.swap(rhs);
 	}
 }

@@ -9,17 +9,17 @@
 template<class Rep, class Period>
 void print_time(const std::chrono::duration<Rep, Period>& c)
 {
-	const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(c);
-	const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(c);
-	const auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(c);
-	if (seconds.count() > 0)
+	const auto seconds = std::chrono::duration_cast<std::chrono::duration<double>>(c);
+	const auto milliseconds = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(c);
+	const auto nanoseconds = std::chrono::duration_cast<std::chrono::duration<double, std::nano>>(c);
+	if (seconds.count() > 1)
 	{
-		std::cout << (static_cast<long double>(seconds.count()) + (static_cast<long double>(milliseconds.count()) / static_cast<long double>(std::milli::den)));
+		std::cout << seconds.count();
 		std::cout << "s";
 	}
-	else if (milliseconds.count() > 0)
+	else if (milliseconds.count() > 1)
 	{
-		std::cout << (static_cast<long double>(milliseconds.count()) + (static_cast<long double>(nanoseconds.count()) / static_cast<long double>(std::nano::den)));
+		std::cout << milliseconds.count();
 		std::cout << "ms";
 	}
 	else
@@ -131,6 +131,8 @@ int main()
 	constexpr std::array sizes = {10, 20, 30, 40, 50, 60, 70, 80, 90,
 					 100, 200, 300, 400, 500, 600, 700, 800, 900,
 					 1000, 1500, 2000, 2500, 3000, 3500, 4000};
+
+	//constexpr std::array sizes = {100, 200, 300};
 
 	//benchmark_multiplication_fixed_matrix<int, 10>();
 	//benchmark_multiplication_fixed_matrix<int, 20>();

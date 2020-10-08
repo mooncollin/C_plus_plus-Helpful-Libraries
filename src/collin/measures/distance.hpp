@@ -6,6 +6,7 @@
 #include <iostream>
 #include <sstream>
 #include <cstdint>
+
 #include "collin/measures/measure.hpp"
 #include "collin/math.hpp"
 #include "collin/ratio.hpp"
@@ -17,14 +18,14 @@ namespace collin
         template<class Rep>
         struct distance_values;
 
-        template<class Rep, class System, collin::ratio::ratio_type Ratio = std::ratio<1>>
-        using distance = basic_unit<Rep, Ratio, distance_values<Rep>, System>;
+        template<class Rep, class System, collin::ratio::ratio_type Ratio = std::ratio<1>, dimension_type Dimension = 1>
+        using distance = basic_unit<Rep, Ratio, distance_values<Rep>, System, Dimension>;
 
         template<class T>
         struct is_distance : std::false_type {};
 
-        template<class Rep, class System, collin::ratio::ratio_type Ratio>
-        struct is_distance<distance<Rep, System, Ratio>> : std::true_type {};
+        template<class Rep, class System, collin::ratio::ratio_type Ratio, dimension_type Dimension>
+        struct is_distance<distance<Rep, System, Ratio, Dimension>> : std::true_type {};
 
         template<class T>
         constexpr bool is_distance_v = is_distance<T>::value;
@@ -32,56 +33,56 @@ namespace collin
         template<class T>
         concept distance_type = is_distance_v<T>;
 
-        template<class Rep>
-        using basic_attometers = distance<Rep, metric_system, std::atto>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_attometers = distance<Rep, metric_system, std::atto, Dimension>;
 
-        template<class Rep>
-        using basic_femtometers = distance<Rep, metric_system, std::femto>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_femtometers = distance<Rep, metric_system, std::femto, Dimension>;
 
-        template<class Rep>
-        using basic_picometers = distance<Rep, metric_system, std::pico>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_picometers = distance<Rep, metric_system, std::pico, Dimension>;
 
-        template<class Rep>
-        using basic_nanometers = distance<Rep, metric_system, std::nano>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_nanometers = distance<Rep, metric_system, std::nano, Dimension>;
 
-        template<class Rep>
-        using basic_micrometers = distance<Rep, metric_system, std::micro>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_micrometers = distance<Rep, metric_system, std::micro, Dimension>;
 
-        template<class Rep>
-        using basic_millimeters = distance<Rep, metric_system, std::milli>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_millimeters = distance<Rep, metric_system, std::milli, Dimension>;
 
-        template<class Rep>
-        using basic_centimeters = distance<Rep, metric_system, std::centi>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_centimeters = distance<Rep, metric_system, std::centi, Dimension>;
 
-        template<class Rep>
-        using basic_decimeters = distance<Rep, metric_system, std::deci>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_decimeters = distance<Rep, metric_system, std::deci, Dimension>;
 
-        template<class Rep>
-        using basic_meters = distance<Rep, metric_system>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_meters = distance<Rep, metric_system, std::ratio<1>, Dimension>;
 
-        template<class Rep>
-        using basic_decameters = distance<Rep, metric_system, std::deca>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_decameters = distance<Rep, metric_system, std::deca, Dimension>;
 
-        template<class Rep>
-        using basic_hectometers = distance<Rep, metric_system, std::hecto>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_hectometers = distance<Rep, metric_system, std::hecto, Dimension>;
 
-        template<class Rep>
-        using basic_kilometers = distance<Rep, metric_system, std::kilo>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_kilometers = distance<Rep, metric_system, std::kilo, Dimension>;
 
-        template<class Rep>
-        using basic_megameters = distance<Rep, metric_system, std::mega>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_megameters = distance<Rep, metric_system, std::mega, Dimension>;
 
-        template<class Rep>
-        using basic_gigameters = distance<Rep, metric_system, std::giga>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_gigameters = distance<Rep, metric_system, std::giga, Dimension>;
 
-        template<class Rep>
-        using basic_terameters = distance<Rep, metric_system, std::tera>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_terameters = distance<Rep, metric_system, std::tera, Dimension>;
 
-        template<class Rep>
-        using basic_petameters = distance<Rep, metric_system, std::peta>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_petameters = distance<Rep, metric_system, std::peta, Dimension>;
 
-        template<class Rep>
-        using basic_exameters = distance<Rep, metric_system, std::exa>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_exameters = distance<Rep, metric_system, std::exa, Dimension>;
 
         using attometers = basic_attometers<std::intmax_t>;
         using femtometers = basic_femtometers<std::intmax_t>;
@@ -101,17 +102,17 @@ namespace collin
         using petameters = basic_petameters<std::intmax_t>;
         using exameters = basic_exameters<std::intmax_t>;
 
-        template<class Rep>
-        using basic_inches = distance<Rep, imperial_system>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_inches = distance<Rep, imperial_system, std::ratio<1>, Dimension>;
 
-        template<class Rep>
-        using basic_feet = distance<Rep, imperial_system, std::ratio<12, 1>>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_feet = distance<Rep, imperial_system, std::ratio<12, 1>, Dimension>;
 
-        template<class Rep>
-        using basic_yards = distance<Rep, imperial_system, std::ratio<36, 1>>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_yards = distance<Rep, imperial_system, std::ratio<36, 1>, Dimension>;
 
-        template<class Rep>
-        using basic_miles = distance<Rep, imperial_system, std::ratio<63360, 1>>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_miles = distance<Rep, imperial_system, std::ratio<63360, 1>, Dimension>;
 
         using inches = basic_inches<std::intmax_t>;
         using feet = basic_feet<std::intmax_t>;
@@ -136,9 +137,9 @@ namespace collin
                 return std::numeric_limits<Rep>::max();
             }
 
-            template<distance_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio>
+            template<distance_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio, dimension_type Dimension>
                 requires (collin::concepts::same<ToSystem, metric_system>)
-            static constexpr ToBasicUnit system_cast(const distance<Rep, imperial_system, Ratio>& unit) noexcept
+            static constexpr ToBasicUnit system_cast(const distance<Rep, imperial_system, Ratio, Dimension>& unit) noexcept
             {
                 using common_type = std::common_type_t<Rep, typename ToBasicUnit::rep>;
                 const auto inch_conversion = unit_cast<basic_inches<common_type>>(unit);
@@ -146,9 +147,9 @@ namespace collin
                 return ToBasicUnit{nanometer_conversion};
             }
 
-            template<distance_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio>
+            template<distance_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio, dimension_type Dimension>
                 requires(collin::concepts::same<ToSystem, imperial_system>)
-            static constexpr ToBasicUnit system_cast(const distance<Rep, metric_system, Ratio>& unit) noexcept
+            static constexpr ToBasicUnit system_cast(const distance<Rep, metric_system, Ratio, Dimension>& unit) noexcept
             {
                 using common_type = std::common_type_t<Rep, typename ToBasicUnit::rep>;
                 const auto nanometer_conversion = unit_cast<basic_nanometers<common_type>>(unit);
@@ -157,128 +158,128 @@ namespace collin
             }
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_attometers<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_attometers<Rep, Dimension>>
         {
             constexpr static std::string_view value {"am"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_femtometers<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_femtometers<Rep, Dimension>>
         {
             constexpr static std::string_view value {"fm"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_picometers<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_picometers<Rep, Dimension>>
         {
             constexpr static std::string_view value {"pm"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_nanometers<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_nanometers<Rep, Dimension>>
         {
             constexpr static std::string_view value {"nm"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_micrometers<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_micrometers<Rep, Dimension>>
         {
             constexpr static std::string_view value {"um"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_millimeters<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_millimeters<Rep, Dimension>>
         {
             constexpr static std::string_view value {"mm"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_centimeters<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_centimeters<Rep, Dimension>>
         {
             constexpr static std::string_view value {"cm"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_decimeters<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_decimeters<Rep, Dimension>>
         {
             constexpr static std::string_view value {"dm"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_meters<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_meters<Rep, Dimension>>
         {
             constexpr static std::string_view value {"m"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_decameters<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_decameters<Rep, Dimension>>
         {
             constexpr static std::string_view value {"dam"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_hectometers<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_hectometers<Rep, Dimension>>
         {
             constexpr static std::string_view value {"hm"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_kilometers<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_kilometers<Rep, Dimension>>
         {
             constexpr static std::string_view value {"km"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_megameters<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_megameters<Rep, Dimension>>
         {
             constexpr static std::string_view value {"Mm"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_gigameters<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_gigameters<Rep, Dimension>>
         {
             constexpr static std::string_view value {"Gm"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_terameters<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_terameters<Rep, Dimension>>
         {
             constexpr static std::string_view value {"Tm"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_petameters<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_petameters<Rep, Dimension>>
         {
             constexpr static std::string_view value {"Pm"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_exameters<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_exameters<Rep, Dimension>>
         {
             constexpr static std::string_view value {"Em"};
         };
 
-        template<class Rep>
-        struct imperial_system::suffix<basic_inches<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct imperial_system::suffix<basic_inches<Rep, Dimension>>
         {
             constexpr static std::string_view value {"in"};
         };
 
-        template<class Rep>
-        struct imperial_system::suffix<basic_feet<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct imperial_system::suffix<basic_feet<Rep, Dimension>>
         {
             constexpr static std::string_view value {"ft"};
         };
 
-        template<class Rep>
-        struct imperial_system::suffix<basic_yards<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct imperial_system::suffix<basic_yards<Rep, Dimension>>
         {
             constexpr static std::string_view value {"yd"};
         };
 
-        template<class Rep>
-        struct imperial_system::suffix<basic_miles<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct imperial_system::suffix<basic_miles<Rep, Dimension>>
         {
             constexpr static std::string_view value {"mi"};
         };

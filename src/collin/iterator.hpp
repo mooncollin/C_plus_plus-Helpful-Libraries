@@ -139,14 +139,20 @@ namespace collin
 			return back_emplace_iterator<Container>(c);
 		}
 
-		template<class ForwardIterator>
-		class enumerate : public std::iterator<std::forward_iterator_tag, std::tuple<int, typename ForwardIterator::value_type>>
+		template<class InputIterator>
+		class enumerate
 		{
 			public:
-				constexpr explicit enumerate(ForwardIterator begin, ForwardIterator end, int start=0, int step=1)
+				using difference_type = std::intmax_t;
+				using value_type = std::pair<std::intmax_t, typename std::iterator_traits<InputIterator>::value_type>;
+				using pointer = value_type*;
+				using reference = value_type&;
+				using iterator_category = std::input_iterator_tag;
+
+				constexpr explicit enumerate(InputIterator begin, InputIterator end, difference_type start=0, difference_type step=1)
 					: current_(begin), end_(end), index_(start), step_(step) {}
 
-				constexpr enumerate begin() const
+				constexpr enumerate begin()
 				{
 					return *this;
 				}
@@ -166,7 +172,7 @@ namespace collin
 
 				constexpr enumerate operator++(int)
 				{
-					enumerate e(*this);
+					auto e = *this;
 					operator++();
 					return e;
 				}
@@ -186,19 +192,19 @@ namespace collin
 					return !operator==(rhs);
 				}
 
-				constexpr int index() const noexcept
+				constexpr difference_type index() const noexcept
 				{
 					return index_;
 				}
 
-				constexpr int step() const noexcept
+				constexpr difference_type step() const noexcept
 				{
 					return step_;
 				}
 
 			private:
-				ForwardIterator current_;
-				ForwardIterator end_;
+				InputIterator current_;
+				InputIterator end_;
 				int index_;
 				int step_;
 		};
@@ -311,5 +317,131 @@ namespace collin
                     }
                 }
         };
+
+		template<class... Ranges>
+			requires(sizeof...(Ranges) > 0)
+		class zip_ranges
+		{
+			using iterators_type = std::tuple<decltype(std::begin(std::declval<Ranges>()))...>;
+			using ranges_type = std::tuple<std::reference_wrapper<Ranges>...>;
+			static constexpr auto range_size = sizeof...(Ranges);
+
+			public:
+				using difference_type = std::ptrdiff_t;
+				using value_type = std::tuple<typename std::iterator_traits<decltype(std::begin(std::declval<Ranges>()))>::value_type...>;
+				using pointer = value_type*;
+				using reference = value_type&;
+				using iterator_category = std::input_iterator_tag;
+
+				constexpr zip_ranges(Ranges&... ranges)
+					: ranges_{std::make_tuple(std::reference_wrapper<Ranges>{ranges}...)},
+					  current_{std::make_tuple(std::begin(ranges)...)} {}
+
+				constexpr zip_ranges& operator++()
+				{
+					collin::tuples::for_each(current_, [](auto& v) { ++v; });
+					return *this;
+				}
+
+				constexpr zip_ranges operator++(int)
+				{
+					auto r = *this;
+					operator++();
+					return r;
+				}
+
+				constexpr value_type operator*() const
+				{
+					return dereference_helper(std::make_index_sequence<range_size>{});
+				}
+
+				constexpr value_type operator*()
+				{
+					return dereference_helper(std::make_index_sequence<range_size>{});
+				}
+
+				constexpr zip_ranges begin()
+				{
+					return *this;
+				}
+
+				constexpr zip_ranges end() const
+				{
+					return end_helper(std::make_index_sequence<range_size>{});
+				}
+
+				[[nodiscard]] constexpr bool operator==(const zip_ranges& rhs) const noexcept
+				{
+					return equal_helper(rhs, std::make_index_sequence<range_size>{});
+				}
+
+				[[nodiscard]] constexpr bool operator!=(const zip_ranges& rhs) const noexcept
+				{
+					return !(*this == rhs);
+				}
+			private:
+				ranges_type ranges_;
+				iterators_type current_;
+
+				struct do_end {};
+
+				constexpr zip_ranges(do_end, Ranges&... ranges)
+					: ranges_{std::make_tuple(std::reference_wrapper<Ranges>{ranges}...)},
+					  current_{std::make_tuple(std::end(ranges)...)} {}
+
+				template<std::size_t... I>
+				[[nodiscard]] constexpr zip_ranges end_helper(std::index_sequence<I...>) const noexcept
+				{
+					return {do_end{}, std::get<I>(ranges_).get()...};
+				}
+
+				template<std::size_t... I>
+				constexpr value_type dereference_helper(std::index_sequence<I...>)
+				{
+					return std::make_tuple((*std::get<I>(current_))...);
+				}
+
+				template<std::size_t... I>
+				constexpr value_type dereference_helper(std::index_sequence<I...>) const
+				{
+					return std::make_tuple((*std::get<I>(current_))...);
+				}
+
+				template<std::size_t... I>
+				[[nodiscard]] constexpr bool equal_helper(const zip_ranges& rhs, std::index_sequence<I...>) const noexcept
+				{
+					return ((std::get<I>(current_) == std::get<I>(rhs.current_)) || ...);
+				}
+		};
+
+		template<class T>
+		class reverse
+		{
+			public:
+				constexpr explicit reverse(T& iterable)
+					: iterable_{iterable} {}
+
+				[[nodiscard]] constexpr auto begin() const
+				{
+					return std::rbegin(iterable_);
+				}
+
+				[[nodiscard]] constexpr auto end() const
+				{
+					return std::rend(iterable_);
+				}
+
+				[[nodiscard]] constexpr auto rbegin() const
+				{
+					return std::begin(iterable_);
+				}
+
+				[[nodiscard]] constexpr auto rend() const
+				{
+					return std::end(iterable_);
+				}
+			private:
+				T& iterable_;
+		};
 	}
 }

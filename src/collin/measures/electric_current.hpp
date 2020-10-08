@@ -1,6 +1,7 @@
 #pragma once
 
-#include "measure.hpp"
+#include "collin/measures/measure.hpp"
+#include "collin/ratio.hpp"
 
 namespace collin
 {
@@ -9,14 +10,14 @@ namespace collin
 		template<class Rep>
 		struct electric_current_values;
 
-		template<class Rep, class System, class Ratio = std::ratio<1>>
-		using electric_current = basic_unit<Rep, Ratio, electric_current_values<Rep>, System>;
+		template<class Rep, class System, collin::ratio::ratio_type Ratio = std::ratio<1>, dimension_type Dimension = 1>
+		using electric_current = basic_unit<Rep, Ratio, electric_current_values<Rep>, System, Dimension>;
 
 		template<class T>
 		struct is_electric_current : std::false_type {};
 
-		template<class Rep, class System, class Ratio>
-		struct is_electric_current<electric_current<Rep, System, Ratio>> : std::true_type {};
+		template<class Rep, class System, collin::ratio::ratio_type Ratio, dimension_type Dimension>
+		struct is_electric_current<electric_current<Rep, System, Ratio, Dimension>> : std::true_type {};
 
 		template<class T>
 		constexpr bool is_electric_current_v = is_electric_current<T>::value;
@@ -24,8 +25,8 @@ namespace collin
 		template<class T>
 		concept electric_current_type = is_electric_current_v<T>;
 
-		template<class T>
-		using basic_ampere = electric_current<T, metric_system>;
+		template<class T, dimension_type Dimension = 1>
+		using basic_ampere = electric_current<T, metric_system, std::ratio<1>, Dimension>;
 
 		using ampere = basic_ampere<std::intmax_t>;
 
@@ -48,8 +49,8 @@ namespace collin
 			}
 		};
 
-		template<class Rep>
-		struct metric_system::suffix<basic_ampere<Rep>>
+		template<class Rep, dimension_type Dimension>
+		struct metric_system::suffix<basic_ampere<Rep, Dimension>>
 		{
 			constexpr static std::string_view value {"A"};
 		};

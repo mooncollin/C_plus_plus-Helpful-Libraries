@@ -6,7 +6,9 @@
 #include <iostream>
 #include <sstream>
 #include <cstdint>
-#include "measure.hpp"
+
+#include "collin/measures/measure.hpp"
+#include "collin/ratio.hpp"
 
 namespace collin
 {
@@ -15,14 +17,14 @@ namespace collin
         template<class Rep>
         struct mass_values;
 
-        template<class Rep, class System, class Ratio = std::ratio<1>>
-        using mass = basic_unit<Rep, Ratio, mass_values<Rep>, System>;
+        template<class Rep, class System, collin::ratio::ratio_type Ratio = std::ratio<1>, dimension_type Dimension = 1>
+        using mass = basic_unit<Rep, Ratio, mass_values<Rep>, System, Dimension>;
 
         template<class T>
         struct is_mass : std::false_type {};
 
-        template<class Rep, class System, class Ratio>
-        struct is_mass<mass<Rep, System, Ratio>> : std::true_type {};
+        template<class Rep, class System, collin::ratio::ratio_type Ratio, dimension_type Dimension>
+        struct is_mass<mass<Rep, System, Ratio, Dimension>> : std::true_type {};
 
         template<class T>
         constexpr bool is_mass_v = is_mass<T>::value;
@@ -30,56 +32,56 @@ namespace collin
         template<class T>
         concept mass_type = is_mass_v<T>;
 
-        template<class Rep>
-        using basic_attograms = mass<Rep, metric_system, std::atto>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_attograms = mass<Rep, metric_system, std::atto, Dimension>;
         
-        template<class Rep>
-        using basic_femtograms = mass<Rep, metric_system, std::femto>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_femtograms = mass<Rep, metric_system, std::femto, Dimension>;
         
-        template<class Rep>
-        using basic_picograms = mass<Rep, metric_system, std::pico>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_picograms = mass<Rep, metric_system, std::pico, Dimension>;
         
-        template<class Rep>
-        using basic_nanograms = mass<Rep, metric_system, std::nano>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_nanograms = mass<Rep, metric_system, std::nano, Dimension>;
         
-        template<class Rep>
-        using basic_micrograms = mass<Rep, metric_system, std::micro>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_micrograms = mass<Rep, metric_system, std::micro, Dimension>;
         
-        template<class Rep>
-        using basic_milligrams = mass<Rep, metric_system, std::milli>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_milligrams = mass<Rep, metric_system, std::milli, Dimension>;
         
-        template<class Rep>
-        using basic_centigrams = mass<Rep, metric_system, std::centi>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_centigrams = mass<Rep, metric_system, std::centi, Dimension>;
         
-        template<class Rep>
-        using basic_decigrams = mass<Rep, metric_system, std::deci>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_decigrams = mass<Rep, metric_system, std::deci, Dimension>;
         
-        template<class Rep>
-        using basic_grams = mass<Rep, metric_system>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_grams = mass<Rep, metric_system, std::ratio<1>, Dimension>;
         
-        template<class Rep>
-        using basic_decagrams = mass<Rep, metric_system, std::deca>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_decagrams = mass<Rep, metric_system, std::deca, Dimension>;
         
-        template<class Rep>
-        using basic_hectograms = mass<Rep, metric_system, std::hecto>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_hectograms = mass<Rep, metric_system, std::hecto, Dimension>;
         
-        template<class Rep>
-        using basic_kilograms = mass<Rep, metric_system, std::kilo>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_kilograms = mass<Rep, metric_system, std::kilo, Dimension>;
         
-        template<class Rep>
-        using basic_megagrams = mass<Rep, metric_system, std::mega>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_megagrams = mass<Rep, metric_system, std::mega, Dimension>;
         
-        template<class Rep>
-        using basic_gigagrams = mass<Rep, metric_system, std::giga>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_gigagrams = mass<Rep, metric_system, std::giga, Dimension>;
         
-        template<class Rep>
-        using basic_teragrams = mass<Rep, metric_system, std::tera>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_teragrams = mass<Rep, metric_system, std::tera, Dimension>;
         
-        template<class Rep>
-        using basic_petagrams = mass<Rep, metric_system, std::peta>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_petagrams = mass<Rep, metric_system, std::peta, Dimension>;
         
-        template<class Rep>
-        using basic_exagrams = mass<Rep, metric_system, std::exa>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_exagrams = mass<Rep, metric_system, std::exa, Dimension>;
         
         using attograms = basic_attograms<std::intmax_t>;
         using femtograms = basic_femtograms<std::intmax_t>;
@@ -99,32 +101,32 @@ namespace collin
         using petagrams = basic_petagrams<std::intmax_t>;
         using exagrams = basic_exagrams<std::intmax_t>;
 
-        template<class Rep>
-        using basic_grains = mass<Rep, imperial_system, std::ratio<1, 7000>>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_grains = mass<Rep, imperial_system, std::ratio<1, 7000>, Dimension>;
 
-        template<class Rep>
-        using basic_drachm = mass<Rep, imperial_system, std::ratio<1, 256>>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_drachm = mass<Rep, imperial_system, std::ratio<1, 256>, Dimension>;
 
-        template<class Rep>
-        using basic_ounces = mass<Rep, imperial_system, std::ratio<1, 16>>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_ounces = mass<Rep, imperial_system, std::ratio<1, 16>, Dimension>;
 
-        template<class Rep>
-        using basic_pounds = mass<Rep, imperial_system>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_pounds = mass<Rep, imperial_system, std::ratio<1>, Dimension>;
 
-        template<class Rep>
-        using basic_stones = mass<Rep, imperial_system, std::ratio<14, 1>>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_stones = mass<Rep, imperial_system, std::ratio<14, 1>, Dimension>;
 
-        template<class Rep>
-        using basic_quarters = mass<Rep, imperial_system, std::ratio<28, 1>>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_quarters = mass<Rep, imperial_system, std::ratio<28, 1>, Dimension>;
 
-        template<class Rep>
-        using basic_hundredweights = mass<Rep, imperial_system, std::ratio<112, 1>>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_hundredweights = mass<Rep, imperial_system, std::ratio<112, 1>, Dimension>;
 
-        template<class Rep>
-        using basic_short_tons = mass<Rep, imperial_system, std::ratio<2000, 1>>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_short_tons = mass<Rep, imperial_system, std::ratio<2000, 1>, Dimension>;
 
-        template<class Rep>
-        using basic_tons = mass<Rep, imperial_system, std::ratio<2240, 1>>;
+        template<class Rep, dimension_type Dimension = 1>
+        using basic_tons = mass<Rep, imperial_system, std::ratio<2240, 1>, Dimension>;
 
         using grains = basic_grains<std::intmax_t>;
         using drachm = basic_drachm<std::intmax_t>;
@@ -154,9 +156,9 @@ namespace collin
                 return std::numeric_limits<Rep>::max();
             }
 
-            template<mass_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio>
+            template<mass_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio, dimension_type Dimension>
                 requires(collin::concepts::same<ToSystem, metric_system>)
-            static constexpr ToBasicUnit system_cast(const mass<Rep, imperial_system, Ratio>& unit) noexcept
+            static constexpr ToBasicUnit system_cast(const mass<Rep, imperial_system, Ratio, Dimension>& unit) noexcept
             {
                 using common_type = std::common_type_t<Rep, typename ToBasicUnit::rep>;
                 const auto grains_conversion = unit_cast<basic_grains<common_type>>(unit);
@@ -164,9 +166,9 @@ namespace collin
                 return ToBasicUnit{nanograms_conversion};
             }
 
-            template<mass_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio>
+            template<mass_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio, dimension_type Dimension>
                 requires(collin::concepts::same<ToSystem, imperial_system>)
-            static constexpr ToBasicUnit system_cast(const mass<Rep, metric_system, Ratio>& unit) noexcept
+            static constexpr ToBasicUnit system_cast(const mass<Rep, metric_system, Ratio, Dimension>& unit) noexcept
             {
                 using common_type = std::common_type_t<Rep, typename ToBasicUnit::rep>;
                 const auto nanograms_conversion = unit_cast<basic_nanograms<common_type>>(unit);
@@ -175,158 +177,158 @@ namespace collin
             }
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_attograms<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_attograms<Rep, Dimension>>
         {
             constexpr static std::string_view value {"ag"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_femtograms<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_femtograms<Rep, Dimension>>
         {
             constexpr static std::string_view value {"fg"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_picograms<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_picograms<Rep, Dimension>>
         {
             constexpr static std::string_view value {"pg"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_nanograms<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_nanograms<Rep, Dimension>>
         {
             constexpr static std::string_view value {"ng"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_micrograms<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_micrograms<Rep, Dimension>>
         {
             constexpr static std::string_view value {"ug"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_milligrams<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_milligrams<Rep, Dimension>>
         {
             constexpr static std::string_view value {"mg"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_centigrams<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_centigrams<Rep, Dimension>>
         {
             constexpr static std::string_view value {"cg"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_decigrams<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_decigrams<Rep, Dimension>>
         {
             constexpr static std::string_view value {"dg"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_grams<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_grams<Rep, Dimension>>
         {
             constexpr static std::string_view value {"g"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_decagrams<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_decagrams<Rep, Dimension>>
         {
             constexpr static std::string_view value {"dag"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_hectograms<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_hectograms<Rep, Dimension>>
         {
             constexpr static std::string_view value {"hg"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_kilograms<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_kilograms<Rep, Dimension>>
         {
             constexpr static std::string_view value {"kg"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_megagrams<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_megagrams<Rep, Dimension>>
         {
             constexpr static std::string_view value {"Mg"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_gigagrams<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_gigagrams<Rep, Dimension>>
         {
             constexpr static std::string_view value {"Gg"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_teragrams<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_teragrams<Rep, Dimension>>
         {
             constexpr static std::string_view value {"Tg"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_petagrams<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_petagrams<Rep, Dimension>>
         {
             constexpr static std::string_view value {"Pg"};
         };
 
-        template<class Rep>
-        struct metric_system::suffix<basic_exagrams<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct metric_system::suffix<basic_exagrams<Rep, Dimension>>
         {
             constexpr static std::string_view value {"Eg"};
         };
 
-        template<class Rep>
-        struct imperial_system::suffix<basic_grains<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct imperial_system::suffix<basic_grains<Rep, Dimension>>
         {
             constexpr static std::string_view value {"gr"};
         };
 
-        template<class Rep>
-        struct imperial_system::suffix<basic_drachm<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct imperial_system::suffix<basic_drachm<Rep, Dimension>>
         {
             constexpr static std::string_view value {"dr"};
         };
 
-        template<class Rep>
-        struct imperial_system::suffix<basic_ounces<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct imperial_system::suffix<basic_ounces<Rep, Dimension>>
         {
             constexpr static std::string_view value {"oz"};
         };
 
-        template<class Rep>
-        struct imperial_system::suffix<basic_pounds<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct imperial_system::suffix<basic_pounds<Rep, Dimension>>
         {
             constexpr static std::string_view value {"lb"};
         };
 
-        template<class Rep>
-        struct imperial_system::suffix<basic_stones<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct imperial_system::suffix<basic_stones<Rep, Dimension>>
         {
             constexpr static std::string_view value {"st"};
         };
 
-        template<class Rep>
-        struct imperial_system::suffix<basic_quarters<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct imperial_system::suffix<basic_quarters<Rep, Dimension>>
         {
             constexpr static std::string_view value {"qr"};
         };
 
-        template<class Rep>
-        struct imperial_system::suffix<basic_hundredweights<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct imperial_system::suffix<basic_hundredweights<Rep, Dimension>>
         {
             constexpr static std::string_view value {"cwt"};
         };
 
-        template<class Rep>
-        struct imperial_system::suffix<basic_short_tons<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct imperial_system::suffix<basic_short_tons<Rep, Dimension>>
         {
             constexpr static std::string_view value {"t"};
         };
 
-        template<class Rep>
-        struct imperial_system::suffix<basic_tons<Rep>>
+        template<class Rep, dimension_type Dimension>
+        struct imperial_system::suffix<basic_tons<Rep, Dimension>>
         {
             constexpr static std::string_view value {"t"};
         };

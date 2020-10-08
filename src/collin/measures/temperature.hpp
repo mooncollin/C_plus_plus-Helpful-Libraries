@@ -2,7 +2,8 @@
 
 #include <string_view>
 
-#include "measure.hpp"
+#include "collin/measures/measure.hpp"
+#include "collin/ratio.hpp"
 #include "collin/math.hpp"
 
 namespace collin
@@ -12,14 +13,14 @@ namespace collin
 		template<class Rep>
 		struct temperature_values;
 
-		template<class Rep, class System, class Ratio = std::ratio<1>>
-		using temperature = basic_unit<Rep, Ratio, temperature_values<Rep>, System>;
+		template<class Rep, class System, collin::ratio::ratio_type Ratio = std::ratio<1>, dimension_type Dimension = 1>
+		using temperature = basic_unit<Rep, Ratio, temperature_values<Rep>, System, Dimension>;
 
 		template<class T>
 		struct is_temperature : std::false_type {};
 
-		template<class Rep, class System, class Ratio>
-		struct is_temperature<temperature<Rep, System, Ratio>> : std::true_type {};
+		template<class Rep, class System, collin::ratio::ratio_type Ratio, dimension_type Dimension>
+		struct is_temperature<temperature<Rep, System, Ratio, Dimension>> : std::true_type {};
 
 		template<class T>
 		constexpr bool is_temperature_v = is_temperature<T>::value;
@@ -39,14 +40,14 @@ namespace collin
 		{
 		};
 
-		template<class Rep>
-		using basic_celsius = temperature<Rep, celsius_scale>;
+		template<class Rep, dimension_type Dimension = 1>
+		using basic_celsius = temperature<Rep, celsius_scale, std::ratio<1>, Dimension>;
 
-		template<class Rep>
-		using basic_fahrenheit = temperature<Rep, fahrenheit_scale>;
+		template<class Rep, dimension_type Dimension = 1>
+		using basic_fahrenheit = temperature<Rep, fahrenheit_scale, std::ratio<1>, Dimension>;
 
-		template<class Rep>
-		using basic_kelvin = temperature<Rep, kelvin_scale>;
+		template<class Rep, dimension_type Dimension = 1>
+		using basic_kelvin = temperature<Rep, kelvin_scale, std::ratio<1>, Dimension>;
 
 		using celsius = basic_celsius<std::intmax_t>;
 		using fahrenheit = basic_fahrenheit<std::intmax_t>;
@@ -70,8 +71,8 @@ namespace collin
 				return std::numeric_limits<Rep>::max();
 			}
 
-			template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio>
-			static constexpr ToBasicUnit system_cast(const temperature<Rep, fahrenheit_scale, Ratio>& unit) noexcept
+			template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio, dimension_type Dimension>
+			static constexpr ToBasicUnit system_cast(const temperature<Rep, fahrenheit_scale, Ratio, Dimension>& unit) noexcept
 			{
 				constexpr auto rational_5_9 = collin::math::basic_rational<typename ToBasicUnit::rep>{5, 9};
 				if constexpr(collin::concepts::same<ToSystem, celsius_scale>)
@@ -84,8 +85,8 @@ namespace collin
 				}
 			}
 
-			template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio>
-			static constexpr ToBasicUnit system_cast(const temperature<Rep, kelvin_scale, Ratio>& unit) noexcept
+			template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio, dimension_type Dimension>
+			static constexpr ToBasicUnit system_cast(const temperature<Rep, kelvin_scale, Ratio, Dimension>& unit) noexcept
 			{
 				if constexpr (collin::concepts::same<ToSystem, celsius_scale>)
 				{
@@ -98,8 +99,8 @@ namespace collin
 				}
 			}
 
-			template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio>
-			static constexpr ToBasicUnit system_cast(const temperature<Rep, celsius_scale, Ratio>& unit) noexcept
+			template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, collin::ratio::ratio_type Ratio, dimension_type Dimension>
+			static constexpr ToBasicUnit system_cast(const temperature<Rep, celsius_scale, Ratio, Dimension>& unit) noexcept
 			{
 				if constexpr(collin::concepts::same<ToSystem, fahrenheit_scale>)
 				{
@@ -113,20 +114,20 @@ namespace collin
 			}
 		};
 
-		template<class Rep>
-		struct fahrenheit_scale::suffix<basic_fahrenheit<Rep>>
+		template<class Rep, dimension_type Dimension>
+		struct fahrenheit_scale::suffix<basic_fahrenheit<Rep, Dimension>>
 		{
 			constexpr static std::string_view value {"F"};
 		};
 
-		template<class Rep>
-		struct celsius_scale::suffix<basic_celsius<Rep>>
+		template<class Rep, dimension_type Dimension>
+		struct celsius_scale::suffix<basic_celsius<Rep, Dimension>>
 		{
 			constexpr static std::string_view value {"C"};
 		};
 
-		template<class Rep>
-		struct kelvin_scale::suffix<basic_kelvin<Rep>>
+		template<class Rep, dimension_type Dimension>
+		struct kelvin_scale::suffix<basic_kelvin<Rep, Dimension>>
 		{
 			constexpr static std::string_view value {"K"};
 		};
