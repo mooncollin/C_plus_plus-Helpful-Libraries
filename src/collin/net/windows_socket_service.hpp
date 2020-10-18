@@ -2,6 +2,8 @@
 
 #ifdef _WIN32
 #include <WinSock2.h>
+#undef max
+#undef min
 #endif
 
 #include <system_error>

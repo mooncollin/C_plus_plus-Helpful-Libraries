@@ -4,6 +4,7 @@
 #include <map>
 #include <optional>
 #include <string_view>
+#include <iostream>
 
 #include "collin/net/internet.hpp"
 
@@ -14,7 +15,7 @@ namespace collin
 		namespace web
 		{
 			template<class CharT>
-			std::basic_string<CharT> url_encode_char(const CharT& c)
+			[[nodiscard]] std::basic_string<CharT> url_encode_char(const CharT& c)
 			{
 				switch (c)
 				{
@@ -105,7 +106,7 @@ namespace collin
 			}
 
 			template<class Map>
-			std::string create_parameter_string(const Map& map)
+			[[nodiscard]] std::string create_parameter_string(const Map& map)
 			{
 				std::string result;
 
@@ -138,7 +139,7 @@ namespace collin
 						: protocol_{std::move(protocol)}, host_{host}, port_{port},
 						  resource_{resource}, parameters_{parameters} {}
 
-					std::string to_string() const
+					[[nodiscard]] std::string to_string() const
 					{
 						std::string result;
 						create_pre_parameter_string(result);
@@ -162,7 +163,7 @@ namespace collin
 						return result;
 					}
 
-					std::string encode_string() const
+					[[nodiscard]] std::string encode_string() const
 					{
 						std::string result;
 						create_pre_parameter_string(result);
@@ -253,6 +254,41 @@ namespace collin
 						str += resource_;
 					}
 			};
+
+			std::ostream& operator<<(std::ostream& os, const url& u)
+			{
+				if (u.protocol())
+				{
+					os << u.protocol().value() << "://";
+				}
+
+				os << u.host();
+
+				if (u.port())
+				{
+					os << ':' << u.port().value();
+				}
+
+				os << u.resource();
+
+				if (!u.parameters().empty())
+				{
+					os << '?';
+				}
+
+				const auto end = u.parameters().cend();
+				for (auto it = u.parameters().cbegin(); it != end; ++it)
+				{
+					os << url_encode_string(it->first) << '=' << url_encode_string(it->second);
+
+					if (std::next(it) != end)
+					{
+						os << '&';
+					}
+				}
+
+				return os;
+			}
 		}
 	}
 }

@@ -298,7 +298,6 @@ namespace collin
 				}
 
 				template<class InputIterator>
-					requires(type_traits::is_iterator_v<InputIterator>)
 				void write_row(InputIterator begin, InputIterator end)
 				{
 					while (begin != end)

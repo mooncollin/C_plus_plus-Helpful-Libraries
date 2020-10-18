@@ -312,10 +312,10 @@ namespace collin
 
 			if (ctx.has_service<Service>())
 			{
-				throw service_already_exists{};
+				throw service_already_exists{"Service already exists"};
 			}
 
-			ctx.add_service(std::forward<Args>(args)...);
+			ctx.add_service<Service>(std::forward<Args>(args)...);
 			return static_cast<Service&>(*(ctx.services.back().svc.get()));
 		}
 
@@ -330,7 +330,15 @@ namespace collin
 			return ctx.has_service<Service>();
 		}
 
-		class service_already_exists : public std::logic_error {};
+		class service_already_exists : public std::logic_error
+		{
+			public:
+				service_already_exists(const std::string& what_arg)
+					: std::logic_error{what_arg} {}
+
+				service_already_exists(const char* what_arg)
+					: std::logic_error{what_arg} {}
+		};
 
 		template<class X>
 		concept specialized_execution_context = collin::concepts::derived_from<X, execution_context> &&

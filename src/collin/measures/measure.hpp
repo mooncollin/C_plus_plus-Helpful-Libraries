@@ -442,6 +442,9 @@ namespace collin
 				rep amount_ {};
 		};
 
+		template<basic_unit_type Unit, dimension_type Dimension>
+		using convert_unit_dimension = basic_unit<typename Unit::rep, typename Unit::ratio, typename Unit::unit_values, typename Unit::system, Dimension>;
+
 		template<basic_unit_type ToBasicUnit, class Rep, collin::ratio::ratio_type Ratio, class UnitValues, class System, dimension_type Dimension>
 		[[nodiscard]] constexpr ToBasicUnit floor(const basic_unit<Rep, Ratio, UnitValues, System, Dimension>& unit) noexcept
 		{
@@ -554,11 +557,8 @@ namespace collin
 				constexpr basic_derived_unit& operator=(const basic_derived_unit&) = default;
 				constexpr basic_derived_unit& operator=(basic_derived_unit&&) noexcept = default;
 
-				constexpr explicit basic_derived_unit(const rep& n, const rep& d = 1)
-					: amount_{n, d} {}
-				
-				constexpr explicit basic_derived_unit(const collin::math::basic_rational<rep>& other)
-					: amount_{other} {}
+				constexpr explicit basic_derived_unit(const rep& n)
+					: amount_{n} {}
 
 				template<basic_unit_type... Units2>
                     requires(same_unit_values<Units2...>&& same_systems<Units2...> && same_dimensions<Units2...>)
@@ -573,15 +573,9 @@ namespace collin
                     return *this;
                 }
 
-				[[nodiscard]] constexpr storage_t rational() const noexcept
+                [[nodiscard]] constexpr rep count() const noexcept
                 {
                     return amount_;
-                }
-
-                template<class Rep2 = rep>
-                [[nodiscard]] constexpr Rep2 count() const noexcept
-                {
-                    return static_cast<Rep2>(amount_);
                 }
 
 				[[nodiscard]] constexpr basic_derived_unit operator+() const noexcept
@@ -650,7 +644,7 @@ namespace collin
                     requires(same_unit_values<Units2...> && same_systems<Units2...> && same_dimensions<Units2...>)
                 [[nodiscard]] friend constexpr bool operator==(const basic_derived_unit& lhs, const basic_derived_unit<Rep2, Units2...>& rhs) noexcept
                 {
-					return amount_ == basic_derived_unit{rhs}.rational();
+					return amount_ == basic_derived_unit{rhs}.count();
                 }
 
 				template<class Rep2, basic_unit_type... Units2>
@@ -668,11 +662,11 @@ namespace collin
 
                     if constexpr (std::ratio_equal_v<t, std::ratio<1, 1>>)
                     {
-                        return lhs.rational() < rhs.rational();
+                        return lhs.count() < rhs.count();
                     }
                     else
                     {
-                        return lhs.rational() < basic_derived_unit<Rep, DimensionUnits...>{rhs}.rational();
+                        return lhs.count() < basic_derived_unit<Rep, DimensionUnits...>{rhs}.count();
                     }
                 }
 
@@ -730,7 +724,7 @@ namespace collin
 					using unit_t = basic_unit<Rep2, Ratio2, UnitValues, System, Dimension2>;
 					using result_t = derived_result_one_t<unit_t, multiply_op>;
 					using common_t = typename result_t::rep;
-					const auto amount = static_cast<common_t>(lhs.count()) * static_cast<common_t>(rhs.count()) * collin::math::rational_ratio<result_ratio_t<unit_t>, common_t>;
+					const auto amount = static_cast<common_t>(static_cast<common_t>(lhs.count()) * static_cast<common_t>(rhs.count()) * collin::math::rational_ratio<result_ratio_t<unit_t>, common_t>);
 
 					if constexpr (basic_derived_unit_type<result_t>)
 					{
@@ -747,7 +741,7 @@ namespace collin
 				{
 					using result_t = derived_result_many_t<multiply_op, Units2...>;
 					using common_t = std::common_type_t<Rep, Rep2>;
-					const auto amount = static_cast<common_t>(lhs.count()) * static_cast<common_t>(rhs.count()) * collin::math::rational_ratio<result_ratio_t<Units2...>, common_t>;
+					const auto amount = static_cast<common_t>(static_cast<common_t>(lhs.count()) * static_cast<common_t>(rhs.count()) * collin::math::rational_ratio<result_ratio_t<Units2...>, common_t>);
 
 					if constexpr (basic_derived_unit_type<result_t>)
 					{
@@ -774,7 +768,7 @@ namespace collin
 					using unit_t = basic_unit<Rep2, Ratio2, UnitValues, System, Dimension2>;
 					using result_t = derived_result_one_t<unit_t, divide_op>;
 					using common_t = typename result_t::rep;
-					const auto amount = static_cast<common_t>(lhs.count()) / static_cast<common_t>(rhs.count()) * collin::math::rational_ratio<collin::ratio::reciprocal<result_ratio_t<unit_t>>, common_t>;
+					const auto amount = static_cast<common_t>(static_cast<common_t>(lhs.count()) / static_cast<common_t>(rhs.count()) * collin::math::rational_ratio<collin::ratio::reciprocal<result_ratio_t<unit_t>>, common_t>);
 
 					if constexpr (basic_derived_unit_type<result_t>)
 					{
@@ -791,7 +785,7 @@ namespace collin
 				{
 					using result_t = derived_result_many_t<divide_op, Units2...>;
 					using common_t = std::common_type_t<Rep, Rep2>;
-					const auto amount = static_cast<common_t>(lhs.count()) / static_cast<common_t>(rhs.count()) * collin::math::rational_ratio<collin::ratio::reciprocal<result_ratio_t<Units2...>>, common_t>;
+					const auto amount = static_cast<common_t>(static_cast<common_t>(lhs.count()) / static_cast<common_t>(rhs.count()) * collin::math::rational_ratio<collin::ratio::reciprocal<result_ratio_t<Units2...>>, common_t>);
 
 					if constexpr (basic_derived_unit_type<result_t>)
 					{
@@ -850,22 +844,10 @@ namespace collin
 						struct result_impl<E>
 						{
 							private:
-								using common_type = std::common_type_t<E, basic_unit<
-									typename NewUnit::rep,
-									typename NewUnit::ratio,
-									typename NewUnit::unit_values,
-									typename NewUnit::system,
-									E::dimension
-								>>;
+								using common_type = std::common_type_t<E, convert_unit_dimension<NewUnit, E::dimension>>;
 							public:
 								static constexpr auto dimension_result = Operation::value(E::dimension, NewUnit::dimension);
-								using type = std::tuple<basic_unit<typename common_type::rep,
-														  typename common_type::ratio,
-														  typename common_type::unit_values,
-														  typename common_type::system,
-														  dimension_result
-														  >
-											   >;
+								using type = std::tuple<convert_unit_dimension<common_type, dimension_result>>;
 						};
 
 						template<basic_unit_type E>
@@ -944,10 +926,8 @@ namespace collin
 
 				template<class Operation, basic_unit_type First, basic_unit_type... Rest>
 				using derived_result_many_t = typename derived_result_many<Operation, First, Rest...>::type;
-
-
 			private:
-				storage_t amount_ {0, 1};
+				rep amount_ {0};
 
 				template<basic_unit_type... Units2>
 				struct result_ratio
@@ -985,18 +965,18 @@ namespace collin
 				using result_ratio_t = typename result_ratio<Units2...>::type;
 
 				template<class Rep2, basic_unit_type... Units2>
-				[[nodiscard]] static constexpr auto convert_amount(const basic_derived_unit<Rep2, Units2...>& other) noexcept
+				[[nodiscard]] static constexpr rep convert_amount(const basic_derived_unit<Rep2, Units2...>& other) noexcept
 				{
 					using t = result_ratio_t<Units2...>;
 
 					if constexpr (std::ratio_equal_v<t, std::ratio<1, 1>>)
 					{
-						return other.rational();
+						return other.count();
 					}
 					else
 					{
 						using common_type = std::common_type_t<Rep, Rep2>;
-						return other.rational() * collin::math::rational_ratio<t, common_type>;
+						return static_cast<rep>(other.count() * collin::math::rational_ratio<t, common_type>);
 					}
 				}
 		};

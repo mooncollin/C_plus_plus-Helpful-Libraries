@@ -6,10 +6,10 @@
 #include "collin/measures/distance.hpp"
 #include "collin/measures/mass.hpp"
 #include "collin/measures/time.hpp"
-//#include "collin/measures/kinematic.hpp"
-//#include "collin//measures/mechanical.hpp"
+#include "collin/measures/kinematic.hpp"
+#include "collin//measures/mechanical.hpp"
 #include "collin/measures/temperature.hpp"
-//#include "collin/measures/constants.hpp"
+#include "collin/measures/constants.hpp"
 #include "collin/test.hpp"
 #include "collin/utility.hpp"
 
@@ -678,7 +678,18 @@ class derived_unit_construction_test : public collin::test::test_case
         }
 };
 
+class constants_test : public collin::test::test_case
+{
+    public:
+        constants_test()
+            : collin::test::test_case{"constants_test"} {}
 
+        void operator()() override
+        {
+            constexpr auto gc = collin::measures::gravitational_constant;
+            constexpr auto gc2 = gc * 2;
+        }
+};
 
 int main()
 {
@@ -692,6 +703,7 @@ int main()
     suite.add_test_case<time_values_test>();
     suite.add_test_case<dimension_unit_construction_test>();
     suite.add_test_case<derived_unit_construction_test>();
+    suite.add_test_case<constants_test>();
 
     collin::test::text_test_runner runner(std::cout);
     

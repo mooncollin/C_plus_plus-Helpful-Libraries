@@ -90,5 +90,11 @@ namespace collin
 
 			return 0;
 		}
+
+		template<class F>
+		void repeat(std::uintmax_t n, F&& f)
+		{
+			while(n--) f();
+		}
 	}
 }

@@ -246,13 +246,13 @@ namespace collin
 
 				bool run(test_suite& t_suite) override
 				{
-					const auto time_now = print_header();
-					out_.get() << "\n\n";
-
 					std::vector<std::pair<test_result, std::string_view>> results;
 					std::size_t num_passed {0};
 					std::size_t num_errored {0};
 					std::size_t num_failed {0};
+
+					const auto time_now = print_header();
+					out_.get() << "\n\n";
 
 					for (auto& t_case : t_suite)
 					{

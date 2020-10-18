@@ -3,6 +3,14 @@
 #ifdef _WIN32
 	#include <WinSock2.h>
 	#include <WS2tcpip.h>
+
+	#ifdef max
+	#undef max
+	#endif
+
+	#ifdef min
+	#undef min
+	#endif
 #else
 	#include <sys/socket.h>
 	#include <arpa/inet.h>
@@ -14,7 +22,8 @@
 #include <array>
 #include <vector>
 #include <type_traits>
-#include "collin/span.hpp"
+#include <span>
+
 #include "collin/concepts.hpp"
 
 namespace collin
@@ -68,16 +77,16 @@ namespace collin
 				: msgtype{t} {}
 
 			template<class ElementType, std::size_t Extent>
-			constexpr msgbuf(span<ElementType, Extent> s)
+			constexpr msgbuf(std::span<ElementType, Extent> s)
 				: msgbuf{static_cast<pointer_type>(s.data()), static_cast<len_type>(s.size())} {}
 
 			template<class sock_type, std::size_t N>
 			constexpr msgbuf(std::array<sock_type, N> & a)
 				: msgbuf{static_cast<pointer_type>(a.data()), static_cast<len_type>(N)} {}
 
-			constexpr operator span<data_type, collin::dynamic_extent>() const
+			constexpr operator std::span<data_type, std::dynamic_extent>() const
 			{
-				return collin::make_span(buf, len);
+				return std::span<data_type, std::dynamic_extent>{buf, len};
 			}
 		};
 
@@ -112,14 +121,14 @@ namespace collin
 					return msgs.data();
 				}
 
-				operator span<msgtype, collin::dynamic_extent>() noexcept
+				operator std::span<msgtype, std::dynamic_extent>() noexcept
 				{
-					return make_span(buffers(), size());
+					return std::span<msgtype, std::dynamic_extent>{buffers(), size()};
 				}
 
 				auto get_span() noexcept
 				{
-					return operator span<msgtype, collin::dynamic_extent>();
+					return operator std::span<msgtype, std::dynamic_extent>();
 				}
 
 				std::size_t size() const noexcept

@@ -3,6 +3,12 @@
 #ifdef _WIN32
     #include <WinSock2.h>
     #include <WS2tcpip.h>
+	#ifdef max
+	#undef max
+	#endif
+	#ifdef min
+	#undef min
+	#endif
 #else
     #include <sys/socket.h>
     #include <arpa/inet.h>
@@ -32,17 +38,13 @@
 #include <condition_variable>
 #include <any>
 #include <bit>
+#include <span>
 
 #include "collin/net/iocontext.hpp"
 #include "collin/net/buffers.hpp"
-#include "collin/span.hpp"
 #include "collin/utility.hpp"
 #include "collin/concepts.hpp"
 #include "collin/platform.hpp"
-
-#ifdef max
-#undef max
-#endif
 
 namespace collin
 {
@@ -1258,7 +1260,7 @@ namespace collin
 		}
 
 		template<std::size_t Ext>
-		auto socket_receive(socket_type s, span<msgtype, Ext> bufs, int flags, std::error_code& ec) noexcept
+		auto socket_receive(socket_type s, std::span<msgtype, Ext> bufs, int flags, std::error_code& ec) noexcept
 		{
 			clear_last_error();
 			ec.clear();
@@ -1285,11 +1287,11 @@ namespace collin
 		}
 
 		template<class ElementType, std::size_t Extent>
-		std::size_t socket_receive(socket_type s, span<ElementType, Extent> buf, int flags, std::error_code& ec) noexcept
+		std::size_t socket_receive(socket_type s, std::span<ElementType, Extent> buf, int flags, std::error_code& ec) noexcept
 		{
 			clear_last_error();
 			ec.clear();
-			auto bytes = as_writable_bytes(buf);
+			auto bytes = std::as_writable_bytes(buf);
 			std::size_t total = 0;
 			while(total != bytes.size())
 			{
@@ -1318,7 +1320,7 @@ namespace collin
 		}
 
 		template<std::size_t Ext>
-		std::size_t socket_send(socket_type s, span<msgtype, Ext> bufs, int flags, std::error_code& ec) noexcept
+		std::size_t socket_send(socket_type s, std::span<msgtype, Ext> bufs, int flags, std::error_code& ec) noexcept
 		{
 			clear_last_error();
 			ec.clear();
@@ -1345,16 +1347,16 @@ namespace collin
 		}
 
 		template<class ElementType, std::size_t Extent>
-		std::size_t socket_send(socket_type s, const span<ElementType, Extent> buf, int flags, std::error_code& ec) noexcept
+		std::size_t socket_send(socket_type s, std::span<const ElementType, Extent> buf, int flags, std::error_code& ec) noexcept
 		{
 			clear_last_error();
 			ec.clear();
-			const auto bytes = as_bytes(buf);
+			const auto bytes = std::as_bytes(buf);
 			
 			std::size_t total = 0;
 			while(total != bytes.size())
 			{
-				const auto result = ::send(s, reinterpret_cast<const char*>(bytes.data() + total), bytes.size() - total, flags);
+				const auto result = ::send(s, static_cast<const char*>(bytes.data() + total), bytes.size() - total, flags);
 				switch(get_last_error())
 				{
 					case socket_errc::try_again:
@@ -1580,7 +1582,7 @@ namespace collin
 						protocol_ = protocol;
 						base::bits.native_non_blocking = -1;
 						base::sockfd = native_sockfd;
-						if(base::is_open())
+						if (base::is_open())
 						{
 							ec.clear();
 						}
@@ -1696,7 +1698,7 @@ namespace collin
 				using protocol_type = protocol;
 				using endpoint_type = typename protocol_type::endpoint;
 
-				[[nodiscard]] io_context& context() noexcept
+				io_context& context() noexcept
 				{
 					return base::ctx.get();
 				}
@@ -2523,7 +2525,7 @@ namespace collin
 				}
 
 				template<class ElementType, std::size_t Extent>
-				std::size_t receive(span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
+				std::size_t receive(std::span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
 				{
 					const auto result = socket_receive(base::native_handle(), buf, flags, ec);
 					if (ec)
@@ -2534,25 +2536,25 @@ namespace collin
 				}
 
 				template<class ElementType, std::size_t Extent>
-				std::size_t receive(span<ElementType, Extent> buf, int flags = 0)
+				std::size_t receive(std::span<ElementType, Extent> buf, int flags = 0)
 				{
 					return receive(buf, collin::throw_on_error{"basic_datagram_socket::receive"}, flags);
 				}
 
 				template<class ElementType, std::size_t Extent>
-				std::future<std::size_t> async_receive(span<ElementType, Extent> buf, std::error_code& ec, int flags = 0, const std::launch l = std::launch::async) noexcept
+				std::future<std::size_t> async_receive(std::span<ElementType, Extent> buf, std::error_code& ec, int flags = 0, const std::launch l = std::launch::async) noexcept
 				{
 					return std::async(l, &basic_datagram_socket::receive, buf, std::ref(ec), flags);
 				}
 
 				template<class ElementType, std::size_t Extent>
-				std::future<std::size_t> async_receive(span<ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async)
+				std::future<std::size_t> async_receive(std::span<ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async)
 				{
 					return async_receive(buf, collin::throw_on_error{"basic_datagram_socket::async_receive"}, flags, l);
 				}
 
 				template<class ElementType, std::size_t Extent>
-				std::size_t send(const span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
+				std::size_t send(std::span<const ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
 				{
 					const auto result = socket_send(base::native_handle(), buf, flags, ec);
 					if (ec)
@@ -2563,13 +2565,13 @@ namespace collin
 				}
 
 				template<class ElementType, std::size_t Extent>
-				std::future<std::size_t> async_send(const span<ElementType, Extent> buf, std::error_code& ec, int flags = 0, const std::launch l = std::launch::async) noexcept
+				std::future<std::size_t> async_send(std::span<const ElementType, Extent> buf, std::error_code& ec, int flags = 0, const std::launch l = std::launch::async) noexcept
 				{
 					return std::async(l, &basic_datagram_socket::send, std::ref(ec), flags);
 				}
 
 				template<class ElementType, std::size_t Extent>
-				std::future<std::size_t> async_send(const span<ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async)
+				std::future<std::size_t> async_send(std::span<const ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async)
 				{
 					return async_send(buf, collin::throw_on_error{"basic_datagram_socket::async_send"}, flags, l);
 				}
@@ -2581,7 +2583,7 @@ namespace collin
 			using base = basic_socket<protocol>;
 
 			public:
-				using native_handle_type = basic_socket<protocol>::native_handle_type;
+				using native_handle_type = typename basic_socket<protocol>::native_handle_type;
 				using protocol_type = protocol;
 				using endpoint_type = typename protocol_type::endpoint;
 
@@ -2598,7 +2600,7 @@ namespace collin
 					: base{ctx, protocol, handle} {}
 
 				basic_stream_socket(const basic_stream_socket&) = delete;
-				basic_stream_socket(basic_stream_socket&& rhs) noexcept = default;
+				basic_stream_socket(basic_stream_socket&&) noexcept = default;
 
 				template<class OtherProtocol>
 					requires(collin::concepts::convertible_to<OtherProtocol, protocol>)
@@ -2620,7 +2622,7 @@ namespace collin
 				}
 
 				template<class ElementType, std::size_t Extent>
-				std::size_t receive(span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
+				std::size_t receive(std::span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
 				{
 					const auto result = socket_receive(base::native_handle(), buf, flags, ec);
 					if (ec)
@@ -2631,19 +2633,19 @@ namespace collin
 				}
 
 				template<class ElementType, std::size_t Extent>
-				std::future<std::size_t> async_receive(span<ElementType, Extent> buf, std::error_code& ec, int flags = 0, const std::launch l = std::launch::async) noexcept
+				std::future<std::size_t> async_receive(std::span<ElementType, Extent> buf, std::error_code& ec, int flags = 0, const std::launch l = std::launch::async) noexcept
 				{
 					return std::async(l, &basic_stream_socket::receive, buf, std::ref(ec), flags);
 				}
 
 				template<class ElementType, std::size_t Extent>
-				std::future<std::size_t> async_receive(span<ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async)
+				std::future<std::size_t> async_receive(std::span<ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async)
 				{
 					return async_receive(buf, collin::throw_on_error{ "basic_stream_socket::async_receive" }, flags, l);
 				}
 
 				template<class ElementType, std::size_t Extent>
-				std::size_t send(const span<ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
+				std::size_t send(std::span<const ElementType, Extent> buf, std::error_code& ec, int flags = 0) noexcept
 				{
 					const auto result = socket_send(base::native_handle(), buf, flags, ec);
 					if (ec)
@@ -2654,13 +2656,13 @@ namespace collin
 				}
 
 				template<class ElementType, std::size_t Extent>
-				std::future<std::size_t> async_send(const span<ElementType, Extent> buf, std::error_code& ec, int flags = 0, const std::launch l = std::launch::async) noexcept
+				std::future<std::size_t> async_send(std::span<const ElementType, Extent> buf, std::error_code& ec, int flags = 0, const std::launch l = std::launch::async) noexcept
 				{
 					return std::async(l, &basic_stream_socket::send, std::ref(ec), flags);
 				}
 
 				template<class ElementType, std::size_t Extent>
-				std::future<std::size_t> async_send(const span<ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async)
+				std::future<std::size_t> async_send(std::span<const ElementType, Extent> buf, int flags = 0, const std::launch l = std::launch::async)
 				{
 					return async_send(buf, collin::throw_on_error{ "basic_stream_socket::async_send" }, flags, l);
 				}
@@ -2695,7 +2697,7 @@ namespace collin
 
 				virtual ~basic_socket_streambuf()
 				{
-					if(pptr() != pbase())
+					if (pptr() != pbase())
 					{
 						overflow(std::istream::traits_type::eof());
 					}
@@ -2708,7 +2710,7 @@ namespace collin
 					if (this != &rhs)
 					{
 						close();
-						socket_ = rhs.socket_;
+						socket_ = std::move(rhs.socket_);
 						rhs.socket_.assign(protocol_type::v4(), socket_base::invalid_socket);
 						std::basic_streambuf<char>::operator=(std::move(rhs));
 						get_buf = std::exchange(rhs.get_buf, {});
@@ -2759,7 +2761,7 @@ namespace collin
 					{
 						overflow(std::istream::traits_type::eof());
 						ec_.clear();
-						socket_.close();
+						socket_.close(ec_);
 					}
 					return ec_ ? nullptr : this;
 				}
@@ -2850,6 +2852,10 @@ namespace collin
 				static io_context& ctx() noexcept
 				{
 					static io_context ctx_;
+					if constexpr (collin::platform::win32_api)
+					{
+						make_service<windows_socket_service>(ctx_);
+					}
 					return ctx_;
 				}
 
@@ -2905,6 +2911,8 @@ namespace collin
 						sb_ = std::move(rhs.sb_);
 						std::basic_iostream::operator=(std::move(rhs));
 					}
+
+					return *this;
 				}
 
 				template<class... Args>
@@ -2930,6 +2938,11 @@ namespace collin
 				}
 
 				basic_stream_socket<protocol_type>& socket() noexcept
+				{
+					return rdbuf()->socket();
+				}
+
+				const basic_stream_socket<protocol_type>& socket() const noexcept
 				{
 					return rdbuf()->socket();
 				}

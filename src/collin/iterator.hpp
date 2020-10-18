@@ -443,5 +443,94 @@ namespace collin
 			private:
 				T& iterable_;
 		};
+
+		namespace details
+		{
+			template<class InputIt, class Function>
+			class filter_impl
+			{
+				public:
+					using difference_type = typename std::iterator_traits<InputIt>::difference_type;
+					using value_type = typename std::iterator_traits<InputIt>::value_type;
+					using pointer = typename std::iterator_traits<InputIt>::pointer;
+					using reference = typename std::iterator_traits<InputIt>::reference;
+					using iterator_category = std::input_iterator_tag;
+
+					filter_impl(InputIt begin, InputIt end, Function& f)
+						: current_{begin}, end_{end}, function_{f}
+					{
+						operator++();
+					}
+
+					reference operator*()
+					{
+						return *current_;
+					}
+
+					pointer operator->()
+					{
+						return (*current_)operator->();
+					}
+
+					filter_impl& operator++()
+					{
+						while (current_ != end_ && !function_.get()(*current_))
+						{
+							++current_;
+						}
+
+						return *this;
+					}
+
+					filter_impl operator++(int)
+					{
+						auto r = *this;
+						++*this;
+						return r;
+					}
+					
+					[[nodiscard]] friend constexpr bool operator==(const filter_impl& lhs, const filter_impl& rhs) noexcept
+					{
+						return lhs.current_ == rhs.current_;
+					}
+
+					[[nodiscard]] friend constexpr bool operator!=(const filter_impl& lhs, const filter_impl& rhs) noexcept
+					{
+						return !(lhs == rhs);
+					}
+				private:
+					InputIt current_;
+					InputIt end_;
+					std::reference_wrapper<Function> function_;
+			};
+		}
+
+		template<class InputIt, class Function>
+		class filter
+		{
+			public:
+				using difference_type = typename std::iterator_traits<InputIt>::difference_type;
+				using value_type = typename std::iterator_traits<InputIt>::value_type;
+				using pointer = typename std::iterator_traits<InputIt>::pointer;
+				using reference = typename std::iterator_traits<InputIt>::reference;
+				using iterator = details::filter_impl<InputIt, Function>;
+
+				constexpr filter(InputIt begin, InputIt end, Function&& f)
+					: begin_{begin}, end_{end}, function_{std::forward<Function>(f)} {}
+
+				constexpr iterator begin() const noexcept
+				{
+					return iterator{begin_, end_, function_};
+				}
+
+				constexpr iterator end() const noexcept
+				{
+					return iterator{end_, end_, function_};
+				}
+			private:
+				InputIt begin_;
+				InputIt end_;
+				Function function_;
+		};
 	}
 }

@@ -13,6 +13,8 @@
 #include <sstream>
 #include <array>
 #include <iterator>
+#include <charconv>
+#include <vector>
 
 #include "collin/net/socket.hpp"
 #include "collin/net/internet.hpp"
@@ -22,12 +24,16 @@
 #include "collin/iterator.hpp"
 #include "collin/string.hpp"
 #include "collin/flat_map.hpp"
+#include "collin/algorithm.hpp"
+#include "collin/net/windows_socket_service.hpp"
+#include "collin/net/socket_ssl.hpp"
 
 namespace collin
 {
 	namespace http
 	{
-		constexpr net::ip::port_type default_port {80};
+		constexpr net::ip::port_type http_port {80};
+		constexpr net::ip::port_type https_port {443};
 
 		namespace headers
 		{
@@ -291,6 +297,11 @@ namespace collin
 					return !(lhs == rhs);
 				}
 			};
+
+			std::istream& operator>>(std::istream& is, http_status& s)
+			{
+				return is >> s.code >> s.message;
+			}
 		}
 
 		enum class http_version
@@ -356,6 +367,69 @@ namespace collin
 			}
 
 			throw std::invalid_argument("http_version_type");
+		}
+
+		std::istream& operator>>(std::istream& is, http_version& v)
+		{
+			std::array<char, sizeof("HTTP/") - 1> http_part;
+			if (is.read(http_part.data(), http_part.size()))
+			{
+				if (std::string_view{http_part.data(), http_part.size()} == "HTTP/")
+				{
+					char input;
+					if (is >> input)
+					{
+						switch (input)
+						{
+							case '1':
+								if (is >> input)
+								{
+									if (input == '.')
+									{
+										if (is >> input)
+										{
+											switch (input)
+											{
+												case '1':
+													v = http_version::HTTP_1_1;
+													break;
+												case '0':
+													v = http_version::HTTP_1;
+													break;
+												default:
+													is.unget();
+													is.setstate(std::istream::failbit);
+											}
+										}
+									}
+									else
+									{
+										is.unget();
+										is.setstate(std::istream::failbit);
+									}
+								}
+								break;
+							case '2':
+								v = http_version::HTTP_2;
+								break;
+							case '3':
+								v = http_version::HTTP_3;
+								break;
+							default:
+								is.unget();
+								is.setstate(std::istream::failbit);
+						}
+					}
+					
+				}
+				else
+				{
+					collin::algorithms::repeat(http_part.size(), [&is](){ is.unget(); });
+					is.setstate(std::istream::failbit);
+				}
+			}
+
+			return is;
 		}
 
 		constexpr std::string_view http_method_string(http_method m)
@@ -435,57 +509,11 @@ namespace collin
 			return std::error_condition(static_cast<int>(e), http_category());
 		}
 
-		template<class Owner>
-		class scoped_http_socket
+		class http_request
 		{
 			public:
-				using socket_type = net::basic_socket_iostream<typename Owner::protocol_type>;
-
-				scoped_http_socket(Owner& own)
-					: owner_(own), s(std::move(own.socket())) {}
-
-				scoped_http_socket(const scoped_http_socket&) = delete;
-				scoped_http_socket& operator=(const scoped_http_socket&) = delete;
-
-				net::basic_stream_socket<typename Owner::protocol_type>&& move_socket() noexcept
-				{
-					moved = true;
-					return std::move(s.socket());
-				}
-
-				socket_type& socket()
-				{
-					return s;
-				}
-
-				socket_type* operator->()
-				{
-					return &s;
-				}
-
-				~scoped_http_socket() noexcept
-				{
-					if(!moved)
-					{
-						owner_.socket(std::move(s.socket()));
-					}
-				}
-
-			private:
-				Owner& owner_;
-				socket_type s;
-				bool moved {false};
-		};
-
-		class basic_http_request
-		{
-			public:
-				using protocol_type = net::ip::tcp;
-				using endpoint_type = typename protocol_type::endpoint;
-				using socket_type = net::basic_stream_socket<protocol_type>;
-
-				basic_http_request(net::io_context& ctx)
-					: socket_{ctx} {}
+				http_request(std::streambuf* buf = nullptr)
+					: body_{buf} {}
 
 				const collin::net::web::url& url() const noexcept
 				{
@@ -503,7 +531,6 @@ namespace collin
 					{
 						url_.host() = str;
 						update_host_header();
-						socket_.close();
 					}
 				}
 
@@ -513,7 +540,6 @@ namespace collin
 					{
 						url_.port(p);
 						update_host_header();
-						socket_.close();
 					}
 				}
 
@@ -562,82 +588,17 @@ namespace collin
 					return version_;
 				}
 
-				socket_type& socket()
-				{
-					return socket_;
-				}
-
-				void socket(net::basic_socket<protocol_type>&& socket)
-				{
-					socket_.assign(endpoint_type{}.protocol(), socket.release());
-				}
-
-				const std::istream_iterator<char>& body() const
+				std::istream& body() noexcept
 				{
 					return body_;
 				}
-
-				std::istream_iterator<char>& body()
-				{
-					return body_;
-				}
-
-				void connect(std::error_code& ec) noexcept
-				{
-					ec.clear();
-					std::string service_string;
-					if (url_.port())
-					{
-						service_string = std::to_string(url_.port().value());
-					}
-					else if (url_.protocol())
-					{
-						service_string = url_.protocol().value();
-					}
-
-					const auto results = protocol_type::resolver(socket_.context()).resolve(url_.host(), service_string);
-					for (const auto& result : results)
-					{
-						socket_.open(result.endpoint().protocol(), ec);
-						if (ec)
-						{
-							continue;
-						}
-
-						socket_.set_option(net::socket_base::timeout(timeout_), ec);
-						if (ec)
-						{
-							continue;
-						}
-
-						socket_.connect(result.endpoint(), ec);
-						if (!ec)
-						{
-							break;
-						}
-						
-						ec.clear();
-						socket_.close(ec);
-						if (ec)
-						{
-							break;
-						}
-					}
-				}
-
-				bool is_open() const noexcept
-				{
-					return socket_.is_open();
-				}
-
 			private:
-				collin::net::web::url url_ {"http", "", default_port};
+				collin::net::web::url url_;
 				std::string method_ {get};
+				std::istream body_;
 				http_version version_ {http_version::HTTP_1_1};
 				std::map<std::string, std::string> headers_;
-				std::istream_iterator<char> body_;
 				std::chrono::milliseconds timeout_ {std::chrono::seconds(1)};
-				socket_type socket_;
 
 				void update_host_header()
 				{
@@ -651,7 +612,7 @@ namespace collin
 				}
 		};
 
-		std::ostream& operator<<(std::ostream& stream, basic_http_request& req)
+		std::ostream& operator<<(std::ostream& stream, http_request& req)
 		{
 			stream << req.method();
 			stream << " ";
@@ -669,109 +630,274 @@ namespace collin
 
 			stream << line_terminator << line_terminator;
 
-			std::copy(req.body(), std::istream_iterator<char>(), std::ostream_iterator<char>(stream));
+			auto buf = req.body().rdbuf();
+			if (buf != nullptr)
+			{
+				stream << buf;
+			}
 
 			return stream;
 		}
 
-		class basic_http_response
+		class http_response
 		{
 			public:
-				using protocol_type = net::ip::tcp;
-				using endpoint_type = typename protocol_type::endpoint;
-				using socket_type = net::basic_stream_socket<protocol_type>;
+				http_response() = default;
 
-				basic_http_response(socket_type&& sock, status::http_status&& status, http_version version, std::map<std::string, std::string>&& headers)
-					: socket_(std::move(sock)), status_{std::move(status)}, version_(version), headers_(std::move(headers)) {}
+				status::http_status& status() noexcept
+				{
+					return status_;
+				}
 
 				const status::http_status& status() const noexcept
 				{
 					return status_;
 				}
 
-				http_version version() const noexcept
+				http_version& version() noexcept
 				{
 					return version_;
+				}
+
+				const http_version& version() const noexcept
+				{
+					return version_;
+				}
+
+				std::map<std::string, std::string>& headers() noexcept
+				{
+					return headers_;
 				}
 
 				const std::map<std::string, std::string>& headers() const noexcept
 				{
 					return headers_;
 				}
-
-				socket_type& socket()
-				{
-					return socket_;
-				}
-
-				void socket(socket_type&& socket)
-				{
-					socket_ = std::move(socket);
-				}
-
-				const std::error_code& error() const
-				{
-					return ec_;
-				}
-
 			private:
-				friend std::ostream& operator<<(std::ostream& os, basic_http_response& resp);
-
-				socket_type socket_;
 				status::http_status status_;
 				http_version version_;
 				std::map<std::string, std::string> headers_;
-				std::error_code ec_;
 		};
 
-		std::ostream& operator<<(std::ostream& os, basic_http_response& resp)
+		std::istream& operator>>(std::istream& is, http_response& rep)
 		{
-			resp.ec_.clear();
-			if(resp.socket().is_open())
+			if (!(is >> rep.version()))
 			{
-				scoped_http_socket s(resp);
-				os << s->rdbuf();
-				resp.ec_ = s->error();
+				return is;
 			}
 
-			return os;
+			if (!(is >> rep.status()))
+			{
+				return is;
+			}
+
+			is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+			while(is.peek() != '\r')
+			{
+				std::string key_input;
+				std::string value_input;
+				if (std::getline(is, key_input, ':') &&
+					is >> std::ws &&
+					collin::iostream::getline(is, value_input))
+				{
+					rep.headers()[key_input] = value_input;
+				}
+			}
+
+			is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+			return is;
 		}
 
-		class http_client
+		template<bool SSL>
+		class basic_http_client
 		{
 			public:
 				using protocol_type = net::ip::tcp;
 				using endpoint_type = protocol_type::endpoint;
-				using socket_type = net::basic_socket_iostream<protocol_type>;
+				static constexpr auto using_ssl = SSL;
+				using socket_type = std::conditional_t<using_ssl, net::basic_stream_ssl_socket<protocol_type>,
+																  net::basic_stream_socket<protocol_type>>;
+			private:
+				using iostream_socket_type = std::conditional_t<using_ssl, net::basic_socket_ssl_iostream<protocol_type>,
+																		   net::basic_socket_iostream<protocol_type>>;
+			public:
 
-				http_client(collin::net::io_context& ctx)
+				basic_http_client(collin::net::io_context& ctx)
 					: ctx_{ctx}
 				{
-					collin::net::use_service<collin::net::windows_socket_service>(ctx_.get());
+					if constexpr (collin::platform::win32_api)
+					{
+						collin::net::use_service<collin::net::windows_socket_service>(ctx_.get());
+					}
+					if constexpr (using_ssl)
+					{
+						collin::net::use_service<collin::net::openssl_socket_service>(ctx_.get());
+					}
 				}
 
-				template<class HttpRequest>
-				std::optional<basic_http_response> send(HttpRequest& req, std::error_code& ec) const
+				net::io_context& context() noexcept
+				{
+					return ctx_.get();
+				}
+
+				[[nodiscard]] socket_type connect(const http_request& request, std::error_code& ec) const
+				{
+					socket_type socket{ctx_.get()};
+					ec.clear();
+					std::string service_string;
+					if (request.url().port())
+					{
+						service_string = std::to_string(request.url().port().value());
+					}
+					else if (request.url().protocol())
+					{
+					service_string = request.url().protocol().value();
+					}
+					else
+					{
+					if constexpr (using_ssl)
+					{
+						service_string = "https";
+					}
+					else
+					{
+						service_string = "http";
+					}
+					}
+
+					const auto results = protocol_type::resolver(ctx_.get()).resolve(request.url().host(), service_string);
+					for (const auto& result : results)
+					{
+						socket.open(result.endpoint().protocol(), ec);
+						if (ec)
+						{
+							continue;
+						}
+
+						socket.set_option(net::socket_base::timeout(request.timeout()), ec);
+						if (ec)
+						{
+							continue;
+						}
+
+						socket.connect(result.endpoint(), ec);
+						if (!ec)
+						{
+							break;
+						}
+					}
+
+					return socket;
+				}
+
+				std::optional<http_response> send(http_request& req, std::error_code& ec) const
 				{
 					ec.clear();
-					if (!req.is_open())
-					{
-						req.connect(ec);
-					}
+					auto socket = connect(req, ec);
 					if (ec)
 					{
 						return {};
 					}
 
-					scoped_http_socket s{req};
-					s.socket() << req;
-					s->sync();
+					iostream_socket_type socket_stream{ std::move(socket) };
+					if (!(socket_stream << req))
+					{
+						return {};
+					}
 
-					return parseResponse(s, ec);
+					socket_stream.sync();
+					http_response res;
+					if (!(socket_stream >> res))
+					{
+						if (socket_stream.fail())
+						{
+							ec = make_error_code(http_errc::malformed_response);
+						}
+
+						return {};
+					}
+
+					return res;
 				}
 
-				template<class HttpRequest>
-				basic_http_response send(HttpRequest& req) const
+				std::optional<http_response> send(http_request& req, std::ostream& os, std::error_code& ec) const
+				{
+					ec.clear();
+					auto socket = connect(req, ec);
+					if (ec)
+					{
+						return {};
+					}
+
+					iostream_socket_type socket_stream{std::move(socket)};
+					if (!(socket_stream << req))
+					{
+						return {};
+					}
+
+					socket_stream.sync();
+					http_response res;
+					if (!(socket_stream >> res))
+					{
+						if (socket_stream.fail())
+						{
+							ec = make_error_code(http_errc::malformed_response);
+						}
+
+						return {};
+					}
+
+					if (res.headers().at(std::string{headers::transfer_encoding}) == "chunked")
+					{
+						std::string size_input;
+						while (collin::iostream::getline(socket_stream, size_input))
+						{
+							std::streamsize size;
+							auto result = std::from_chars(size_input.data(), size_input.data() + size_input.size(),
+													size, 16);
+
+							if (result.ec != std::errc{})
+							{
+								ec = make_error_code(http_errc::malformed_response);
+								break;
+							}
+
+							if (size == 0)
+							{
+								socket_stream.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+								break;
+							}
+
+							while (size--)
+							{
+								char ch;
+								if (socket_stream.get(ch))
+								{
+									if (!os.put(ch))
+									{
+										break;
+									}
+								}
+								else
+								{
+									ec = make_error_code(http_errc::malformed_response);
+									break;
+								}
+							}
+
+							socket_stream.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+						}
+					}
+					else
+					{
+						os << socket_stream.rdbuf();
+					}
+
+					return res;
+				}
+
+				http_response send(http_request& req) const
 				{
 					std::error_code ec;
 					auto op = send(req, ec);
@@ -783,119 +909,36 @@ namespace collin
 					return std::move(op).value();
 				}
 
-				template<class HttpRequest>
-				std::future<std::optional<basic_http_response>> async_send(HttpRequest& req, std::error_code& ec, const std::launch l = std::launch::async) const
+				http_response send(http_request& req, std::ostream& os) const
 				{
-					using func_t = std::optional<basic_http_response>(http_client::*)(HttpRequest&, std::error_code&);
-					auto f = static_cast<func_t>(&http_client::send);
+					std::error_code ec;
+					auto op = send(req, os, ec);
+					if (ec)
+					{
+						throw std::system_error{ec};
+					}
+
+					return std::move(op).value();
+				}
+
+				std::future<std::optional<http_response>> async_send(http_request& req, std::error_code& ec, const std::launch l = std::launch::async) const
+				{
+					using func_t = std::optional<http_response>(http_client::*)(http_request&, std::error_code&);
+					auto f = static_cast<func_t>(&basic_http_client::send);
 					return std::async(l, f, std::ref(*this), std::ref(req), std::ref(ec));
 				}
 
-				template<class HttpRequest>
-				std::future<basic_http_response> async_send(HttpRequest& req, const std::launch l = std::launch::async) const
+				std::future<http_response> async_send(http_request& req, const std::launch l = std::launch::async) const
 				{
-					using func_t = basic_http_response(http_client::*)(HttpRequest&, std::error_code&);
-					auto f = static_cast<func_t>(&http_client::send);
+					using func_t = http_response(basic_http_client::*)(http_request&, std::error_code&);
+					auto f = static_cast<func_t>(&basic_http_client::send);
 					return std::async(l, f, std::ref(*this), std::ref(req));
 				}
 			private:
 				std::reference_wrapper<collin::net::io_context> ctx_;
-				/*
-				 * We are attempting to parse an HTTP response message. This method is responsible for parsing the headers.
-				 * The message can look like the following:
-				 *
-				 *	HTTP/1.1 200 OK
-				 *	Date: Sun, 08 Feb xxxx 01:11:12 GMT
-				 *	Server: Apache/1.3.29 (Win32)
-				 *	Last-Modified: Sat, 07 Feb xxxx
-				 *	ETag: "0-23-4024c3a5"
-				 *	Accept-Ranges: bytes
-				 *	Content-Length: 35
-				 *	Connection: close
-				 *	Content-Type: text/html
-				 *
-				 *	<h1>My Home page</h1>
-				 */
-				template<class HttpRequest>
-				std::optional<basic_http_response> parseResponse(scoped_http_socket<HttpRequest>& s, std::error_code& ec) const
-				{
-					ec.clear();
-
-					iterators::istream_iterator_sep space_stream {s.socket(), " "};
-
-					if(space_stream->empty())
-					{
-						ec = make_error_code(http_errc::malformed_response);
-						return {};
-					}
-
-					http_version version;
-					try
-					{
-						version = http_version_type(*space_stream);
-					}
-					catch (...)
-					{
-						ec = make_error_code(http_errc::malformed_response);
-						return {};
-					}
-
-					++space_stream;
-					if(space_stream->empty())
-					{
-						ec = make_error_code(http_errc::malformed_response);
-						return {};
-					}
-
-					status::code_t status_code;
-					try
-					{
-						status_code = strings::from_string<status::code_t>(std::string_view{*space_stream});
-					}
-					catch (...)
-					{
-						ec = make_error_code(http_errc::malformed_response);
-						return {};
-					}
-
-					iterators::istream_iterator_sep line_stream {s.socket(), "\r\n"};
-
-					if(line_stream->empty())
-					{
-						ec = make_error_code(http_errc::malformed_response);
-						return {};
-					}
-
-					auto status_code_message = std::move(*line_stream);
-
-					std::map<std::string, std::string> headers;
-
-					while (true)
-					{
-						++line_stream;
-						if(line_stream->empty())
-						{
-							break;
-						}
-						
-						const std::string_view line{*line_stream};
-
-						const auto colon_loc = line.find(':');
-						if (colon_loc == std::string_view::npos)
-						{
-							ec = make_error_code(http_errc::malformed_response);
-							return {};
-						}
-
-
-						const auto key = line.substr(0, colon_loc);
-						const auto value = strings::trim_front(colon_loc + 1 > std::size(line) ? std::string_view{""} : line.substr(colon_loc + 1), std::string_view{" "});
-
-						headers[std::string{key}] = value;
-					}
-
-					return std::make_optional<basic_http_response>(std::move(s.move_socket()), status::http_status{status_code, std::move(status_code_message)}, version, std::move(headers));
-				}
 		};
+
+		using http_client = basic_http_client<false>;
+		using https_client = basic_http_client<true>;
 	}
 }

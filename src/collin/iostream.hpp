@@ -7,6 +7,7 @@
 #include <iterator>
 #include <locale>
 #include <array>
+#include <iostream>
 
 namespace collin
 {
@@ -18,6 +19,37 @@ namespace collin
 			T t;
 			in >> t;
 			return t;
+		}
+
+		std::istream& getline(std::istream& is, std::string& str)
+		{
+			str.clear();
+
+			std::istream::sentry se(is, true);
+			auto sb = is.rdbuf();
+			while(true)
+			{
+				auto c = sb->sbumpc();
+				switch (c)
+				{
+					case '\n':
+						return is;
+					case '\r':
+						if (sb->sgetc() == '\n')
+						{
+							sb->sbumpc();
+						}
+						return is;
+					case std::streambuf::traits_type::eof():
+						if (str.empty())
+						{
+							is.setstate(std::ios::eofbit);
+						}
+						return is;
+					default:
+						str += static_cast<char>(c);
+				}
+			}
 		}
 
 		std::istream& getline(std::istream& stream, std::string& str, std::string_view delim)
