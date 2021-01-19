@@ -3,8 +3,8 @@
 #include <iomanip>
 #include <random>
 
-#include "collin/linear/matrix.hpp"
-#include "collin/linear/algorithms.hpp"
+#include "cmoon/linear/matrix.hpp"
+#include "cmoon/linear/algorithms.hpp"
 
 template<class Rep, class Period>
 void print_time(const std::chrono::duration<Rep, Period>& c)
@@ -30,7 +30,7 @@ void print_time(const std::chrono::duration<Rep, Period>& c)
 }
 
 template<class T>
-void fill_matrix(collin::linear::matrix<T>& m)
+void fill_matrix(cmoon::linear::matrix<T>& m)
 {
 	std::random_device rd;
 	std::mt19937 gen{rd()};
@@ -45,7 +45,7 @@ void fill_matrix(collin::linear::matrix<T>& m)
 }
 
 template<class T, std::size_t Rows, std::size_t Cols>
-void fill_matrix(collin::linear::fixed_matrix<T, Rows, Cols>& m)
+void fill_matrix(cmoon::linear::fixed_matrix<T, Rows, Cols>& m)
 {
 	std::random_device rd;
 	std::mt19937 gen{ rd() };
@@ -66,8 +66,8 @@ void benchmark_multiplication_matrix(std::size_t matrix_size)
 	std::mt19937 gen{rd()};
 	std::uniform_int_distribution<> d;
 
-	collin::linear::matrix<T> m1{matrix_size, matrix_size};
-	collin::linear::matrix<T> m2{matrix_size, matrix_size};
+	cmoon::linear::matrix<T> m1{matrix_size, matrix_size};
+	cmoon::linear::matrix<T> m2{matrix_size, matrix_size};
 
 	fill_matrix(m1);
 	fill_matrix(m2);
@@ -75,7 +75,7 @@ void benchmark_multiplication_matrix(std::size_t matrix_size)
 	std::cout << "Multiplication benchmark for a matrix of size " << matrix_size << ":\n";
 
 	const auto time_now = std::chrono::system_clock::now();
-	m1 * m2;
+	const auto m3 = m1 * m2;
 	const auto elapsed_time = std::chrono::system_clock::now() - time_now;
 	std::cout << "Time Elapsed: ";
 	print_time(elapsed_time);
@@ -89,8 +89,8 @@ void benchmark_multiplication_fixed_matrix()
 	std::mt19937 gen{rd()};
 	std::uniform_int_distribution<> d;
 
-	collin::linear::fixed_matrix<T, Size, Size> m1;
-	collin::linear::fixed_matrix<T, Size, Size> m2;
+	cmoon::linear::fixed_matrix<T, Size, Size> m1;
+	cmoon::linear::fixed_matrix<T, Size, Size> m2;
 
 	fill_matrix(m1);
 	fill_matrix(m2);
@@ -112,14 +112,14 @@ void benchmark_inverse_matrix(std::size_t matrix_size)
 	std::mt19937 gen{rd()};
 	std::uniform_int_distribution<> d;
 
-	collin::linear::matrix<T> m1{matrix_size, matrix_size};
+	cmoon::linear::matrix<T> m1{matrix_size, matrix_size};
 
 	fill_matrix(m1);
 
 	std::cout << "Inverse benchmark for a matrix of size " << matrix_size << ":\n";
 
 	const auto time_now = std::chrono::system_clock::now();
-	collin::linear::inverse(m1);
+	cmoon::linear::inverse(m1);
 	const auto elapsed_time = std::chrono::system_clock::now() - time_now;
 	std::cout << "Time Elapsed: ";
 	print_time(elapsed_time);

@@ -1,17 +1,17 @@
 #include <iostream>
 
-#include "collin/bio/rna.hpp"
-#include "collin/bio/dna.hpp"
-#include "collin/bio/nucleotide.hpp"
+#include "cmoon/bio/rna.hpp"
+#include "cmoon/bio/dna.hpp"
+#include "cmoon/bio/nucleotide.hpp"
 
 int main()
 {
-	collin::bio::rna rs {collin::bio::rna_nucleotide::guanine, 
-						 collin::bio::rna_nucleotide::guanine,
-						 collin::bio::rna_nucleotide::adenine,
-						 collin::bio::rna_nucleotide::guanine,
-						 collin::bio::rna_nucleotide::cytosine,
-						 collin::bio::rna_nucleotide::uracil};
+	cmoon::bio::rna rs {cmoon::bio::rna_nucleotide::guanine, 
+						 cmoon::bio::rna_nucleotide::guanine,
+						 cmoon::bio::rna_nucleotide::adenine,
+						 cmoon::bio::rna_nucleotide::guanine,
+						 cmoon::bio::rna_nucleotide::cytosine,
+						 cmoon::bio::rna_nucleotide::uracil};
 
 	std::cout << rs << '\n';
 	std::cout << rs.to_dna() << '\n';

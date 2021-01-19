@@ -2,54 +2,55 @@
 #include <sstream>
 #include <fstream>
 
-#include "collin/net/windows_socket_service.hpp"
-#include "collin/net/http.hpp"
-#include "collin/test.hpp"
+#include "cmoon/net/windows_socket_service.hpp"
+#include "cmoon/net/http.hpp"
+#include "cmoon/test/assert.hpp"
+#include "cmoon/test/runner.hpp"
+#include "cmoon/test/test_case.hpp"
+#include "cmoon/test/test_suite.hpp"
 
-class http_response_test : public collin::test::test_case
+class http_response_test : public cmoon::test::test_case
 {
 	public:
 		http_response_test()
-			: collin::test::test_case{"http_response_test"} {}
+			: cmoon::test::test_case{"http_response_test"} {}
 
 		void operator()() override
 		{
-			collin::net::io_context ctx;
-			collin::http::http_client c{ctx};
-			collin::http::http_request r;
+			cmoon::net::io_context ctx;
+			cmoon::http::http_client c{ctx};
+			cmoon::http::http_request r;
 			r.host("www.httpvshttps.com");
-			std::ofstream out_file{"test.html"};
-			auto response = c.send(r, out_file);
-			collin::test::assert_equal(response.status().code, 200);
+			auto response = c.send(r);
+			cmoon::test::assert_equal(response.status().code, 200u);
 		}
 };
 
-class https_response_test : public collin::test::test_case
+class https_response_test : public cmoon::test::test_case
 {
 	public:
 		https_response_test()
-			: collin::test::test_case{"https_response_test"} {}
+			: cmoon::test::test_case{"https_response_test"} {}
 
 		void operator()() override
 		{
-			collin::net::io_context ctx;
-			collin::http::https_client c{ctx};
-			collin::http::http_request r;
+			cmoon::net::io_context ctx;
+			cmoon::http::https_client c{ctx};
+			cmoon::http::http_request r;
 			r.host("www.google.com");
-			std::ofstream f{"test.html"};
-			auto response = c.send(r, f);
-			collin::test::assert_equal(response.status().code, 200);
+			auto response = c.send(r);
+			cmoon::test::assert_equal(response.status().code, 200u);
 		}
 };
 
 
 int main()
 {
-	collin::test::test_suite suite;
-	//suite.add_test_case<http_response_test>();
+	cmoon::test::test_suite suite;
+	suite.add_test_case<http_response_test>();
 	suite.add_test_case<https_response_test>();
 
-	collin::test::text_test_runner runner(std::cout);
+	cmoon::test::text_test_runner runner(std::cout);
 
 	return !runner.run(suite);
 }

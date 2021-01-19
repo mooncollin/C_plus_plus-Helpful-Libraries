@@ -2,224 +2,227 @@
 #include <ratio>
 #include <sstream>
 
-#include "collin/measures/measure.hpp"
-#include "collin/measures/distance.hpp"
-#include "collin/measures/mass.hpp"
-#include "collin/measures/time.hpp"
-#include "collin/measures/kinematic.hpp"
-#include "collin//measures/mechanical.hpp"
-#include "collin/measures/temperature.hpp"
-#include "collin/measures/constants.hpp"
-#include "collin/test.hpp"
-#include "collin/utility.hpp"
+#include "cmoon/measures/measure.hpp"
+#include "cmoon/measures/distance.hpp"
+#include "cmoon/measures/mass.hpp"
+#include "cmoon/measures/time.hpp"
+#include "cmoon/measures/kinematic.hpp"
+#include "cmoon//measures/mechanical.hpp"
+#include "cmoon/measures/temperature.hpp"
+#include "cmoon/measures/constants.hpp"
+#include "cmoon/test/test_case.hpp"
+#include "cmoon/test/runner.hpp"
+#include "cmoon/test/assert.hpp"
+#include "cmoon/test/test_suite.hpp"
+#include "cmoon/utility.hpp"
 
-class measures_suffix_test : public collin::test::test_case
+class measures_suffix_test : public cmoon::test::test_case
 {
     public:
         measures_suffix_test()
-            : collin::test::test_case{"measures_suffix_test"} {}
+            : cmoon::test::test_case{"measures_suffix_test"} {}
 
         void operator()() override
         {
-            static_assert(collin::measures::metric_system::suffix_v<std::atto> == "a");
-            static_assert(collin::measures::metric_system::suffix_v<std::femto> == "f");
-            static_assert(collin::measures::metric_system::suffix_v<std::pico> == "p");
-            static_assert(collin::measures::metric_system::suffix_v<std::nano> == "n");
-            static_assert(collin::measures::metric_system::suffix_v<std::micro> == "u");
-            static_assert(collin::measures::metric_system::suffix_v<std::milli> == "m");
-            static_assert(collin::measures::metric_system::suffix_v<std::centi> == "c");
-            static_assert(collin::measures::metric_system::suffix_v<std::deci> == "d");
-            static_assert(collin::measures::metric_system::suffix_v<std::deca> == "da");
-            static_assert(collin::measures::metric_system::suffix_v<std::hecto> == "h");
-            static_assert(collin::measures::metric_system::suffix_v<std::kilo> == "k");
-            static_assert(collin::measures::metric_system::suffix_v<std::mega> == "M");
-            static_assert(collin::measures::metric_system::suffix_v<std::giga> == "G");
-            static_assert(collin::measures::metric_system::suffix_v<std::tera> == "T");
-            static_assert(collin::measures::metric_system::suffix_v<std::peta> == "P");
-            static_assert(collin::measures::metric_system::suffix_v<std::exa> == "E");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::atto> == "a");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::femto> == "f");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::pico> == "p");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::nano> == "n");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::micro> == "u");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::milli> == "m");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::centi> == "c");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::deci> == "d");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::deca> == "da");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::hecto> == "h");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::kilo> == "k");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::mega> == "M");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::giga> == "G");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::tera> == "T");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::peta> == "P");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::exa> == "E");
 
-            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::atto>, "a");
-            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::femto>, "f");
-            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::pico>, "p");
-            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::nano>, "n");
-            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::micro>, "u");
-            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::milli>, "m");
-            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::centi>, "c");
-            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::deci>, "d");
-            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::deca>, "da");
-            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::hecto>, "h");
-            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::kilo>, "k");
-            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::mega>, "M");
-            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::giga>, "G");
-            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::tera>, "T");
-            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::peta>, "P");
-            collin::test::assert_equal(collin::measures::metric_system::suffix_v<std::exa>, "E");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::atto>, "a");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::femto>, "f");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::pico>, "p");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::nano>, "n");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::micro>, "u");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::milli>, "m");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::centi>, "c");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::deci>, "d");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::deca>, "da");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::hecto>, "h");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::kilo>, "k");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::mega>, "M");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::giga>, "G");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::tera>, "T");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::peta>, "P");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::exa>, "E");
         }
 };
 
-class distance_suffix_test : public collin::test::test_case
+class distance_suffix_test : public cmoon::test::test_case
 {
     public:
         distance_suffix_test()
-            : collin::test::test_case{"distance_suffix_test"} {}
+            : cmoon::test::test_case{"distance_suffix_test"} {}
 
         void operator()() override
         {
             std::stringstream ss;
 
-            ss << collin::measures::attometers{10};
-            collin::test::assert_equal(ss.str(), "10am");
+            ss << cmoon::measures::attometers{10};
+            cmoon::test::assert_equal(ss.str(), "10am");
 
             ss.str("");
-            ss << collin::measures::femtometers{10};
-            collin::test::assert_equal(ss.str(), "10fm");
+            ss << cmoon::measures::femtometers{10};
+            cmoon::test::assert_equal(ss.str(), "10fm");
 
             ss.str("");
-            ss << collin::measures::picometers{10};
-            collin::test::assert_equal(ss.str(), "10pm");
+            ss << cmoon::measures::picometers{10};
+            cmoon::test::assert_equal(ss.str(), "10pm");
 
             ss.str("");
-            ss << collin::measures::nanometers{10};
-            collin::test::assert_equal(ss.str(), "10nm");
+            ss << cmoon::measures::nanometers{10};
+            cmoon::test::assert_equal(ss.str(), "10nm");
 
             ss.str("");
-            ss << collin::measures::micrometers{10};
-            collin::test::assert_equal(ss.str(), "10um");
+            ss << cmoon::measures::micrometers{10};
+            cmoon::test::assert_equal(ss.str(), "10um");
 
             ss.str("");
-            ss << collin::measures::millimeters{10};
-            collin::test::assert_equal(ss.str(), "10mm");
+            ss << cmoon::measures::millimeters{10};
+            cmoon::test::assert_equal(ss.str(), "10mm");
 
             ss.str("");
-            ss << collin::measures::centimeters{10};
-            collin::test::assert_equal(ss.str(), "10cm");
+            ss << cmoon::measures::centimeters{10};
+            cmoon::test::assert_equal(ss.str(), "10cm");
 
             ss.str("");
-            ss << collin::measures::decimeters{10};
-            collin::test::assert_equal(ss.str(), "10dm");
+            ss << cmoon::measures::decimeters{10};
+            cmoon::test::assert_equal(ss.str(), "10dm");
 
             ss.str("");
-            ss << collin::measures::meters{10};
-            collin::test::assert_equal(ss.str(), "10m");
+            ss << cmoon::measures::meters{10};
+            cmoon::test::assert_equal(ss.str(), "10m");
 
             ss.str("");
-            ss << collin::measures::decameters{10};
-            collin::test::assert_equal(ss.str(), "10dam");
+            ss << cmoon::measures::decameters{10};
+            cmoon::test::assert_equal(ss.str(), "10dam");
 
             ss.str("");
-            ss << collin::measures::hectometers{10};
-            collin::test::assert_equal(ss.str(), "10hm");
+            ss << cmoon::measures::hectometers{10};
+            cmoon::test::assert_equal(ss.str(), "10hm");
 
             ss.str("");
-            ss << collin::measures::kilometers{10};
-            collin::test::assert_equal(ss.str(), "10km");
+            ss << cmoon::measures::kilometers{10};
+            cmoon::test::assert_equal(ss.str(), "10km");
 
             ss.str("");
-            ss << collin::measures::megameters{10};
-            collin::test::assert_equal(ss.str(), "10Mm");
+            ss << cmoon::measures::megameters{10};
+            cmoon::test::assert_equal(ss.str(), "10Mm");
 
             ss.str("");
-            ss << collin::measures::gigameters{10};
-            collin::test::assert_equal(ss.str(), "10Gm");
+            ss << cmoon::measures::gigameters{10};
+            cmoon::test::assert_equal(ss.str(), "10Gm");
 
             ss.str("");
-            ss << collin::measures::terameters{10};
-            collin::test::assert_equal(ss.str(), "10Tm");
+            ss << cmoon::measures::terameters{10};
+            cmoon::test::assert_equal(ss.str(), "10Tm");
 
             ss.str("");
-            ss << collin::measures::petameters{10};
-            collin::test::assert_equal(ss.str(), "10Pm");
+            ss << cmoon::measures::petameters{10};
+            cmoon::test::assert_equal(ss.str(), "10Pm");
 
             ss.str("");
-            ss << collin::measures::exameters{10};
-            collin::test::assert_equal(ss.str(), "10Em");
+            ss << cmoon::measures::exameters{10};
+            cmoon::test::assert_equal(ss.str(), "10Em");
 
             ss.str("");
-            ss << collin::measures::inches{10};
-            collin::test::assert_equal(ss.str(), "10in");
+            ss << cmoon::measures::inches{10};
+            cmoon::test::assert_equal(ss.str(), "10in");
 
             ss.str("");
-            ss << collin::measures::feet{10};
-            collin::test::assert_equal(ss.str(), "10ft");
+            ss << cmoon::measures::feet{10};
+            cmoon::test::assert_equal(ss.str(), "10ft");
 
             ss.str("");
-            ss << collin::measures::yards{10};
-            collin::test::assert_equal(ss.str(), "10yd");
+            ss << cmoon::measures::yards{10};
+            cmoon::test::assert_equal(ss.str(), "10yd");
 
             ss.str("");
-            ss << collin::measures::miles{10};
-            collin::test::assert_equal(ss.str(), "10mi");
+            ss << cmoon::measures::miles{10};
+            cmoon::test::assert_equal(ss.str(), "10mi");
         }
 
         void static_asserts()
         {
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::attometers> == "am");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::femtometers> == "fm");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::picometers> == "pm");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::nanometers> == "nm");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::micrometers> == "um");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::millimeters> == "mm");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::centimeters> == "cm");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::decimeters> == "dm");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::meters> == "m");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::decameters> == "dam");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::hectometers> == "hm");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::kilometers> == "km");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::megameters> == "Mm");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::gigameters> == "Gm");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::terameters> == "Tm");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::petameters> == "Pm");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::exameters> == "Em");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::attometers> == "am");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::femtometers> == "fm");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::picometers> == "pm");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::nanometers> == "nm");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::micrometers> == "um");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::millimeters> == "mm");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::centimeters> == "cm");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::decimeters> == "dm");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::meters> == "m");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::decameters> == "dam");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::hectometers> == "hm");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::kilometers> == "km");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::megameters> == "Mm");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::gigameters> == "Gm");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::terameters> == "Tm");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::petameters> == "Pm");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::exameters> == "Em");
 
-            static_assert(collin::measures::imperial_system::suffix_v<collin::measures::inches> == "in");
-            static_assert(collin::measures::imperial_system::suffix_v<collin::measures::feet> == "ft");
-            static_assert(collin::measures::imperial_system::suffix_v<collin::measures::yards> == "yd");
-            static_assert(collin::measures::imperial_system::suffix_v<collin::measures::miles> == "mi");
+            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::inches> == "in");
+            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::feet> == "ft");
+            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::yards> == "yd");
+            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::miles> == "mi");
         }
 };
 
-class distance_values_test : public collin::test::test_case
+class distance_values_test : public cmoon::test::test_case
 {
     public:
         distance_values_test()
-            : collin::test::test_case{"distance_values_test"} {}
+            : cmoon::test::test_case{"distance_values_test"} {}
 
         void operator()() override
         {
-            static_assert(collin::measures::meters{1} == collin::measures::attometers{1000000000000000000});
-            static_assert(collin::measures::meters{1} == collin::measures::femtometers{1000000000000000});
-            static_assert(collin::measures::meters{1} == collin::measures::picometers{1000000000000});
-            static_assert(collin::measures::meters{1} == collin::measures::nanometers{1000000000});
-            static_assert(collin::measures::meters{1} == collin::measures::micrometers{1000000});
-            static_assert(collin::measures::meters{1} == collin::measures::millimeters{1000});
-            static_assert(collin::measures::meters{1} == collin::measures::centimeters{100});
-            static_assert(collin::measures::meters{1} == collin::measures::decimeters{10});
-            static_assert(collin::measures::meters{1} == collin::measures::meters{1});
-            static_assert(collin::measures::meters{10} == collin::measures::decameters{1});
-            static_assert(collin::measures::meters{1000} == collin::measures::kilometers{1});
-            static_assert(collin::measures::meters{1000000} == collin::measures::megameters{1});
-            static_assert(collin::measures::meters{1000000000} == collin::measures::gigameters{1});
-            static_assert(collin::measures::meters{1000000000000} == collin::measures::terameters{1});
-            static_assert(collin::measures::meters{1000000000000000} == collin::measures::petameters{1});
-            static_assert(collin::measures::meters{1000000000000000000} == collin::measures::exameters{1});
+            static_assert(cmoon::measures::meters{1} == cmoon::measures::attometers{1000000000000000000});
+            static_assert(cmoon::measures::meters{1} == cmoon::measures::femtometers{1000000000000000});
+            static_assert(cmoon::measures::meters{1} == cmoon::measures::picometers{1000000000000});
+            static_assert(cmoon::measures::meters{1} == cmoon::measures::nanometers{1000000000});
+            static_assert(cmoon::measures::meters{1} == cmoon::measures::micrometers{1000000});
+            static_assert(cmoon::measures::meters{1} == cmoon::measures::millimeters{1000});
+            static_assert(cmoon::measures::meters{1} == cmoon::measures::centimeters{100});
+            static_assert(cmoon::measures::meters{1} == cmoon::measures::decimeters{10});
+            static_assert(cmoon::measures::meters{1} == cmoon::measures::meters{1});
+            static_assert(cmoon::measures::meters{10} == cmoon::measures::decameters{1});
+            static_assert(cmoon::measures::meters{1000} == cmoon::measures::kilometers{1});
+            static_assert(cmoon::measures::meters{1000000} == cmoon::measures::megameters{1});
+            static_assert(cmoon::measures::meters{1000000000} == cmoon::measures::gigameters{1});
+            static_assert(cmoon::measures::meters{1000000000000} == cmoon::measures::terameters{1});
+            static_assert(cmoon::measures::meters{1000000000000000} == cmoon::measures::petameters{1});
+            static_assert(cmoon::measures::meters{1000000000000000000} == cmoon::measures::exameters{1});
 
-            static_assert(collin::measures::system_cast<collin::measures::meters>(collin::measures::kilometers{1}) == collin::measures::meters{1000});
+            static_assert(cmoon::measures::system_cast<cmoon::measures::meters>(cmoon::measures::kilometers{1}) == cmoon::measures::meters{1000});
 
-            static_assert(collin::measures::meters{1} * 10 == collin::measures::decameters{1});
-            static_assert((collin::measures::meters{1} + collin::measures::meters{1} + collin::measures::meters{1}) == collin::measures::meters{3});
-            static_assert((collin::measures::meters{3} - collin::measures::meters{2}) == collin::measures::meters{1});
-            static_assert(collin::measures::meters{100} / 10 == collin::measures::meters{10});
+            static_assert(cmoon::measures::meters{1} * 10 == cmoon::measures::decameters{1});
+            static_assert((cmoon::measures::meters{1} + cmoon::measures::meters{1} + cmoon::measures::meters{1}) == cmoon::measures::meters{3});
+            static_assert((cmoon::measures::meters{3} - cmoon::measures::meters{2}) == cmoon::measures::meters{1});
+            static_assert(cmoon::measures::meters{100} / 10 == cmoon::measures::meters{10});
 
-            static_assert(collin::measures::inches{12} == collin::measures::feet{1});
-            static_assert(collin::measures::inches{36} == collin::measures::yards{1});
-            static_assert(collin::measures::inches{63360} == collin::measures::miles{1});
-            static_assert(collin::measures::feet{3} == collin::measures::yards{1});
-            static_assert(collin::measures::feet{5280} == collin::measures::miles{1});
-            static_assert(collin::measures::yards{1760} == collin::measures::miles{1});
+            static_assert(cmoon::measures::inches{12} == cmoon::measures::feet{1});
+            static_assert(cmoon::measures::inches{36} == cmoon::measures::yards{1});
+            static_assert(cmoon::measures::inches{63360} == cmoon::measures::miles{1});
+            static_assert(cmoon::measures::feet{3} == cmoon::measures::yards{1});
+            static_assert(cmoon::measures::feet{5280} == cmoon::measures::miles{1});
+            static_assert(cmoon::measures::yards{1760} == cmoon::measures::miles{1});
 
-            static_assert(collin::measures::system_cast<collin::measures::meters>(collin::measures::inches{10000}) == collin::measures::meters{254});
-            static_assert(collin::measures::system_cast<collin::measures::centimeters>(collin::measures::yards{100}) == collin::measures::centimeters{9144});
-            static_assert(collin::measures::system_cast<collin::measures::feet>(collin::measures::centimeters{10000}) == collin::measures::feet{328});
+            static_assert(cmoon::measures::system_cast<cmoon::measures::meters>(cmoon::measures::inches{10000}) == cmoon::measures::meters{254});
+            static_assert(cmoon::measures::system_cast<cmoon::measures::centimeters>(cmoon::measures::yards{100}) == cmoon::measures::centimeters{9144});
+            static_assert(cmoon::measures::system_cast<cmoon::measures::feet>(cmoon::measures::centimeters{10000}) == cmoon::measures::feet{328});
 
             static_information();
         }
@@ -227,161 +230,161 @@ class distance_values_test : public collin::test::test_case
     private:
         void static_information()
         {
-            constexpr auto size = sizeof(collin::measures::meters);
+            constexpr auto size = sizeof(cmoon::measures::meters);
         }
 };
 
-class mass_suffix_test : public collin::test::test_case
+class mass_suffix_test : public cmoon::test::test_case
 {
     public:
         mass_suffix_test()
-            : collin::test::test_case{"mass_suffix_test"} {}
+            : cmoon::test::test_case{"mass_suffix_test"} {}
 
         void operator()() override
         {
             std::stringstream ss;
 
-            ss << collin::measures::attograms{10};
-            collin::test::assert_equal(ss.str(), "10ag");
+            ss << cmoon::measures::attograms{10};
+            cmoon::test::assert_equal(ss.str(), "10ag");
 
             ss.str("");
-            ss << collin::measures::femtograms{10};
-            collin::test::assert_equal(ss.str(), "10fg");
+            ss << cmoon::measures::femtograms{10};
+            cmoon::test::assert_equal(ss.str(), "10fg");
 
             ss.str("");
-            ss << collin::measures::picograms{10};
-            collin::test::assert_equal(ss.str(), "10pg");
+            ss << cmoon::measures::picograms{10};
+            cmoon::test::assert_equal(ss.str(), "10pg");
 
             ss.str("");
-            ss << collin::measures::nanograms{10};
-            collin::test::assert_equal(ss.str(), "10ng");
+            ss << cmoon::measures::nanograms{10};
+            cmoon::test::assert_equal(ss.str(), "10ng");
 
             ss.str("");
-            ss << collin::measures::micrograms{10};
-            collin::test::assert_equal(ss.str(), "10ug");
+            ss << cmoon::measures::micrograms{10};
+            cmoon::test::assert_equal(ss.str(), "10ug");
 
             ss.str("");
-            ss << collin::measures::milligrams{10};
-            collin::test::assert_equal(ss.str(), "10mg");
+            ss << cmoon::measures::milligrams{10};
+            cmoon::test::assert_equal(ss.str(), "10mg");
 
             ss.str("");
-            ss << collin::measures::centigrams{10};
-            collin::test::assert_equal(ss.str(), "10cg");
+            ss << cmoon::measures::centigrams{10};
+            cmoon::test::assert_equal(ss.str(), "10cg");
 
             ss.str("");
-            ss << collin::measures::decigrams{10};
-            collin::test::assert_equal(ss.str(), "10dg");
+            ss << cmoon::measures::decigrams{10};
+            cmoon::test::assert_equal(ss.str(), "10dg");
 
             ss.str("");
-            ss << collin::measures::grams{10};
-            collin::test::assert_equal(ss.str(), "10g");
+            ss << cmoon::measures::grams{10};
+            cmoon::test::assert_equal(ss.str(), "10g");
 
             ss.str("");
-            ss << collin::measures::decagrams{10};
-            collin::test::assert_equal(ss.str(), "10dag");
+            ss << cmoon::measures::decagrams{10};
+            cmoon::test::assert_equal(ss.str(), "10dag");
 
             ss.str("");
-            ss << collin::measures::hectograms{10};
-            collin::test::assert_equal(ss.str(), "10hg");
+            ss << cmoon::measures::hectograms{10};
+            cmoon::test::assert_equal(ss.str(), "10hg");
 
             ss.str("");
-            ss << collin::measures::kilograms{10};
-            collin::test::assert_equal(ss.str(), "10kg");
+            ss << cmoon::measures::kilograms{10};
+            cmoon::test::assert_equal(ss.str(), "10kg");
 
             ss.str("");
-            ss << collin::measures::megagrams{10};
-            collin::test::assert_equal(ss.str(), "10Mg");
+            ss << cmoon::measures::megagrams{10};
+            cmoon::test::assert_equal(ss.str(), "10Mg");
 
             ss.str("");
-            ss << collin::measures::gigagrams{10};
-            collin::test::assert_equal(ss.str(), "10Gg");
+            ss << cmoon::measures::gigagrams{10};
+            cmoon::test::assert_equal(ss.str(), "10Gg");
 
             ss.str("");
-            ss << collin::measures::teragrams{10};
-            collin::test::assert_equal(ss.str(), "10Tg");
+            ss << cmoon::measures::teragrams{10};
+            cmoon::test::assert_equal(ss.str(), "10Tg");
 
             ss.str("");
-            ss << collin::measures::petagrams{10};
-            collin::test::assert_equal(ss.str(), "10Pg");
+            ss << cmoon::measures::petagrams{10};
+            cmoon::test::assert_equal(ss.str(), "10Pg");
 
             ss.str("");
-            ss << collin::measures::exagrams{10};
-            collin::test::assert_equal(ss.str(), "10Eg");
+            ss << cmoon::measures::exagrams{10};
+            cmoon::test::assert_equal(ss.str(), "10Eg");
 
             ss.str("");
-            ss << collin::measures::grains{10};
-            collin::test::assert_equal(ss.str(), "10gr");
+            ss << cmoon::measures::grains{10};
+            cmoon::test::assert_equal(ss.str(), "10gr");
 
             ss.str("");
-            ss << collin::measures::drachm{10};
-            collin::test::assert_equal(ss.str(), "10dr");
+            ss << cmoon::measures::drachm{10};
+            cmoon::test::assert_equal(ss.str(), "10dr");
 
             ss.str("");
-            ss << collin::measures::ounces{10};
-            collin::test::assert_equal(ss.str(), "10oz");
+            ss << cmoon::measures::ounces{10};
+            cmoon::test::assert_equal(ss.str(), "10oz");
 
             ss.str("");
-            ss << collin::measures::pounds{10};
-            collin::test::assert_equal(ss.str(), "10lb");
+            ss << cmoon::measures::pounds{10};
+            cmoon::test::assert_equal(ss.str(), "10lb");
 
             ss.str("");
-            ss << collin::measures::stones{10};
-            collin::test::assert_equal(ss.str(), "10st");
+            ss << cmoon::measures::stones{10};
+            cmoon::test::assert_equal(ss.str(), "10st");
 
             ss.str("");
-            ss << collin::measures::quarters{10};
-            collin::test::assert_equal(ss.str(), "10qr");
+            ss << cmoon::measures::quarters{10};
+            cmoon::test::assert_equal(ss.str(), "10qr");
 
             ss.str("");
-            ss << collin::measures::hundredweights{10};
-            collin::test::assert_equal(ss.str(), "10cwt");
+            ss << cmoon::measures::hundredweights{10};
+            cmoon::test::assert_equal(ss.str(), "10cwt");
 
             ss.str("");
-            ss << collin::measures::short_tons{10};
-            collin::test::assert_equal(ss.str(), "10t");
+            ss << cmoon::measures::short_tons{10};
+            cmoon::test::assert_equal(ss.str(), "10t");
 
             ss.str("");
-            ss << collin::measures::tons{10};
-            collin::test::assert_equal(ss.str(), "10t");
+            ss << cmoon::measures::tons{10};
+            cmoon::test::assert_equal(ss.str(), "10t");
         }
 
         void static_asserts()
         {
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::attograms> == "ag");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::femtograms> == "fg");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::picograms> == "pg");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::nanograms> == "ng");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::micrograms> == "ug");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::milligrams> == "mg");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::centigrams> == "cg");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::decigrams> == "dg");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::grams> == "g");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::decagrams> == "dag");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::hectograms> == "hg");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::kilograms> == "kg");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::megagrams> == "Mg");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::gigagrams> == "Gg");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::teragrams> == "Tg");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::petagrams> == "Pg");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::exagrams> == "Eg");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::attograms> == "ag");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::femtograms> == "fg");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::picograms> == "pg");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::nanograms> == "ng");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::micrograms> == "ug");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::milligrams> == "mg");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::centigrams> == "cg");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::decigrams> == "dg");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::grams> == "g");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::decagrams> == "dag");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::hectograms> == "hg");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::kilograms> == "kg");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::megagrams> == "Mg");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::gigagrams> == "Gg");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::teragrams> == "Tg");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::petagrams> == "Pg");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::exagrams> == "Eg");
 
-            static_assert(collin::measures::imperial_system::suffix_v<collin::measures::grains> == "gr");
-            static_assert(collin::measures::imperial_system::suffix_v<collin::measures::drachm> == "dr");
-            static_assert(collin::measures::imperial_system::suffix_v<collin::measures::ounces> == "oz");
-            static_assert(collin::measures::imperial_system::suffix_v<collin::measures::pounds> == "lb");
-            static_assert(collin::measures::imperial_system::suffix_v<collin::measures::stones> == "st");
-            static_assert(collin::measures::imperial_system::suffix_v<collin::measures::quarters> == "qr");
-            static_assert(collin::measures::imperial_system::suffix_v<collin::measures::hundredweights> == "cwt");
-            static_assert(collin::measures::imperial_system::suffix_v<collin::measures::short_tons> == "t");
-            static_assert(collin::measures::imperial_system::suffix_v<collin::measures::tons> == "t");
+            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::grains> == "gr");
+            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::drachm> == "dr");
+            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::ounces> == "oz");
+            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::pounds> == "lb");
+            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::stones> == "st");
+            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::quarters> == "qr");
+            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::hundredweights> == "cwt");
+            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::short_tons> == "t");
+            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::tons> == "t");
         }
 };
 
-class mass_values_test : public collin::test::test_case
+class mass_values_test : public cmoon::test::test_case
 {
     public:
         mass_values_test()
-            : collin::test::test_case{"mass_values_test"} {}
+            : cmoon::test::test_case{"mass_values_test"} {}
 
         void operator()() override
         {
@@ -389,174 +392,174 @@ class mass_values_test : public collin::test::test_case
 
         void static_asserts()
         {
-            static_assert(collin::measures::grams{1} == collin::measures::attograms{1000000000000000000});
-            static_assert(collin::measures::grams{1} == collin::measures::femtograms{1000000000000000});
-            static_assert(collin::measures::grams{1} == collin::measures::picograms{1000000000000});
-            static_assert(collin::measures::grams{1} == collin::measures::nanograms{1000000000});
-            static_assert(collin::measures::grams{1} == collin::measures::micrograms{1000000});
-            static_assert(collin::measures::grams{1} == collin::measures::milligrams{1000});
-            static_assert(collin::measures::grams{1} == collin::measures::centigrams{100});
-            static_assert(collin::measures::grams{1} == collin::measures::decigrams{10});
-            static_assert(collin::measures::grams{1} == collin::measures::grams{1});
-            static_assert(collin::measures::grams{10} == collin::measures::decagrams{1});
-            static_assert(collin::measures::grams{1000} == collin::measures::kilograms{1});
-            static_assert(collin::measures::grams{1000000} == collin::measures::megagrams{1});
-            static_assert(collin::measures::grams{1000000000} == collin::measures::gigagrams{1});
-            static_assert(collin::measures::grams{1000000000000} == collin::measures::teragrams{1});
-            static_assert(collin::measures::grams{1000000000000000} == collin::measures::petagrams{1});
-            static_assert(collin::measures::grams{1000000000000000000} == collin::measures::exagrams{1});
+            static_assert(cmoon::measures::grams{1} == cmoon::measures::attograms{1000000000000000000});
+            static_assert(cmoon::measures::grams{1} == cmoon::measures::femtograms{1000000000000000});
+            static_assert(cmoon::measures::grams{1} == cmoon::measures::picograms{1000000000000});
+            static_assert(cmoon::measures::grams{1} == cmoon::measures::nanograms{1000000000});
+            static_assert(cmoon::measures::grams{1} == cmoon::measures::micrograms{1000000});
+            static_assert(cmoon::measures::grams{1} == cmoon::measures::milligrams{1000});
+            static_assert(cmoon::measures::grams{1} == cmoon::measures::centigrams{100});
+            static_assert(cmoon::measures::grams{1} == cmoon::measures::decigrams{10});
+            static_assert(cmoon::measures::grams{1} == cmoon::measures::grams{1});
+            static_assert(cmoon::measures::grams{10} == cmoon::measures::decagrams{1});
+            static_assert(cmoon::measures::grams{1000} == cmoon::measures::kilograms{1});
+            static_assert(cmoon::measures::grams{1000000} == cmoon::measures::megagrams{1});
+            static_assert(cmoon::measures::grams{1000000000} == cmoon::measures::gigagrams{1});
+            static_assert(cmoon::measures::grams{1000000000000} == cmoon::measures::teragrams{1});
+            static_assert(cmoon::measures::grams{1000000000000000} == cmoon::measures::petagrams{1});
+            static_assert(cmoon::measures::grams{1000000000000000000} == cmoon::measures::exagrams{1});
 
-            static_assert(collin::measures::grains{7000} == collin::measures::pounds{1});
-            static_assert(collin::measures::drachm{256} == collin::measures::pounds{1});
-            static_assert(collin::measures::ounces{16} == collin::measures::pounds{1});
-            static_assert(collin::measures::pounds{1} == collin::measures::pounds{1});
-            static_assert(collin::measures::stones{1} == collin::measures::pounds{14});
-            static_assert(collin::measures::quarters{1} == collin::measures::pounds{28});
-            static_assert(collin::measures::hundredweights{1} == collin::measures::pounds{112});
-            static_assert(collin::measures::short_tons{1} == collin::measures::pounds{2000});
-            static_assert(collin::measures::tons{1} == collin::measures::pounds{2240});
+            static_assert(cmoon::measures::grains{7000} == cmoon::measures::pounds{1});
+            static_assert(cmoon::measures::drachm{256} == cmoon::measures::pounds{1});
+            static_assert(cmoon::measures::ounces{16} == cmoon::measures::pounds{1});
+            static_assert(cmoon::measures::pounds{1} == cmoon::measures::pounds{1});
+            static_assert(cmoon::measures::stones{1} == cmoon::measures::pounds{14});
+            static_assert(cmoon::measures::quarters{1} == cmoon::measures::pounds{28});
+            static_assert(cmoon::measures::hundredweights{1} == cmoon::measures::pounds{112});
+            static_assert(cmoon::measures::short_tons{1} == cmoon::measures::pounds{2000});
+            static_assert(cmoon::measures::tons{1} == cmoon::measures::pounds{2240});
 
-            static_assert(collin::measures::system_cast<collin::measures::pounds>(collin::measures::short_tons{10}) == collin::measures::pounds{20000});
-            static_assert(collin::measures::system_cast<collin::measures::grams>(collin::measures::pounds{1}) == collin::measures::grams{453});
-            static_assert(collin::measures::system_cast<collin::measures::pounds>(collin::measures::kilograms{10}) == collin::measures::pounds{22});
+            static_assert(cmoon::measures::system_cast<cmoon::measures::pounds>(cmoon::measures::short_tons{10}) == cmoon::measures::pounds{20000});
+            static_assert(cmoon::measures::system_cast<cmoon::measures::grams>(cmoon::measures::pounds{1}) == cmoon::measures::grams{453});
+            static_assert(cmoon::measures::system_cast<cmoon::measures::pounds>(cmoon::measures::kilograms{10}) == cmoon::measures::pounds{22});
         }
 };
 
-class time_suffix_test : public collin::test::test_case
+class time_suffix_test : public cmoon::test::test_case
 {
     public:
         time_suffix_test()
-            : collin::test::test_case{"time_suffix_test"} {}
+            : cmoon::test::test_case{"time_suffix_test"} {}
 
         void operator()() override
         {
             std::stringstream ss;
 
-            ss << collin::measures::attoseconds{10};
-		    collin::test::assert_equal(ss.str(), "10as");
+            ss << cmoon::measures::attoseconds{10};
+		    cmoon::test::assert_equal(ss.str(), "10as");
 
 		    ss.str("");
-            ss << collin::measures::femtoseconds{10};
-		    collin::test::assert_equal(ss.str(), "10fs");
+            ss << cmoon::measures::femtoseconds{10};
+		    cmoon::test::assert_equal(ss.str(), "10fs");
 
 		    ss.str("");
-            ss << collin::measures::picoseconds{10};
-		    collin::test::assert_equal(ss.str(), "10ps");
+            ss << cmoon::measures::picoseconds{10};
+		    cmoon::test::assert_equal(ss.str(), "10ps");
 
 		    ss.str("");
-            ss << collin::measures::nanoseconds{10};
-		    collin::test::assert_equal(ss.str(), "10ns");
+            ss << cmoon::measures::nanoseconds{10};
+		    cmoon::test::assert_equal(ss.str(), "10ns");
 
 		    ss.str("");
-            ss << collin::measures::microseconds{10};
-		    collin::test::assert_equal(ss.str(), "10us");
+            ss << cmoon::measures::microseconds{10};
+		    cmoon::test::assert_equal(ss.str(), "10us");
 
 		    ss.str("");
-            ss << collin::measures::milliseconds{10};
-		    collin::test::assert_equal(ss.str(), "10ms");
+            ss << cmoon::measures::milliseconds{10};
+		    cmoon::test::assert_equal(ss.str(), "10ms");
 
 		    ss.str("");
-            ss << collin::measures::centiseconds{10};
-		    collin::test::assert_equal(ss.str(), "10cs");
+            ss << cmoon::measures::centiseconds{10};
+		    cmoon::test::assert_equal(ss.str(), "10cs");
 
 		    ss.str("");
-            ss << collin::measures::deciseconds{10};
-		    collin::test::assert_equal(ss.str(), "10ds");
+            ss << cmoon::measures::deciseconds{10};
+		    cmoon::test::assert_equal(ss.str(), "10ds");
 
 		    ss.str("");
-            ss << collin::measures::seconds{10};
-		    collin::test::assert_equal(ss.str(), "10s");
+            ss << cmoon::measures::seconds{10};
+		    cmoon::test::assert_equal(ss.str(), "10s");
 
 		    ss.str("");
-            ss << collin::measures::decaseconds{10};
-		    collin::test::assert_equal(ss.str(), "10das");
+            ss << cmoon::measures::decaseconds{10};
+		    cmoon::test::assert_equal(ss.str(), "10das");
 
 		    ss.str("");
-            ss << collin::measures::hectoseconds{10};
-		    collin::test::assert_equal(ss.str(), "10hs");
+            ss << cmoon::measures::hectoseconds{10};
+		    cmoon::test::assert_equal(ss.str(), "10hs");
 
 		    ss.str("");
-            ss << collin::measures::kiloseconds{10};
-		    collin::test::assert_equal(ss.str(), "10ks");
+            ss << cmoon::measures::kiloseconds{10};
+		    cmoon::test::assert_equal(ss.str(), "10ks");
 
 		    ss.str("");
-            ss << collin::measures::megaseconds{10};
-		    collin::test::assert_equal(ss.str(), "10Ms");
+            ss << cmoon::measures::megaseconds{10};
+		    cmoon::test::assert_equal(ss.str(), "10Ms");
 
 		    ss.str("");
-            ss << collin::measures::gigaseconds{10};
-		    collin::test::assert_equal(ss.str(), "10Gs");
+            ss << cmoon::measures::gigaseconds{10};
+		    cmoon::test::assert_equal(ss.str(), "10Gs");
 
 		    ss.str("");
-            ss << collin::measures::teraseconds{10};
-		    collin::test::assert_equal(ss.str(), "10Ts");
+            ss << cmoon::measures::teraseconds{10};
+		    cmoon::test::assert_equal(ss.str(), "10Ts");
 
 		    ss.str("");
-            ss << collin::measures::petaseconds{10};
-		    collin::test::assert_equal(ss.str(), "10Ps");
+            ss << cmoon::measures::petaseconds{10};
+		    cmoon::test::assert_equal(ss.str(), "10Ps");
 
 		    ss.str("");
-            ss << collin::measures::exaseconds{10};
-		    collin::test::assert_equal(ss.str(), "10Es");
+            ss << cmoon::measures::exaseconds{10};
+		    cmoon::test::assert_equal(ss.str(), "10Es");
 
 		    ss.str("");
-            ss << collin::measures::minutes{10};
-		    collin::test::assert_equal(ss.str(), "10min");
+            ss << cmoon::measures::minutes{10};
+		    cmoon::test::assert_equal(ss.str(), "10min");
 
 		    ss.str("");
-            ss << collin::measures::hours{10};
-		    collin::test::assert_equal(ss.str(), "10h");
+            ss << cmoon::measures::hours{10};
+		    cmoon::test::assert_equal(ss.str(), "10h");
 
 		    ss.str("");
-            ss << collin::measures::days{10};
-		    collin::test::assert_equal(ss.str(), "10d");
+            ss << cmoon::measures::days{10};
+		    cmoon::test::assert_equal(ss.str(), "10d");
 
 		    ss.str("");
-            ss << collin::measures::weeks{10};
-		    collin::test::assert_equal(ss.str(), "10w");
+            ss << cmoon::measures::weeks{10};
+		    cmoon::test::assert_equal(ss.str(), "10w");
 
 		    ss.str("");
-            ss << collin::measures::months{10};
-		    collin::test::assert_equal(ss.str(), "10mo");
+            ss << cmoon::measures::months{10};
+		    cmoon::test::assert_equal(ss.str(), "10mo");
 
 		    ss.str("");
-            ss << collin::measures::years{10};
-		    collin::test::assert_equal(ss.str(), "10y");
+            ss << cmoon::measures::years{10};
+		    cmoon::test::assert_equal(ss.str(), "10y");
         }
 
         void static_asserts()
         {
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::attoseconds> == "as");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::femtoseconds> == "fs");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::picoseconds> == "ps");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::nanoseconds> == "ns");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::microseconds> == "us");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::milliseconds> == "ms");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::centiseconds> == "cs");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::deciseconds> == "ds");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::seconds> == "s");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::decaseconds> == "das");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::hectoseconds> == "hs");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::kiloseconds> == "ks");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::megaseconds> == "Ms");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::gigaseconds> == "Gs");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::teraseconds> == "Ts");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::petaseconds> == "Ps");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::exaseconds> == "Es");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::minutes> == "min");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::hours> == "h");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::days> == "d");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::weeks> == "w");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::months> == "mo");
-            static_assert(collin::measures::metric_system::suffix_v<collin::measures::years> == "y");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::attoseconds> == "as");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::femtoseconds> == "fs");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::picoseconds> == "ps");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::nanoseconds> == "ns");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::microseconds> == "us");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::milliseconds> == "ms");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::centiseconds> == "cs");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::deciseconds> == "ds");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::seconds> == "s");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::decaseconds> == "das");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::hectoseconds> == "hs");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::kiloseconds> == "ks");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::megaseconds> == "Ms");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::gigaseconds> == "Gs");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::teraseconds> == "Ts");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::petaseconds> == "Ps");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::exaseconds> == "Es");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::minutes> == "min");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::hours> == "h");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::days> == "d");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::weeks> == "w");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::months> == "mo");
+            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::years> == "y");
         }
 };
 
-class time_values_test : public collin::test::test_case
+class time_values_test : public cmoon::test::test_case
 {
     public:
         time_values_test()
-            : collin::test::test_case{"time_values_test"} {}
+            : cmoon::test::test_case{"time_values_test"} {}
 
         void operator()() override
         {
@@ -565,61 +568,61 @@ class time_values_test : public collin::test::test_case
 
         void static_asserts()
         {
-            static_assert(collin::measures::seconds{1} == collin::measures::attoseconds{1000000000000000000});
-            static_assert(collin::measures::seconds{1} == collin::measures::femtoseconds{1000000000000000});
-            static_assert(collin::measures::seconds{1} == collin::measures::picoseconds{1000000000000});
-            static_assert(collin::measures::seconds{1} == collin::measures::nanoseconds{1000000000});
-            static_assert(collin::measures::seconds{1} == collin::measures::microseconds{1000000});
-            static_assert(collin::measures::seconds{1} == collin::measures::milliseconds{1000});
-            static_assert(collin::measures::seconds{1} == collin::measures::centiseconds{100});
-            static_assert(collin::measures::seconds{1} == collin::measures::deciseconds{10});
-            static_assert(collin::measures::seconds{1} == collin::measures::seconds{1});
-            static_assert(collin::measures::seconds{10} == collin::measures::decaseconds{1});
-            static_assert(collin::measures::seconds{1000} == collin::measures::kiloseconds{1});
-            static_assert(collin::measures::seconds{1000000} == collin::measures::megaseconds{1});
-            static_assert(collin::measures::seconds{1000000000} == collin::measures::gigaseconds{1});
-            static_assert(collin::measures::seconds{1000000000000} == collin::measures::teraseconds{1});
-            static_assert(collin::measures::seconds{1000000000000000} == collin::measures::petaseconds{1});
-            static_assert(collin::measures::seconds{1000000000000000000} == collin::measures::exaseconds{1});
+            static_assert(cmoon::measures::seconds{1} == cmoon::measures::attoseconds{1000000000000000000});
+            static_assert(cmoon::measures::seconds{1} == cmoon::measures::femtoseconds{1000000000000000});
+            static_assert(cmoon::measures::seconds{1} == cmoon::measures::picoseconds{1000000000000});
+            static_assert(cmoon::measures::seconds{1} == cmoon::measures::nanoseconds{1000000000});
+            static_assert(cmoon::measures::seconds{1} == cmoon::measures::microseconds{1000000});
+            static_assert(cmoon::measures::seconds{1} == cmoon::measures::milliseconds{1000});
+            static_assert(cmoon::measures::seconds{1} == cmoon::measures::centiseconds{100});
+            static_assert(cmoon::measures::seconds{1} == cmoon::measures::deciseconds{10});
+            static_assert(cmoon::measures::seconds{1} == cmoon::measures::seconds{1});
+            static_assert(cmoon::measures::seconds{10} == cmoon::measures::decaseconds{1});
+            static_assert(cmoon::measures::seconds{1000} == cmoon::measures::kiloseconds{1});
+            static_assert(cmoon::measures::seconds{1000000} == cmoon::measures::megaseconds{1});
+            static_assert(cmoon::measures::seconds{1000000000} == cmoon::measures::gigaseconds{1});
+            static_assert(cmoon::measures::seconds{1000000000000} == cmoon::measures::teraseconds{1});
+            static_assert(cmoon::measures::seconds{1000000000000000} == cmoon::measures::petaseconds{1});
+            static_assert(cmoon::measures::seconds{1000000000000000000} == cmoon::measures::exaseconds{1});
 
-            static_assert(collin::measures::system_cast<collin::measures::seconds>(collin::measures::kiloseconds{1}) == collin::measures::seconds{1000});
+            static_assert(cmoon::measures::system_cast<cmoon::measures::seconds>(cmoon::measures::kiloseconds{1}) == cmoon::measures::seconds{1000});
 
-            static_assert(collin::measures::seconds{1} * 10 == collin::measures::decaseconds{1});
-            static_assert((collin::measures::seconds{1} + collin::measures::seconds{1} + collin::measures::seconds{1}) == collin::measures::seconds{3});
-            static_assert((collin::measures::seconds{3} - collin::measures::seconds{2}) == collin::measures::seconds{1});
-            static_assert(collin::measures::seconds{100} / 10 == collin::measures::seconds{10});
+            static_assert(cmoon::measures::seconds{1} * 10 == cmoon::measures::decaseconds{1});
+            static_assert((cmoon::measures::seconds{1} + cmoon::measures::seconds{1} + cmoon::measures::seconds{1}) == cmoon::measures::seconds{3});
+            static_assert((cmoon::measures::seconds{3} - cmoon::measures::seconds{2}) == cmoon::measures::seconds{1});
+            static_assert(cmoon::measures::seconds{100} / 10 == cmoon::measures::seconds{10});
 
-            static_assert(collin::measures::seconds{60} == collin::measures::minutes{1});
-            static_assert(collin::measures::seconds{3600} == collin::measures::hours{1});
-            static_assert(collin::measures::seconds{86400} == collin::measures::days{1});
-            static_assert(collin::measures::seconds{604800} == collin::measures::weeks{1});
-            static_assert(collin::measures::seconds{2629746} == collin::measures::months{1});
-            static_assert(collin::measures::seconds{31556952} == collin::measures::years{1});
+            static_assert(cmoon::measures::seconds{60} == cmoon::measures::minutes{1});
+            static_assert(cmoon::measures::seconds{3600} == cmoon::measures::hours{1});
+            static_assert(cmoon::measures::seconds{86400} == cmoon::measures::days{1});
+            static_assert(cmoon::measures::seconds{604800} == cmoon::measures::weeks{1});
+            static_assert(cmoon::measures::seconds{2629746} == cmoon::measures::months{1});
+            static_assert(cmoon::measures::seconds{31556952} == cmoon::measures::years{1});
 
-            static_assert(collin::measures::minutes{60} == collin::measures::hours{1});
-            static_assert(collin::measures::hours{24} == collin::measures::days{1});
-            static_assert(collin::measures::days{7} == collin::measures::weeks{1});
-            static_assert(collin::measures::months{12} == collin::measures::years{1});
+            static_assert(cmoon::measures::minutes{60} == cmoon::measures::hours{1});
+            static_assert(cmoon::measures::hours{24} == cmoon::measures::days{1});
+            static_assert(cmoon::measures::days{7} == cmoon::measures::weeks{1});
+            static_assert(cmoon::measures::months{12} == cmoon::measures::years{1});
 
-            static_assert(collin::measures::to_chrono(collin::measures::nanoseconds{10}) == std::chrono::nanoseconds{10});
-            static_assert(collin::measures::to_chrono(collin::measures::microseconds{10}) == std::chrono::microseconds{10});
-            static_assert(collin::measures::to_chrono(collin::measures::milliseconds{10}) == std::chrono::milliseconds{10});
-            static_assert(collin::measures::to_chrono(collin::measures::seconds{10}) == std::chrono::seconds{10});
-            static_assert(collin::measures::to_chrono(collin::measures::minutes{10}) == std::chrono::minutes{10});
-            static_assert(collin::measures::to_chrono(collin::measures::hours{10}) == std::chrono::hours{10});
+            static_assert(cmoon::measures::to_chrono(cmoon::measures::nanoseconds{10}) == std::chrono::nanoseconds{10});
+            static_assert(cmoon::measures::to_chrono(cmoon::measures::microseconds{10}) == std::chrono::microseconds{10});
+            static_assert(cmoon::measures::to_chrono(cmoon::measures::milliseconds{10}) == std::chrono::milliseconds{10});
+            static_assert(cmoon::measures::to_chrono(cmoon::measures::seconds{10}) == std::chrono::seconds{10});
+            static_assert(cmoon::measures::to_chrono(cmoon::measures::minutes{10}) == std::chrono::minutes{10});
+            static_assert(cmoon::measures::to_chrono(cmoon::measures::hours{10}) == std::chrono::hours{10});
         }
 };
 
-class dimension_unit_construction_test : public collin::test::test_case
+class dimension_unit_construction_test : public cmoon::test::test_case
 {
     public:
         dimension_unit_construction_test()
-            : collin::test::test_case{"dimension_unit_construction_test"} {}
+            : cmoon::test::test_case{"dimension_unit_construction_test"} {}
 
         void operator()() override
         {
-            using type = collin::measures::seconds;
-            using type2 = collin::measures::kiloseconds;
+            using type = cmoon::measures::seconds;
+            using type2 = cmoon::measures::kiloseconds;
 
             constexpr type s1{10};
             constexpr auto s2 = s1 * s1;
@@ -637,29 +640,29 @@ class dimension_unit_construction_test : public collin::test::test_case
     private:
         void static_information()
         {
-            constexpr auto size1 = sizeof(collin::measures::basic_seconds<std::intmax_t, 2>);
-            constexpr auto size2 = sizeof(collin::measures::basic_seconds<std::intmax_t, -2>);
+            constexpr auto size1 = sizeof(cmoon::measures::basic_seconds<std::intmax_t, 2>);
+            constexpr auto size2 = sizeof(cmoon::measures::basic_seconds<std::intmax_t, -2>);
         }
 };
 
-class derived_unit_construction_test : public collin::test::test_case
+class derived_unit_construction_test : public cmoon::test::test_case
 {
     public:
         derived_unit_construction_test()
-            : collin::test::test_case{"derived_unit_construction_test"} {}
+            : cmoon::test::test_case{"derived_unit_construction_test"} {}
 
         void operator()() override
         {
-            using t = collin::measures::meters;
-            using t2 = collin::measures::basic_seconds<std::intmax_t, -1>;
+            using t = cmoon::measures::meters;
+            using t2 = cmoon::measures::basic_seconds<std::intmax_t, -1>;
 
-            using t3 = collin::measures::kilometers;
+            using t3 = cmoon::measures::kilometers;
 
-            using derived_t = collin::measures::basic_derived_unit<std::intmax_t, t, t2>;
-            using derived_t2 = collin::measures::basic_derived_unit<std::intmax_t, t3, t2>;
-            using derived_t3 = collin::measures::basic_derived_unit<std::intmax_t,
-                                    collin::measures::basic_meters<std::intmax_t, -1>,
-                                    collin::measures::basic_seconds<std::intmax_t, 1>>;
+            using derived_t = cmoon::measures::basic_derived_unit<std::intmax_t, t, t2>;
+            using derived_t2 = cmoon::measures::basic_derived_unit<std::intmax_t, t3, t2>;
+            using derived_t3 = cmoon::measures::basic_derived_unit<std::intmax_t,
+                                    cmoon::measures::basic_meters<std::intmax_t, -1>,
+                                    cmoon::measures::basic_seconds<std::intmax_t, 1>>;
 
             derived_t derived {10};
             derived *= 10;
@@ -670,30 +673,17 @@ class derived_unit_construction_test : public collin::test::test_case
             derived += derived2;
 
             const auto derived3 = derived * t{2};
-            const auto derived4 = derived * collin::measures::basic_seconds<std::intmax_t, 1>{1};
-            const auto derived5 = derived4 * collin::measures::basic_meters<std::intmax_t, -1>{1};
+            const auto derived4 = derived * cmoon::measures::basic_seconds<std::intmax_t, 1>{1};
+            const auto derived5 = derived4 * cmoon::measures::basic_meters<std::intmax_t, -1>{1};
             const auto derived6 = derived / t2{1};
             const auto derived7 = derived * derived;
             const auto derived8 = derived * derived_t3{1};
         }
 };
 
-class constants_test : public collin::test::test_case
-{
-    public:
-        constants_test()
-            : collin::test::test_case{"constants_test"} {}
-
-        void operator()() override
-        {
-            constexpr auto gc = collin::measures::gravitational_constant;
-            constexpr auto gc2 = gc * 2;
-        }
-};
-
 int main()
 {
-    collin::test::test_suite suite;
+    cmoon::test::test_suite suite;
     suite.add_test_case<measures_suffix_test>();
     suite.add_test_case<distance_suffix_test>();
     suite.add_test_case<distance_values_test>();
@@ -703,9 +693,8 @@ int main()
     suite.add_test_case<time_values_test>();
     suite.add_test_case<dimension_unit_construction_test>();
     suite.add_test_case<derived_unit_construction_test>();
-    suite.add_test_case<constants_test>();
 
-    collin::test::text_test_runner runner(std::cout);
+    cmoon::test::text_test_runner runner(std::cout);
     
     return !runner.run(suite);
 }

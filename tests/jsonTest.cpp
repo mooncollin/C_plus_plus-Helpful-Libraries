@@ -18,7 +18,7 @@ class json_parse_test : public collin::test::test_case
 		void operator()() override
 		{
 			std::ifstream json_file {"jsonExample.json"};
-			collin::json::json_value data;
+			collin::json::json_value<> data;
 			json_file >> data;
 
 			collin::test::assert_true(data.is_object(),
@@ -93,12 +93,12 @@ class json_parse_test : public collin::test::test_case
 				"\"GlossSeeAlso\" is not a list"
 			);
 
-			collin::test::assert_equal(data.at("glossary").at("GlossDiv").at("GlossList").at("GlossEntry").at("GlossDef").at("GlossSeeAlso")[0].as_string(), 
+			collin::test::assert_equal(data.at("glossary").at("GlossDiv").at("GlossList").at("GlossEntry").at("GlossDef").at("GlossSeeAlso").as_list().front().as_string(), 
 				"GML",
 				"\"GlossSeeAlso::0\" has an incorrect value"
 			);
 
-			collin::test::assert_equal(data.at("glossary").at("GlossDiv").at("GlossList").at("GlossEntry").at("GlossDef").at("GlossSeeAlso")[1].as_string(), 
+			collin::test::assert_equal(collin::first_of(data.at("glossary").at("GlossDiv").at("GlossList").at("GlossEntry").at("GlossDef").at("GlossSeeAlso").as_list(), 1).as_string(), 
 				"XML",
 				"\"GlossSeeAlso::1\" has an incorrect value"
 			);
@@ -154,7 +154,9 @@ class json_speed_test : public collin::test::test_case
 		void operator()()
 		{
 			std::ifstream json_file {"citm_catalog.json"};
-			collin::json::json_parser parser {json_file};
+			collin::json::json_value<> json;
+			collin::json::json_parser parser;
+			parser(json_file, json);
 		}
 };
 
