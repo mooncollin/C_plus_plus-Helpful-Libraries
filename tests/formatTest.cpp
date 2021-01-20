@@ -6,6 +6,7 @@
 #include <chrono>
 
 #include "cmoon/format.hpp"
+#include "cmoon/datetime.hpp"
 
 #include "cmoon/test/assert.hpp"
 #include "cmoon/test/assert_exception.hpp"

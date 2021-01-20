@@ -1842,6 +1842,145 @@ namespace cmoon
 		}
 	}
 
+	template<typename CharT>
+	struct formatter<std::tm, CharT> : public details::base_chrono_formatter<std::tm, CharT>
+	{
+		public:
+			template<class OutputIt>
+			constexpr auto format(const std::tm& t, basic_format_context<OutputIt, CharT>& ctx)
+			{
+				details::tm_handler h {t, ctx};
+				details::parse_chrono_format(this->fmt, h);
+
+				return details::write_string_view(h.str(), ctx, this->parser);
+			}
+	};
+
+	template<typename Duration, typename CharT>
+	struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>, CharT> : public details::base_chrono_formatter<std::chrono::time_point<std::chrono::system_clock, Duration>, CharT>
+	{
+		private:
+			template<class OutputIt>
+			struct handler : public details::tm_handler<CharT, OutputIt>
+			{
+				handler(const handler&) = delete;
+				handler& operator=(const handler&) = delete;
+
+				handler(const std::tm& value, basic_format_context<OutputIt, CharT>& ctx)
+					: details::tm_handler<CharT, OutputIt>{value, ctx} {}
+
+				void on_tz_name()
+				{
+					this->on_text(cmoon::choose_str_literal<CharT>(STR_LITERALS("UTC")));
+				}
+
+				void on_utc_offset(const details::numeric_system s)
+				{
+					if (s == details::numeric_system::standard)
+					{
+						this->on_text(cmoon::choose_str_literal<CharT>(STR_LITERALS("+0000")));
+					}
+					else
+					{
+						this->on_text(cmoon::choose_str_literal<CharT>(STR_LITERALS("+00:00")));
+					}
+				}
+			};
+		public:
+			template<class OutputIt>
+			auto format(const std::chrono::time_point<std::chrono::system_clock, Duration>& val, basic_format_context<OutputIt, CharT>& ctx)
+			{
+				const auto time1 = std::chrono::system_clock::to_time_t(val);
+				std::tm time2;
+				::localtime_s(std::addressof(time2), std::addressof(time1));
+
+				handler h{time2, ctx};
+				details::parse_chrono_format(this->fmt, h);
+
+				return details::write_string_view(h.str(), ctx, this->parser);
+			}
+	};
+
+	template<class Duration, typename CharT>
+	struct formatter<datetime::hh_mm_ss<Duration>, CharT> : public details::base_chrono_formatter<datetime::hh_mm_ss<Duration>, CharT>
+	{
+		private:
+			template<class OutputIt>
+			struct handler : public details::tm_handler<CharT, OutputIt>
+			{
+				public:
+					handler(const handler&) = delete;
+					handler& operator=(const handler&) = delete;
+
+					handler(const std::tm& value, basic_format_context<OutputIt, CharT>& ctx)
+						: details::tm_handler<CharT, OutputIt>{value, ctx} {}
+
+					void on_abbr_month() { this->throw_not_supported(); }
+					void on_full_month() { this->throw_not_supported(); }
+					void on_abbr_weekday() { this->throw_not_supported(); }
+					void on_full_weekday() { this->throw_not_supported(); }
+					void on_iso_abbr_year() { this->throw_not_supported(); }
+					void on_iso_year() { this->throw_not_supported(); }
+					void on_week_sunday(const details::numeric_system) { this->throw_not_supported(); }
+					void on_week_monday(const details::numeric_system) { this->throw_not_supported(); }
+					void on_us_date() { this->throw_not_supported(); }
+					void on_iso_date() { this->throw_not_supported(); }
+					void on_loc_date(const details::numeric_system) { this->throw_not_supported(); }
+					void on_datetime(const details::numeric_system) { this->throw_not_supported(); }
+					void on_utc_offset(const details::numeric_system) { this->throw_not_supported(); }
+					void on_tz_name() { this->throw_not_supported(); }
+					void on_day_of_year() { this->throw_not_supported(); }
+					void on_iso_week(const details::numeric_system) { this->throw_not_supported(); }
+					void on_dec0_weekday(const details::numeric_system) { this->throw_not_supported(); }
+					void on_dec1_weekday(const details::numeric_system) { this->throw_not_supported(); }
+					void on_day_of_month_space(const details::numeric_system) { this->throw_not_supported(); }
+					void on_day_of_month_zero(const details::numeric_system) { this->throw_not_supported(); }
+					void on_dec_month(const details::numeric_system) { this->throw_not_supported(); }
+					void on_century(const details::numeric_system) { this->throw_not_supported(); }
+					void on_abbr_year(const details::numeric_system) { this->throw_not_supported(); }
+					void on_offset_year() { this->throw_not_supported(); }
+					void on_year(const details::numeric_system) { this->throw_not_supported(); }
+			};
+
+		public:
+			template<class OutputIt>
+			auto format(const datetime::hh_mm_ss<Duration>& val, basic_format_context<OutputIt, CharT>& ctx)
+			{
+				std::tm time;
+				if constexpr (std::same_as<Duration, measures::hours>)
+				{
+					time.tm_hour = static_cast<int>(val.hours().count());
+				}
+				else if constexpr (std::same_as<Duration, measures::minutes>)
+				{
+					time.tm_hour = static_cast<int>(val.hours().count());
+					time.tm_min = static_cast<int>(val.minutes().count());
+				}
+				else
+				{
+					time.tm_hour = static_cast<int>(val.hours().count());
+					time.tm_min = static_cast<int>(val.minutes().count());
+					time.tm_sec = static_cast<int>(val.seconds().count());
+				}
+
+				handler h{time, ctx};
+				details::parse_chrono_format(this->fmt, h);
+
+				return details::write_string_view(h.str(), ctx, this->parser);
+			}
+	};
+
+	template<class Rep, class Period, typename CharT>
+	struct formatter<std::chrono::duration<Rep, Period>, CharT> : public formatter<datetime::hh_mm_ss<measures::time<Rep, measures::metric_system, Period>>, CharT>
+	{
+		template<class OutputIt>
+		auto format(const std::chrono::duration<Rep, Period>& d, basic_format_context<OutputIt, CharT>& ctx)
+		{
+			const datetime::hh_mm_ss<measures::time<Rep, measures::metric_system, Period>> hhmmss {measures::from_chrono(d)};
+			return formatter<datetime::hh_mm_ss<measures::time<Rep, measures::metric_system, Period>>, CharT>::format(hhmmss, ctx);
+		}
+	};
+
 	template<class CharT>
 	struct formatter<datetime::day_of_month, CharT> : public details::base_chrono_formatter<datetime::day_of_month, CharT>
 	{
@@ -1889,6 +2028,252 @@ namespace cmoon
 			auto format(const datetime::day_of_month& val, basic_format_context<OutputIt, CharT>& ctx)
 			{
 				const std::tm time {.tm_mday = static_cast<int>(val)};
+				handler h{time, ctx};
+				details::parse_chrono_format(this->fmt, h);
+
+				return details::write_string_view(h.str(), ctx, this->parser);
+			}
+	};
+
+	template<class CharT>
+	struct formatter<datetime::day_of_year, CharT> : public details::base_chrono_formatter<datetime::day_of_year, CharT>
+	{
+		private:
+			template<class OutputIt>
+			struct handler : public details::tm_handler<CharT, OutputIt>
+			{
+				handler(const handler&) = delete;
+				handler& operator=(const handler&) = delete;
+
+				handler(const std::tm& value, basic_format_context<OutputIt, CharT>& ctx)
+					: details::tm_handler<CharT, OutputIt>{value, ctx} {}
+
+				void on_abbr_month() { this->throw_not_supported(); }
+				void on_full_month() { this->throw_not_supported(); }
+				void on_abbr_weekday() { this->throw_not_supported(); }
+				void on_full_weekday() { this->throw_not_supported(); }
+				void on_iso_abbr_year() { this->throw_not_supported(); }
+				void on_iso_year() { this->throw_not_supported(); }
+				void on_week_sunday(const details::numeric_system) { this->throw_not_supported(); }
+				void on_week_monday(const details::numeric_system) { this->throw_not_supported(); }
+				void on_us_date() { this->throw_not_supported(); }
+				void on_iso_date() { this->throw_not_supported(); }
+				void on_loc_date(const details::numeric_system) { this->throw_not_supported(); }
+				void on_datetime(const details::numeric_system) { this->throw_not_supported(); }
+				void on_utc_offset(const details::numeric_system) { this->throw_not_supported(); }
+				void on_tz_name() { this->throw_not_supported(); }
+				void on_iso_week(const details::numeric_system) { this->throw_not_supported(); }
+				void on_dec0_weekday(const details::numeric_system) { this->throw_not_supported(); }
+				void on_dec1_weekday(const details::numeric_system) { this->throw_not_supported(); }
+				void on_dec_month(const details::numeric_system) { this->throw_not_supported(); }
+				void on_century(const details::numeric_system) { this->throw_not_supported(); }
+				void on_abbr_year(const details::numeric_system) { this->throw_not_supported(); }
+				void on_offset_year() { this->throw_not_supported(); }
+				void on_year(const details::numeric_system) { this->throw_not_supported(); }
+				void on_24_hour(const details::numeric_system) { this->throw_not_supported(); }
+				void on_12_hour(const details::numeric_system) { this->throw_not_supported(); }
+				void on_minute(const details::numeric_system) { this->throw_not_supported(); }
+				void on_second(const details::numeric_system) { this->throw_not_supported(); }
+				void on_loc_time(const details::numeric_system) { this->throw_not_supported(); }
+				void on_day_of_month_zero(const details::numeric_system) { this->throw_not_supported(); }
+				void on_day_of_month_space(const details::numeric_system) { this->throw_not_supported(); }
+			};
+		public:
+			template<class OutputIt>
+			auto format(const datetime::day_of_year& val, basic_format_context<OutputIt, CharT>& ctx)
+			{
+				const std::tm time {.tm_yday = static_cast<int>(unsigned{val} - 1)};
+				handler h{time, ctx};
+				details::parse_chrono_format(this->fmt, h);
+
+				return details::write_string_view(h.str(), ctx, this->parser);
+			}
+	};
+
+	template<class CharT>
+	struct formatter<datetime::month, CharT> : public details::base_chrono_formatter<datetime::month, CharT>
+	{
+		private:
+			template<class OutputIt>
+			struct handler : public details::tm_handler<CharT, OutputIt>
+			{
+				handler(const handler&) = delete;
+				handler& operator=(const handler&) = delete;
+
+				handler(const std::tm& value, basic_format_context<OutputIt, CharT>& ctx)
+					: details::tm_handler<CharT, OutputIt>{value, ctx} {}
+
+				void on_abbr_weekday() { this->throw_not_supported(); }
+				void on_full_weekday() { this->throw_not_supported(); }
+				void on_iso_abbr_year() { this->throw_not_supported(); }
+				void on_iso_year() { this->throw_not_supported(); }
+				void on_week_sunday(const details::numeric_system) { this->throw_not_supported(); }
+				void on_week_monday(const details::numeric_system) { this->throw_not_supported(); }
+				void on_us_date() { this->throw_not_supported(); }
+				void on_iso_date() { this->throw_not_supported(); }
+				void on_loc_date(const details::numeric_system) { this->throw_not_supported(); }
+				void on_datetime(const details::numeric_system) { this->throw_not_supported(); }
+				void on_utc_offset(const details::numeric_system) { this->throw_not_supported(); }
+				void on_tz_name() { this->throw_not_supported(); }
+				void on_iso_week(const details::numeric_system) { this->throw_not_supported(); }
+				void on_dec0_weekday(const details::numeric_system) { this->throw_not_supported(); }
+				void on_dec1_weekday(const details::numeric_system) { this->throw_not_supported(); }
+				void on_century(const details::numeric_system) { this->throw_not_supported(); }
+				void on_abbr_year(const details::numeric_system) { this->throw_not_supported(); }
+				void on_offset_year() { this->throw_not_supported(); }
+				void on_year(const details::numeric_system) { this->throw_not_supported(); }
+				void on_24_hour(const details::numeric_system) { this->throw_not_supported(); }
+				void on_12_hour(const details::numeric_system) { this->throw_not_supported(); }
+				void on_minute(const details::numeric_system) { this->throw_not_supported(); }
+				void on_second(const details::numeric_system) { this->throw_not_supported(); }
+				void on_loc_time(const details::numeric_system) { this->throw_not_supported(); }
+				void on_day_of_month_zero(const details::numeric_system) { this->throw_not_supported(); }
+				void on_day_of_month_space(const details::numeric_system) { this->throw_not_supported(); }
+				void on_day_of_year() { this->throw_not_supported(); }
+			};
+		public:
+			template<class OutputIt>
+			auto format(const datetime::month& val, basic_format_context<OutputIt, CharT>& ctx)
+			{
+				const std::tm time {.tm_mon = static_cast<int>(unsigned{val})};
+				handler h{time, ctx};
+				details::parse_chrono_format(this->fmt, h);
+
+				return details::write_string_view(h.str(), ctx, this->parser);
+			}
+	};
+
+	template<class CharT>
+	struct formatter<datetime::year, CharT> : public details::base_chrono_formatter<datetime::year, CharT>
+	{
+		private:
+			template<class OutputIt>
+			struct handler : public details::tm_handler<CharT, OutputIt>
+			{
+				handler(const handler&) = delete;
+				handler& operator=(const handler&) = delete;
+
+				handler(const std::tm& value, basic_format_context<OutputIt, CharT>& ctx)
+					: details::tm_handler<CharT, OutputIt>{value, ctx} {}
+
+				void on_abbr_month() { this->throw_not_supported(); }
+				void on_full_month() { this->throw_not_supported(); }
+				void on_dec_month(const details::numeric_system) { this->throw_not_supported(); }
+				void on_abbr_weekday() { this->throw_not_supported(); }
+				void on_full_weekday() { this->throw_not_supported(); }
+				void on_week_sunday(const details::numeric_system) { this->throw_not_supported(); }
+				void on_week_monday(const details::numeric_system) { this->throw_not_supported(); }
+				void on_us_date() { this->throw_not_supported(); }
+				void on_iso_date() { this->throw_not_supported(); }
+				void on_loc_date(const details::numeric_system) { this->throw_not_supported(); }
+				void on_datetime(const details::numeric_system) { this->throw_not_supported(); }
+				void on_utc_offset(const details::numeric_system) { this->throw_not_supported(); }
+				void on_tz_name() { this->throw_not_supported(); }
+				void on_iso_week(const details::numeric_system) { this->throw_not_supported(); }
+				void on_dec0_weekday(const details::numeric_system) { this->throw_not_supported(); }
+				void on_dec1_weekday(const details::numeric_system) { this->throw_not_supported(); }
+				void on_24_hour(const details::numeric_system) { this->throw_not_supported(); }
+				void on_12_hour(const details::numeric_system) { this->throw_not_supported(); }
+				void on_minute(const details::numeric_system) { this->throw_not_supported(); }
+				void on_second(const details::numeric_system) { this->throw_not_supported(); }
+				void on_loc_time(const details::numeric_system) { this->throw_not_supported(); }
+				void on_day_of_month_zero(const details::numeric_system) { this->throw_not_supported(); }
+				void on_day_of_month_space(const details::numeric_system) { this->throw_not_supported(); }
+				void on_day_of_year() { this->throw_not_supported(); }
+			};
+		public:
+			template<class OutputIt>
+			auto format(const datetime::year& val, basic_format_context<OutputIt, CharT>& ctx)
+			{
+				const std::tm time {.tm_year = static_cast<int>(val) - 1900};
+				handler h{time, ctx};
+				details::parse_chrono_format(this->fmt, h);
+
+				return details::write_string_view(h.str(), ctx, this->parser);
+			}
+	};
+
+	template<class CharT>
+	struct formatter<datetime::weekday, CharT> : public details::base_chrono_formatter<datetime::weekday, CharT>
+	{
+		private:
+			template<class OutputIt>
+			struct handler : public details::tm_handler<CharT, OutputIt>
+			{
+				handler(const handler&) = delete;
+				handler& operator=(const handler&) = delete;
+
+				handler(const std::tm& value, basic_format_context<OutputIt, CharT>& ctx)
+					: details::tm_handler<CharT, OutputIt>{value, ctx} {}
+
+				void on_abbr_month() { this->throw_not_supported(); }
+				void on_full_month() { this->throw_not_supported(); }
+				void on_dec_month(const details::numeric_system) { this->throw_not_supported(); }
+				void on_iso_abbr_year() { this->throw_not_supported(); }
+				void on_iso_year() { this->throw_not_supported(); }
+				void on_us_date() { this->throw_not_supported(); }
+				void on_iso_date() { this->throw_not_supported(); }
+				void on_loc_date(const details::numeric_system) { this->throw_not_supported(); }
+				void on_datetime(const details::numeric_system) { this->throw_not_supported(); }
+				void on_utc_offset(const details::numeric_system) { this->throw_not_supported(); }
+				void on_tz_name() { this->throw_not_supported(); }
+				void on_iso_week(const details::numeric_system) { this->throw_not_supported(); }
+				void on_century(const details::numeric_system) { this->throw_not_supported(); }
+				void on_abbr_year(const details::numeric_system) { this->throw_not_supported(); }
+				void on_offset_year() { this->throw_not_supported(); }
+				void on_24_hour(const details::numeric_system) { this->throw_not_supported(); }
+				void on_12_hour(const details::numeric_system) { this->throw_not_supported(); }
+				void on_minute(const details::numeric_system) { this->throw_not_supported(); }
+				void on_second(const details::numeric_system) { this->throw_not_supported(); }
+				void on_loc_time(const details::numeric_system) { this->throw_not_supported(); }
+				void on_day_of_month_zero(const details::numeric_system) { this->throw_not_supported(); }
+				void on_day_of_month_space(const details::numeric_system) { this->throw_not_supported(); }
+				void on_day_of_year() { this->throw_not_supported(); }
+			};
+		public:
+			template<class OutputIt>
+			auto format(const datetime::weekday& val, basic_format_context<OutputIt, CharT>& ctx)
+			{
+				const std::tm time {.tm_wday = static_cast<int>(unsigned{val})};
+				handler h{time, ctx};
+				details::parse_chrono_format(this->fmt, h);
+
+				return details::write_string_view(h.str(), ctx, this->parser);
+			}
+	};
+
+	template<class CharT>
+	struct formatter<datetime::year_month_day, CharT> : public details::base_chrono_formatter<datetime::year_month_day, CharT>
+	{
+		private:
+			template<class OutputIt>
+			struct handler : public details::tm_handler<CharT, OutputIt>
+			{
+				handler(const handler&) = delete;
+				handler& operator=(const handler&) = delete;
+
+				handler(const std::tm& value, basic_format_context<OutputIt, CharT>& ctx)
+					: details::tm_handler<CharT, OutputIt>{value, ctx} {}
+
+				void on_datetime(const details::numeric_system) { this->throw_not_supported(); }
+				void on_utc_offset(const details::numeric_system) { this->throw_not_supported(); }
+				void on_tz_name() { this->throw_not_supported(); }
+				void on_24_hour(const details::numeric_system) { this->throw_not_supported(); }
+				void on_12_hour(const details::numeric_system) { this->throw_not_supported(); }
+				void on_minute(const details::numeric_system) { this->throw_not_supported(); }
+				void on_second(const details::numeric_system) { this->throw_not_supported(); }
+				void on_loc_time(const details::numeric_system) { this->throw_not_supported(); }
+			};
+		public:
+			template<class OutputIt>
+			auto format(const datetime::year_month_day& val, basic_format_context<OutputIt, CharT>& ctx)
+			{
+				std::tm time {.tm_mday = static_cast<int>(unsigned{val.day()}),
+							  .tm_mon = static_cast<int>(unsigned{val.month()} - 1),
+							  .tm_year = static_cast<int>(val.year()) - 1900};
+
+				std::mktime(std::addressof(time));
+
 				handler h{time, ctx};
 				details::parse_chrono_format(this->fmt, h);
 
