@@ -11,7 +11,7 @@ namespace cmoon
 {
 	namespace language
 	{
-		class language {};
+		struct language {};
 
 		template<class Language, class CharT>
 			requires(std::derived_from<Language, language>)

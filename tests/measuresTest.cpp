@@ -2,6 +2,7 @@
 #include <ratio>
 #include <sstream>
 
+#include "cmoon/format.hpp"
 #include "cmoon/measures/measure.hpp"
 #include "cmoon/measures/distance.hpp"
 #include "cmoon/measures/mass.hpp"
@@ -72,86 +73,107 @@ class distance_suffix_test : public cmoon::test::test_case
 
             ss << cmoon::measures::attometers{10};
             cmoon::test::assert_equal(ss.str(), "10am");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::attometers{10}), "10am");
 
             ss.str("");
             ss << cmoon::measures::femtometers{10};
             cmoon::test::assert_equal(ss.str(), "10fm");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::femtometers{10}), "10fm");
 
             ss.str("");
             ss << cmoon::measures::picometers{10};
             cmoon::test::assert_equal(ss.str(), "10pm");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::picometers{10}), "10pm");
 
             ss.str("");
             ss << cmoon::measures::nanometers{10};
             cmoon::test::assert_equal(ss.str(), "10nm");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::nanometers{10}), "10nm");
 
             ss.str("");
             ss << cmoon::measures::micrometers{10};
             cmoon::test::assert_equal(ss.str(), "10um");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::micrometers{10}), "10um");
 
             ss.str("");
             ss << cmoon::measures::millimeters{10};
             cmoon::test::assert_equal(ss.str(), "10mm");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::millimeters{10}), "10mm");
 
             ss.str("");
             ss << cmoon::measures::centimeters{10};
             cmoon::test::assert_equal(ss.str(), "10cm");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::centimeters{10}), "10cm");
 
             ss.str("");
             ss << cmoon::measures::decimeters{10};
             cmoon::test::assert_equal(ss.str(), "10dm");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::decimeters{10}), "10dm");
 
             ss.str("");
             ss << cmoon::measures::meters{10};
             cmoon::test::assert_equal(ss.str(), "10m");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::meters{10}), "10m");
 
             ss.str("");
             ss << cmoon::measures::decameters{10};
             cmoon::test::assert_equal(ss.str(), "10dam");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::decameters{10}), "10dam");
 
             ss.str("");
             ss << cmoon::measures::hectometers{10};
             cmoon::test::assert_equal(ss.str(), "10hm");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::hectometers{10}), "10hm");
 
             ss.str("");
             ss << cmoon::measures::kilometers{10};
             cmoon::test::assert_equal(ss.str(), "10km");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::kilometers{10}), "10km");
 
             ss.str("");
             ss << cmoon::measures::megameters{10};
             cmoon::test::assert_equal(ss.str(), "10Mm");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::megameters{10}), "10Mm");
 
             ss.str("");
             ss << cmoon::measures::gigameters{10};
             cmoon::test::assert_equal(ss.str(), "10Gm");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::gigameters{10}), "10Gm");
 
             ss.str("");
             ss << cmoon::measures::terameters{10};
             cmoon::test::assert_equal(ss.str(), "10Tm");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::terameters{10}), "10Tm");
 
             ss.str("");
             ss << cmoon::measures::petameters{10};
             cmoon::test::assert_equal(ss.str(), "10Pm");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::petameters{10}), "10Pm");
 
             ss.str("");
             ss << cmoon::measures::exameters{10};
             cmoon::test::assert_equal(ss.str(), "10Em");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::exameters{10}), "10Em");
 
             ss.str("");
             ss << cmoon::measures::inches{10};
             cmoon::test::assert_equal(ss.str(), "10in");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::inches{10}), "10in");
 
             ss.str("");
             ss << cmoon::measures::feet{10};
             cmoon::test::assert_equal(ss.str(), "10ft");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::feet{10}), "10ft");
 
             ss.str("");
             ss << cmoon::measures::yards{10};
             cmoon::test::assert_equal(ss.str(), "10yd");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::yards{10}), "10yd");
 
             ss.str("");
             ss << cmoon::measures::miles{10};
             cmoon::test::assert_equal(ss.str(), "10mi");
+            cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::miles{10}), "10mi");
         }
 
         void static_asserts()

@@ -4,7 +4,10 @@
 #include <limits>
 #include <ratio>
 #include <concepts>
+#include <iostream>
+#include <sstream>
 
+#include "cmoon/format.hpp"
 #include "cmoon/ratio.hpp"
 #include "cmoon/type_traits.hpp"
 #include "cmoon/math.hpp"
@@ -1104,4 +1107,17 @@ namespace cmoon
 			return os;
         }
 	}
+
+	template<class Rep, cmoon::ratio_type Ratio, class UnitValues, class System, measures::dimension_type Dimension, typename CharT>
+	struct formatter<measures::basic_unit<Rep, Ratio, UnitValues, System, Dimension>, CharT> : public details::base_formatter<measures::basic_unit<Rep, Ratio, UnitValues, System, Dimension>, CharT>
+	{
+		template<class OutputIt>
+		auto format(const measures::basic_unit<Rep, Ratio, UnitValues, System, Dimension>& val, basic_format_context<OutputIt, CharT>& ctx)
+		{
+			std::basic_stringstream<CharT> ss;
+			ss << val;
+			const auto str = ss.str();
+			return details::write_string_view(std::basic_string_view<CharT>{str.data(), str.size()}, ctx, this->parser);
+		}
+	};
 }

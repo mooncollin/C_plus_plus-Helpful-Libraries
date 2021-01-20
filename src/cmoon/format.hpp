@@ -1830,8 +1830,7 @@ namespace cmoon
 			return ctx.out();
 		}
 
-		template<class T, class T2, class OutputIt, class CharT>
-			requires(std::integral<T>)
+		template<std::integral T, class T2, class OutputIt, class CharT>
 		typename basic_format_context<OutputIt, CharT>::iterator write_integer(T value, basic_format_context<OutputIt, CharT>& ctx, const format_parser<T2, CharT>& spec_info)
 		{
 			const auto sign = spec_info.specifications().sign == sign_t::none ? sign_t::minus : spec_info.specifications().sign;
