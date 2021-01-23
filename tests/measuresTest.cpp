@@ -7,9 +7,27 @@
 #include "cmoon/measures/distance.hpp"
 #include "cmoon/measures/mass.hpp"
 #include "cmoon/measures/time.hpp"
-#include "cmoon/measures/kinematic.hpp"
-#include "cmoon//measures/mechanical.hpp"
 #include "cmoon/measures/temperature.hpp"
+#include "cmoon/measures/amount.hpp"
+#include "cmoon/measures/coherent.hpp"
+#include "cmoon/measures/derived/si/coulomb.hpp"
+#include "cmoon/measures/derived/si/hertz.hpp"
+#include "cmoon/measures/derived/si/joule.hpp"
+#include "cmoon/measures/derived/si/newton.hpp"
+#include "cmoon/measures/derived/si/pascal.hpp"
+#include "cmoon/measures/derived/si/watt.hpp"
+#include "cmoon/measures/derived/si/farad.hpp"
+#include "cmoon/measures/derived/si/ohm.hpp"
+#include "cmoon/measures/derived/si/volt.hpp"
+#include "cmoon/measures/derived/si/siemens.hpp"
+#include "cmoon/measures/derived/si/weber.hpp"
+#include "cmoon/measures/derived/si/tesla.hpp"
+#include "cmoon/measures/derived/si/becquerel.hpp"
+#include "cmoon/measures/derived/si/gray.hpp"
+#include "cmoon/measures/derived/si/henry.hpp"
+#include "cmoon/measures/derived/si/katal.hpp"
+#include "cmoon/measures/derived/si/lumen.hpp"
+#include "cmoon/measures/derived/si/lux.hpp"
 #include "cmoon/measures/constants.hpp"
 #include "cmoon/test/test_case.hpp"
 #include "cmoon/test/runner.hpp"
@@ -25,39 +43,73 @@ class measures_suffix_test : public cmoon::test::test_case
 
         void operator()() override
         {
-            static_assert(cmoon::measures::metric_system::suffix_v<std::atto> == "a");
-            static_assert(cmoon::measures::metric_system::suffix_v<std::femto> == "f");
-            static_assert(cmoon::measures::metric_system::suffix_v<std::pico> == "p");
-            static_assert(cmoon::measures::metric_system::suffix_v<std::nano> == "n");
-            static_assert(cmoon::measures::metric_system::suffix_v<std::micro> == "u");
-            static_assert(cmoon::measures::metric_system::suffix_v<std::milli> == "m");
-            static_assert(cmoon::measures::metric_system::suffix_v<std::centi> == "c");
-            static_assert(cmoon::measures::metric_system::suffix_v<std::deci> == "d");
-            static_assert(cmoon::measures::metric_system::suffix_v<std::deca> == "da");
-            static_assert(cmoon::measures::metric_system::suffix_v<std::hecto> == "h");
-            static_assert(cmoon::measures::metric_system::suffix_v<std::kilo> == "k");
-            static_assert(cmoon::measures::metric_system::suffix_v<std::mega> == "M");
-            static_assert(cmoon::measures::metric_system::suffix_v<std::giga> == "G");
-            static_assert(cmoon::measures::metric_system::suffix_v<std::tera> == "T");
-            static_assert(cmoon::measures::metric_system::suffix_v<std::peta> == "P");
-            static_assert(cmoon::measures::metric_system::suffix_v<std::exa> == "E");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::atto, char> == "a");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::femto, char> == "f");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::pico, char> == "p");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::nano, char> == "n");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::micro, char> == "u");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::milli, char> == "m");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::centi, char> == "c");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::deci, char> == "d");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::deca, char> == "da");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::hecto, char> == "h");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::kilo, char> == "k");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::mega, char> == "M");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::giga, char> == "G");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::tera, char> == "T");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::peta, char> == "P");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::exa, char> == "E");
 
-            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::atto>, "a");
-            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::femto>, "f");
-            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::pico>, "p");
-            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::nano>, "n");
-            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::micro>, "u");
-            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::milli>, "m");
-            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::centi>, "c");
-            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::deci>, "d");
-            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::deca>, "da");
-            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::hecto>, "h");
-            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::kilo>, "k");
-            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::mega>, "M");
-            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::giga>, "G");
-            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::tera>, "T");
-            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::peta>, "P");
-            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::exa>, "E");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::atto, char>, "a");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::femto, char>, "f");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::pico, char>, "p");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::nano, char>, "n");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::micro, char>, "u");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::milli, char>, "m");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::centi, char>, "c");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::deci, char>, "d");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::deca, char>, "da");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::hecto, char>, "h");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::kilo, char>, "k");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::mega, char>, "M");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::giga, char>, "G");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::tera, char>, "T");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::peta, char>, "P");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::exa, char>, "E");
+
+            static_assert(cmoon::measures::metric_system::suffix_v<std::atto, wchar_t> == L"a");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::femto, wchar_t> == L"f");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::pico, wchar_t> == L"p");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::nano, wchar_t> == L"n");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::micro, wchar_t> == L"u");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::milli, wchar_t> == L"m");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::centi, wchar_t> == L"c");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::deci, wchar_t> == L"d");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::deca, wchar_t> == L"da");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::hecto, wchar_t> == L"h");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::kilo, wchar_t> == L"k");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::mega, wchar_t> == L"M");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::giga, wchar_t> == L"G");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::tera, wchar_t> == L"T");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::peta, wchar_t> == L"P");
+            static_assert(cmoon::measures::metric_system::suffix_v<std::exa, wchar_t> == L"E");
+
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::atto, wchar_t>, L"a");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::femto, wchar_t>, L"f");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::pico, wchar_t>, L"p");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::nano, wchar_t>, L"n");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::micro, wchar_t>, L"u");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::milli, wchar_t>, L"m");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::centi, wchar_t>, L"c");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::deci, wchar_t>, L"d");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::deca, wchar_t>, L"da");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::hecto, wchar_t>, L"h");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::kilo, wchar_t>, L"k");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::mega, wchar_t>, L"M");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::giga, wchar_t>, L"G");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::tera, wchar_t>, L"T");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::peta, wchar_t>, L"P");
+            cmoon::test::assert_equal(cmoon::measures::metric_system::suffix_v<std::exa, wchar_t>, L"E");
         }
 };
 
@@ -175,32 +227,6 @@ class distance_suffix_test : public cmoon::test::test_case
             cmoon::test::assert_equal(ss.str(), "10mi");
             cmoon::test::assert_equal(cmoon::format("{}", cmoon::measures::miles{10}), "10mi");
         }
-
-        void static_asserts()
-        {
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::attometers> == "am");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::femtometers> == "fm");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::picometers> == "pm");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::nanometers> == "nm");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::micrometers> == "um");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::millimeters> == "mm");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::centimeters> == "cm");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::decimeters> == "dm");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::meters> == "m");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::decameters> == "dam");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::hectometers> == "hm");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::kilometers> == "km");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::megameters> == "Mm");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::gigameters> == "Gm");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::terameters> == "Tm");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::petameters> == "Pm");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::exameters> == "Em");
-
-            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::inches> == "in");
-            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::feet> == "ft");
-            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::yards> == "yd");
-            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::miles> == "mi");
-        }
 };
 
 class distance_values_test : public cmoon::test::test_case
@@ -227,6 +253,23 @@ class distance_values_test : public cmoon::test::test_case
             static_assert(cmoon::measures::meters{1000000000000} == cmoon::measures::terameters{1});
             static_assert(cmoon::measures::meters{1000000000000000} == cmoon::measures::petameters{1});
             static_assert(cmoon::measures::meters{1000000000000000000} == cmoon::measures::exameters{1});
+
+            static_assert(cmoon::measures::meters{1} <= cmoon::measures::attometers{1000000000000000000});
+            static_assert(cmoon::measures::meters{1} <= cmoon::measures::femtometers{1000000000000000});
+            static_assert(cmoon::measures::meters{1} <= cmoon::measures::picometers{1000000000000});
+            static_assert(cmoon::measures::meters{1} <= cmoon::measures::nanometers{1000000000});
+            static_assert(cmoon::measures::meters{1} <= cmoon::measures::micrometers{1000000});
+            static_assert(cmoon::measures::meters{1} <= cmoon::measures::millimeters{1000});
+            static_assert(cmoon::measures::meters{1} <= cmoon::measures::centimeters{100});
+            static_assert(cmoon::measures::meters{1} <= cmoon::measures::decimeters{10});
+            static_assert(cmoon::measures::meters{1} <= cmoon::measures::meters{1});
+            static_assert(cmoon::measures::meters{10} <= cmoon::measures::decameters{1});
+            static_assert(cmoon::measures::meters{1000} <= cmoon::measures::kilometers{1});
+            static_assert(cmoon::measures::meters{1000000} <= cmoon::measures::megameters{1});
+            static_assert(cmoon::measures::meters{1000000000} <= cmoon::measures::gigameters{1});
+            static_assert(cmoon::measures::meters{1000000000000} <= cmoon::measures::terameters{1});
+            static_assert(cmoon::measures::meters{1000000000000000} <= cmoon::measures::petameters{1});
+            static_assert(cmoon::measures::meters{1000000000000000000} <= cmoon::measures::exameters{1});
 
             static_assert(cmoon::measures::system_cast<cmoon::measures::meters>(cmoon::measures::kilometers{1}) == cmoon::measures::meters{1000});
 
@@ -368,37 +411,6 @@ class mass_suffix_test : public cmoon::test::test_case
             ss.str("");
             ss << cmoon::measures::tons{10};
             cmoon::test::assert_equal(ss.str(), "10t");
-        }
-
-        void static_asserts()
-        {
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::attograms> == "ag");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::femtograms> == "fg");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::picograms> == "pg");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::nanograms> == "ng");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::micrograms> == "ug");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::milligrams> == "mg");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::centigrams> == "cg");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::decigrams> == "dg");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::grams> == "g");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::decagrams> == "dag");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::hectograms> == "hg");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::kilograms> == "kg");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::megagrams> == "Mg");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::gigagrams> == "Gg");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::teragrams> == "Tg");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::petagrams> == "Pg");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::exagrams> == "Eg");
-
-            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::grains> == "gr");
-            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::drachm> == "dr");
-            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::ounces> == "oz");
-            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::pounds> == "lb");
-            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::stones> == "st");
-            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::quarters> == "qr");
-            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::hundredweights> == "cwt");
-            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::short_tons> == "t");
-            static_assert(cmoon::measures::imperial_system::suffix_v<cmoon::measures::tons> == "t");
         }
 };
 
@@ -548,33 +560,6 @@ class time_suffix_test : public cmoon::test::test_case
             ss << cmoon::measures::years{10};
 		    cmoon::test::assert_equal(ss.str(), "10y");
         }
-
-        void static_asserts()
-        {
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::attoseconds> == "as");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::femtoseconds> == "fs");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::picoseconds> == "ps");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::nanoseconds> == "ns");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::microseconds> == "us");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::milliseconds> == "ms");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::centiseconds> == "cs");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::deciseconds> == "ds");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::seconds> == "s");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::decaseconds> == "das");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::hectoseconds> == "hs");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::kiloseconds> == "ks");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::megaseconds> == "Ms");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::gigaseconds> == "Gs");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::teraseconds> == "Ts");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::petaseconds> == "Ps");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::exaseconds> == "Es");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::minutes> == "min");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::hours> == "h");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::days> == "d");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::weeks> == "w");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::months> == "mo");
-            static_assert(cmoon::measures::metric_system::suffix_v<cmoon::measures::years> == "y");
-        }
 };
 
 class time_values_test : public cmoon::test::test_case
@@ -680,9 +665,10 @@ class derived_unit_construction_test : public cmoon::test::test_case
 
             using t3 = cmoon::measures::kilometers;
 
-            using derived_t = cmoon::measures::basic_derived_unit<std::intmax_t, t, t2>;
-            using derived_t2 = cmoon::measures::basic_derived_unit<std::intmax_t, t3, t2>;
+            using derived_t = cmoon::measures::basic_derived_unit<std::intmax_t, std::ratio<1>, t, t2>;
+            using derived_t2 = cmoon::measures::basic_derived_unit<std::intmax_t, std::ratio<1>, t3, t2>;
             using derived_t3 = cmoon::measures::basic_derived_unit<std::intmax_t,
+                                    std::ratio<1>,
                                     cmoon::measures::basic_meters<std::intmax_t, -1>,
                                     cmoon::measures::basic_seconds<std::intmax_t, 1>>;
 
@@ -703,6 +689,110 @@ class derived_unit_construction_test : public cmoon::test::test_case
         }
 };
 
+class hertz_test : public cmoon::test::test_case
+{
+    public:
+        hertz_test()
+            : cmoon::test::test_case{"hertz_test"} {}
+
+        void operator()() override
+        {
+            constexpr cmoon::measures::hertz h1{40};
+            constexpr cmoon::measures::hertz h2{40};
+
+            static_assert(h1 == h2);
+            static_assert(h1 <= h2);
+            static_assert(h1 >= h2);
+
+            cmoon::test::assert_equal(h1, h2);
+            cmoon::test::assert_less_equal(h1, h2);
+            cmoon::test::assert_greater_equal(h1, h2);
+        }
+};
+
+class si_derived_unit_prefix_test : public cmoon::test::test_case
+{
+    public:
+        si_derived_unit_prefix_test()
+            : cmoon::test::test_case{"si_derived_unit_prefix_test"} {}
+
+        void operator()() override
+        {
+            std::stringstream ss;
+
+            ss << cmoon::measures::hertz{40};
+            cmoon::test::assert_equal(ss.str(), "40Hz");
+            
+            ss.str("");
+            ss << cmoon::measures::newtons{40};
+            cmoon::test::assert_equal(ss.str(), "40N");
+
+            ss.str("");
+            ss << cmoon::measures::pascals{40};
+            cmoon::test::assert_equal(ss.str(), "40Pa");
+
+            ss.str("");
+            ss << cmoon::measures::coulombs{40};
+            cmoon::test::assert_equal(ss.str(), "40C");
+
+            ss.str("");
+            ss << cmoon::measures::watts{40};
+            cmoon::test::assert_equal(ss.str(), "40W");
+
+            ss.str("");
+            ss << cmoon::measures::joules{40};
+            cmoon::test::assert_equal(ss.str(), "40J");
+
+            ss.str("");
+            ss << cmoon::measures::farads{40};
+            cmoon::test::assert_equal(ss.str(), "40F");
+
+            ss.str("");
+            ss << cmoon::measures::ohms{40};
+            cmoon::test::assert_equal(ss.str(), "40O");
+
+            ss.str("");
+            ss << cmoon::measures::volts{40};
+            cmoon::test::assert_equal(ss.str(), "40V");
+
+            ss.str("");
+            ss << cmoon::measures::siemens{40};
+            cmoon::test::assert_equal(ss.str(), "40S");
+
+            ss.str("");
+            ss << cmoon::measures::teslas{40};
+            cmoon::test::assert_equal(ss.str(), "40T");
+
+            ss.str("");
+            ss << cmoon::measures::webers{40};
+            cmoon::test::assert_equal(ss.str(), "40Wb");
+
+            ss.str("");
+            ss << cmoon::measures::becquerels{40};
+            cmoon::test::assert_equal(ss.str(), "40Bq");
+
+            ss.str("");
+            ss << cmoon::measures::gray{40};
+            cmoon::test::assert_equal(ss.str(), "40Gy");
+
+            ss.str("");
+            ss << cmoon::measures::henrys{40};
+            cmoon::test::assert_equal(ss.str(), "40H");
+
+            ss.str("");
+            ss << cmoon::measures::katals{40};
+            cmoon::test::assert_equal(ss.str(), "40kat");
+
+            ss.str("");
+            ss << cmoon::measures::lumens{40};
+            cmoon::test::assert_equal(ss.str(), "40lm");
+
+            ss.str("");
+            ss << cmoon::measures::lux{40};
+            cmoon::test::assert_equal(ss.str(), "40lx");
+        }
+};
+
 int main()
 {
     cmoon::test::test_suite suite;
@@ -715,8 +805,10 @@ int main()
     suite.add_test_case<time_values_test>();
     suite.add_test_case<dimension_unit_construction_test>();
     suite.add_test_case<derived_unit_construction_test>();
+    suite.add_test_case<si_derived_unit_prefix_test>();
+    suite.add_test_case<hertz_test>();
 
-    cmoon::test::text_test_runner runner(std::cout);
+    cmoon::test::text_test_runner runner{std::cout};
     
     return !runner.run(suite);
 }

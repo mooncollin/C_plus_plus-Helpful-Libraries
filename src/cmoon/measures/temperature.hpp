@@ -6,6 +6,7 @@
 #include "cmoon/measures/measure.hpp"
 #include "cmoon/ratio.hpp"
 #include "cmoon/math.hpp"
+#include "cmoon/string.hpp"
 
 namespace cmoon
 {
@@ -17,11 +18,18 @@ namespace cmoon
 		template<class Rep, class System, cmoon::ratio_type Ratio = std::ratio<1>, dimension_type Dimension = 1>
 		using temperature = basic_unit<Rep, Ratio, temperature_values<Rep>, System, Dimension>;
 
-		template<class T>
-		struct is_temperature : std::false_type {};
+		namespace details
+		{
+			template<class Rep, class System, cmoon::ratio_type Ratio, dimension_type Dimension>
+			std::true_type is_temperature_base_impl(const temperature<Rep, System, Ratio, Dimension>&);
+			std::false_type is_temperature_base_impl(...);
 
-		template<class Rep, class System, cmoon::ratio_type Ratio, dimension_type Dimension>
-		struct is_temperature<temperature<Rep, System, Ratio, Dimension>> : std::true_type {};
+			template<class U>
+			constexpr auto is_based_in_temperature = decltype(is_temperature_base_impl(std::declval<U>()))::value;
+		}
+
+		template<class T>
+		struct is_temperature : std::bool_constant<details::is_based_in_temperature<T>> {};
 
 		template<class T>
 		constexpr bool is_temperature_v = is_temperature<T>::value;
@@ -115,22 +123,22 @@ namespace cmoon
 			}
 		};
 
-		template<class Rep, dimension_type Dimension>
-		struct fahrenheit_scale::suffix<basic_fahrenheit<Rep, Dimension>>
+		template<class Rep, dimension_type Dimension, class CharT>
+		struct suffix<basic_fahrenheit<Rep, Dimension>, CharT>
 		{
-			constexpr static std::string_view value {"F"};
+			static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("F"))};
 		};
 
-		template<class Rep, dimension_type Dimension>
-		struct celsius_scale::suffix<basic_celsius<Rep, Dimension>>
+		template<class Rep, dimension_type Dimension, class CharT>
+		struct suffix<basic_celsius<Rep, Dimension>, CharT>
 		{
-			constexpr static std::string_view value {"C"};
+			static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("C"))};
 		};
 
-		template<class Rep, dimension_type Dimension>
-		struct kelvin_scale::suffix<basic_kelvin<Rep, Dimension>>
+		template<class Rep, dimension_type Dimension, class CharT>
+		struct suffix<basic_kelvin<Rep, Dimension>, CharT>
 		{
-			constexpr static std::string_view value {"K"};
+			static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("K"))};
 		};
 	}
 }

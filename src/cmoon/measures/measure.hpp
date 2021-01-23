@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <type_traits>
 #include <limits>
@@ -6,9 +6,11 @@
 #include <concepts>
 #include <iostream>
 #include <sstream>
+#include <compare>
 
 #include "cmoon/format.hpp"
 #include "cmoon/ratio.hpp"
+#include "cmoon/string.hpp"
 #include "cmoon/type_traits.hpp"
 #include "cmoon/math.hpp"
 #include "cmoon/tuple.hpp"
@@ -22,8 +24,20 @@ namespace cmoon
 		template<class Rep, cmoon::ratio_type Ratio, class UnitValues, class System, dimension_type Dimension = 1>
 		class basic_unit;
 
+		namespace details
+		{
+			// For type checking only
+			template<class Rep, cmoon::ratio_type Ratio, class UnitValues, class System, dimension_type Dimension>
+			std::true_type is_basic_unit_base_impl(const basic_unit<Rep, Ratio, UnitValues, System, Dimension>&);
+			std::false_type is_basic_unit_base_impl(...);
+
+
+			template<class U>
+			constexpr auto is_based_in_basic_unit = decltype(is_basic_unit_base_impl(std::declval<U>()))::value;
+		}
+
 		template<class T>
-		struct is_basic_unit : std::false_type {};
+		struct is_basic_unit : std::bool_constant<details::is_based_in_basic_unit<T>> {};
 
 		template<class Rep, cmoon::ratio_type Ratio, class UnitValues, class System, dimension_type Dimension>
 		struct is_basic_unit<basic_unit<Rep, Ratio, UnitValues, System, Dimension>> : std::true_type {};
@@ -52,17 +66,29 @@ namespace cmoon
 		template<class T>
 		concept denominator_unit = basic_unit_type<T> && is_denominator_unit_v<T>;
 
-		template<class Rep, basic_unit_type... Units>
+		template<class Rep, cmoon::ratio_type Ratio, basic_unit_type... Units>
 			requires(cmoon::is_unique_v<typename Units::unit_values...> &&
-						sizeof...(Units) >= 2
+						sizeof...(Units) >= 1
 					)
 		class basic_derived_unit;
 
-		template<class T>
-		struct is_basic_derived_unit : std::false_type {};
+		namespace details
+		{
+			// For type checking only
+			template<class Rep, cmoon::ratio_type Ratio, basic_unit_type... Units>
+			std::true_type is_basic_derived_unit_base_impl(const basic_derived_unit<Rep, Ratio, Units...>&);
+			std::false_type is_basic_derived_unit_base_impl(...);
 
-		template<class Rep, basic_unit_type... Units>
-		struct is_basic_derived_unit<basic_derived_unit<Rep, Units...>> : std::true_type {};
+
+			template<class U>
+			constexpr auto is_based_in_basic_derived_unit = decltype(is_basic_derived_unit_base_impl(std::declval<U>()))::value;
+		}
+
+		template<class T>
+		struct is_basic_derived_unit : std::bool_constant<details::is_based_in_basic_derived_unit<T>> {};
+
+		template<class Rep, cmoon::ratio_type Ratio, basic_unit_type... Units>
+		struct is_basic_derived_unit<basic_derived_unit<Rep, Ratio, Units...>> : std::true_type {};
 
 		template<class T>
 		constexpr bool is_basic_derived_unit_v = is_basic_derived_unit<T>::value;
@@ -84,6 +110,18 @@ namespace std
             using r_   = std::ratio<num_::value, (Ratio1::den / den_::value) * Ratio2::den>;
         public:
             using type = cmoon::measures::basic_unit<cr_, r_, UnitValues, System>;
+	};
+
+	template<class Rep1, cmoon::ratio_type Ratio1, class Rep2, cmoon::ratio_type Ratio2, cmoon::measures::basic_unit_type... Units>
+	struct common_type<cmoon::measures::basic_derived_unit<Rep1, Ratio1, Units...>, cmoon::measures::basic_derived_unit<Rep2, Ratio2, Units...>>
+	{
+		private:
+			using num_ = cmoon::static_gcd<Ratio1::num, Ratio2::num>;
+			using den_ = cmoon::static_gcd<Ratio1::den, Ratio2::den>;
+			using cr_ = std::common_type_t<Rep1, Rep2>;
+			using r_ = std::ratio<num_::value, (Ratio1::den / den_::value) * Ratio2::den>;
+		public:
+			using type = cmoon::measures::basic_derived_unit<cr_, r_, Units...>;
 	};
 }
 
@@ -126,6 +164,31 @@ namespace cmoon
 		[[nodiscard]] constexpr ToBasicUnit unit_cast(const basic_unit<Rep, Ratio, UnitValues, System, Dimension>& unit) noexcept
 		{
 			return details::unit_cast<ToBasicUnit>(unit);
+		}
+
+		template<basic_derived_unit_type ToDerivedUnit, class Rep, cmoon::ratio_type Ratio, basic_unit_type... Units>
+			requires(std::same_as<typename ToDerivedUnit::units, std::tuple<Units...>>)
+		[[nodiscard]] constexpr ToDerivedUnit unit_cast(const basic_derived_unit<Rep, Ratio, Units...>& unit) noexcept
+		{
+			using ratio = typename std::ratio_divide<Ratio, typename ToDerivedUnit::ratio>::type;
+			using common_type = std::common_type_t<typename ToDerivedUnit::rep, Rep>;
+
+			if constexpr (std::same_as<ToDerivedUnit, basic_derived_unit<Rep, Ratio, Units...>>)
+			{
+				return unit;
+			}
+			else if constexpr (std::ratio_equal<Ratio, typename ToDerivedUnit::ratio>::value)
+			{
+				return ToDerivedUnit(static_cast<typename ToDerivedUnit::rep>(unit.count()));
+			}
+			else
+			{
+				return ToDerivedUnit(
+					static_cast<typename ToDerivedUnit::rep>(
+						static_cast<common_type>(unit.count()) * cmoon::rational_ratio<ratio, common_type>
+					)
+				);
+			}
 		}
 
 		template<class ToBasicUnit, class Rep, class Ratio, class UnitValues, class System, dimension_type Dimension>
@@ -175,18 +238,17 @@ namespace cmoon
 				constexpr basic_unit& operator=(const basic_unit&) = default;
 				constexpr basic_unit& operator=(basic_unit&&) noexcept = default;
 
-				 template<class Rep2, cmoon::ratio_type Ratio2>
-					requires(std::constructible_from<rep, Rep2>)
-				 constexpr basic_unit(const basic_unit<Rep2, Ratio2, UnitValues, System, Dimension>& other)
+				 template<cmoon::ratio_type Ratio2>
+				 constexpr basic_unit(const basic_unit<rep, Ratio2, unit_values, system, Dimension>& other) noexcept
 					: amount_{unit_cast<basic_unit>(other).count()} {}
 
-				constexpr explicit basic_unit(const rep& n)
+				constexpr explicit basic_unit(const rep& n) noexcept
 					: amount_{n} {}
 
-				template<class Rep2, cmoon::ratio_type Ratio2>
-				constexpr basic_unit& operator=(const basic_unit<Rep2, Ratio2, UnitValues, System, Dimension>& other)
+				template<cmoon::ratio_type Ratio2>
+				constexpr basic_unit& operator=(const basic_unit<rep, Ratio2, unit_values, system, Dimension>& other) noexcept
 				{
-					amount_ = static_cast<rep>(unit_cast<basic_unit>(other).count());
+					amount_ = unit_cast<basic_unit>(other).count();
 					return *this;
 				}
 
@@ -203,6 +265,85 @@ namespace cmoon
 				[[nodiscard]] constexpr basic_unit operator-() const noexcept
 				{
 					return basic_unit{-amount_};
+				}
+
+				[[nodiscard]] friend constexpr basic_unit operator+(const basic_unit& lhs, const basic_unit& rhs) noexcept
+				{
+					return basic_unit{lhs.count() + rhs.count()};
+				}
+
+				[[nodiscard]] friend constexpr basic_unit operator-(const basic_unit& lhs, const basic_unit& rhs) noexcept
+				{
+					return basic_unit{lhs.count() - rhs.count()};
+				}
+
+				[[nodiscard]] friend constexpr basic_unit operator*(const basic_unit& lhs, const rep& rhs) noexcept
+				{
+					return basic_unit{lhs.count() * rhs};
+				}
+
+				[[nodiscard]] friend constexpr basic_unit operator*(const rep& lhs, const basic_unit& rhs) noexcept
+				{
+					return basic_unit{lhs * rhs.count()};
+				}
+
+				[[nodiscard]] friend constexpr basic_unit operator/(const basic_unit& lhs, const rep& rhs) noexcept
+				{
+					return basic_unit{lhs.count() / rhs};
+				}
+
+				[[nodiscard]] friend constexpr auto operator/(const rep& lhs, const basic_unit& rhs) noexcept
+				{
+					return basic_unit<rep, ratio, unit_values, system, -Dimension>{lhs / rhs.count()};
+				}
+
+				[[nodiscard]] friend constexpr basic_unit operator%(const basic_unit& lhs, const rep& rhs) noexcept
+				{
+					return basic_unit{lhs.count() % rhs};
+				}
+
+				template<cmoon::ratio_type Ratio2, dimension_type Dimension2>
+				[[nodiscard]] friend constexpr auto operator*(const basic_unit& lhs, const basic_unit<rep, Ratio2, unit_values, system, Dimension2>& rhs) noexcept
+				{
+					using lhs_t = basic_unit;
+					using rhs_t = basic_unit<rep, Ratio2, unit_values, system, Dimension>;
+					using common_type = std::common_type_t<lhs_t, rhs_t>;
+
+					const auto amount = std::same_as<lhs_t, rhs_t> ? lhs.count() * rhs.count()
+																	 : details::unit_cast<common_type>(lhs).count() * details::unit_cast<common_type>(rhs).count();
+
+					constexpr auto result_dimension = Dimension + Dimension2;
+					if constexpr (result_dimension == 0)
+					{
+						return amount;
+					}
+					else
+					{
+						using dimension_common_type = basic_unit<typename common_type::rep, typename common_type::ratio, typename common_type::unit_values, typename common_type::system, result_dimension>;
+						return dimension_common_type{amount};
+					}
+				}
+
+				template<cmoon::ratio_type Ratio2, dimension_type Dimension2>
+				[[nodiscard]] friend constexpr auto operator/(const basic_unit& lhs, const basic_unit<rep, Ratio2, unit_values, system, Dimension2>& rhs) noexcept
+				{
+					using lhs_t = basic_unit;
+					using rhs_t = basic_unit<rep, Ratio2, unit_values, system, Dimension>;
+					using common_type = std::common_type_t<lhs_t, rhs_t>;
+
+					const auto amount = std::is_same_v<lhs_t, rhs_t> ? lhs.count() / rhs.count()
+						: details::unit_cast<common_type>(lhs).count() / details::unit_cast<common_type>(rhs).count();
+
+					constexpr auto result_dimension = Dimension - Dimension2;
+					if constexpr (result_dimension == 0)
+					{
+						return amount;
+					}
+					else
+					{
+						using dimension_common_type = basic_unit<typename common_type::rep, typename common_type::ratio, typename common_type::unit_values, typename common_type::system, result_dimension>;
+						return dimension_common_type{amount};
+					}
 				}
 
 				constexpr basic_unit& operator++() noexcept
@@ -229,222 +370,54 @@ namespace cmoon
 
 				constexpr basic_unit& operator+=(const basic_unit& other) noexcept
 				{
-					amount_ += other.amount_;
-					return *this;
-				}
-
-				template<class Rep2, cmoon::ratio_type Ratio2>
-					requires(requires(rep r, const Rep2& r2) { r += r2; })
-				constexpr basic_unit& operator+=(const basic_unit<Rep2, Ratio2, UnitValues, System, Dimension>& other) noexcept
-				{
-					amount_ += unit_cast<basic_unit>(other).count();
+					*this = *this + other;
 					return *this;
 				}
 
 				constexpr basic_unit& operator-=(const basic_unit& other) noexcept
 				{
-					amount_ -= other.amount_;
+					*this = *this - other;
 					return *this;
 				}
 
-				template<class Rep2, cmoon::ratio_type Ratio2>
-				    requires(requires(rep r, const Rep2& r2) { r -= r2; })
-				constexpr basic_unit& operator-=(const basic_unit<Rep2, Ratio2, UnitValues, System, Dimension>& other) noexcept
-				{
-					amount_ -= unit_cast<basic_unit>(other).count();
-					return *this;
-				}
-
-				template<class Rep2>
-                    requires(requires(rep r, const Rep2& r2) { r *= r2; })
-                constexpr basic_unit& operator*=(const Rep2& other) noexcept
+                constexpr basic_unit& operator*=(const rep& other) noexcept
                 {
-                    amount_ *= other;
+                    *this = *this * other;
                     return *this;
                 }
 
-                template<class Rep2>
-                    requires(requires(rep r, const Rep2& r2) { r /= r2; })
-                constexpr basic_unit& operator/=(const Rep2& other) noexcept
+                constexpr basic_unit& operator/=(const rep& other) noexcept
                 {
-                    amount_ /= other;
+                    *this = *this / other;
                     return *this;
                 }
 
-                template<class Rep2>
-                    requires(requires(rep r, const Rep2& r2) { r %= r2; })
-                constexpr basic_unit& operator %=(const Rep2& other) noexcept
+                constexpr basic_unit& operator %=(const rep& other) noexcept
                 {
-                    amount_ %= other;
+                    *this = *this % other;
                     return *this;
                 }
 
-				template<class Rep2, cmoon::ratio_type Ratio2>
-				[[nodiscard]] friend constexpr auto operator+(const basic_unit& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System, Dimension>& rhs) noexcept
-				{
-					using common_type = std::common_type_t<basic_unit, basic_unit<Rep2, Ratio2, UnitValues, System, Dimension>>;
+				[[nodiscard]] friend constexpr bool operator==(const basic_unit&, const basic_unit&) noexcept = default;
+				[[nodiscard]] friend constexpr bool operator!=(const basic_unit&, const basic_unit&) noexcept = default;
+				[[nodiscard]] friend constexpr std::strong_ordering operator<=>(const basic_unit&, const basic_unit&) noexcept = default;
 
-					common_type r {lhs};
-					r += rhs;
-					return r;
+				template<cmoon::ratio_type Ratio2>
+				[[nodiscard]] friend constexpr bool operator==(const basic_unit& lhs, const basic_unit<rep, Ratio2, unit_values, system, Dimension>& rhs) noexcept
+				{
+					return lhs == basic_unit{rhs};
 				}
 
-				template<class Rep2, cmoon::ratio_type Ratio2>
-				[[nodiscard]] friend constexpr auto operator-(const basic_unit& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System, Dimension>& rhs) noexcept
-				{
-					using common_type = std::common_type_t<basic_unit, basic_unit<Rep2, Ratio2, UnitValues, System, Dimension>>;
-
-					common_type r {lhs};
-					r -= rhs;
-					return r;
-				}
-
-				template<class Rep2>
-					requires(!basic_unit_type<Rep2> && !basic_derived_unit_type<Rep2>)
-				[[nodiscard]] friend constexpr auto operator*(const basic_unit& lhs, const Rep2& rhs) noexcept
-				{
-					using common_type = std::common_type_t<basic_unit, basic_unit<Rep2, Ratio, UnitValues, System, Dimension>>;
-
-					common_type r {lhs};
-					r *= rhs;
-					return r;
-				}
-
-				template<class Rep2>
-					requires(!basic_unit_type<Rep2> && !basic_derived_unit_type<Rep2>)
-				[[nodiscard]] friend constexpr auto operator*(const Rep2& lhs, const basic_unit& rhs) noexcept
-				{
-					using common_type = std::common_type_t<basic_unit, basic_unit<Rep2, Ratio, UnitValues, System, Dimension>>;
-
-					common_type r {lhs};
-					r *= rhs;
-					return r;
-				}
-
-				template<class Rep2, cmoon::ratio_type Ratio2, class UnitValues, class System, dimension_type Dimension2>
-				[[nodiscard]] friend constexpr auto operator*(const basic_unit& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System, Dimension2>& rhs) noexcept
-				{
-					using lhs_t = basic_unit;
-					using rhs_t = basic_unit<Rep2, Ratio2, UnitValues, System, Dimension>;
-					using common_type = std::common_type_t<lhs_t, rhs_t>;
-
-					const auto amount = std::same_as<lhs_t, rhs_t> ? lhs.count() * rhs.count()
-																	 : details::unit_cast<common_type>(lhs).count() * details::unit_cast<common_type>(rhs).count();
-
-					constexpr auto result_dimension = Dimension + Dimension2;
-					if constexpr (result_dimension == 0)
-					{
-						return amount;
-					}
-					else
-					{
-						using dimension_common_type = basic_unit<typename common_type::rep, typename common_type::ratio, typename common_type::unit_values, typename common_type::system, result_dimension>;
-						return dimension_common_type{amount};
-					}
-				}
-
-				template<class Rep2>
-					requires(!basic_unit_type<Rep2> && !basic_derived_unit_type<Rep2>)
-				[[nodiscard]] friend constexpr auto operator/(const basic_unit& lhs, const Rep2& rhs) noexcept
-				{
-					using common_type = std::common_type_t<basic_unit, basic_unit<Rep2, Ratio, UnitValues, System, Dimension>>;
-
-					common_type r {lhs};
-					r /= rhs;
-					return r;
-				}
-
-				template<class Rep2>
-					requires(!basic_unit_type<Rep2> && !basic_derived_unit_type<Rep2>)
-				[[nodiscard]] friend constexpr auto operator/(const Rep2& lhs, const basic_unit& rhs) noexcept
-				{
-					using common_type = std::common_type_t<rep, Rep2>;
-					basic_unit<common_type, ratio, unit_values, system, -Dimension> r {lhs};
-					r /= rhs.count();
-					return r;
-				}
-
-				template<class Rep2, cmoon::ratio_type Ratio2, class UnitValues, class System, dimension_type Dimension2>
-				[[nodiscard]] friend constexpr auto operator/(const basic_unit& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System, Dimension2>& rhs) noexcept
-				{
-					using lhs_t = basic_unit;
-					using rhs_t = basic_unit<Rep2, Ratio2, UnitValues, System, Dimension>;
-					using common_type = std::common_type_t<lhs_t, rhs_t>;
-
-					const auto amount = std::is_same_v<lhs_t, rhs_t> ? lhs.count() / rhs.count()
-						: details::unit_cast<common_type>(lhs).count() / details::unit_cast<common_type>(rhs).count();
-
-					constexpr auto result_dimension = Dimension - Dimension2;
-					if constexpr (result_dimension == 0)
-					{
-						return amount;
-					}
-					else
-					{
-						using dimension_common_type = basic_unit<typename common_type::rep, typename common_type::ratio, typename common_type::unit_values, typename common_type::system, result_dimension>;
-						return dimension_common_type{amount};
-					}
-				}
-
-				template<class Rep2>
-					requires(!basic_unit_type<Rep2>)
-				[[nodiscard]] friend constexpr auto operator%(const basic_unit& lhs, const Rep2& rhs) noexcept
-				{
-					using common_type = std::common_type_t<basic_unit, basic_unit<Rep2, Ratio, UnitValues, System, Dimension>>;
-
-					common_type r {lhs};
-					r %= rhs;
-					return r;
-				}
-
-				[[nodiscard]] friend constexpr bool operator==(const basic_unit& lhs, const basic_unit& rhs) noexcept
-				{
-					return lhs.count() == rhs.count();
-				}
-
-				[[nodiscard]] friend constexpr bool operator<(const basic_unit& lhs, const basic_unit& rhs) noexcept
-				{
-					return lhs.count() < rhs.count();
-				}
-
-				template<class Rep2, cmoon::ratio_type Ratio2>
-				[[nodiscard]] friend constexpr bool operator==(const basic_unit& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System, Dimension>& rhs) noexcept
-				{
-					using common_type = typename std::common_type_t<basic_unit, basic_unit<Rep2, Ratio2, UnitValues, System, Dimension>>;
-
-					return common_type{lhs}.count() == common_type{rhs}.count();
-				}
-
-				template<class Rep2, cmoon::ratio_type Ratio2>
-				[[nodiscard]] friend constexpr bool operator<(const basic_unit& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System, Dimension>& rhs) noexcept
-				{
-					using common_type = typename std::common_type_t<basic_unit, basic_unit<Rep2, Ratio2, UnitValues, System, Dimension>>;
-
-					return common_type{lhs}.count() < common_type{rhs}.count();
-				}
-
-				template<class Rep2, cmoon::ratio_type Ratio2>
-				[[nodiscard]] friend constexpr bool operator!=(const basic_unit& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System, Dimension>& rhs) noexcept
+				template<cmoon::ratio_type Ratio2>
+				[[nodiscard]] friend constexpr bool operator!=(const basic_unit& lhs, const basic_unit<rep, Ratio2, unit_values, system, Dimension>& rhs) noexcept
 				{
 					return !(lhs == rhs);
 				}
 
-				template<class Rep2, cmoon::ratio_type Ratio2>
-				[[nodiscard]] friend constexpr bool operator<=(const basic_unit& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System, Dimension>& rhs) noexcept
+				template<cmoon::ratio_type Ratio2>
+				[[nodiscard]] friend constexpr std::strong_ordering operator<=>(const basic_unit& lhs, const basic_unit<rep, Ratio2, unit_values, system, Dimension>& rhs) noexcept
 				{
-					return !(rhs < lhs);
-				}
-
-				template<class Rep2, cmoon::ratio_type Ratio2>
-				[[nodiscard]] friend constexpr bool operator>(const basic_unit& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System, Dimension>& rhs) noexcept
-				{
-					return rhs < lhs;
-				}
-
-				template<class Rep2, cmoon::ratio_type Ratio2>
-				[[nodiscard]] friend constexpr bool operator>=(const basic_unit& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System, Dimension>& rhs) noexcept
-				{
-					return !(lhs < rhs);
+					return lhs <=> basic_unit{rhs};
 				}
 			private:
 				rep amount_ {};
@@ -507,14 +480,12 @@ namespace cmoon
 			return unit >= basic_unit<Rep, Ratio, UnitValues, System, Dimension>::zero() ? unit : -unit;
 		}
 
-		template<class Rep, basic_unit_type... Units>
+		template<class Rep, cmoon::ratio_type Ratio, basic_unit_type... Units>
 			requires(cmoon::is_unique_v<typename Units::unit_values...> &&
-						sizeof...(Units) >= 2
+						sizeof...(Units) >= 1
 					)
 		class basic_derived_unit
 		{
-			using storage_t = cmoon::basic_rational<Rep>;
-
 			template<basic_unit_type... Units2>
 			static constexpr bool same_dimensions = (... && (Units::dimension == Units2::dimension));
 
@@ -530,6 +501,7 @@ namespace cmoon
 
 			public:
 				using rep = Rep;
+				using ratio = Ratio;
 				using units = std::tuple<Units...>;
 				using numerator_units = cmoon::tuples::filter_t<is_numerator_unit, units>;
 				using denominator_units = cmoon::tuples::filter_t<is_denominator_unit, units>;
@@ -537,6 +509,7 @@ namespace cmoon
 			private:
 				using driver_unit = std::tuple_element_t<0, units>;
 			public:
+				using system = typename driver_unit::system;
 				template<basic_unit_type T>
 				struct contains_unit : std::bool_constant<(... || same_measurement<T, Units>)> {};
 
@@ -568,9 +541,9 @@ namespace cmoon
 				constexpr explicit basic_derived_unit(const rep& n)
 					: amount_{n} {}
 
-				template<basic_unit_type... Units2>
+				template<cmoon::ratio_type Ratio2, basic_unit_type... Units2>
                     requires(same_unit_values<Units2...>&& same_systems<Units2...> && same_dimensions<Units2...>)
-                constexpr basic_derived_unit(const basic_derived_unit<rep, Units2...>& other)
+                constexpr basic_derived_unit(const basic_derived_unit<rep, Ratio2, Units2...>& other)
                     : basic_derived_unit{convert_amount(other)} {}
 
 				template<basic_unit_type... Units2>
@@ -618,112 +591,24 @@ namespace cmoon
                     return basic_derived_unit{amount_--};
                 }
 
-				template<class Rep2, basic_unit_type... Units2>
-                    requires(same_unit_values<Units2...> && same_systems<Units2...>&& same_dimensions<Units2...>)
-                constexpr basic_derived_unit& operator+=(const basic_derived_unit<Rep2, Units2...>& other) noexcept
+                [[nodiscard]] constexpr friend basic_derived_unit operator+(const basic_derived_unit& lhs, const basic_derived_unit& rhs) noexcept
                 {
-					amount_ += convert_amount(other);
-                    return *this;
+					return basic_derived_unit{lhs.count() + rhs.count()};
                 }
 
-				template<class Rep2, basic_unit_type... Units2>
-                    requires(same_unit_values<Units2...> && same_systems<Units2...>&& same_dimensions<Units2...>)
-                constexpr basic_derived_unit& operator-=(const basic_derived_unit<Rep2, Units2...>& other) noexcept
+                [[nodiscard]] constexpr friend basic_derived_unit operator-(const basic_derived_unit& lhs, const basic_derived_unit& rhs) noexcept
                 {
-					amount_ -= convert_amount(other);
-                    return *this;
+					return basic_derived_unit{lhs.count() - rhs.count()};
                 }
 
-				template<class Rep2>
-                constexpr basic_derived_unit& operator*=(const Rep2& other) noexcept
+                [[nodiscard]] constexpr friend basic_derived_unit operator*(const basic_derived_unit& lhs, const rep& rhs) noexcept
                 {
-                    amount_ *= other;
-                    return *this;
+					return basic_derived_unit{lhs.count() * rhs};
                 }
 
-                template<class Rep2>
-                constexpr basic_derived_unit& operator/=(const Rep2& other) noexcept
+                [[nodiscard]] constexpr friend basic_derived_unit operator/(const basic_derived_unit& lhs, const rep& rhs) noexcept
                 {
-                    amount_ /= other;
-                    return *this;
-                }
-
-				template<class Rep2, basic_unit_type... Units2>
-                    requires(same_unit_values<Units2...> && same_systems<Units2...> && same_dimensions<Units2...>)
-                [[nodiscard]] friend constexpr bool operator==(const basic_derived_unit& lhs, const basic_derived_unit<Rep2, Units2...>& rhs) noexcept
-                {
-					return amount_ == basic_derived_unit{rhs}.count();
-                }
-
-				template<class Rep2, basic_unit_type... Units2>
-                    requires(same_unit_values<Units2...> && same_systems<Units2...> && same_dimensions<Units2...>)
-                [[nodiscard]] friend constexpr bool operator!=(const basic_derived_unit& lhs, const basic_derived_unit<Rep2, Units2...>& rhs) noexcept
-                {
-                    return !(lhs == rhs);
-                }
-
-                template<class Rep2, basic_unit_type... Units2>
-                    requires(same_unit_values<Units2...> && same_systems<Units2...> && same_dimensions<Units2...>)
-                [[nodiscard]] friend constexpr bool operator<(const basic_derived_unit& lhs, const basic_derived_unit<Rep2, Units2...>& rhs) noexcept
-                {
-                    using t = result_ratio<Units2...>;
-
-                    if constexpr (std::ratio_equal_v<t, std::ratio<1, 1>>)
-                    {
-                        return lhs.count() < rhs.count();
-                    }
-                    else
-                    {
-                        return lhs.count() < basic_derived_unit<Rep, Units...>{rhs}.count();
-                    }
-                }
-
-                template<class Rep2, basic_unit_type... Units2>
-                    requires(same_unit_values<Units2...> && same_systems<Units2...> && same_dimensions<Units2...>)
-                [[nodiscard]] friend constexpr bool operator>(const basic_derived_unit& lhs, const basic_derived_unit<Rep2, Units2...>& rhs) noexcept
-                {
-                    return rhs < lhs;
-                }
-
-                template<class Rep2, basic_unit_type... Units2>
-                    requires(same_unit_values<Units2...> && same_systems<Units2...> && same_dimensions<Units2...>)
-                [[nodiscard]] friend constexpr bool operator<=(const basic_derived_unit& lhs, const basic_derived_unit<Rep2, Units2...>& rhs) noexcept
-                {
-                    return !(rhs < lhs);
-                }
-
-                template<class Rep2, basic_unit_type... Units2>
-                    requires(same_unit_values<Units2...> && same_systems<Units2...> && same_dimensions<Units2...>)
-                [[nodiscard]] friend constexpr bool operator>=(const basic_derived_unit& lhs, const basic_derived_unit<Rep2, Units2...>& rhs) noexcept
-                {
-                    return !(lhs < rhs);
-                }
-
-                template<class Rep2, basic_unit_type... Units2>
-                    requires(same_unit_values<Units2...> && same_systems<Units2...> && same_dimensions<Units2...>)
-                [[nodiscard]] constexpr friend auto operator+(const basic_derived_unit& lhs, const basic_derived_unit<Rep2, Units2...>& rhs) noexcept
-                {
-                    auto r {lhs};
-                    r += rhs;
-                    return r;
-                }
-
-                template<class Rep2, basic_unit_type... Units2>
-                    requires(same_unit_values<Units2...> && same_systems<Units2...> && same_dimensions<Units2...>)
-                [[nodiscard]] constexpr friend auto operator-(const basic_derived_unit& lhs, const basic_derived_unit<Rep2, Units2...>& rhs) noexcept
-                {
-                    auto r {lhs};
-                    r -= rhs;
-                    return r;
-                }
-
-                template<class Rep2>
-					requires(!basic_unit_type<Rep2> && !basic_derived_unit_type<Rep2>)
-                [[nodiscard]] constexpr friend auto operator*(const basic_derived_unit& lhs, const Rep2& rhs) noexcept
-                {
-                    auto r {lhs};
-                    r *= rhs;
-                    return r;
+                    return basic_derived_unit{lhs.count() / rhs};
                 }
 
 				template<class Rep2, cmoon::ratio_type Ratio2, class UnitValues, class System, dimension_type Dimension2>
@@ -731,44 +616,29 @@ namespace cmoon
 				{
 					using unit_t = basic_unit<Rep2, Ratio2, UnitValues, System, Dimension2>;
 					using result_t = derived_result_one_t<unit_t, multiply_op>;
-					using common_t = typename result_t::rep;
-					const auto amount = static_cast<common_t>(static_cast<common_t>(lhs.count()) * static_cast<common_t>(rhs.count()) * cmoon::rational_ratio<result_ratio_t<unit_t>, common_t>);
+					using common_t = std::common_type_t<rep, Rep2>;
+					const auto amount = static_cast<common_t>(lhs.count()) * static_cast<common_t>(rhs.count()) * cmoon::rational_ratio<result_ratio_t<unit_t>, common_t>;
 
-					if constexpr (basic_derived_unit_type<result_t>)
-					{
-						return result_t{amount};
-					}
-					else
-					{
-						return result_t{static_cast<common_t>(amount)};
-					}
+					return result_t{static_cast<common_t>(amount)};
 				}
 
-				template<class Rep2, basic_unit_type... Units2>
-				[[nodiscard]] constexpr friend auto operator*(const basic_derived_unit& lhs, const basic_derived_unit<Rep2, Units2...>& rhs) noexcept
+				template<cmoon::ratio_type Ratio2, class UnitValues, class System, dimension_type Dimension2>
+				[[nodiscard]] constexpr friend auto operator*(const basic_unit<rep, Ratio2, UnitValues, System, Dimension2>& lhs, const basic_derived_unit& rhs) noexcept
+				{
+					return rhs * lhs;
+				}
+
+				template<class Rep2, cmoon::ratio_type Ratio2, basic_unit_type... Units2>
+				[[nodiscard]] constexpr friend auto operator*(const basic_derived_unit& lhs, const basic_derived_unit<Rep2, Ratio2, Units2...>& rhs) noexcept
 				{
 					using result_t = derived_result_many_t<multiply_op, Units2...>;
-					using common_t = std::common_type_t<Rep, Rep2>;
-					const auto amount = static_cast<common_t>(static_cast<common_t>(lhs.count()) * static_cast<common_t>(rhs.count()) * cmoon::rational_ratio<result_ratio_t<Units2...>, common_t>);
+					using common_t = std::common_type_t<basic_derived_unit, basic_derived_unit<Rep2, Ratio2, Units...>>;
+					using ratio_t = typename std::ratio_multiply<typename common_t::ratio, result_ratio_t<Units2...>>::type;
 
-					if constexpr (basic_derived_unit_type<result_t>)
-					{
-						return result_t{amount};
-					}
-					else
-					{
-						return result_t{static_cast<common_t>(amount)};
-					}
+					const auto amount = static_cast<typename common_t::rep>(lhs.count()) * static_cast<typename common_t::rep>(rhs.count()) * cmoon::rational_ratio<ratio_t, typename common_t::rep>;
+
+					return result_t{static_cast<typename common_t::rep>(amount)};
 				}
-
-                template<class Rep2>
-					requires(!basic_unit_type<Rep2> && !basic_derived_unit_type<Rep2>)
-                [[nodiscard]] constexpr friend auto operator/(const basic_derived_unit& lhs, const Rep2& rhs) noexcept
-                {
-                    auto r {lhs};
-                    r /= rhs;
-                    return r;
-                }
 
 				template<class Rep2, cmoon::ratio_type Ratio2, class UnitValues, class System, dimension_type Dimension2>
 				[[nodiscard]] constexpr friend auto operator/(const basic_derived_unit& lhs, const basic_unit<Rep2, Ratio2, UnitValues, System, Dimension2>& rhs) noexcept
@@ -782,14 +652,62 @@ namespace cmoon
 					return result_t{amount};
 				}
 
-				template<class Rep2, basic_unit_type... Units2>
-				[[nodiscard]] constexpr friend auto operator/(const basic_derived_unit& lhs, const basic_derived_unit<Rep2, Units2...>& rhs) noexcept
+				template<class Rep2, cmoon::ratio_type Ratio2, basic_unit_type... Units2>
+				[[nodiscard]] constexpr friend auto operator/(const basic_derived_unit& lhs, const basic_derived_unit<Rep2, Ratio2, Units2...>& rhs) noexcept
 				{
 					using result_t = derived_result_many_t<divide_op, Units2...>;
-					using common_t = std::common_type_t<Rep, Rep2>;
-					const auto amount = static_cast<common_t>(static_cast<common_t>(lhs.count()) / static_cast<common_t>(rhs.count()) * cmoon::rational_ratio<cmoon::ratio_reciprocal<result_ratio_t<Units2...>>, common_t>);
+					using common_t = std::common_type_t<basic_derived_unit, basic_derived_unit<Rep2, Ratio2, Units...>>;
+					using ratio_t = typename std::ratio_multiply<typename common_t::ratio, result_ratio_t<Units2...>>::type;
+
+					const auto amount = static_cast<typename common_t::rep>(lhs.count()) / static_cast<typename common_t::rep>(rhs.count()) * cmoon::rational_ratio<ratio_t, typename common_t::rep>;
 
 					return result_t{amount};
+				}
+
+                constexpr basic_derived_unit& operator+=(const basic_derived_unit& other) noexcept
+                {
+					*this = *this + other;
+                    return *this;
+                }
+
+                constexpr basic_derived_unit& operator-=(const basic_derived_unit& other) noexcept
+                {
+					*this = *this - other;
+                    return *this;
+                }
+
+                constexpr basic_derived_unit& operator*=(const rep& other) noexcept
+                {
+                    *this = *this * other;
+                    return *this;
+                }
+
+                constexpr basic_derived_unit& operator/=(const rep& other) noexcept
+                {
+                    *this = *this / other;
+                    return *this;
+                }
+
+				[[nodiscard]] friend constexpr bool operator==(const basic_derived_unit&, const basic_derived_unit&) noexcept = default;
+				[[nodiscard]] friend constexpr bool operator!=(const basic_derived_unit&, const basic_derived_unit&) noexcept = default;
+				[[nodiscard]] friend constexpr std::strong_ordering operator<=>(const basic_derived_unit&, const basic_derived_unit&) noexcept = default;
+
+				template<cmoon::ratio_type Ratio2, basic_unit_type... Units2>
+                [[nodiscard]] friend constexpr bool operator==(const basic_derived_unit& lhs, const basic_derived_unit<rep, Ratio2, Units2...>& rhs) noexcept
+                {
+					return lhs == basic_derived_unit{rhs};
+                }
+
+				template<cmoon::ratio_type Ratio2, basic_unit_type... Units2>
+                [[nodiscard]] friend constexpr bool operator!=(const basic_derived_unit& lhs, const basic_derived_unit<rep, Ratio2, Units2...>& rhs) noexcept
+                {
+                    return !(lhs == rhs);
+                }
+
+				template<cmoon::ratio_type Ratio2, basic_unit_type... Units2>
+				[[nodiscard]] friend constexpr std::strong_ordering operator<=>(const basic_derived_unit& lhs, const basic_derived_unit<rep, Ratio2, Units2...>& rhs) noexcept
+				{
+					return lhs <=> basic_derived_unit{rhs};
 				}
 
 				/*
@@ -805,9 +723,10 @@ namespace cmoon
 
 				*/
 
-				template<class Rep2, basic_unit_type... Units2>
-				basic_derived_unit<Rep2, Units2...> static get_tuple_derived_t(std::tuple<Units2...>);
-
+				// Using this only for type deduction
+				template<class Rep2, cmoon::ratio_type Ratio2, basic_unit_type... Units2>
+				basic_derived_unit<Rep2, Ratio2, Units2...> static get_tuple_derived_t(std::tuple<Units2...>);
+				
 				struct multiply_op
 				{
 					[[nodiscard]] static constexpr dimension_type value(dimension_type D1, dimension_type D2) noexcept
@@ -855,6 +774,11 @@ namespace cmoon
 						template<basic_unit_type E>
 						using result_impl_t = typename result_impl<E>::type;
 
+						// If we already have this new unit as our set of units,
+						// then produce the resulting tuple by traversing through
+						// our list of units, returning a tuple of zero or one types
+						// depending on the result of the operation on the two types.
+						// Otherwise, append the new type to the end.
 						using full_tuple_type = std::conditional_t<contains_unit_v<NewUnit>,
 													decltype(std::tuple_cat(std::declval<result_impl_t<Units>>()...)),
 													std::tuple<Units..., NewUnit>>;
@@ -862,7 +786,7 @@ namespace cmoon
 						template<class EndingTuple>
 						struct end_type_picker
 						{
-							using type = decltype(get_tuple_derived_t<typename NewUnit::rep>(
+							using type = decltype(get_tuple_derived_t<typename NewUnit::rep, Ratio>(
 								std::declval<EndingTuple>()));
 						};
 
@@ -959,10 +883,13 @@ namespace cmoon
 				template<basic_unit_type... Units2>
 				using result_ratio_t = typename result_ratio<Units2...>::type;
 
-				template<class Rep2, basic_unit_type... Units2>
-				[[nodiscard]] static constexpr rep convert_amount(const basic_derived_unit<Rep2, Units2...>& other) noexcept
+				template<class Rep2, class Ratio2, basic_unit_type... Units2>
+				[[nodiscard]] static constexpr rep convert_amount(const basic_derived_unit<Rep2, Ratio2, Units2...>& other) noexcept
 				{
-					using t = result_ratio_t<Units2...>;
+					// Both have the same units as I only need to common representations and ratios.
+					using common_t = std::common_type_t<basic_derived_unit, basic_derived_unit<Rep2, Ratio2, Units...>>;
+
+					using t = typename std::ratio_multiply<typename common_t::ratio, result_ratio_t<Units2...>>::type;
 
 					if constexpr (std::ratio_equal_v<t, std::ratio<1, 1>>)
 					{
@@ -970,149 +897,232 @@ namespace cmoon
 					}
 					else
 					{
-						using common_type = std::common_type_t<Rep, Rep2>;
-						return static_cast<rep>(other.count() * cmoon::rational_ratio<t, common_type>);
+						return static_cast<rep>(other.count() * cmoon::rational_ratio<t, typename common_t::rep>);
 					}
 				}
 		};
 
+		namespace details
+		{
+			template<class T>
+			struct suffix_dimension : std::false_type {};
+
+			template<class T>
+				requires(requires() { T::dimension_opt_out; })
+			struct suffix_dimension<T> : std::bool_constant<T::dimension_opt_out> {};
+		}
+
+		template<class T, class CharT>
+		struct suffix
+		{
+			static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS(""))};
+			static constexpr bool dimension_opt_out {false};
+		};
+
+		template<class T, class CharT>
+		constexpr auto suffix_v = suffix<T, CharT>::value;
+
+		template<class T, class CharT>
+		constexpr auto suffix_dimension_v = details::suffix_dimension<suffix<T, CharT>>::value;
+
 		struct metric_system
         {
-            template<class T>
+            template<class T, class CharT>
             struct suffix
             {
-                constexpr static std::string_view value {""};
+				static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS(""))};
             };
 
-            template<>
-            struct suffix<std::atto>
+            template<class CharT>
+            struct suffix<std::atto, CharT>
             {
-                constexpr static std::string_view value {"a"};
+				static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("a"))};
             };
 
-            template<>
-            struct suffix<std::femto>
+            template<class CharT>
+            struct suffix<std::femto, CharT>
             {
-                constexpr static std::string_view value {"f"};
+				static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("f"))};
             };
 
-            template<>
-            struct suffix<std::pico>
+            template<class CharT>
+            struct suffix<std::pico, CharT>
             {
-                constexpr static std::string_view value {"p"};
+				static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("p"))};
             };
 
-            template<>
-            struct suffix<std::nano>
+            template<class CharT>
+            struct suffix<std::nano, CharT>
             {
-                constexpr static std::string_view value {"n"};
+				static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("n"))};
             };
 
-            template<>
-            struct suffix<std::micro>
+            template<class CharT>
+            struct suffix<std::micro, CharT>
             {
-                constexpr static std::string_view value {"u"};
+				static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("u"))};
             };
 
-            template<>
-            struct suffix<std::milli>
+            template<class CharT>
+            struct suffix<std::milli, CharT>
             {
-                constexpr static std::string_view value {"m"};
+				static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("m"))};
             };
 
-            template<>
-            struct suffix<std::centi>
+            template<class CharT>
+            struct suffix<std::centi, CharT>
             {
-                constexpr static std::string_view value {"c"};
+				static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("c"))};
             };
 
-            template<>
-            struct suffix<std::deci>
+            template<class CharT>
+            struct suffix<std::deci, CharT>
             {
-                constexpr static std::string_view value {"d"};
+				static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("d"))};
             };
 
-            template<>
-            struct suffix<std::deca>
+            template<class CharT>
+            struct suffix<std::deca, CharT>
             {
-                constexpr static std::string_view value {"da"};
+				static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("da"))};
             };
 
-            template<>
-            struct suffix<std::hecto>
+            template<class CharT>
+            struct suffix<std::hecto, CharT>
             {
-                constexpr static std::string_view value {"h"};
+				static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("h"))};
             };
 
-            template<>
-            struct suffix<std::kilo>
+            template<class CharT>
+            struct suffix<std::kilo, CharT>
             {
-                constexpr static std::string_view value {"k"};
+				static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("k"))};
             };
 
-            template<>
-            struct suffix<std::mega>
+            template<class CharT>
+            struct suffix<std::mega, CharT>
             {
-                constexpr static std::string_view value {"M"};
+				static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("M"))};
             };
 
-            template<>
-            struct suffix<std::giga>
+            template<class CharT>
+            struct suffix<std::giga, CharT>
             {
-                constexpr static std::string_view value {"G"};
+				static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("G"))};
             };
 
-            template<>
-            struct suffix<std::tera>
+            template<class CharT>
+            struct suffix<std::tera, CharT>
             {
-                constexpr static std::string_view value {"T"};
+				static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("T"))};
             };
 
-            template<>
-            struct suffix<std::peta>
+            template<class CharT>
+            struct suffix<std::peta, CharT>
             {
-                constexpr static std::string_view value {"P"};
+				static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("P"))};
             };
 
-            template<>
-            struct suffix<std::exa>
+            template<class CharT>
+            struct suffix<std::exa, CharT>
             {
-                constexpr static std::string_view value {"E"};
+				static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("E"))};
             };
 
-            template<class T>
-            static constexpr auto suffix_v = suffix<T>::value;
+            template<class T, class CharT>
+            static constexpr auto suffix_v = suffix<T, CharT>::value;
         };
 
         struct imperial_system
         {
-            template<class T>
+            template<class T, class CharT>
             struct suffix
             {
-                constexpr static std::string_view value {""};
+                static constexpr std::basic_string_view<CharT> value {cmoon::choose_str_literal<CharT>(STR_LITERALS(""))};
             };
 
-            template<class T>
-            static constexpr auto suffix_v = suffix<T>::value;
+            template<class T, class CharT>
+            static constexpr auto suffix_v = suffix<T, CharT>::value;
         };
 
-        template<class CharT, class Traits, class Rep, cmoon::ratio_type Ratio, class UnitValues, class System, dimension_type Dimension>
-        std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& os, const basic_unit<Rep, Ratio, UnitValues, System, Dimension>& unit)
-        {
-            os << unit.count() << System::template suffix_v<basic_unit<Rep, Ratio, UnitValues, System, Dimension>>;
-			if constexpr (Dimension != 1)
+		namespace details
+		{
+			template<basic_unit_type T, class CharT, class Traits>
+			void output_unit_details(std::basic_ostream<CharT, Traits>& os)
 			{
-				os << '^' << Dimension;
+				os << T::system::template suffix_v<typename T::ratio, CharT>;
+				os << suffix_v<T, CharT>;
+
+				if constexpr (!suffix_dimension_v<T, CharT>)
+				{
+					if constexpr (T::dimension != 1)
+					{
+						os << CharT('^') << T::dimension;
+					}
+				}
 			}
+		}
+
+        template<class CharT, class Traits, basic_unit_type T>
+        std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& os, const T& unit)
+        {
+            os << unit.count();
+			details::output_unit_details<T>(os);
 			return os;
         }
+
+		namespace details
+		{	
+			template<class CharT, class Traits, class Rep, cmoon::ratio_type Ratio, basic_unit_type First, basic_unit_type... Rest>
+			void derived_unit_output_stream_helper(std::basic_ostream<CharT, Traits>& os, const basic_derived_unit<Rep, Ratio, First, Rest...>&)
+			{
+				output_unit_details<First>(os);
+				
+				if constexpr (sizeof...(Rest) > 0)
+				{
+					// Print the rest of the units, separated by a '*'
+					((os << CharT('*'), output_unit_details<Rest>(os)), ...);
+				}
+			}
+		}
+
+		template<class CharT, class Traits, basic_derived_unit_type T>
+		std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& os, const T& d_unit)
+		{
+			os << d_unit.count();
+			// TODO: This is not a very good way of determining the system.
+			// May need to rework the framework to be accurate.
+			os << T::system::template suffix_v<typename T::ratio, CharT>;
+			if constexpr (suffix_v<T, CharT> == cmoon::choose_str_literal<CharT>(STR_LITERALS("")))
+			{
+				details::derived_unit_output_stream_helper(os, d_unit);
+			}
+			else
+			{
+				os << suffix_v<T, CharT>;
+			}
+			return os;
+		}
 	}
 
-	template<class Rep, cmoon::ratio_type Ratio, class UnitValues, class System, measures::dimension_type Dimension, typename CharT>
-	struct formatter<measures::basic_unit<Rep, Ratio, UnitValues, System, Dimension>, CharT> : public details::base_formatter<measures::basic_unit<Rep, Ratio, UnitValues, System, Dimension>, CharT>
+	template<cmoon::measures::basic_unit_type T, typename CharT>
+	struct formatter<T, CharT> : public details::base_formatter<T, CharT>
 	{
 		template<class OutputIt>
-		auto format(const measures::basic_unit<Rep, Ratio, UnitValues, System, Dimension>& val, basic_format_context<OutputIt, CharT>& ctx)
+		auto format(const T& val, basic_format_context<OutputIt, CharT>& ctx)
+		{
+			std::basic_stringstream<CharT> ss;
+			ss << val;
+			const auto str = ss.str();
+			return details::write_string_view(std::basic_string_view<CharT>{str.data(), str.size()}, ctx, this->parser);
+		}
+	};
+
+	template<cmoon::measures::basic_derived_unit_type T, typename CharT>
+	struct formatter<T, CharT> : public details::base_formatter<T, CharT>
+	{
+		template<class OutputIt>
+		auto format(const T& val, basic_format_context<OutputIt, CharT>& ctx)
 		{
 			std::basic_stringstream<CharT> ss;
 			ss << val;

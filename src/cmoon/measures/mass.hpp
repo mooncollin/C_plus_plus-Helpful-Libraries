@@ -3,13 +3,12 @@
 #include <ratio>
 #include <limits>
 #include <type_traits>
-#include <iostream>
-#include <sstream>
 #include <cstdint>
 #include <concepts>
 
 #include "cmoon/measures/measure.hpp"
 #include "cmoon/ratio.hpp"
+#include "cmoon/string.hpp"
 
 namespace cmoon
 {
@@ -21,11 +20,18 @@ namespace cmoon
         template<class Rep, class System, cmoon::ratio_type Ratio = std::ratio<1>, dimension_type Dimension = 1>
         using mass = basic_unit<Rep, Ratio, mass_values<Rep>, System, Dimension>;
 
-        template<class T>
-        struct is_mass : std::false_type {};
+        namespace details
+        {
+            template<class Rep, class System, cmoon::ratio_type Ratio, dimension_type Dimension>
+            std::true_type is_mass_base_impl(const mass<Rep, System, Ratio, Dimension>&);
+            std::false_type is_mass_base_impl(...);
 
-        template<class Rep, class System, cmoon::ratio_type Ratio, dimension_type Dimension>
-        struct is_mass<mass<Rep, System, Ratio, Dimension>> : std::true_type {};
+            template<class U>
+            constexpr auto is_based_in_mass = decltype(is_mass_base_impl(std::declval<U>()))::value;
+        }
+
+        template<class T>
+        struct is_mass : std::bool_constant<details::is_based_in_mass<T>> {};
 
         template<class T>
         constexpr bool is_mass_v = is_mass<T>::value;
@@ -178,160 +184,64 @@ namespace cmoon
             }
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_attograms<Rep, Dimension>>
+        template<class Rep, cmoon::ratio_type Ratio, dimension_type Dimension, class CharT>
+        struct suffix<mass<Rep, metric_system, Ratio, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"ag"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("g"))};
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_femtograms<Rep, Dimension>>
+        template<class Rep, dimension_type Dimension, class CharT>
+        struct suffix<basic_grains<Rep, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"fg"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("gr"))};
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_picograms<Rep, Dimension>>
+        template<class Rep, dimension_type Dimension, class CharT>
+        struct suffix<basic_drachm<Rep, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"pg"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("dr"))};
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_nanograms<Rep, Dimension>>
+        template<class Rep, dimension_type Dimension, class CharT>
+        struct suffix<basic_ounces<Rep, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"ng"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("oz"))};
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_micrograms<Rep, Dimension>>
+        template<class Rep, dimension_type Dimension, class CharT>
+        struct suffix<basic_pounds<Rep, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"ug"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("lb"))};
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_milligrams<Rep, Dimension>>
+        template<class Rep, dimension_type Dimension, class CharT>
+        struct suffix<basic_stones<Rep, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"mg"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("st"))};
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_centigrams<Rep, Dimension>>
+        template<class Rep, dimension_type Dimension, class CharT>
+        struct suffix<basic_quarters<Rep, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"cg"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("qr"))};
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_decigrams<Rep, Dimension>>
+        template<class Rep, dimension_type Dimension, class CharT>
+        struct suffix<basic_hundredweights<Rep, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"dg"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("cwt"))};
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_grams<Rep, Dimension>>
+        template<class Rep, dimension_type Dimension, class CharT>
+        struct suffix<basic_short_tons<Rep, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"g"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("t"))};
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_decagrams<Rep, Dimension>>
+        template<class Rep, dimension_type Dimension, class CharT>
+        struct suffix<basic_tons<Rep, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"dag"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_hectograms<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"hg"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_kilograms<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"kg"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_megagrams<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"Mg"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_gigagrams<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"Gg"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_teragrams<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"Tg"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_petagrams<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"Pg"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_exagrams<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"Eg"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct imperial_system::suffix<basic_grains<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"gr"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct imperial_system::suffix<basic_drachm<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"dr"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct imperial_system::suffix<basic_ounces<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"oz"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct imperial_system::suffix<basic_pounds<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"lb"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct imperial_system::suffix<basic_stones<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"st"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct imperial_system::suffix<basic_quarters<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"qr"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct imperial_system::suffix<basic_hundredweights<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"cwt"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct imperial_system::suffix<basic_short_tons<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"t"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct imperial_system::suffix<basic_tons<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"t"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("t"))};
         };
     }
 }

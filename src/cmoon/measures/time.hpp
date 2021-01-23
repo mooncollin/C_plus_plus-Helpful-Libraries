@@ -17,11 +17,18 @@ namespace cmoon
 		template<class Rep, class System, cmoon::ratio_type Ratio = std::ratio<1>, dimension_type Dimension = 1>
 		using time = basic_unit<Rep, Ratio, time_values<Rep>, System, Dimension>;
 
-        template<class T>
-        struct is_time : std::false_type {};
+        namespace details
+        {
+            template<class Rep, class System, cmoon::ratio_type Ratio, dimension_type Dimension>
+            std::true_type is_time_base_impl(const time<Rep, System, Ratio, Dimension>&);
+            std::false_type is_time_base_impl(...);
 
-        template<class Rep, class System, cmoon::ratio_type Ratio, dimension_type Dimension>
-        struct is_time<time<Rep, System, Ratio, Dimension>> : std::true_type {};
+            template<class U>
+            constexpr auto is_based_in_time = decltype(is_time_base_impl(std::declval<U>()))::value;
+        }
+
+        template<class T>
+        struct is_time : std::bool_constant<details::is_based_in_time<T>> {};
 
         template<class T>
         constexpr bool is_time_v = is_time<T>::value;
@@ -122,142 +129,46 @@ namespace cmoon
         using months = basic_months<std::intmax_t>;
         using years = basic_years<std::intmax_t>;
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_attoseconds<Rep, Dimension>>
+        template<class Rep, cmoon::ratio_type Ratio, dimension_type Dimension, class CharT>
+        struct suffix<time<Rep, metric_system, Ratio, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"as"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("s"))};
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_femtoseconds<Rep, Dimension>>
+        template<class Rep, dimension_type Dimension, class CharT>
+        struct suffix<basic_minutes<Rep, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"fs"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("min"))};
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_picoseconds<Rep, Dimension>>
+        template<class Rep, dimension_type Dimension, class CharT>
+        struct suffix<basic_hours<Rep, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"ps"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("h"))};
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_nanoseconds<Rep, Dimension>>
+        template<class Rep, dimension_type Dimension, class CharT>
+        struct suffix<basic_days<Rep, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"ns"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("d"))};
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_microseconds<Rep, Dimension>>
+        template<class Rep, dimension_type Dimension, class CharT>
+        struct suffix<basic_weeks<Rep, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"us"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("w"))};
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_milliseconds<Rep, Dimension>>
+        template<class Rep, dimension_type Dimension, class CharT>
+        struct suffix<basic_months<Rep, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"ms"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("mo"))};
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_centiseconds<Rep, Dimension>>
+        template<class Rep, dimension_type Dimension, class CharT>
+        struct suffix<basic_years<Rep, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"cs"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_deciseconds<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"ds"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_seconds<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"s"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_decaseconds<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"das"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_hectoseconds<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"hs"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_kiloseconds<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"ks"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_megaseconds<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"Ms"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_gigaseconds<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"Gs"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_teraseconds<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"Ts"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_petaseconds<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"Ps"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_exaseconds<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"Es"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_minutes<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"min"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_hours<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"h"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_days<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"d"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_weeks<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"w"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_months<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"mo"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_years<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"y"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("y"))};
         };
 
         template<time_type Time>

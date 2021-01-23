@@ -1,7 +1,6 @@
 #pragma once
 
 #include "cmoon/measures/measure.hpp"
-#include "cmoon/measures/kinematic.hpp"
 #include "cmoon/measures/distance.hpp"
 #include "cmoon/measures/time.hpp"
 #include "cmoon/measures/mass.hpp"

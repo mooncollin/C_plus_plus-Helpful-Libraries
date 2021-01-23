@@ -3,14 +3,13 @@
 #include <ratio>
 #include <limits>
 #include <type_traits>
-#include <iostream>
-#include <sstream>
 #include <cstdint>
 #include <concepts>
 
 #include "cmoon/measures/measure.hpp"
 #include "cmoon/math.hpp"
 #include "cmoon/ratio.hpp"
+#include "cmoon/string.hpp"
 
 namespace cmoon
 {
@@ -22,11 +21,18 @@ namespace cmoon
         template<class Rep, class System, cmoon::ratio_type Ratio = std::ratio<1>, dimension_type Dimension = 1>
         using distance = basic_unit<Rep, Ratio, distance_values<Rep>, System, Dimension>;
 
-        template<class T>
-        struct is_distance : std::false_type {};
+        namespace details
+        {
+            template<class Rep, class System, cmoon::ratio_type Ratio, dimension_type Dimension>
+		    std::true_type is_distance_base_impl(const distance<Rep, System, Ratio, Dimension>&);
+		    std::false_type is_distance_base_impl(...);
 
-        template<class Rep, class System, cmoon::ratio_type Ratio, dimension_type Dimension>
-        struct is_distance<distance<Rep, System, Ratio, Dimension>> : std::true_type {};
+		    template<class U>
+		    constexpr auto is_based_in_distance = decltype(is_distance_base_impl(std::declval<U>()))::value;
+        }
+
+        template<class T>
+        struct is_distance : std::bool_constant<details::is_based_in_distance<T>> {};
 
         template<class T>
         constexpr bool is_distance_v = is_distance<T>::value;
@@ -159,130 +165,34 @@ namespace cmoon
             }
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_attometers<Rep, Dimension>>
+        template<class Rep, cmoon::ratio_type Ratio, dimension_type Dimension, class CharT>
+        struct suffix<distance<Rep, metric_system, Ratio, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"am"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("m"))};
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_femtometers<Rep, Dimension>>
+        template<class Rep, dimension_type Dimension, class CharT>
+        struct suffix<basic_inches<Rep, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"fm"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("in"))};
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_picometers<Rep, Dimension>>
+        template<class Rep, dimension_type Dimension, class CharT>
+        struct suffix<basic_feet<Rep, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"pm"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("ft"))};
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_nanometers<Rep, Dimension>>
+        template<class Rep, dimension_type Dimension, class CharT>
+        struct suffix<basic_yards<Rep, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"nm"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("yd"))};
         };
 
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_micrometers<Rep, Dimension>>
+        template<class Rep, dimension_type Dimension, class CharT>
+        struct suffix<basic_miles<Rep, Dimension>, CharT>
         {
-            constexpr static std::string_view value {"um"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_millimeters<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"mm"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_centimeters<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"cm"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_decimeters<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"dm"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_meters<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"m"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_decameters<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"dam"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_hectometers<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"hm"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_kilometers<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"km"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_megameters<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"Mm"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_gigameters<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"Gm"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_terameters<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"Tm"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_petameters<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"Pm"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct metric_system::suffix<basic_exameters<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"Em"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct imperial_system::suffix<basic_inches<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"in"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct imperial_system::suffix<basic_feet<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"ft"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct imperial_system::suffix<basic_yards<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"yd"};
-        };
-
-        template<class Rep, dimension_type Dimension>
-        struct imperial_system::suffix<basic_miles<Rep, Dimension>>
-        {
-            constexpr static std::string_view value {"mi"};
+            static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("mi"))};
         };
     }
 }
