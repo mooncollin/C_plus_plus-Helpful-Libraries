@@ -5,6 +5,8 @@
 #include <array>
 #include <cmath>
 #include <numbers>
+#include <type_traits>
+#include <concepts>
 #include <initializer_list>
 
 #include "cmoon/geometry/angle.hpp"
@@ -23,10 +25,10 @@ namespace cmoon
 
 				constexpr polygon() = default;
 
-				template<class... Sides>
+				template<std::same_as<Rep>... Sides>
 					requires(sizeof...(Sides) == S)
-				constexpr polygon(Sides&&... sides)
-					: sides_{{std::forward<Sides>(sides)...}} {}
+				constexpr polygon(const Sides&... sides) noexcept(std::is_nothrow_copy_constructible_v<Rep>)
+					: sides_{{sides...}} {}
 
 				template<std::size_t I>
 					requires(I <= S && I != 0)
@@ -66,7 +68,7 @@ namespace cmoon
 				using rep = Rep;
 
 				constexpr regular_polygon() = default;
-				constexpr regular_polygon(rep s)
+				constexpr regular_polygon(rep s) noexcept(std::is_nothrow_copy_constructible_v<Rep>)
 					: side_{s} {}
 
 				constexpr void side(rep s) noexcept

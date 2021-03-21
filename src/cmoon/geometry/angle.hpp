@@ -4,6 +4,7 @@
 #include <cmath>
 #include <concepts>
 #include <compare>
+#include <cassert>
 
 #include "cmoon/math.hpp"
 
@@ -50,26 +51,26 @@ namespace cmoon
 				}
 
 				constexpr angle() = default;
-				constexpr explicit angle(const cmoon::basic_rational<std::intmax_t>& amount, angle_type t)
+				constexpr angle(const cmoon::basic_rational<std::intmax_t>& amount, angle_type t)
 					: angle{convert_type(amount, t)} {}
 
 				template<std::integral T>
-				constexpr explicit angle(T amount, angle_type t)
+				constexpr angle(const T& amount, angle_type t)
 					: angle{convert_type(cmoon::basic_rational<std::intmax_t>{static_cast<std::intmax_t>(amount)}, t)} {}
 
-				constexpr explicit angle(long double amount, angle_type t)
+				constexpr angle(long double amount, angle_type t)
 					: angle{convert_type(amount, t)} {}
 
 				template<class Rep = long double>
 				[[nodiscard]] constexpr Rep turns() const noexcept
 				{
-					return static_cast<Rep>(amount_ / 2);
+					return static_cast<Rep>(amount_ / 2.0);
 				}
 
 				template<class Rep = long double>
 				[[nodiscard]] constexpr Rep radians() const noexcept
 				{
-					return static_cast<Rep>(amount_) * std::numbers::pi_v<Rep>;
+					return static_cast<Rep>(static_cast<long double>(amount_) * std::numbers::pi_v<long double>);
 				}
 
 				template<class Rep = long double>
@@ -192,6 +193,8 @@ namespace cmoon
 						case angle_type::second_arc:
 							return angle{amount / 648'000};
 					}
+
+					assert(false);
 				}
 
 				static constexpr angle convert_type(const cmoon::basic_rational<std::intmax_t>& amount, angle_type from) noexcept
@@ -211,6 +214,7 @@ namespace cmoon
 						case angle_type::second_arc:
 							return angle{amount / 648'000};
 					}
+					assert(false);
 				}
 
 				cmoon::basic_rational<std::intmax_t> amount_ {0};

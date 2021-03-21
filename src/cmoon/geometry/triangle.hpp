@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <type_traits>
 
 #include "cmoon/geometry/polygon.hpp"
 #include "cmoon/geometry/circle.hpp"
@@ -34,7 +35,7 @@ namespace cmoon
 				using rep = Rep;
 
 				constexpr triangle() = default;
-				constexpr triangle(rep s1, rep s2, rep s3)
+				constexpr triangle(rep s1, rep s2, rep s3) noexcept(std::is_nothrow_copy_constructible_v<Rep>)
 					: polygon<Rep, 3>{s1, s2, s3} {}
 
 				[[nodiscard]] friend constexpr bool operator==(const triangle&, const triangle&) noexcept = default;

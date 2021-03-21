@@ -272,9 +272,23 @@ namespace cmoon
 					return basic_unit{lhs.count() + rhs.count()};
 				}
 
+				template<class Rep2, cmoon::ratio_type Ratio2>
+				[[nodiscard]] friend constexpr auto operator+(const basic_unit& lhs, const basic_unit<Rep2, Ratio2, unit_values, system, dimension>& rhs) noexcept
+				{
+					using common_t = std::common_type_t<basic_unit, basic_unit<Rep2, Ratio2, unit_values, system, dimension>>;
+					return common_t{common_t{lhs}.count() + common_t{rhs}.count()};
+				}
+
 				[[nodiscard]] friend constexpr basic_unit operator-(const basic_unit& lhs, const basic_unit& rhs) noexcept
 				{
 					return basic_unit{lhs.count() - rhs.count()};
+				}
+
+				template<class Rep2, cmoon::ratio_type Ratio2>
+				[[nodiscard]] friend constexpr auto operator-(const basic_unit& lhs, const basic_unit<Rep2, Ratio2, unit_values, system, dimension>& rhs) noexcept
+				{
+					using common_t = std::common_type_t<basic_unit, basic_unit<Rep2, Ratio2, unit_values, system, dimension>>;
+					return common_t{common_t{lhs}.count() - common_t{rhs}.count()};
 				}
 
 				[[nodiscard]] friend constexpr basic_unit operator*(const basic_unit& lhs, const rep& rhs) noexcept
@@ -400,7 +414,7 @@ namespace cmoon
 
 				[[nodiscard]] friend constexpr bool operator==(const basic_unit&, const basic_unit&) noexcept = default;
 				[[nodiscard]] friend constexpr bool operator!=(const basic_unit&, const basic_unit&) noexcept = default;
-				[[nodiscard]] friend constexpr std::strong_ordering operator<=>(const basic_unit&, const basic_unit&) noexcept = default;
+				[[nodiscard]] friend constexpr auto operator<=>(const basic_unit&, const basic_unit&) noexcept = default;
 
 				template<cmoon::ratio_type Ratio2>
 				[[nodiscard]] friend constexpr bool operator==(const basic_unit& lhs, const basic_unit<rep, Ratio2, unit_values, system, Dimension>& rhs) noexcept
@@ -415,7 +429,7 @@ namespace cmoon
 				}
 
 				template<cmoon::ratio_type Ratio2>
-				[[nodiscard]] friend constexpr std::strong_ordering operator<=>(const basic_unit& lhs, const basic_unit<rep, Ratio2, unit_values, system, Dimension>& rhs) noexcept
+				[[nodiscard]] friend constexpr auto operator<=>(const basic_unit& lhs, const basic_unit<rep, Ratio2, unit_values, system, Dimension>& rhs) noexcept
 				{
 					return lhs <=> basic_unit{rhs};
 				}

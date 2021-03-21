@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cmath>
+#include <type_traits>
+
 #include "cmoon/geometry/polygon.hpp"
 
 namespace cmoon
@@ -14,7 +16,7 @@ namespace cmoon
 				using rep = Rep;
 
 				constexpr rectangle() = default;
-				constexpr rectangle(const rep& s1, const rep& s2)
+				constexpr rectangle(const rep& s1, const rep& s2) noexcept(std::is_nothrow_copy_constructible_v<rep>)
 					: length_{s1}, width_{s2} {}
 
 				constexpr void length(const rep& s) noexcept

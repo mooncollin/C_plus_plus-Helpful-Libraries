@@ -2,6 +2,7 @@
 
 #include <numbers>
 #include <compare>
+#include <type_traits>
 
 namespace cmoon
 {
@@ -14,10 +15,10 @@ namespace cmoon
 				using rep = Rep;
 
 				constexpr circle() = default;
-				constexpr circle(rep r)
+				explicit constexpr circle(const rep& r) noexcept(std::is_nothrow_copy_constructible_v<Rep>)
 					: radius_{r} {}
 
-				constexpr void radius(rep r) noexcept
+				constexpr void radius(rep r) noexcept(std::is_nothrow_copy_assignable_v<Rep>)
 				{
 					radius_ = r;
 				}

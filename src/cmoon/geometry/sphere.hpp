@@ -2,6 +2,7 @@
 
 #include <numbers>
 #include <compare>
+#include <type_traits>
 
 namespace cmoon
 {
@@ -14,7 +15,7 @@ namespace cmoon
 				using rep = Rep;
 
 				constexpr sphere() = default;
-				constexpr sphere(rep r)
+				constexpr sphere(rep r) noexcept(std::is_nothrow_copy_constructible_v<rep>)
 					: radius_{r} {}
 
 				constexpr void radius(rep r) noexcept

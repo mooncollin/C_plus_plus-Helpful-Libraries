@@ -26,7 +26,7 @@ namespace cmoon
 		using ansi_string = std::string;
 		using unicode_string = std::wstring;
 		using string_type = std::conditional_t<win_unicode, unicode_string, ansi_string>;
-		using string_view_type = std::basic_string_view<typename string_type::value_type>;
+		using string_view_type = std::conditional_t<win_unicode, std::wstring_view, std::string_view>;
 
 		constexpr auto max_username_size = UNLEN;
 		constexpr auto max_path_size = MAX_PATH;

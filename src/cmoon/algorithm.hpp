@@ -2,7 +2,9 @@
 
 #include <cstdint>
 #include <concepts>
+#include <ranges>
 #include <iterator>
+#include <functional>
 
 namespace cmoon
 {

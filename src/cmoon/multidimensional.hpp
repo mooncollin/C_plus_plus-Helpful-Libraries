@@ -30,7 +30,7 @@ namespace cmoon
 	class multidimensional_array
 	{
 		using storage_t = std::vector<T, Allocator>;
-		using dimensions_t = std::vector<std::size_t>;
+		using dimensions_t = std::vector<std::size_t, typename std::allocator_traits<Allocator>::template rebind_alloc<std::size_t>>;
 
 		public:
 			using value_type = typename storage_t::value_type;
@@ -46,6 +46,8 @@ namespace cmoon
 			using reverse_iterator = typename storage_t::reverse_iterator;
 			using const_reverse_iterator = typename storage_t::const_reverse_iterator;
 
+			static_assert(std::same_as<T, typename std::allocator_traits<allocator_type>::value_type>);
+
 			multidimensional_array(std::initializer_list<std::size_t> dimensions, const Allocator& alloc = Allocator{})
 				: data_{alloc}, dimensions_{dimensions}, dimensions_cache_(std::ranges::size(dimensions) - 1)
 			{
@@ -53,27 +55,23 @@ namespace cmoon
 				data_.resize(most_significant_dimension() * dimensions_.front());
 			}
 
-			template<std::convertible_to<value_type> T2>
-			multidimensional_array(const multidimensional_array<T2, Allocator>& other)
-				: data_{other.data_}, dimensions_{other.dimensions_}, dimensions_cache_{other.dimensions_cache_} {}
-
-			template<std::convertible_to<value_type> T2, std::size_t... OtherDimensions>
-			multidimensional_array(const constant_multidimensional_array<T2, OtherDimensions...>& other, const Allocator& alloc = Allocator{})
-				: data_{alloc}, dimensions_{OtherDimensions...}, dimensions_cache_(sizeof...(OtherDimensions) - 1)
+			template<std::size_t... OtherDimensions>
+			multidimensional_array(const constant_multidimensional_array<T, OtherDimensions...>& other, const Allocator& alloc = Allocator{})
+				: data_{alloc}, dimensions_{OtherDimensions...}, dimensions_cache_(sizeof...(OtherDimensions) == 1 ? 1 : sizeof...(OtherDimensions) - 1)
 			{
 				fill_cache();
 				data_.resize(most_significant_dimension() * dimensions_.front());
-				std::ranges::copy(other, begin());
+				std::copy(other.begin(), other.end(), begin());
 			}
 
-			template<std::convertible_to<value_type> T2, std::size_t OtherDimensions>
-			multidimensional_array(const fixed_multidimensional_array<T2, OtherDimensions>& other, const Allocator& alloc = Allocator{})
-				: data_{alloc}, dimensions_(OtherDimensions), dimensions_cache_(OtherDimensions - 1)
+			template<std::size_t OtherDimensions>
+			multidimensional_array(const fixed_multidimensional_array<T, OtherDimensions>& other, const Allocator& alloc = Allocator{})
+				: data_{alloc}, dimensions_(OtherDimensions), dimensions_cache_(OtherDimensions == 1 ? 1 : OtherDimensions - 1)
 			{
 				std::ranges::copy(other.dimensions(), std::ranges::begin(dimensions_));
 				fill_cache();
 				data_.resize(most_significant_dimension() * dimensions_.front());
-				std::ranges::copy(other, begin());
+				std::copy(other.begin(), other.end(), begin());
 			}
 
 			multidimensional_array(const multidimensional_array&) = default;
@@ -96,10 +94,17 @@ namespace cmoon
 			multidimensional_array& operator=(const constant_multidimensional_array<T2, OtherDimensions...>& other)
 			{
 				dimensions_ = {OtherDimensions...};
-				dimensions_cache_.resize(sizeof...(OtherDimensions) - 1);
+				if constexpr (sizeof...(OtherDimensions) == 1)
+				{
+					dimensions_cache_.resize(1);
+				}
+				else
+				{
+					dimensions_cache_.resize(sizeof...(OtherDimensions) - 1);
+				}
 				fill_cache();
 				data_.resize(most_significant_dimension() * dimensions_.front());
-				std::ranges::copy(other, begin());
+				std::copy(other.begin(), other.end(), begin());
 				return *this;
 			}
 
@@ -108,7 +113,14 @@ namespace cmoon
 			{
 				dimensions_.resize(OtherDimensions);
 				std::ranges::copy(other.dimensions(), std::ranges::begin(dimensions_));
-				dimensions_cache_.resize(OtherDimensions - 1);
+				if constexpr (OtherDimensions == 1)
+				{
+					dimensions_cache_.resize(1);
+				}
+				else
+				{
+					dimensions_cache_.resize(OtherDimensions - 1);
+				}
 				fill_cache();
 				data_.resize(most_significant_dimension() * dimensions_.front());
 				std::ranges::copy(other, begin());
@@ -125,6 +137,11 @@ namespace cmoon
 				return *this;
 			}
 
+			[[nodiscard]] const Allocator& get_allocator() const noexcept
+			{
+				return data_.get_allocator();
+			}
+
 			[[nodiscard]] const dimensions_t& dimensions() const noexcept
 			{
 				return dimensions_;
@@ -137,7 +154,14 @@ namespace cmoon
 				dimensions_.clear();
 				dimensions_.reserve(sizeof...(Elements));
 				(dimensions_.push_back(std::forward<Elements>(elements)), ...);
-				dimensions_cache_.resize(sizeof...(Elements) - 1);
+				if constexpr (sizeof...(Elements) == 1)
+				{
+					dimensions_cache_.resize(1);
+				}
+				else
+				{
+					dimensions_cache_.resize(sizeof...(Elements) - 1);
+				}
 				fill_cache();
 				data_.resize(most_significant_dimension() * dimensions_.front());
 			}
@@ -271,10 +295,17 @@ namespace cmoon
 
 			inline void fill_cache() noexcept
 			{
-				std::partial_sum(std::ranges::crbegin(dimensions_), 
-								 std::ranges::crend(dimensions_) - 1, 
-								 std::ranges::rbegin(dimensions_cache_), 
-								 std::multiplies<>{});
+				if (std::size(dimensions_) == 1)
+				{
+					dimensions_cache_.push_back(1);
+				}
+				else
+				{
+					std::partial_sum(std::ranges::crbegin(dimensions_), 
+									 std::ranges::crend(dimensions_) - 1, 
+									 std::ranges::rbegin(dimensions_cache_), 
+									 std::multiplies<>{});
+				}
 			}
 
 			[[nodiscard]] std::size_t most_significant_dimension() const noexcept
@@ -294,11 +325,23 @@ namespace cmoon
 	{
 		static_assert(Dimensions > 0);
 
+		struct empty {};
+
 		using storage_t = std::vector<T, Allocator>;
 		using dimensions_t = std::array<std::size_t, Dimensions>;
 
+		static constexpr bool no_dimension_cache = Dimensions == 1;
+		static constexpr bool simple_dimension_cache = Dimensions == 2;
+		static constexpr bool complex_dimension_cache = !no_dimension_cache && !simple_dimension_cache;
+
+		using dimensions_cache_t = std::conditional_t<no_dimension_cache || simple_dimension_cache,
+										empty,
+										std::array<std::size_t, Dimensions - 1>
+								   >;
+
 		public:
 			using value_type = typename storage_t::value_type;
+			using allocator_type = typename storage_t::allocator_type;
 			using size_type = typename storage_t::size_type;
 			using difference_type = typename storage_t::difference_type;
 			using reference = typename storage_t::reference;
@@ -310,6 +353,8 @@ namespace cmoon
 			using reverse_iterator = typename storage_t::reverse_iterator;
 			using const_reverse_iterator = typename storage_t::const_reverse_iterator;
 
+			static_assert(std::same_as<T, typename std::allocator_traits<allocator_type>::value_type>);
+
 			fixed_multidimensional_array(std::initializer_list<std::size_t> dimensions, const Allocator& alloc = Allocator{})
 				: data_{alloc}
 			{
@@ -317,10 +362,6 @@ namespace cmoon
 				fill_cache();
 				data_.resize(most_significant_dimension() * dimensions_.front());
 			}
-
-			template<std::convertible_to<value_type> T2>
-			fixed_multidimensional_array(const fixed_multidimensional_array<T2, Dimensions, Allocator>& other)
-				: data_{other.data_}, dimensions_{other.dimensions_}, dimensions_cache_{other.dimensions_cache_} {}
 
 			template<std::convertible_to<value_type> T2, std::size_t... OtherDimensions>
 			fixed_multidimensional_array(const constant_multidimensional_array<T2, OtherDimensions...>& other, const Allocator& alloc = Allocator{})
@@ -357,6 +398,11 @@ namespace cmoon
 			[[nodiscard]] const dimensions_t& dimensions() const noexcept
 			{
 				return dimensions_;
+			}
+
+			[[nodiscard]] const Allocator get_allocator() const noexcept
+			{
+				return data_.get_allocator();
 			}
 
 			template<class... Elements>
@@ -473,17 +519,31 @@ namespace cmoon
 			{
 				std::swap(data_, other.data_);
 				std::swap(dimensions_, other.dimensions_);
-				std::swap(dimensions_cache_, other.dimensions_cache_);
+				if constexpr (complex_dimension_cache)
+				{
+					std::swap(dimensions_cache_, other.dimensions_cache_);
+				}
 			}
 		private:
 			storage_t data_;
 			dimensions_t dimensions_ {};
-			std::array<std::size_t, Dimensions - 1> dimensions_cache_ {};
+			dimensions_cache_t dimensions_cache_;
 
 			template<std::size_t Index = 0, class... Indexes>
 			[[nodiscard]] inline std::size_t index(std::size_t current_index, Indexes&&... indexes) const noexcept
 			{
-				return current_index * dimensions_cache_[Index] + index<Index + 1>(std::forward<Indexes>(indexes)...);
+				if constexpr (no_dimension_cache)
+				{
+					current_index;
+				}
+				else if constexpr (simple_dimension_cache)
+				{
+					return current_index * dimensions_.back() + index<Index + 1>(std::forward<Indexes>(indexes)...);
+				}
+				else
+				{
+					return current_index * dimensions_cache_[Index] + index<Index + 1>(std::forward<Indexes>(indexes)...);
+				}
 			}
 
 			template<std::size_t TupleIndex>
@@ -494,20 +554,29 @@ namespace cmoon
 
 			inline void fill_cache() noexcept
 			{
-				std::partial_sum(std::ranges::crbegin(dimensions_), 
-								 std::ranges::crend(dimensions_) - 1, 
-								 std::ranges::rbegin(dimensions_cache_), 
-								 std::multiplies<>{});
+				if constexpr (complex_dimension_cache)
+				{
+					std::partial_sum(std::ranges::crbegin(dimensions_), 
+									 std::ranges::crend(dimensions_) - 1, 
+									 std::ranges::rbegin(dimensions_cache_), 
+									 std::multiplies<>{});
+				}
 			}
 
 			[[nodiscard]] std::size_t most_significant_dimension() const noexcept
 			{
-				if (dimensions_cache_.empty())
+				if constexpr (no_dimension_cache)
 				{
 					return 1;
 				}
-
-				return dimensions_cache_.front();
+				else if constexpr (simple_dimension_cache)
+				{
+					return dimensions_.back();
+				}
+				else
+				{
+					return dimensions_cache_.front();
+				}
 			}
 	};
 

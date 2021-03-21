@@ -2,6 +2,7 @@
 
 #include <tuple>
 #include <functional>
+#include <type_traits>
 
 namespace cmoon
 {
@@ -10,32 +11,32 @@ namespace cmoon
 		template<class Tuple, class Function>
 		void for_each(Tuple&& t, Function&& func)
 		{
-			std::apply([f = std::forward<Function>(func)](auto&& ...x) {
-				(f(std::forward<decltype(x)>(x)), ...);
+			std::apply([f = std::forward<Function>(func)](auto& ...x) {
+				(f(x), ...);
 			}, std::forward<Tuple>(t));
 		}
 
 		template<class Tuple, class Function>
 		bool all_of(Tuple&& t, Function&& func)
 		{
-			return std::apply([f = std::forward<Function>(func)](auto&& ...x) {
-				return (f(std::forward<decltype(x)>(x)) && ...);
+			return std::apply([f = std::forward<Function>(func)](const auto& ...x) {
+				return (f(x) && ...);
 			}, std::forward<Tuple>(t));
 		}
 
 		template<class Tuple, class Function>
 		bool any_of(Tuple&& t, Function&& func)
 		{
-			return std::apply([f = std::forward<Function>(func)](auto&& ...x) {
-				return (f(std::forward<decltype(x)>(x)) || ...);
+			return std::apply([f = std::forward<Function>(func)](const auto& ...x) {
+				return (f(x) || ...);
 			}, std::forward<Tuple>(t));
 		}
 
 		template<class Tuple, class Function>
 		bool none_of(Tuple&& t, Function&& func)
 		{
-			return std::apply([f = std::forward<Function>(func)](auto&& ...x) {
-				return (!f(std::forward<decltype(x)>(x)) && ...);
+			return std::apply([f = std::forward<Function>(func)](const auto& ...x) {
+				return (!f(x) && ...);
 			}, std::forward<Tuple>(t));
 		}
 

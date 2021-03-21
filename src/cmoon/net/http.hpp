@@ -424,7 +424,7 @@ namespace cmoon
 				}
 				else
 				{
-					cmoon::repeat(http_part.size(), [&is](){ is.unget(); });
+					cmoon::repeat(http_part.size(), [&is]{ is.unget(); });
 					is.setstate(std::istream::failbit);
 				}
 			}
@@ -605,13 +605,12 @@ namespace cmoon
 
 				void update_host_header()
 				{
-					std::string host_info = url_.host();
+					auto& header = headers_[headers::host.data()];
+					header = url_.host();
 					if (url_.port())
 					{
-						host_info += ':' + std::to_string(url_.port().value());
+						header += ':' + std::to_string(url_.port().value());
 					}
-
-					headers_[headers::host.data()] = std::move(host_info);
 				}
 		};
 
@@ -731,11 +730,11 @@ namespace cmoon
 				{
 					if constexpr (cmoon::win32_api)
 					{
-						cmoon::net::use_service<cmoon::net::windows_socket_service>(ctx_.get());
+						cmoon::net::use_service<cmoon::net::windows_socket_service>(context());
 					}
 					if constexpr (using_ssl)
 					{
-						cmoon::net::use_service<cmoon::net::openssl_socket_service>(ctx_.get());
+						cmoon::net::use_service<cmoon::net::openssl_socket_service>(context());
 					}
 				}
 
@@ -746,7 +745,7 @@ namespace cmoon
 
 				[[nodiscard]] socket_type connect(const http_request& request, std::error_code& ec) const
 				{
-					socket_type socket{ctx_.get()};
+					socket_type socket{context()};
 					ec.clear();
 					std::string service_string;
 					if (request.url().port())
@@ -769,7 +768,7 @@ namespace cmoon
 						}
 					}
 
-					const auto results = protocol_type::resolver(ctx_.get()).resolve(request.url().host(), service_string);
+					const auto results = protocol_type::resolver(context()).resolve(request.url().host(), service_string);
 					for (const auto& result : results)
 					{
 						socket.open(result.endpoint().protocol(), ec);
@@ -803,7 +802,7 @@ namespace cmoon
 						return {};
 					}
 
-					iostream_socket_type socket_stream{ std::move(socket) };
+					iostream_socket_type socket_stream{std::move(socket)};
 					if (!(socket_stream << req))
 					{
 						return {};

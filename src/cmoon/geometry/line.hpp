@@ -1,6 +1,7 @@
 #pragma once
 
 #include <compare>
+#include <type_traits>
 
 namespace cmoon
 {
@@ -13,10 +14,10 @@ namespace cmoon
 				using rep = Rep;
 
 				constexpr line() = default;
-				explicit constexpr line(const rep& l)
+				explicit constexpr line(const rep& l) noexcept(std::is_nothrow_copy_constructible_v<Rep>)
 					: length_{l} {}
 
-				constexpr void length(const rep& r) noexcept
+				constexpr void length(const rep& r) noexcept(std::is_nothrow_copy_assignable_v<Rep>)
 				{
 					length_ = r;
 				}

@@ -22,7 +22,7 @@ namespace cmoon
 		using point3d = point<Rep, 3>;
 
 		template<class Rep, std::size_t D>
-		[[nodiscard]] constexpr point<Rep, D> normalize(const point<Rep, D>& p) noexcept
+		[[nodiscard]] point<Rep, D> normalize(const point<Rep, D>& p) noexcept
 		{
 			if constexpr (D == 1)
 			{

@@ -1,13 +1,9 @@
-#include <tuple>
-#include <random>
-#include <array>
-#include <chrono>
-
-#include "cmoon/math.hpp"
 #include "cmoon/test/assert.hpp"
 #include "cmoon/test/runner.hpp"
 #include "cmoon/test/test_case.hpp"
 #include "cmoon/test/test_suite.hpp"
+
+import cmoon.core;
 
 class is_odd_test : public cmoon::test::test_case
 {

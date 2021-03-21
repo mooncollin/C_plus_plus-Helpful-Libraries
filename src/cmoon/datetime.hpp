@@ -9,10 +9,12 @@
 #include <vector>
 #include <forward_list>
 #include <mutex>
+#include <sstream>
 
 #include "cmoon/measures/time.hpp"
 #include "cmoon/math.hpp"
 #include "cmoon/format.hpp"
+#include "cmoon/measures/time.hpp"
 
 namespace cmoon
 {
@@ -139,41 +141,40 @@ namespace cmoon
 			};
 		}
 
-		template<>
-		class hh_mm_ss<measures::hours> : public details::base_hh_mm_ss<measures::hours>
+		template<class Rep>
+		class hh_mm_ss<measures::basic_hours<Rep>> : public details::base_hh_mm_ss<measures::basic_hours<Rep>>
 		{
-			using precision = measures::hours;
+			using precision = measures::basic_hours<Rep>;
 
 			public:
 				constexpr hh_mm_ss() = default;
 				explicit constexpr hh_mm_ss(precision since_midnight)
-					: details::base_hh_mm_ss<measures::hours>{since_midnight} {}
+					: details::base_hh_mm_ss<measures::basic_hours<Rep>>{since_midnight} {}
 		};
 
-		template<>
-		class hh_mm_ss<measures::minutes> : public details::base_hh_mm_ss<measures::minutes>
+		template<class Rep>
+		class hh_mm_ss<measures::basic_minutes<Rep>> : public details::base_hh_mm_ss<measures::basic_minutes<Rep>>
 		{
-			using precision = measures::minutes;
+			using precision = measures::basic_minutes<Rep>;
 
 			public:
 				constexpr hh_mm_ss() = default;
 				explicit constexpr hh_mm_ss(precision since_midnight)
-					: details::base_hh_mm_ss<measures::minutes>{since_midnight} {}
+					: details::base_hh_mm_ss<measures::basic_minutes<Rep>>{since_midnight} {}
 		};
 
-		template<>
-		class hh_mm_ss<measures::seconds> : public details::base_hh_mm_ss<measures::seconds>
+		template<class Rep>
+		class hh_mm_ss<measures::basic_seconds<Rep>> : public details::base_hh_mm_ss<measures::basic_seconds<Rep>>
 		{
-			using precision = measures::seconds;
+			using precision = measures::basic_seconds<Rep>;
 
 			public:
 				constexpr hh_mm_ss() = default;
 				explicit constexpr hh_mm_ss(precision since_midnight)
-					: details::base_hh_mm_ss<measures::seconds>{since_midnight} {}
+					: details::base_hh_mm_ss<measures::basic_seconds<Rep>>{since_midnight} {}
 		};
 
 		template<class Rep, class Period>
-			requires(!std::floating_point<Rep> && !std::convertible_to<measures::time<Rep, measures::metric_system, Period>, measures::seconds>)
 		class hh_mm_ss<measures::time<Rep, measures::metric_system, Period, 1>> : public details::base_hh_mm_ss<measures::time<Rep, measures::metric_system, Period, 1>>
 		{
 			using precision = measures::time<Rep, measures::metric_system, Period, 1>;
@@ -1971,14 +1972,86 @@ namespace cmoon
 	};
 
 	template<class Rep, class Period, typename CharT>
-	struct formatter<std::chrono::duration<Rep, Period>, CharT> : public formatter<datetime::hh_mm_ss<measures::time<Rep, measures::metric_system, Period>>, CharT>
+	struct formatter<std::chrono::duration<Rep, Period>, CharT> : public details::base_chrono_formatter<std::chrono::duration<Rep, Period>, CharT>
 	{
-		template<class OutputIt>
-		auto format(const std::chrono::duration<Rep, Period>& d, basic_format_context<OutputIt, CharT>& ctx)
-		{
-			const datetime::hh_mm_ss<measures::time<Rep, measures::metric_system, Period>> hhmmss {measures::from_chrono(d)};
-			return formatter<datetime::hh_mm_ss<measures::time<Rep, measures::metric_system, Period>>, CharT>::format(hhmmss, ctx);
-		}
+		private:
+			template<class OutputIt>
+			struct handler : public details::tm_handler<CharT, OutputIt>
+			{
+				public:
+					handler(const handler&) = delete;
+					handler& operator=(const handler&) = delete;
+
+					handler(const std::tm& value, const std::chrono::duration<Rep, Period>& dur,  basic_format_context<OutputIt, CharT>& ctx)
+						: details::tm_handler<CharT, OutputIt>{value, ctx}, dur{cmoon::measures::from_chrono(dur)} {}
+
+					void on_abbr_month() { this->throw_not_supported(); }
+					void on_full_month() { this->throw_not_supported(); }
+					void on_abbr_weekday() { this->throw_not_supported(); }
+					void on_full_weekday() { this->throw_not_supported(); }
+					void on_iso_abbr_year() { this->throw_not_supported(); }
+					void on_iso_year() { this->throw_not_supported(); }
+					void on_week_sunday(const details::numeric_system) { this->throw_not_supported(); }
+					void on_week_monday(const details::numeric_system) { this->throw_not_supported(); }
+					void on_us_date() { this->throw_not_supported(); }
+					void on_iso_date() { this->throw_not_supported(); }
+					void on_loc_date(const details::numeric_system) { this->throw_not_supported(); }
+					void on_datetime(const details::numeric_system) { this->throw_not_supported(); }
+					void on_utc_offset(const details::numeric_system) { this->throw_not_supported(); }
+					void on_tz_name() { this->throw_not_supported(); }
+					void on_day_of_year() { this->throw_not_supported(); }
+					void on_iso_week(const details::numeric_system) { this->throw_not_supported(); }
+					void on_dec0_weekday(const details::numeric_system) { this->throw_not_supported(); }
+					void on_dec1_weekday(const details::numeric_system) { this->throw_not_supported(); }
+					void on_day_of_month_space(const details::numeric_system) { this->throw_not_supported(); }
+					void on_day_of_month_zero(const details::numeric_system) { this->throw_not_supported(); }
+					void on_dec_month(const details::numeric_system) { this->throw_not_supported(); }
+					void on_century(const details::numeric_system) { this->throw_not_supported(); }
+					void on_abbr_year(const details::numeric_system) { this->throw_not_supported(); }
+					void on_offset_year() { this->throw_not_supported(); }
+					void on_year(const details::numeric_system) { this->throw_not_supported(); }
+					void on_duration_value()
+					{
+						cmoon::format_to(std::back_inserter(this->buf), cmoon::choose_str_literal<CharT>(STR_LITERALS("{}")), dur.count());
+					}
+					void on_duration_unit()
+					{
+						std::basic_stringstream<CharT> ss;
+						cmoon::measures::details::output_unit_details<decltype(dur)>(ss);
+						this->buf += ss.str();
+					}
+				private:
+					cmoon::measures::time<Rep, cmoon::measures::metric_system, Period, 1> dur;
+			};
+		public:
+			template<class OutputIt>
+			auto format(const std::chrono::duration<Rep, Period>& d, basic_format_context<OutputIt, CharT>& ctx)
+			{
+				std::tm time;
+				const datetime::hh_mm_ss<measures::time<Rep, measures::metric_system, Period>> hhmmss {measures::from_chrono(d)};
+				using duration_t = cmoon::measures::time<Rep, cmoon::measures::metric_system, Period, 1>;
+
+				if constexpr (std::same_as<duration_t, measures::basic_hours<Rep>>)
+				{
+					time.tm_hour = static_cast<int>(hhmmss.hours().count());
+				}
+				else if constexpr (std::same_as<duration_t, measures::basic_minutes<Rep>>)
+				{
+					time.tm_hour = static_cast<int>(hhmmss.hours().count());
+					time.tm_min = static_cast<int>(hhmmss.minutes().count());
+				}
+				else
+				{
+					time.tm_hour = static_cast<int>(hhmmss.hours().count());
+					time.tm_min = static_cast<int>(hhmmss.minutes().count());
+					time.tm_sec = static_cast<int>(hhmmss.seconds().count());
+				}
+
+				handler h{time, d, ctx};
+				details::parse_chrono_format(this->fmt, h);
+
+				return details::write_string_view(h.str(), ctx, this->parser);
+			}
 	};
 
 	template<class CharT>

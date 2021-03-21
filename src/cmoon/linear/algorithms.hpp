@@ -12,13 +12,13 @@ namespace cmoon
 {
 	namespace linear
 	{
-		template<class T>
-		[[nodiscard]] matrix<T> transpose(const matrix<T>& m)
+		template<class T, class Allocator>
+		[[nodiscard]] matrix<T, Allocator> transpose(const matrix<T, Allocator>& m)
 		{
 			const auto rows = m.rows();
 			const auto columns = m.cols();
 			
-			matrix<T> out{columns, rows};
+			matrix<T, Allocator> out{columns, rows};
 			for (std::size_t i {0}; i < columns; ++i)
 			{
 				const auto row = out.get_row(i);
@@ -55,13 +55,13 @@ namespace cmoon
 			return out;
 		}
 
-		template<class T>
-		[[nodiscard]] matrix<T> sub_matrix(const matrix<T>& m, const std::size_t r, const std::size_t c)
+		template<class T, class Allocator>
+		[[nodiscard]] matrix<T, Allocator> sub_matrix(const matrix<T, Allocator>& m, const std::size_t r, const std::size_t c)
 		{
 			const auto rows = m.rows();
 			const auto columns = m.cols();
 
-			matrix<T> result {rows - 1, columns - 1};
+			matrix<T, Allocator> result {rows - 1, columns - 1};
 			auto it = std::begin(result);
 			for (std::size_t i {0}; i < rows; ++i)
 			{
@@ -112,8 +112,8 @@ namespace cmoon
 			return result;
 		}
 
-		template<class T>
-		[[nodiscard]] T trace(const matrix<T>& m) noexcept
+		template<class T, class Allocator>
+		[[nodiscard]] T trace(const matrix<T, Allocator>& m) noexcept
 		{
 			return main_diagonal(m).sum();
 		}
@@ -262,8 +262,8 @@ namespace cmoon
 			}
 		}
 
-		template<class Rep>
-		[[nodiscard]] Rep determinant(const matrix<Rep>& m)
+		template<class T, class Allocator>
+		[[nodiscard]] T determinant(const matrix<T, Allocator>& m)
 		{
 			if (!is_square_matrix(m))
 			{
@@ -301,18 +301,18 @@ namespace cmoon
 					   (c*e*g);
 			}
 			
-			matrix<long double> elim {size, size};
-			std::ranges::copy(m, std::ranges::begin(elim));
+			matrix<long double, typename std::allocator_traits<Allocator>::template rebind_alloc<long double>> elim {size, size};
+			std::copy(std::begin(m), std::end(m), std::begin(elim));
 			details::no_b_matrix temp;
 			const auto operations = details::pivot_elimination(elim, temp);
 			const auto p = main_diagonal(elim).product();
-			if constexpr (std::is_integral_v<Rep>)
+			if constexpr (std::is_integral_v<T>)
 			{
-				return static_cast<Rep>(std::round(p * operations));
+				return static_cast<T>(std::round(p * operations));
 			}
 			else
 			{
-				return static_cast<Rep>(p * operations);
+				return static_cast<T>(p * operations);
 			}
 		}
 
@@ -378,8 +378,8 @@ namespace cmoon
 			}
 		}
 
-		template<class T>
-		[[nodiscard]] T cofactor(const matrix<T>& m, const std::size_t p, const std::size_t q)
+		template<class T, class Allocator>
+		[[nodiscard]] T cofactor(const matrix<T, Allocator>& m, const std::size_t p, const std::size_t q)
 		{
 			const auto sub = sub_matrix(m, p, q);
 			const auto det = determinant(sub);
@@ -394,8 +394,8 @@ namespace cmoon
 			return cmoon::is_even(p + q) ? det : -det;
 		}
 
-		template<class T>
-		[[nodiscard]] matrix<T> adjugate(const matrix<T>& m)
+		template<class T, class Allocator>
+		[[nodiscard]] matrix<T, Allocator> adjugate(const matrix<T, Allocator>& m)
 		{
 			if (!is_square_matrix(m))
 			{
@@ -404,7 +404,7 @@ namespace cmoon
 
 			const auto size {m.rows()};
 
-			matrix<T> out{size, size};
+			matrix<T, Allocator> out{size, size};
 
 			if (size == 1)
 			{
@@ -465,16 +465,22 @@ namespace cmoon
 			return out;
 		}
 
-		template<class T>
-		[[nodiscard]] matrix<T> inverse(const matrix<T>& m)
+		template<class T, class Allocator>
+		[[nodiscard]] matrix<T, Allocator> inverse(matrix<T, Allocator> m)
 		{
-			auto mutable_m = m;
-			auto identity = identity_matrix<T>(m.rows());
-			return gaussian_elimination(mutable_m, identity);
+			auto identity = identity_matrix<T, Allocator>(m.rows());
+			return gaussian_elimination(m, identity);
+		}
+
+		template<class T, class Allocator>
+		[[nodiscard]] matrix<T, Allocator> inverse(matrix<T, Allocator>&& m)
+		{
+			auto identity = identity_matrix<T, Allocator>(m.rows());
+			return gaussian_elimination(m, identity);
 		}
 
 		template<class T, std::size_t S>
-		[[nodiscard]] constexpr square_matrix<T, S> inverse(const square_matrix<T, S>& m)
+		[[nodiscard]] constexpr square_matrix<T, S> inverse(square_matrix<T, S> m)
 		{
 			if (std::is_constant_evaluated())
 			{
@@ -496,14 +502,13 @@ namespace cmoon
 			}
 			else
 			{
-				auto mutable_m = m;
 				auto identity = identity_matrix<T, S>();
-				return gaussian_elimination(mutable_m, identity);
+				return gaussian_elimination(m, identity);
 			}
 		}
 
-		template<class T>
-		[[nodiscard]] bool is_orthogonal(const matrix<T>& m)
+		template<class T, class Allocator>
+		[[nodiscard]] bool is_orthogonal(const matrix<T, Allocator>& m)
 		{
 			return inverse(m) == transpose(m);
 		}
@@ -514,8 +519,8 @@ namespace cmoon
 			return inverse(m) == transpose(m);
 		}
 
-		template<class T, class T2>
-		auto pivot_elimination(matrix<T>& a, matrix<T2>& b)
+		template<class T, class T2, class Allocator>
+		auto pivot_elimination(matrix<T, Allocator>& a, matrix<T2, Allocator>& b)
 		{
 			if (!is_square_matrix(a) || a.rows() != b.rows())
 			{
@@ -542,8 +547,8 @@ namespace cmoon
 			return details::pivot_elimination(a, b);
 		}
 
-		template<class T, std::size_t Rows, class T2>
-		auto pivot_elimination(square_matrix<T, Rows>& a, matrix<T2>& b)
+		template<class T, std::size_t Rows, class T2, class Allocator>
+		auto pivot_elimination(square_matrix<T, Rows>& a, matrix<T2, Allocator>& b)
 		{
 			if (a.rows() != b.rows())
 			{
@@ -553,8 +558,8 @@ namespace cmoon
 			return details::pivot_elimination(a, b);
 		}
 
-		template<class T>
-		auto pivot_elimination(matrix<T>& a)
+		template<class T, class Allocator>
+		auto pivot_elimination(matrix<T, Allocator>& a)
 		{
 			if (!is_square_matrix(a))
 			{
@@ -572,8 +577,8 @@ namespace cmoon
 			return details::pivot_elimination(a, temp);
 		}
 
-		template<class T, class T2, std::size_t Extent, std::size_t RowSize>
-		[[nodiscard]] auto back_substitution(const matrix<T>& a, const column<T2, Extent, RowSize>& b)
+		template<class T, class Allocator, class T2, std::size_t Extent, std::size_t RowSize>
+		[[nodiscard]] auto back_substitution(const matrix<T, Allocator>& a, const column<T2, Extent, RowSize>& b)
 		{
 			if (b.size() != a.rows())
 			{
@@ -603,8 +608,8 @@ namespace cmoon
 			return details::back_substitution_impl(a, b, c.get_column(0));
 		}
 
-		template<class T, class T2, class T3, std::size_t Extent1, std::size_t RowSize1, std::size_t Extent2, std::size_t RowSize2>
-		[[nodiscard]] void back_substitution(const matrix<T>& a, const column<T2, Extent1, RowSize1>& b, const column<T3, Extent2, RowSize2>& c)
+		template<class T, class Allocator, class T2, class T3, std::size_t Extent1, std::size_t RowSize1, std::size_t Extent2, std::size_t RowSize2>
+		[[nodiscard]] void back_substitution(const matrix<T, Allocator>& a, const column<T2, Extent1, RowSize1>& b, const column<T3, Extent2, RowSize2>& c)
 		{
 			if (b.size() != a.rows() || b.size() != c.size())
 			{
@@ -650,31 +655,31 @@ namespace cmoon
 			return details::back_substitution_impl(a, b, c);
 		}
 
-		template<class T, class T2>
-		matrix<T> gaussian_elimination(matrix<T>& a, matrix<T2>& b)
+		template<class T, class T2, class Allocator>
+		matrix<T, Allocator> gaussian_elimination(matrix<T, Allocator>& a, matrix<T2, Allocator>& b)
 		{
 			const auto columns = std::min(a.cols(), b.cols());
-			matrix<T> result{a.rows(), columns};
+			matrix<T, Allocator> result{a.rows(), columns};
 			details::gaussian_elimination_impl(a, b, result);
 
 			return result;
 		}
 
-		template<class T, class T2, std::size_t Rows, std::size_t Columns>
-		matrix<T> gaussian_elimination(matrix<T>& a, fixed_matrix<T2, Rows, Columns>& b)
+		template<class T, class Allocator, class T2, std::size_t Rows, std::size_t Columns>
+		matrix<T, Allocator> gaussian_elimination(matrix<T, Allocator>& a, fixed_matrix<T2, Rows, Columns>& b)
 		{
 			const auto columns = std::min(a.cols(), b.cols());
-			matrix<T> result{a.rows(), columns};
+			matrix<T, Allocator> result{a.rows(), columns};
 			details::gaussian_elimination_impl(a, b, result);
 
 			return result;
 		}
 
-		template<class T, class T2, std::size_t Rows>
-		matrix<T> gaussian_elimination(square_matrix<T, Rows>& a, matrix<T2>& b)
+		template<class T, class Allocator, class T2, std::size_t Rows>
+		matrix<T, Allocator> gaussian_elimination(square_matrix<T, Rows>& a, matrix<T2, Allocator>& b)
 		{
 			const auto columns = std::min(a.cols(), b.cols());
-			matrix<T> result{a.rows(), columns};
+			matrix<T, Allocator> result{a.rows(), columns};
 			details::gaussian_elimination_impl(a, b, result);
 
 			return result;

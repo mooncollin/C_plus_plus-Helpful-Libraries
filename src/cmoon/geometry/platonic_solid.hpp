@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstddef>
+#include <type_traits>
+
+#include "cmoon/concepts.hpp"
 #include "cmoon/geometry/angle.hpp"
 #include "cmoon/geometry/sphere.hpp"
 
@@ -9,6 +12,7 @@ namespace cmoon
 	namespace geometry
 	{
 		template<class Rep, std::size_t V, std::size_t E, std::size_t F>
+			requires((V - E + F) == 2)
 		class regular_platonic_solid;
 
 		template<class Rep>
@@ -87,18 +91,17 @@ namespace cmoon
 		}
 
 		template<class Rep, std::size_t V, std::size_t E, std::size_t F>
+			requires((V - E + F) == 2)
 		class regular_platonic_solid
 		{
-			static_assert((V - E + F) == 2);
-
 			public:
 				using rep = Rep;
 
 				constexpr regular_platonic_solid() = default;
-				constexpr regular_platonic_solid(rep s)
+				explicit constexpr regular_platonic_solid(const rep& s) noexcept(std::is_nothrow_copy_constructible_v<Rep>)
 					: edge_{s} {}
 
-				constexpr void edge(rep s) noexcept
+				constexpr void edge(const rep& s) noexcept(std::is_nothrow_copy_assignable_v<Rep>)
 				{
 					edge_ = s;
 				}

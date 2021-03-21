@@ -253,11 +253,13 @@ class fixed_multidimensional_constructor_test : public cmoon::test::test_case
 	private:
 		void static_information()
 		{
-			const cmoon::fixed_multidimensional_array<int, 2> m_arr{2, 3};
-			const cmoon::fixed_multidimensional_array<int, 3> m_arr2{2, 3, 2};
+			const cmoon::fixed_multidimensional_array<int, 1> m_arr{2};
+			const cmoon::fixed_multidimensional_array<int, 2> m_arr2{2, 3};
+			const cmoon::fixed_multidimensional_array<int, 3> m_arr3{2, 3, 2};
 
 			constexpr auto m_arr_size = sizeof(m_arr);
 			constexpr auto m_arr2_size = sizeof(m_arr2);
+			constexpr auto m_arr3_size = sizeof(m_arr3);
 		}
 };
 
