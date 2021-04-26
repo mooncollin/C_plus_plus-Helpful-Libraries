@@ -1,9 +1,5 @@
-#include "cmoon/test/assert.hpp"
-#include "cmoon/test/runner.hpp"
-#include "cmoon/test/test_case.hpp"
-#include "cmoon/test/test_suite.hpp"
-
-import cmoon.core;
+import cmoon.test;
+import cmoon.math;
 
 class is_odd_test : public cmoon::test::test_case
 {

@@ -1,0 +1,12 @@
+export module cmoon.math;
+export import cmoon.math.prime_sieve;
+export import cmoon.math.factorial;
+export import cmoon.math.is_odd_even;
+export import cmoon.math.is_power_of_2;
+export import cmoon.math.abs;
+export import cmoon.math.ceil;
+export import cmoon.math.floor;
+export import cmoon.math.pow;
+export import cmoon.math.cot;
+export import cmoon.math.sign;
+export import cmoon.math.rational;

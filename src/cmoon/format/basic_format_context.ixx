@@ -3,6 +3,7 @@ module;
 #include <iterator>
 #include <locale>
 #include <string_view>
+#include <string>
 
 #include "cmoon/format/forward_declarations.hpp"
 
@@ -54,4 +55,10 @@ namespace cmoon
 			template<typename CharT, class Out>
 			friend Out details::vformat_to(Out, const std::locale&, std::basic_string_view<CharT>, format_args_t<Out, CharT>&&);
 	};
+
+	export
+	using format_context = basic_format_context<std::back_insert_iterator<std::string>, char>;
+
+	export
+	using wformat_context = basic_format_context<std::back_insert_iterator<std::wstring>, wchar_t>;
 }

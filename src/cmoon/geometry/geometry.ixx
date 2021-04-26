@@ -1,0 +1,10 @@
+export module cmoon.geometry;
+export import cmoon.geometry.angle;
+export import cmoon.geometry.circle;
+export import cmoon.geometry.line;
+export import cmoon.geometry.polygon;
+export import cmoon.geometry.platonic_solid;
+export import cmoon.geometry.point;
+export import cmoon.geometry.rectangle;
+export import cmoon.geometry.sphere;
+export import cmoon.geometry.triangle;

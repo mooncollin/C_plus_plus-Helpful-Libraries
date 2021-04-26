@@ -1,0 +1,21 @@
+module;
+
+#include "cmoon/string/literals.hpp"
+
+export module cmoon.measures.imperial_system;
+
+import <string_view>;
+
+import cmoon.string;
+
+namespace cmoon::measures
+{
+	template<class T, class CharT>
+    struct suffix
+    {
+        static constexpr std::basic_string_view<CharT> value {cmoon::choose_str_literal<CharT>(STR_LITERALS(""))};
+    };
+
+    template<class T, class CharT>
+    static constexpr auto suffix_v = suffix<T, CharT>::value;
+}
