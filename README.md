@@ -1,6 +1,6 @@
 # Collin's Useful C++ Libraries
 
-All the files are header only files that attempt to be an extension onto the current C++ standard library.
+This repo contains several libraries (mostly implemented in C++20 modules) that attempt to be an extension onto the current C++ standard library.
 
 With new releases of C++, some of these libraries will become obsolete.
 
