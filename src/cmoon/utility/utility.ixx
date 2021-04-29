@@ -1,6 +1,7 @@
 export module cmoon.utility;
 export import cmoon.utility.throw_on_error;
 export import cmoon.utility.extent_type;
+export import cmoon.utility.expected;
 
 import <iterator>;
 import <utility>;
