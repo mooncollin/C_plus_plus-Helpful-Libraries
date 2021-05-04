@@ -1,6 +1,4 @@
 export module cmoon.csv;
-import cmoon.format;
-import cmoon.string;
 export import cmoon.csv.dialect;
 export import cmoon.csv.parse_line;
 export import cmoon.csv.csv_any;
