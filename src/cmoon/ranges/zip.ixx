@@ -29,10 +29,6 @@ namespace cmoon::ranges
 				requires(sizeof...(Ts) == 2)
 			struct value_type_chooser<Ts...> : public std::type_identity<std::pair<copy_or_reference_type<Ts>...>> {};
 
-			template<class... Ts>
-				requires(sizeof...(Ts) == 1)
-			struct value_type_chooser<Ts...> : public std::type_identity<copy_or_reference_type<Ts>...> {};
-
 			using internal_iterator_category = std::conditional_t<std::conjunction_v<std::bool_constant<std::ranges::contiguous_range<Rngs>>...>,
 																  std::contiguous_iterator_tag,
 																  std::conditional_t<std::conjunction_v<std::bool_constant<std::ranges::random_access_range<Rngs>>...>,
@@ -228,6 +224,10 @@ namespace cmoon::ranges
 				return zip_view_iterator{*this, std::ranges::end(std::get<I>(ranges_))...};
 			}
 	};
+
+	export
+	template<std::ranges::input_range Rng>
+	class zip_view<Rng> : public std::ranges::views::all_t<Rng> {};
 
 	export
 	template<std::ranges::input_range... Rngs>
