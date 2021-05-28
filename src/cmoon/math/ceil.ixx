@@ -1,20 +1,30 @@
 export module cmoon.math.ceil;
 
 import <concepts>;
+import <type_traits>;
+
+import cmoon.concepts;
 
 namespace cmoon
 {
 	export
-	template<std::integral Rep = int, std::floating_point Float>
-	[[nodiscard]] constexpr Rep ceil(const Float& f) noexcept
+	template<std::integral Rep = int, cmoon::arithmetic T>
+	[[nodiscard]] constexpr Rep ceil(const T& t) noexcept
 	{
-		const auto inum = static_cast<Rep>(f);
-			
-		if(f == static_cast<Float>(inum))
+		if constexpr (std::integral<T>)
 		{
-			return inum;
+			return t;
 		}
+		else
+		{
+			const auto inum = static_cast<Rep>(t);
+			
+			if(t == static_cast<T>(inum))
+			{
+				return inum;
+			}
 
-		return inum + (f > 0 ? 1 : 0);
+			return inum + (t > 0 ? 1 : 0);
+		}
 	}
 }

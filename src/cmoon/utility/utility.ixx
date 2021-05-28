@@ -2,6 +2,7 @@ export module cmoon.utility;
 export import cmoon.utility.throw_on_error;
 export import cmoon.utility.extent_type;
 export import cmoon.utility.expected;
+export import cmoon.utility.stopwatch;
 
 import <iterator>;
 import <utility>;
@@ -15,7 +16,7 @@ namespace cmoon
 {
 	export
 	template<std::ranges::range R>
-	constexpr auto& last_of(R& r, typename Container::size_type n = 1)
+	constexpr decltype(auto) last_of(R&& r, std::ranges::range_size_t<R> n = 1)
 	{
 		auto end = std::ranges::end(r);
 		std::advance(end, -n);
@@ -24,25 +25,7 @@ namespace cmoon
 
 	export
 	template<std::ranges::range R>
-	constexpr const auto& last_of(const R& r, typename Container::size_type n = 1)
-	{
-		auto end = std::ranges::end(r);
-		std::advance(end, -n);
-		return *end;
-	}
-
-	export
-	template<std::ranges::range R>
-	constexpr auto& first_of(R& r, typename Container::size_type n = 0)
-	{
-		auto begin = std::begin(r);
-		std::advance(begin, n);
-		return *begin;
-	}
-
-	export
-	template<std::ranges::range R>
-	constexpr const auto& first_of(const R& r, typename Container::size_type n = 0)
+	constexpr decltype(auto) first_of(R&& r, std::ranges::range_size_t<R> n = 0)
 	{
 		auto begin = std::begin(r);
 		std::advance(begin, n);
@@ -156,25 +139,6 @@ namespace cmoon
 	{
 		return static_cast<std::decay_t<T>>(std::forward<T>(v));
 	}
-
-	export
-	template<class Required, std::size_t Min, std::size_t Max, class... T>
-	struct basic_static_initializer_list : public std::bool_constant<
-				 sizeof...(T) >= Min &&
-				 sizeof...(T) <= Max &&
-				 (... && std::is_convertible_v<T, Required>)> {};
-
-	export
-	template<class Required, class... T>
-	using unbounded_static_initializer_list = basic_static_initializer_list<Required, 0, std::numeric_limits<std::size_t>::max(), T...>;
-
-	export
-	template<class Required, std::size_t Min, class... T>
-	using minimum_static_initializer_list = basic_static_initializer_list<Required, Min, std::numeric_limits<std::size_t>::max(), T...>;
-
-	export
-	template<class Required, std::size_t Max, class... T>
-	using maximum_static_initializer_list = basic_static_initializer_list<Required, 0, Max, T...>;
 
 	template<class T>
 	constexpr auto choose_on_type_helper() noexcept

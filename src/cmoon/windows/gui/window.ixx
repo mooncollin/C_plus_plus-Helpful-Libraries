@@ -1,7 +1,7 @@
 module;
 
 #include <d2d1.h>
-#include <windows.h>
+#include <Windows.h>
 
 export module cmoon.windows.gui.window;
 

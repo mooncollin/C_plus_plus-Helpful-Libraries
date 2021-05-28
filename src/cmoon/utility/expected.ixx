@@ -37,7 +37,7 @@ namespace cmoon
 	template<class T, class E>
 		requires (std::is_nothrow_copy_constructible<E> &&
 				  std::is_nothrow_move_constructible<E> &&
-				  std::is_nothrow_copy_assignable<E> &&
+				  std::is_nothrow_is_copy_assignable_v<E> &&
 				  std::is_nothrow_move_assignable<E>)
 	class expected
 	{
@@ -46,16 +46,47 @@ namespace cmoon
 			using error_type = E;
 			using unexpected_type = unexpected<E>;
 		private:
+			struct expected_type_c_t {};
+			static constexpr expected_type_c_t expected_type_c {};
+
+			struct unexpected_type_c_t {};
+			static constexpr unexpected_type_c_t unexpected_type_c {};
+
 			template<class T2>
 			struct union_type
 			{
-				using type = union { T2 val; unexpected_type unex; };
+				union u
+				{
+					constexpr u() = default;
+
+					template<class... Args>
+					constexpr u(const expected_type_c_t, Args&&... args)
+						: val{std::forward<Args>(args)...} {}
+
+					template<class... Args>
+					constexpr u(const unexpected_type_c_t, Args&&... args)
+						: unex{std::forward<Args>(args)...} {}
+
+					T2 val{};
+					unexpected_type unex;
+				};
+
+				using type = u;
 			};
 
 			template<>
 			struct union_type<void>
 			{
-				using type = union { unexpected_type unex; };
+				union u
+				{
+					template<class... Args>
+					constexpr u(const unexpected_type_c_t, Args&&... args)
+						: unex{std::forward<Args>(args)...} {}
+
+					unexpected_type unex{};
+				};
+
+				using type = u;
 			};
 
 			using union_type_t = typename union_type<value_type>::type;
@@ -64,24 +95,25 @@ namespace cmoon
 			template<class U>
 			using rebind = expected<U, error_type>;
 
-			constexpr expected() requires std::default_initializable<T> || std::is_void_v<T>
-				: has_val{true}, storage.val{} {}
+			constexpr expected() requires (std::default_initializable<T> || std::is_void_v<T>)
+				: has_val{true} {}
 
 			constexpr expected(const expected& other) requires (std::copy_constructible<T> || std::is_void_v<T>) && std::copy_constructible<E>
 				: has_val{other.has_val}
 			{
 				if (!std::is_void_v<T> && has_val)
 				{
-					storage.val = *rhs;
+					storage.val = *other;
 				}
 				else
 				{
-					storage.unex = unexpected(rhs.error());
+					storage.unex = unexpected(other.error());
 				}
 			}
 
-			constexpr expected(expected&& other) requires std::move_constructible<T> && std::move_constructible<E> noexcept((std::is_nothrow_move_constructible_v<T> || std::is_void_v<T>) &&
-																															 std::is_nothrow_move_constructible_v<E>)
+			constexpr expected(expected&& other) noexcept((std::is_nothrow_move_constructible_v<T> || std::is_void_v<T>) &&
+														  std::is_nothrow_move_constructible_v<E>)
+				requires(std::move_constructible<T> && std::move_constructible<E>)
 				: has_val{other.has_val}
 			{
 				if (!std::is_void_v<T> && has_val)
@@ -179,19 +211,19 @@ namespace cmoon
 					 !std::same_as<unexpected<E>, std::remove_cvref_t<U>>)
 			explicit(!std::convertible_to<U&&, T>)
 			constexpr expected(U&& v)
-				: has_val{true}, storage.val{std::forward<U>(v)} {}
+				: has_val{true}, storage{expected_type_c, std::forward<U>(v)} {}
 
 			template<class G = E>
 				requires (std::constructible_from<E, const G&>)
 			explicit(!std::convertible_to<const G&, E>)
 			constexpr expected(const unexpected<G>& e)
-				: has_val{false}, storage.unex{unexpected<E>(e)} {}
+				: has_val{false}, storage{unexpected_type_c, unexpected<E>(e)} {}
 
 			template<class G = E>
 			requires(std::constructible_from<E, G&&>)
 			explicit(!std::convertible_to<G&&, E>)
 			constexpr expected(unexpected<G>&& e)
-				: has_val{false}, storage.unex{std::move(e)} {}
+				: has_val{false}, storage{unexpected_type_c, std::move(e)} {}
 
 			template<class... Args>
 			requires(std::is_void_v<T> && sizeof...(Args) == 0)
@@ -201,25 +233,25 @@ namespace cmoon
 			template<class... Args>
 			requires(!std::is_void_v<T>&& std::constructible_from<T, Args...>)
 			explicit constexpr expected(std::in_place_t, Args&&... args)
-				: has_val{true}, storage.val{std::forward<Args>(args)...} {}
+				: has_val{true}, storage{expected_type_c, std::forward<Args>(args)...} {}
 
 			template<class U, class... Args>
-			requires(!std::is_void_v<T> && std::constructible_from<T, std::initializer_list<U>, Args...>)
+				requires(!std::is_void_v<T> && std::constructible_from<T, std::initializer_list<U>, Args...>)
 			explicit constexpr expected(std::in_place_t, std::initializer_list<U> il, Args&&... args)
-				: has_val{true}, storage.val{il, std::forward<Args>(args)...} {}
+				: has_val{true}, storage{expected_type_c, il, std::forward<Args>(args)...} {}
 
 			template<class... Args>
-			requires(std::constructible_from<E, Args...>)
+				requires(std::constructible_from<E, Args...>)
 			explicit constexpr expected(unexpect_t, Args&&... args)
-				: has_val{false}, storage.unex{unexpected<E>{std::forward<Args>(args)...}} {}
+				: has_val{false}, storage{unexpected_type_c, unexpected<E>{std::forward<Args>(args)...}} {}
 
 			template<class U, class... Args>
 			requires(std::constructible_from<E, std::initializer_list<U>, Args...>)
 			explicit constexpr expected(unexpect_t, std::initializer_list<U> il, Args&&... args)
-				: has_val{false}, storage.unex{unexpected<E>{il, std::forward<Args>(args)...}} {}
+				: has_val{false}, storage{unexpected_type_c, unexpected<E>{il, std::forward<Args>(args)...}} {}
 
 			// Both T and E are trivially destructible
-			~expected() requires (std::is_void_v<T> || std::is_trivially_destructible_v<T>) && std::is_trivally_destructible<E> = default;
+			~expected() requires((std::is_void_v<T> || std::is_trivially_destructible_v<T>) && std::is_trivially_destructible_v<E>) = default;
 
 			// Either T or E are trivially destructible
 			~expected()
@@ -240,9 +272,9 @@ namespace cmoon
 				}
 			}
 
-			expected& operator=(const expected& other) requires (std::is_void_v<T> && std::copy_assignable<E> && std::copy_initializable<E>) ||
-																(!std::is_void_v<T> && std::copy_assignable<T> && std::copy_initializable<T> &&
-																 std::copy_assignable<E> && std::copy_initializable<E> &&
+			expected& operator=(const expected& other) requires (std::is_void_v<T> && std::is_copy_assignable_v<E> && std::is_copy_constructible_v<E>) ||
+																(!std::is_void_v<T> && std::is_copy_assignable_v<T> && std::is_copy_constructible_v<T> &&
+																 std::is_copy_assignable_v<E> && std::is_copy_constructible_v<E> &&
 																 (std::is_nothrow_move_constructible_v<E> || std::is_nothrow_move_constructible_v<T>))
 			{
 				if (other)
@@ -278,7 +310,7 @@ namespace cmoon
 							storage.unex.~unexpected<E>();
 							try
 							{
-								storage.val = *rhs;
+								storage.val = *other;
 								has_val = true;
 							}
 							catch (...)
@@ -463,7 +495,7 @@ namespace cmoon
 
 			template<class G = E>
 			requires(std::is_nothrow_copy_constructible_v<E> &&
-					 std::is_copy_assignable_v<E>)
+					 std::is_is_copy_assignable_v_v<E>)
 			expected& operator=(const unexpected<G>& e)
 			{
 				if (*this)
@@ -562,7 +594,7 @@ namespace cmoon
 				{
 					storage.val = T{il, std::forward<Args>(args)...};
 				}
-				else if constexpr (std:::is_nothrow_constructible_v<T, std::initializer_list<U>, Args...>)
+				else if constexpr (std::is_nothrow_constructible_v<T, std::initializer_list<U>, Args...>)
 				{
 					storage.unex.~unexpected_type();
 					storage.val = T{il, std::forward<Args>(args)...};
@@ -594,7 +626,7 @@ namespace cmoon
 				return *(*this);
 			}
 
-			void swap(expected& other) noexcept()
+			void swap(expected& other) // noexcept()
 			requires(std::swappable<T> &&
 					 std::swappable<E> &&
 					 (std::is_void_v<T> ||
@@ -826,10 +858,10 @@ namespace cmoon
 			}
 
 			template<class T2, class E2>
-				requires (const expected& x, const expected<T2, E2>& y) {
+				requires(requires (const expected& x, const expected<T2, E2>& y) {
 					{ *x == *y } -> std::convertible_to<bool>;
 					{ x.error() == y.error() } -> std::convertible_to<bool>;
-				}
+				})
 			friend constexpr bool operator==(const expected& x, const expected<T2, E2>& y)
 			{
 				if (static_cast<bool>(x) != static_cast<bool>(y))
@@ -853,10 +885,10 @@ namespace cmoon
 			}
 
 			template<class T2, class E2>
-				requires (const expected& x, const expected<T2, E2>& y) {
+				requires(requires (const expected& x, const expected<T2, E2>& y) {
 					{ *x != *y } -> std::convertible_to<bool>;
 					{ x.error() != y.error() } -> std::convertible_to<bool>;
-				}
+				})
 			friend constexpr bool operator!=(const expected& x, const expected<T2, E2>& y)
 			{
 				if (static_cast<bool>(x) != static_cast<bool>(y))
@@ -920,19 +952,19 @@ namespace cmoon
 			}
 
 			template<class T2>
-				requires !std::is_void_v<T> && !std::is_void_v<T2> &&
+				requires(!std::is_void_v<T> && !std::is_void_v<T2> &&
 					requires(const expected& x, const T2& v) {
 						{ *x != v } -> std::convertible_to<bool>;
-					}
+					})
 			friend constexpr bool operator!=(const T2& v, const expected& x)
 			{
 				return x != v;
 			}
 
 			template<class E2>
-				requires(const expected& x, const unexpected<E2>& e) {
+				requires(requires(const expected& x, const unexpected<E2>& e) {
 					{ unexpected{x.error()} == e } -> std::convertible_to<bool>;
-				}
+				})
 			friend constexpr bool operator==(const expected& x, const unexpected<E2>& e)
 			{
 				if (x)
@@ -944,18 +976,18 @@ namespace cmoon
 			}
 
 			template<class E2>
-				requires(const expected& x, const unexpected<E2>& e) {
+				requires(requires(const expected& x, const unexpected<E2>& e) {
 					{ unexpected{x.error()} == e } -> std::convertible_to<bool>;
-				}
+				})
 			friend constexpr bool operator==(const unexpected<E2>& e, const expected& x)
 			{
 				return x == e;
 			}
 
 			template<class E2>
-				requires(const expected& x, const unexpected<E2>& e) {
+				requires(requires(const expected& x, const unexpected<E2>& e) {
 					{ unexpected{x.error()} != e } -> std::convertible_to<bool>;
-				}
+				})
 			friend constexpr bool operator!=(const expected& x, const unexpected<E2>& e)
 			{
 				if (x)
@@ -967,9 +999,9 @@ namespace cmoon
 			}
 
 			template<class E2>
-				requires(const expected& x, const unexpected<E2>& e) {
+				requires(requires(const expected& x, const unexpected<E2>& e) {
 					{ unexpected{x.error()} != e } -> std::convertible_to<bool>;
-				}
+				})
 			friend constexpr bool operator!=(const unexpected<E2>& e, const expected& x)
 			{
 				return x != e;
@@ -990,7 +1022,7 @@ namespace cmoon
 
 			template<class... Args>
 				requires(std::constructible_from<E, Args...>)
-			constexpr explicit unexpected(std::in_place_t, Args&&... args);
+			constexpr explicit unexpected(std::in_place_t, Args&&... args)
 				: val{std::forward<Args>(args)...} {}
 
 			template<class U, class... Args>
@@ -1000,8 +1032,8 @@ namespace cmoon
 
 			template<class Err = E>
 				requires(std::constructible_from<E, Err> &&
-						 !std::same_as<std::remove_cvref_t<U>, std::in_place_t> &&
-						 !std::same_as<std::remove_cvref_t<U>, unexpected>)
+						 !std::same_as<std::remove_cvref_t<Err>, std::in_place_t> &&
+						 !std::same_as<std::remove_cvref_t<Err>, unexpected>)
 			constexpr explicit unexpected(Err&& e)
 				: val{std::forward<Err>(e)} {}
 
@@ -1143,7 +1175,7 @@ namespace std
 				 std::swappable<T> &&
 				 std::move_constructible<E> &&
 				 std::swappable<E>)
-	void swap(expected<T, E>& x, expected<T, E>& y) noexcept(noexcept(x.swap(y)))
+	void swap(cmoon::expected<T, E>& x, cmoon::expected<T, E>& y) noexcept(noexcept(x.swap(y)))
 	{
 		x.swap(y);
 	}

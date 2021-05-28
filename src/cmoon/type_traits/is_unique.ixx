@@ -1,6 +1,7 @@
 export module cmoon.type_traits.is_unique;
-import cmoon.type_traits.is_any_of;
 import <type_traits>;
+
+import cmoon.type_traits.is_any_of;
 
 namespace cmoon
 {

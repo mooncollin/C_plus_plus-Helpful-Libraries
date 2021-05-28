@@ -1,14 +1,17 @@
 export module cmoon.csv.parse_line;
-import cmoon.csv.dialect;
+
 import <cstddef>;
 import <iterator>;
 import <string_view>;
+import <string>;
+
+import cmoon.csv.dialect;
 
 namespace cmoon::csv
 {
 	export
-	template<std::output_iterator<std::string_view> OutputIterator>
-	constexpr void parse_line(std::string_view line, const dialect& dialect, OutputIterator out, std::size_t amount=-1)
+	template<class CharT, class Traits, std::output_iterator<std::basic_string_view<CharT, Traits>> OutputIterator>
+	void parse_line(std::basic_string_view<CharT, Traits> line, const basic_dialect<CharT, Traits>& dialect, OutputIterator out, std::size_t amount=-1)
 	{
 		std::size_t previous_index {0};
 		std::size_t current_index {0};

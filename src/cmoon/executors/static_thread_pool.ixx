@@ -20,155 +20,28 @@ import cmoon.memory;
 import cmoon.mutex;
 import cmoon.execution;
 
+import cmoon.executors.executor_properties;
+
 namespace cmoon::executors
 {
 	class static_thread_pool
 	{
 		private:
-			template<template<class, class, class, class> class Base,
-						class Blocking,
-						class Relationship,
-						class Outstanding,
-						class AllocatorType>
-			class properties_impl
+			template<class Blocking = cmoon::blocking_t::possibly_t, 
+					 class Relationship = cmoon::relationship_t::fork_t, 
+					 class Outstanding = cmoon::outstanding_work_t::untracked_t, 
+					 class AllocatorType = std::allocator<void>>
+			class executor_impl : public executor_properties<executor_impl,
+														     Blocking,
+														     Relationship,
+														     Outstanding,
+														     AllocatorType>
 			{
-				public:
-					Base<cmoon::execution::blocking_t::never_t,
-							Relationship,
-							Outstanding,
-							AllocatorType>
-					require(const cmoon::execution::blocking_t::never_t) const
-					{
-						return {*this};
-					}
-
-					Base<cmoon::execution::blocking_t::possibly_t,
-							Relationship,
-							Outstanding,
-							AllocatorType>
-					require(const cmoon::execution::blocking_t::possibly_t) const
-					{
-						return {*this};
-					}
-
-					Base<cmoon::execution::blocking_t::always_t,
-							Relationship,
-							Outstanding,
-							AllocatorType>
-					require(const cmoon::execution::blocking_t::always_t) const
-					{
-						return {*this};
-					}
-
-					Base<Blocking,
-							cmoon::execution::relationship_t::continuation_t,
-							Outstanding,
-							AllocatorType>
-					require(const cmoon::execution::relationship_t::continuation_t) const
-					{
-						return {*this};
-					}
-
-					Base<Blocking,
-							cmoon::execution::relationship_t::fork_t,
-							Outstanding,
-							AllocatorType>
-					require(const cmoon::execution::relationship_t::fork_t) const
-					{
-						return {*this};
-					}
-
-					Base<Blocking,
-							Relationship,
-							cmoon::execution::outstanding_work_t::tracked_t,
-							AllocatorType>
-					require(const cmoon::execution::outstanding_work_t::tracked_t) const
-					{
-						return {*this};
-					}
-
-					Base<Blocking,
-							Relationship,
-							cmoon::execution::outstanding_work_t::untracked_t,
-							AllocatorType>
-					require(const cmoon::execution::outstanding_work_t::untracked_t) const
-					{
-						return {*this};
-					}
-
-					template<class ProtoAllocator>
-					Base<Blocking,
-							Relationship,
-							Outstanding,
-							ProtoAllocator>
-					require(const cmoon::execution::allocator_t<ProtoAllocator>& other) const
-					{
-						return {*this, other.value()};
-					}
-
-					auto require(const cmoon::execution::allocator_t<void>&) const
-					{
-						return require(cmoon::execution::allocator(std::allocator<void>{}));
-					}
-
-					[[nodiscard]] static constexpr cmoon::execution::bulk_guarentee_t query(const cmoon::execution::bulk_guarentee_t) noexcept
-					{
-						return cmoon::execution::bulk_guarentee.parallel;
-					}
-
-					[[nodiscard]] static constexpr cmoon::execution::mapping_t query(const cmoon::execution::mapping_t) noexcept
-					{
-						return cmoon::execution::mapping.thread;
-					}
-
-					[[nodiscard]] static constexpr cmoon::execution::blocking_t query(const cmoon::execution::blocking_t) noexcept
-					{
-						return Blocking{};
-					}
-
-					[[nodiscard]] static constexpr cmoon::execution::relationship_t query(const cmoon::execution::relationship_t) noexcept
-					{
-						return Relationship{};
-					}
-
-					[[nodiscard]] static constexpr cmoon::execution::outstanding_work_t query(const cmoon::execution::outstanding_work_t) noexcept
-					{
-						return Outstanding{};
-					}
-
-					auto query(const cmoon::execution::allocator_t<void>&) const noexcept
-					{
-						return std::allocator<void>{};
-					}
-
-					template<class ProtoAllocator>
-					auto query(const cmoon::execution::allocator_t<ProtoAllocator>&) const noexcept
-					{
-						return alloc;
-					}
-				protected:
-					properties_impl(static_thread_pool& p, const AllocatorType& a = AllocatorType{})
-						: pool{p}, alloc{a} {}
-
-					static_thread_pool& pool;
-					mutable AllocatorType alloc;
-			};
-
-			template<class Blocking = blocking_t::possibly_t, 
-						class Relationship = relationship_t::fork_t, 
-						class Outstanding = outstanding_work_t::untracked_t, 
-						class AllocatorType = std::allocator<void>>
-			class executor_impl : public properties_impl<executor_impl,
-															Blocking,
-															Relationship,
-															Outstanding,
-															AllocatorType>
-			{
-				using base = properties_impl<executor_impl,
-												Blocking,
-												Relationship,
-												Outstanding,
-												AllocatorType>;
+				using base = executor_properties<executor_impl,
+											     Blocking,
+											     Relationship,
+											     Outstanding,
+											     AllocatorType>;
 				public:
 					using shape_type = std::size_t;
 					using index_type = std::size_t;
@@ -181,16 +54,16 @@ namespace cmoon::executors
 
 					[[nodiscard]] bool running_in_this_thread() const noexcept
 					{
-						return this->pool.running_in_this_thread();
+						return pool.running_in_this_thread();
 					}
 
 					template<class OtherBlocking, class OtherRelationship, class OtherOutstanding, class OtherAllocatorType>
 					[[nodiscard]] friend bool operator==(const executor_impl& lhs, const executor_impl<OtherBlocking, OtherRelationship, OtherOutstanding, OtherAllocatorType>& rhs) noexcept
 					{
 						if constexpr (std::same_as<Blocking, OtherBlocking> &&
-										std::same_as<Relationship, OtherRelationship> &&
-										std::same_as<Outstanding, OtherOutstanding> &&
-										std::same_as<AllocatorType, OtherAllocatorType>)
+									  std::same_as<Relationship, OtherRelationship> &&
+									  std::same_as<Outstanding, OtherOutstanding> &&
+									  std::same_as<AllocatorType, OtherAllocatorType>)
 						{
 							return std::addressof(lhs.pool) == std::addressof(rhs.pool);
 						}
@@ -209,14 +82,14 @@ namespace cmoon::executors
 					template<class Function>
 					void execute(Function&& f) const
 					{
-						if (this->pool.is_stopped)
+						if (pool.is_stopped)
 						{
 							return;
 						}
 
 						if constexpr (is_tracking)
 						{
-							++this->pool.outstanding_work;
+							++pool.outstanding_work;
 						}
 
 						if constexpr (is_blocking)
@@ -232,8 +105,8 @@ namespace cmoon::executors
 
 							if constexpr (is_tracking)
 							{
-								--this->pool.outstanding_work;
-								this->pool.outstanding_work.notify_all();
+								--pool.outstanding_work;
+								pool.outstanding_work.notify_all();
 							}
 						}
 						else
@@ -247,24 +120,26 @@ namespace cmoon::executors
 								{
 									std::terminate();
 								}
+
 								if constexpr (is_tracking)
 								{
-									--this->pool.outstanding_work;
-									this->pool.outstanding_work.notify_all();
+									--pool.outstanding_work;
+									pool.outstanding_work.notify_all();
 								}
 							};
 
 							auto job = std::make_unique<static_thread_pool::any_job<decltype(task)>>(std::move(task));
 
-							std::scoped_lock l {this->pool.jobs_m};
-							this->pool.jobs.push(std::move(job));
+							std::scoped_lock l {pool.jobs_m};
+							pool.jobs.push(std::move(job));
+							pool.jobs_cv.notify_one();
 						}
 					}
 
 					template<class Function>
 					void bulk_execute(Function&& f, std::size_t n) const
 					{
-						if (this->pool.is_stopped)
+						if (pool.is_stopped)
 						{
 							return;
 						}
@@ -272,15 +147,16 @@ namespace cmoon::executors
 						if constexpr (is_blocking)
 						{
 							std::atomic<std::size_t> amount_left {n};
-							std::unique_lock l {this->pool.jobs_m};
+							std::unique_lock l {pool.jobs_m};
 
 							if constexpr (is_tracking)
 							{
-								this->pool.outstanding_work += n;
+								pool.outstanding_work += n;
 							}
+
 							for (std::size_t i {0}; i < n; ++i)
 							{
-								this->pool.jobs.push([func = cmoon::allocate_unique<Function>(this->alloc, f), this, i, &amount_left] {
+								pool.jobs.push([func = cmoon::allocate_unique<Function>(this->alloc, f), this, i, &amount_left] {
 									try
 									{
 										(*func)(i);
@@ -294,8 +170,8 @@ namespace cmoon::executors
 									amount_left.notify_one();
 									if constexpr (is_tracking)
 									{
-										--this->pool.outstanding_work;
-										this->pool.outstanding_work.notify_all();
+										--pool.outstanding_work;
+										pool.outstanding_work.notify_all();
 									}
 								});
 							}
@@ -305,16 +181,16 @@ namespace cmoon::executors
 						}
 						else
 						{
-							std::scoped_lock l {this->pool.jobs_m};
+							std::scoped_lock l {pool.jobs_m};
 
 							if constexpr (is_tracking)
 							{
-								this->pool.outstanding_work += n;
+								pool.outstanding_work += n;
 							}
 
 							for (std::size_t i {0}; i < n; ++i)
 							{
-								this->pool.jobs.push([func = cmoon::allocate_unique<Function>(this->alloc, f), this, i] {
+								pool.jobs.push([func = cmoon::allocate_unique<Function>(this->alloc, f), this, i] {
 									try
 									{
 										(*func)(i);
@@ -326,27 +202,31 @@ namespace cmoon::executors
 
 									if constexpr (is_tracking)
 									{
-										--this->pool.outstanding_work;
-										this->pool.outstanding_work.notify_all();
+										--pool.outstanding_work;
+										pool.outstanding_work.notify_all();
 									}
 								});
 							}
+
+							pool.jobs_cv.notify_all();
 						}
 					}
 				private:
 					static constexpr bool is_blocking = std::same_as<Blocking, cmoon::execution::blocking_t::always_t>;
 					static constexpr bool is_tracking = std::same_as<Outstanding, cmoon::execution::outstanding_work_t::tracked_t>;
 
+					static_thread_pool& pool;
+
 					executor_impl(static_thread_pool& pool, const AllocatorType& alloc = AllocatorType{})
-						: base{pool, alloc} {}
+						: base{alloc}, pool{pool} {}
 
 					template<class OtherBlocking, class OtherRelationship, class OtherOutstanding>
 					executor_impl(const executor_impl<OtherBlocking, OtherRelationship, OtherOutstanding, AllocatorType>& other)
-						: base{other.pool, other.alloc} {}
+						: base{other.alloc}, pool{other.pool} {}
 
 					template<class OtherBlocking, class OtherRelationship, class OtherOutstanding, class OtherAllocatorType>
 					executor_impl(const executor_impl<OtherBlocking, OtherRelationship, OtherOutstanding, OtherAllocatorType>& other, const AllocatorType& alloc)
-						: base{other.pool, alloc} {}
+						: base{alloc}, pool{other.pool} {}
 
 					friend static_thread_pool;
 			};
@@ -359,18 +239,18 @@ namespace cmoon::executors
 								class Relationship = relationship_t::fork_t,
 								class Outstanding = outstanding_work_t::untracked_t,
 								class AllocatorType = std::allocator<void>>
-					class sender_impl : public properties_impl<sender_impl,
-																Blocking,
-																Relationship,
-																Outstanding,
-																AllocatorType>
+					class sender_impl : public executor_properties<sender_impl,
+																   Blocking,
+																   Relationship,
+																   Outstanding,
+																   AllocatorType>
 					{
 						private:
-							using base = properties_impl<sender_impl,
-															Blocking,
-															Relationship,
-															Outstanding,
-															AllocatorType>;
+							using base = executor_properties<sender_impl,
+															 Blocking,
+															 Relationship,
+															 Outstanding,
+															 AllocatorType>;
 
 							template<class R>
 							class operation_state_impl
@@ -458,16 +338,18 @@ namespace cmoon::executors
 								return operation_state_impl{std::forward<R>(r), this->pool, this->alloc};
 							}
 						private:
+							static_thread_pool& pool;
+
 							sender_impl(static_thread_pool& pool)
-								: base{pool} {}
+								: base{}, pool{pool} {}
 
 							template<class OtherBlocking, class OtherRelationship, class OtherOutstanding>
 							sender_impl(const sender_impl<OtherBlocking, OtherRelationship, OtherOutstanding, AllocatorType>& other)
-								: base{other.pool, other.alloc} {}
+								: base{other.alloc}, pool{other.pool} {}
 
 							template<class OtherBlocking, class OtherRelationship, class OtherOutstanding, class OtherAllocatorType>
 							sender_impl(const sender_impl<OtherBlocking, OtherRelationship, OtherOutstanding, OtherAllocatorType>& other, const AllocatorType& alloc)
-								: base{other.pool, other.alloc} {}
+								: base{other.alloc}, pool{other.pool} {}
 
 							template<class>
 							friend class scheduler_impl;
@@ -671,7 +553,7 @@ namespace cmoon::executors
 
 			std::queue<std::unique_ptr<job>> jobs;
 			std::mutex jobs_m;
-			std::condition_variable_any jobs_cv;
+			std::condition_variable jobs_cv;
 
 			void run()
 			{

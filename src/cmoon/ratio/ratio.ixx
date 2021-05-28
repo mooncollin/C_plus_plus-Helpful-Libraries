@@ -1,9 +1,9 @@
 export module cmoon.ratio;
 export import cmoon.ratio.is_ratio;
+export import cmoon.ratio.ratio_additive_inverse;
+export import cmoon.ratio.ratio_canonical;
+export import cmoon.ratio.ratio_reciprocal;
 export import cmoon.ratio.ratio_add_many;
 export import cmoon.ratio.ratio_subtract_many;
 export import cmoon.ratio.ratio_multiply_many;
 export import cmoon.ratio.ratio_divide_many;
-export import cmoon.ratio.ratio_reciprocal;
-export import cmoon.ratio.ratio_additive_inverse;
-export import cmoon.ratio.ratio_canonical;

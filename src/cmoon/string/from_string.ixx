@@ -27,6 +27,39 @@ namespace cmoon
 
     export
     template<class T, class CharT>
+    void from_string(std::basic_string_view<CharT> str, T& value)
+    {
+        if constexpr(from_chars_valid<T, CharT>)
+        {
+            const auto result = std::from_chars(str.data(), str.data() + str.size(), value);
+            if (result.ec != std::errc{})
+            {
+                throw bad_string_conversion{};
+            }
+        }
+        else if constexpr (std::same_as<T, std::basic_string<CharT>>)
+        {
+            value = T{str};
+        }
+        else if constexpr (std::same_as<T, std::basic_string_view<CharT>>)
+        {
+        }
+        else if constexpr (std::same_as<T, CharT>)
+        {
+            value = str.front();
+        }
+        else
+        {
+            std::basic_istringstream<CharT> ss{str.data()};
+            if (!(ss >> value))
+            {
+                throw bad_string_conversion{};
+            }
+        }
+    }
+
+    export
+    template<class T, class CharT>
     T from_string(std::basic_string_view<CharT> str)
     {
         if constexpr(from_chars_valid<T, CharT>)
@@ -41,7 +74,7 @@ namespace cmoon
         }
         else if constexpr (std::same_as<T, std::basic_string<CharT>>)
         {
-            return std::string{str};
+            return T{str};
         }
         else if constexpr (std::same_as<T, std::basic_string_view<CharT>>)
         {
@@ -61,6 +94,5 @@ namespace cmoon
             }
             return value;
         }
-
     }
 }

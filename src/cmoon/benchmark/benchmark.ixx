@@ -1,4 +1,5 @@
 export module cmoon.benchmark;
+export import cmoon.benchmark.do_not_optimize;
 export import cmoon.benchmark.run_result;
 export import cmoon.benchmark.benchmark_result;
 export import cmoon.benchmark.suite;

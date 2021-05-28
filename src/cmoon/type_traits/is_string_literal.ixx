@@ -9,6 +9,26 @@ namespace cmoon
 
 	export
 	template<std::size_t N>
+	struct is_string_literal<const char[N]> : std::true_type {};
+
+	export
+	template<std::size_t N>
+	struct is_string_literal<const wchar_t[N]> : std::true_type {};
+
+	export
+	template<std::size_t N>
+	struct is_string_literal<const char8_t[N]> : std::true_type {};
+
+	export
+	template<std::size_t N>
+	struct is_string_literal<const char16_t[N]> : std::true_type {};
+
+	export
+	template<std::size_t N>
+	struct is_string_literal<const char32_t[N]> : std::true_type {};
+
+	export
+	template<std::size_t N>
 	struct is_string_literal<const char(&)[N]> : std::true_type {};
 
 	export

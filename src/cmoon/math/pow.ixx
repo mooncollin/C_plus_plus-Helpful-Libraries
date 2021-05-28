@@ -1,7 +1,14 @@
+module;
+
+#include <cstddef>
+
 export module cmoon.math.pow;
 
 import <concepts>;
 import <type_traits>;
+import <limits>;
+import <cmath>;
+import <bit>;
 
 import cmoon.concepts;
 import cmoon.math.is_odd_even;
@@ -12,7 +19,7 @@ namespace cmoon
 	struct static_integral_power_impl
 	{
 		template<std::integral T>
-		[[nodiscard]] static constexpr calc(const T& base) noexcept
+		[[nodiscard]] static constexpr T calc(const T& base) noexcept
 		{
 			if constexpr (Exp % 2 == 0)
 			{
@@ -33,7 +40,7 @@ namespace cmoon
 	struct static_integral_power_impl<3>
 	{
 		template<std::integral T>
-		[[nodiscard]] static constexpr calc(const T& base) noexcept
+		[[nodiscard]] static constexpr T calc(const T& base) noexcept
 		{
 			return base * base * base;
 		}
@@ -43,7 +50,7 @@ namespace cmoon
 	struct static_integral_power_impl<2>
 	{
 		template<std::integral T>
-		[[nodiscard]] static constexpr calc(const T& base) noexcept
+		[[nodiscard]] static constexpr T calc(const T& base) noexcept
 		{
 			return base * base;
 		}
@@ -53,7 +60,7 @@ namespace cmoon
 	struct static_integral_power_impl<1>
 	{
 		template<std::integral T>
-		[[nodiscard]] static constexpr calc(const T& base) noexcept
+		[[nodiscard]] static constexpr T calc(const T& base) noexcept
 		{
 			return base;
 		}
@@ -63,7 +70,7 @@ namespace cmoon
 	struct static_integral_power_impl<0>
 	{
 		template<std::integral T>
-		[[nodiscard]] static constexpr calc(const T&)
+		[[nodiscard]] static constexpr T calc(const T&)
 		{
 			return 1;
 		}
@@ -77,13 +84,13 @@ namespace cmoon
 	}
 
 	template<cmoon::arithmetic T, std::integral T2, cmoon::arithmetic T3>
-	[[nodiscard]] constexpr std::common_type_t<T, T2, T3, long double> pow2(const T3& y, const T& base, const T2& exp) noexcept
+	[[nodiscard]] constexpr std::common_type_t<T, T2, T3, double> pow2(const T3& y, const T& base, const T2& exp) noexcept
 	{
-		if constexpr (std::singed_integral<T2>)
+		if constexpr (std::signed_integral<T2>)
 		{
 			if (exp < 0)
 			{
-				return pow2(y, 1.0L / base, -exp);
+				return pow2(y, 1.0 / base, -exp);
 			}
 		}
 
@@ -107,7 +114,7 @@ namespace cmoon
 
 	export
 	template<std::floating_point T, std::integral T2>
-	[[nodiscard]] constexpr auto pow(const T& base, const T2& exp) noexcept
+	[[nodiscard]] constexpr std::common_type_t<T, double> pow(const T& base, const T2& exp) noexcept
 	{
 		if constexpr (std::numeric_limits<T>::has_quiet_NaN)
 		{
@@ -163,6 +170,6 @@ namespace cmoon
 	template<std::unsigned_integral T>
 	[[nodiscard]] constexpr bool is_power_of_2(const T& val) noexcept
 	{
-		return (val != 0) && ((val & (val - 1)) == 0);
+		return std::has_single_bit(val);
 	}
 }

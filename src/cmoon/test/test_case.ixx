@@ -13,10 +13,14 @@ namespace cmoon::test
 	class test_case
 	{
 		public:
-			test_case() = default;
-
-			test_case(std::string_view str)
+			test_case(std::string_view str = "")
 				: name_{str} {}
+
+			test_case(const test_case&) = default;
+			test_case(test_case&&) = default;
+
+			test_case& operator=(const test_case&) = default;
+			test_case& operator=(test_case&&) = default;
 
 			virtual void set_up() {}
 			virtual void tear_down() {}
@@ -46,16 +50,15 @@ namespace cmoon::test
 
 			virtual void operator()() = 0;
 
-			[[nodiscard]] const std::string& name() const noexcept
+			[[nodiscard]] std::string& name() noexcept
 			{
 				return name_;
 			}
 
-			void name(std::string_view str)
+			[[nodiscard]] const std::string& name() const noexcept
 			{
-				name_ = str;
+				return name_;
 			}
-
 		private:
 			std::string name_ {};
 	};

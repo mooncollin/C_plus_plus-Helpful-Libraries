@@ -1,5 +1,7 @@
 export module cmoon.finance.securities;
 
+import <cstddef>;
+
 import cmoon.finance.decimal;
 
 namespace cmoon::finance

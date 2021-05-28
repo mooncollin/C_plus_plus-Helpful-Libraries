@@ -6,8 +6,7 @@ import <cstddef>;
 import <cstdint>;
 import <algorithm>;
 import <stdexcept>;
-
-import cmoon.format;
+import <format>;
 
 namespace cmoon
 {
@@ -18,7 +17,7 @@ namespace cmoon
 			return 6;
 		}
 
-		return static_cast<std::size_t>(std::floor(upper_bound) / (std::log(upper_bound) - 1.5));
+		return static_cast<std::size_t>(upper_bound / (std::log(upper_bound) - 1.5));
 	}
 
 	void sieve_of_eratosthenes(std::vector<bool>& composite) noexcept
@@ -44,7 +43,8 @@ namespace cmoon
 				}
 			}
 
-			if (toggle = !toggle)
+			toggle = !toggle;
+			if (toggle)
 			{
 				s += d2;
 				d2 += 16;
@@ -94,7 +94,7 @@ namespace cmoon
 				const auto next = std::upper_bound(std::begin(prime_list), std::end(prime_list), n);
 				if (next == std::end(prime_list))
 				{
-					throw std::out_of_range{cmoon::format("no prime computed after {}", n)};
+					throw std::out_of_range{std::format("no prime computed after {}", n)};
 				}
 
 				return *next;
@@ -183,7 +183,8 @@ namespace cmoon
 						prime_list[j++] = p;
 					}
 
-					p += (toggle = !toggle) ? 2 : 4;
+					toggle = !toggle;
+					p += toggle ? 2 : 4;
 				}
 
 				return j;

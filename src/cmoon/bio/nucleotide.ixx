@@ -3,8 +3,9 @@ export module cmoon.bio.nucleotide;
 import <iostream>;
 import <concepts>;
 import <type_traits>;
-
-import cmoon.format;
+import <format>;
+import <exception>;
+import <stdexcept>;
 
 namespace cmoon::bio
 {
@@ -53,7 +54,7 @@ namespace cmoon::bio
 	};
 
 	export
-	[[nodiscard]] constexpr dna_nucleotide nucleotide_convert(const rna_nucleotide n) noexcept
+	[[nodiscard]] constexpr dna_nucleotide nucleotide_convert(const rna_nucleotide n)
 	{
 		switch (n)
 		{
@@ -66,10 +67,12 @@ namespace cmoon::bio
 			case rna_nucleotide::cytosine:
 				return dna_nucleotide::cytosine;
 		}
+
+		throw std::logic_error{"Invalid rna_nucleotide state"};
 	}
 
 	export
-	[[nodiscard]] constexpr rna_nucleotide nucleotide_convert(const dna_nucleotide n) noexcept
+	[[nodiscard]] constexpr rna_nucleotide nucleotide_convert(const dna_nucleotide n)
 	{
 		switch (n)
 		{
@@ -82,10 +85,12 @@ namespace cmoon::bio
 			case dna_nucleotide::cytosine:
 				return rna_nucleotide::cytosine;
 		}
+
+		throw std::logic_error{"Invalid dna_nucleotide state"};
 	}
 
 	export
-	[[nodiscard]] constexpr rna_nucleotide nucleotide_compliment(const rna_nucleotide n) noexcept
+	[[nodiscard]] constexpr rna_nucleotide nucleotide_compliment(const rna_nucleotide n)
 	{
 		switch (n)
 		{
@@ -98,10 +103,12 @@ namespace cmoon::bio
 			case rna_nucleotide::adenine:
 				return rna_nucleotide::uracil;
 		}
+
+		throw std::logic_error{"Invalid rna_nucleotide state"};
 	}
 
 	export
-	[[nodiscard]] constexpr dna_nucleotide nucleotide_compliment(const dna_nucleotide n) noexcept
+	[[nodiscard]] constexpr dna_nucleotide nucleotide_compliment(const dna_nucleotide n)
 	{
 		switch (n)
 		{
@@ -114,196 +121,214 @@ namespace cmoon::bio
 			case dna_nucleotide::adenine:
 				return dna_nucleotide::thymine;
 		}
+
+		throw std::logic_error{"Invalid dna_nucleotide state"};
 	}
 
 	export
 	struct codon
 	{
-		constexpr codon(rna_nucleotide f, rna_nucleotide s, rna_nucleotide t)
-			: first{f}, second{s}, third{t} {}
+		public:
+			constexpr codon(rna_nucleotide f, rna_nucleotide s, rna_nucleotide t)
+				: first{f}, second{s}, third{t} {}
 
-		constexpr codon(dna_nucleotide f, dna_nucleotide s, dna_nucleotide t)
-			: first{nucleotide_convert(f)}, second{nucleotide_convert(s)}, third{nucleotide_convert(t)} {}
+			constexpr codon(dna_nucleotide f, dna_nucleotide s, dna_nucleotide t)
+				: first{nucleotide_convert(f)}, second{nucleotide_convert(s)}, third{nucleotide_convert(t)} {}
 
-		[[nodiscard]] constexpr amino_acid to_amino_acid() const noexcept
-		{
-			switch (first)
+			[[nodiscard]] constexpr operator amino_acid() const
 			{
-				case rna_nucleotide::uracil:
-					switch (second)
-					{
-						case rna_nucleotide::uracil:
-							switch (third)
-							{
-								case rna_nucleotide::uracil:
-								case rna_nucleotide::cytosine:
-									return amino_acid::phenylalanine;
-								case rna_nucleotide::adenine:
-								case rna_nucleotide::guanine:
-									return amino_acid::leucine;
-							}
-						case rna_nucleotide::cytosine:
-							return amino_acid::serine;
-						case rna_nucleotide::adenine:
-							switch (third)
-							{
-								case rna_nucleotide::uracil:
-								case rna_nucleotide::cytosine:
-									return amino_acid::tyrosine;
-								case rna_nucleotide::adenine:
-								case rna_nucleotide::guanine:
-									return amino_acid::stop;
-							}
-						case rna_nucleotide::guanine:
-							switch (third)
-							{
-								case rna_nucleotide::uracil:
-								case rna_nucleotide::cytosine:
-									return amino_acid::cysteine;
-								case rna_nucleotide::adenine:
-									return amino_acid::stop;
-								case rna_nucleotide::guanine:
-									return amino_acid::tryptophan;
-							}
-					}
-				case rna_nucleotide::cytosine:
-					switch (second)
-					{
-						case rna_nucleotide::uracil:
-							return amino_acid::leucine;
-						case rna_nucleotide::cytosine:
-							return amino_acid::proline;
-						case rna_nucleotide::adenine:
-							switch (third)
-							{
-								case rna_nucleotide::uracil:
-								case rna_nucleotide::cytosine:
-									return amino_acid::histidine;
-								case rna_nucleotide::adenine:
-								case rna_nucleotide::guanine:
-									return amino_acid::glutamine;
-							}
-						case rna_nucleotide::guanine:
-							return amino_acid::arginine;
-					}
-				case rna_nucleotide::adenine:
-					switch (second)
-					{
-						case rna_nucleotide::uracil:
-							switch (third)
-							{
-								case rna_nucleotide::uracil:
-								case rna_nucleotide::cytosine:
-								case rna_nucleotide::adenine:
-									return amino_acid::isoleucine;
-								case rna_nucleotide::guanine:
-									return amino_acid::methionine;
-							}
-						case rna_nucleotide::cytosine:
-							return amino_acid::threonine;
-						case rna_nucleotide::adenine:
-							switch (third)
-							{
-								case rna_nucleotide::uracil:
-								case rna_nucleotide::cytosine:
-									return amino_acid::asparagine;
-								case rna_nucleotide::adenine:
-								case rna_nucleotide::guanine:
-									return amino_acid::lysine;
-							}
-						case rna_nucleotide::guanine:
-							switch (third)
-							{
-								case rna_nucleotide::uracil:
-								case rna_nucleotide::cytosine:
-									return amino_acid::serine;
-								case rna_nucleotide::adenine:
-								case rna_nucleotide::guanine:
-									return amino_acid::arginine;
-							}
-					}
-				case rna_nucleotide::guanine:
-					switch (second)
-					{
-						case rna_nucleotide::uracil:
-							return amino_acid::valine;
-						case rna_nucleotide::cytosine:
-							return amino_acid::alanine;
-						case rna_nucleotide::adenine:
-							switch (third)
-							{
-								case rna_nucleotide::uracil:
-								case rna_nucleotide::cytosine:
-									return amino_acid::aspartic_acid;
-								case rna_nucleotide::adenine:
-								case rna_nucleotide::guanine:
-									return amino_acid::gluatmic_acid;
-							}
-						case rna_nucleotide::guanine:
-							return amino_acid::glycine;
-					}
+				return to_amino_acid();
 			}
-		}
 
-		rna_nucleotide first;
-		rna_nucleotide second;
-		rna_nucleotide third;
+			[[nodiscard]] constexpr amino_acid to_amino_acid() const
+			{
+				switch (first)
+				{
+					case rna_nucleotide::uracil:
+						switch (second)
+						{
+							case rna_nucleotide::uracil:
+								switch (third)
+								{
+									case rna_nucleotide::uracil:
+									case rna_nucleotide::cytosine:
+										return amino_acid::phenylalanine;
+									case rna_nucleotide::adenine:
+									case rna_nucleotide::guanine:
+										return amino_acid::leucine;
+								}
+							case rna_nucleotide::cytosine:
+								return amino_acid::serine;
+							case rna_nucleotide::adenine:
+								switch (third)
+								{
+									case rna_nucleotide::uracil:
+									case rna_nucleotide::cytosine:
+										return amino_acid::tyrosine;
+									case rna_nucleotide::adenine:
+									case rna_nucleotide::guanine:
+										return amino_acid::stop;
+								}
+							case rna_nucleotide::guanine:
+								switch (third)
+								{
+									case rna_nucleotide::uracil:
+									case rna_nucleotide::cytosine:
+										return amino_acid::cysteine;
+									case rna_nucleotide::adenine:
+										return amino_acid::stop;
+									case rna_nucleotide::guanine:
+										return amino_acid::tryptophan;
+								}
+						}
+					case rna_nucleotide::cytosine:
+						switch (second)
+						{
+							case rna_nucleotide::uracil:
+								return amino_acid::leucine;
+							case rna_nucleotide::cytosine:
+								return amino_acid::proline;
+							case rna_nucleotide::adenine:
+								switch (third)
+								{
+									case rna_nucleotide::uracil:
+									case rna_nucleotide::cytosine:
+										return amino_acid::histidine;
+									case rna_nucleotide::adenine:
+									case rna_nucleotide::guanine:
+										return amino_acid::glutamine;
+								}
+							case rna_nucleotide::guanine:
+								return amino_acid::arginine;
+						}
+					case rna_nucleotide::adenine:
+						switch (second)
+						{
+							case rna_nucleotide::uracil:
+								switch (third)
+								{
+									case rna_nucleotide::uracil:
+									case rna_nucleotide::cytosine:
+									case rna_nucleotide::adenine:
+										return amino_acid::isoleucine;
+									case rna_nucleotide::guanine:
+										return amino_acid::methionine;
+								}
+							case rna_nucleotide::cytosine:
+								return amino_acid::threonine;
+							case rna_nucleotide::adenine:
+								switch (third)
+								{
+									case rna_nucleotide::uracil:
+									case rna_nucleotide::cytosine:
+										return amino_acid::asparagine;
+									case rna_nucleotide::adenine:
+									case rna_nucleotide::guanine:
+										return amino_acid::lysine;
+								}
+							case rna_nucleotide::guanine:
+								switch (third)
+								{
+									case rna_nucleotide::uracil:
+									case rna_nucleotide::cytosine:
+										return amino_acid::serine;
+									case rna_nucleotide::adenine:
+									case rna_nucleotide::guanine:
+										return amino_acid::arginine;
+								}
+						}
+					case rna_nucleotide::guanine:
+						switch (second)
+						{
+							case rna_nucleotide::uracil:
+								return amino_acid::valine;
+							case rna_nucleotide::cytosine:
+								return amino_acid::alanine;
+							case rna_nucleotide::adenine:
+								switch (third)
+								{
+									case rna_nucleotide::uracil:
+									case rna_nucleotide::cytosine:
+										return amino_acid::aspartic_acid;
+									case rna_nucleotide::adenine:
+									case rna_nucleotide::guanine:
+										return amino_acid::gluatmic_acid;
+								}
+							case rna_nucleotide::guanine:
+								return amino_acid::glycine;
+						}
+				}
+
+				throw std::logic_error{"Invalid codon state"};
+			}
+
+			rna_nucleotide first;
+			rna_nucleotide second;
+			rna_nucleotide third;
+		private:
+			
 	};
 
 	export
 	template<class CharT, class Traits>
 	std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& os, const rna_nucleotide n)
 	{
-		return os << static_cast<std::underlying_t<rna_nucleotide>>(n);
+		return os << static_cast<std::underlying_type_t<rna_nucleotide>>(n);
 	}
 
 	export
 	template<class CharT, class Traits>
 	std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& os, const dna_nucleotide n)
 	{
-		return os << static_cast<std::underlying_t<dna_nucleotide>>(n);
+		return os << static_cast<std::underlying_type_t<dna_nucleotide>>(n);
 	}
 
 	export
 	template<class CharT, class Traits>
 	std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& os, const amino_acid a)
 	{
-		return os << static_cast<std::underlying_t<amino_acid>>(a);
+		return os << static_cast<std::underlying_type_t<amino_acid>>(a);
 	}
 }
 
-namespace cmoon
+export
+template<>
+struct std::formatter<cmoon::bio::rna_nucleotide> : public std::formatter<std::underlying_type_t<cmoon::bio::rna_nucleotide>>
 {
-	export
-	template<typename CharT>
-	struct formatter<rna_nucleotide> : public formatter<std::underlying_t<rna_nucleotide>, CharT>
-	{
-		template<class OutputIt>
-		auto format(const rna_nucleotide& n, basic_format_context<OutputIt, CharT>& ctx)
+	private:
+		using base = std::formatter<std::underlying_type_t<cmoon::bio::rna_nucleotide>>;
+	public:
+		template<class FormatContext>
+		auto format(const cmoon::bio::rna_nucleotide& n, FormatContext& ctx)
 		{
-			return formatter<std::underlying_t<rna_nucleotide>, CharT>::format(static_cast<std::underlying_t<rna_nucleotide>>(n), ctx);
+			return base::format(static_cast<std::underlying_type_t<cmoon::bio::rna_nucleotide>>(n), ctx);
 		}
-	};
+};
 
-	export
-	template<typename CharT>
-	struct formatter<dna_nucleotide> : public formatter<std::underlying_t<dna_nucleotide>, CharT>
-	{
-		template<class OutputIt>
-		auto format(const dna_nucleotide& n, basic_format_context<OutputIt, CharT>& ctx)
+export
+template<>
+struct std::formatter<cmoon::bio::dna_nucleotide> : public std::formatter<std::underlying_type_t<cmoon::bio::dna_nucleotide>>
+{
+	private:
+		using base = std::formatter<std::underlying_type_t<cmoon::bio::dna_nucleotide>>;
+	public:
+		template<class FormatContext>
+		auto format(const cmoon::bio::dna_nucleotide& n, FormatContext& ctx)
 		{
-			return formatter<std::underlying_t<dna_nucleotide>, CharT>::format(static_cast<std::underlying_t<dna_nucleotide>>(n), ctx);
+			return base::format(static_cast<std::underlying_type_t<cmoon::bio::dna_nucleotide>>(n), ctx);
 		}
-	};
+};
 
-	export
-	template<typename CharT>
-	struct formatter<amino_acid> : public formatter<std::underlying_t<amino_acid>, CharT>
-	{
-		template<class OutputIt>
-		auto format(const amino_acid& n, basic_format_context<OutputIt, CharT>& ctx)
+export
+template<>
+struct std::formatter<cmoon::bio::amino_acid> : public std::formatter<std::underlying_type_t<cmoon::bio::amino_acid>>
+{
+	private:
+		using base = std::formatter<std::underlying_type_t<cmoon::bio::amino_acid>>;
+	public:
+		template<class FormatContext>
+		auto format(const cmoon::bio::amino_acid& n, FormatContext& ctx)
 		{
-			return formatter<std::underlying_t<amino_acid>, CharT>::format(static_cast<std::underlying_t<amino_acid>>(n), ctx);
+			return base::format(static_cast<std::underlying_type_t<cmoon::bio::amino_acid>>(n), ctx);
 		}
-	};
-}
+};

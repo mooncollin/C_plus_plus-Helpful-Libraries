@@ -4,6 +4,7 @@ import <utility>;
 import <type_traits>;
 
 import cmoon.ratio;
+import cmoon.type_traits;
 
 import cmoon.measures.is_basic_unit;
 

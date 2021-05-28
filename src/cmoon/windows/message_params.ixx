@@ -1,6 +1,6 @@
 module;
 
-#include <windows.h>
+#include <Windows.h>
 #include <windowsx.h>
 #include <Dbt.h>
 #include <CommCtrl.h>

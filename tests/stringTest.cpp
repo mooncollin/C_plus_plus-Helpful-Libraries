@@ -1,14 +1,11 @@
-#include <utility>
-#include <tuple>
-#include <string>
-#include <vector>
-#include <locale>
+import <utility>;
+import <tuple>;
+import <string>;
+import <vector>;
+import <locale>;
 
-#include "cmoon/string.hpp"
-#include "cmoon/test/assert.hpp"
-#include "cmoon/test/runner.hpp"
-#include "cmoon/test/test_case.hpp"
-#include "cmoon/test/test_suite.hpp"
+import cmoon.string;
+import cmoon.test;
 
 using namespace std::literals;
 

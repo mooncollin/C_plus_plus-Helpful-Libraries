@@ -2,6 +2,7 @@ export module cmoon.multiprecision.properties;
 
 import <cstdint>;
 import <type_traits>;
+import <limits>;
 
 import cmoon.math;
 import cmoon.platform;

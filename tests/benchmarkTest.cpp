@@ -1,14 +1,8 @@
-#include <iostream>
-#include <chrono>
+import <iostream>;
+import <chrono>;
 
-#include "cmoon/test/assert.hpp"
-#include "cmoon/test/runner.hpp"
-#include "cmoon/test/test_case.hpp"
-#include "cmoon/test/test_suite.hpp"
-
-#include "cmoon/benchmark/benchmark.hpp"
-#include "cmoon/benchmark/runner.hpp"
-#include "cmoon/benchmark/suite.hpp"
+import cmoon.test;
+import cmoon.benchmark;
 
 class run_result_test : public cmoon::test::test_case
 {

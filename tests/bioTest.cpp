@@ -1,19 +1,29 @@
-#include <iostream>
+import <iostream>;
 
-#include "cmoon/bio/rna.hpp"
-#include "cmoon/bio/dna.hpp"
-#include "cmoon/bio/nucleotide.hpp"
+import cmoon.test;
+import cmoon.bio;
+
+
+
+
+
+
+
+
+
+
 
 int main()
 {
-	cmoon::bio::rna rs {cmoon::bio::rna_nucleotide::guanine, 
-						 cmoon::bio::rna_nucleotide::guanine,
-						 cmoon::bio::rna_nucleotide::adenine,
-						 cmoon::bio::rna_nucleotide::guanine,
-						 cmoon::bio::rna_nucleotide::cytosine,
-						 cmoon::bio::rna_nucleotide::uracil};
+	cmoon::test::test_suite suite;
+	suite.add_test_case<nucleotide_convert_test>();
+	suite.add_test_case<nucleotide_compliment_test>();
+	suite.add_test_case<rna_constructor_test>();
+	suite.add_test_case<dna_constructor_test>();
+	suite.add_test_case<rna_to_dna_test>();
+	suite.add_test_case<dna_to_rna_test>();
 
-	std::cout << rs << '\n';
-	std::cout << rs.to_dna() << '\n';
-	std::cout << rs.to_dna().to_rna() << '\n';
+	cmoon::test::text_test_runner runner{std::cout};
+
+	return !runner.run(suite);
 }

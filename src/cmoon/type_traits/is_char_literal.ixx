@@ -13,6 +13,14 @@ namespace cmoon
 
 	export
 	template<>
+	struct is_char_literal<signed char> : std::true_type {};
+
+	export
+	template<>
+	struct is_char_literal<unsigned char> : std::true_type {};
+
+	export
+	template<>
 	struct is_char_literal<wchar_t> : std::true_type {};
 
 	export
@@ -26,6 +34,34 @@ namespace cmoon
 	export
 	template<>
 	struct is_char_literal<char32_t> : std::true_type {};
+
+	export
+	template<>
+	struct is_char_literal<const char> : std::true_type {};
+
+	export
+	template<>
+	struct is_char_literal<const signed char> : std::true_type {};
+
+	export
+	template<>
+	struct is_char_literal<const unsigned char> : std::true_type {};
+
+	export
+	template<>
+	struct is_char_literal<const wchar_t> : std::true_type {};
+
+	export
+	template<>
+	struct is_char_literal<const char8_t> : std::true_type {};
+
+	export
+	template<>
+	struct is_char_literal<const char16_t> : std::true_type {};
+
+	export
+	template<>
+	struct is_char_literal<const char32_t> : std::true_type {};
 
 	export
 	template<class T>

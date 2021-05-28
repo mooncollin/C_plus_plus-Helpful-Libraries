@@ -1,10 +1,14 @@
 module;
+
 #include <type_traits>
 #include <vector>
 #include <memory>
 #include <concepts>
+#include <string>
+#include <string_view>
 
 export module cmoon.test.test_suite;
+
 import cmoon.test.test_case;
 
 namespace cmoon::test
@@ -16,10 +20,29 @@ namespace cmoon::test
 		using iterator = typename container::iterator;
 
 		public:
+			test_suite(std::string_view name = "")
+				: name_{name} {}
+
+			test_suite(const test_suite&) = delete;
+			test_suite& operator=(const test_suite&) = delete;
+
+			test_suite(test_suite&&) = default;
+			test_suite& operator=(test_suite&&) = default;
+
 			template<std::derived_from<test_case> T, class... Args>
 			void add_test_case(Args&&... args)
 			{
 				cases.push_back(std::make_unique<T>(std::forward<Args>(args)...));
+			}
+
+			std::string& name()
+			{
+				return name_;
+			}
+
+			const std::string& name() const
+			{
+				return name_;
 			}
 
 			void add_test_suite(test_suite&& suite)
@@ -59,6 +82,7 @@ namespace cmoon::test
 				cases.clear();
 			}
 		private:
+			std::string name_;
 			container cases;
 	};
 }

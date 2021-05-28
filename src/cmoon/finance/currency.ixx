@@ -60,7 +60,7 @@ namespace cmoon::finance
 				return num_;
 			}
 
-			[[nodiscard]] friend constexpr bool operator==(const basic_currency& x, const basic_currency y) noexcept
+			[[nodiscard]] friend constexpr bool operator==(const basic_currency& x, const basic_currency& y) noexcept
 			{
 				return x.num_ == y.num_;
 			}

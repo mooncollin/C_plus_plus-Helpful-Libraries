@@ -90,6 +90,6 @@ namespace cmoon::meta
 	template<cmoon::tuple::tuple_type Tuple>
 	[[nodiscard]] auto make_type_list(const extract_tuple_types_t) noexcept
 	{
-		return decltype(make_type_list(std::declval<Tuple>()));
+		return decltype(make_type_list(std::declval<Tuple>())){};
 	}
 }

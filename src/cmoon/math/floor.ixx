@@ -2,19 +2,28 @@ export module cmoon.math.floor;
 
 import <concepts>;
 
+import cmoon.concepts;
+
 namespace cmoon
 {
 	export
-	template<std::integral Rep = int, std::floating_point Float>
-	[[nodiscard]] constexpr Rep floor(const Float& f) noexcept
+	template<std::integral Rep = int, cmoon::arithmetic T>
+	[[nodiscard]] constexpr Rep floor(const T& t) noexcept
 	{
-		const auto val_int = static_cast<Rep>(f);
-
-		if(f >= 0 || f == static_cast<Float>(val_int))
+		if constexpr (std::integral<T>)
 		{
-			return val_int;
+			return t;
 		}
+		else
+		{
+			const auto val_int = static_cast<Rep>(t);
 
-		return val_int - 1;
+			if(t >= 0 || t == static_cast<T>(val_int))
+			{
+				return val_int;
+			}
+
+			return val_int - 1;
+		}
 	}
 }

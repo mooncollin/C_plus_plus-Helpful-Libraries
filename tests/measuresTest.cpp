@@ -1,39 +1,20 @@
-#include <iostream>
-#include <ratio>
-#include <sstream>
+import <iostream>;
+import <ratio>;
+import <sstream>;
+import <format>;
 
-#include "cmoon/format.hpp"
-#include "cmoon/measures/measure.hpp"
-#include "cmoon/measures/distance.hpp"
-#include "cmoon/measures/mass.hpp"
-#include "cmoon/measures/time.hpp"
-#include "cmoon/measures/temperature.hpp"
-#include "cmoon/measures/amount.hpp"
-#include "cmoon/measures/coherent.hpp"
-#include "cmoon/measures/derived/si/coulomb.hpp"
-#include "cmoon/measures/derived/si/hertz.hpp"
-#include "cmoon/measures/derived/si/joule.hpp"
-#include "cmoon/measures/derived/si/newton.hpp"
-#include "cmoon/measures/derived/si/pascal.hpp"
-#include "cmoon/measures/derived/si/watt.hpp"
-#include "cmoon/measures/derived/si/farad.hpp"
-#include "cmoon/measures/derived/si/ohm.hpp"
-#include "cmoon/measures/derived/si/volt.hpp"
-#include "cmoon/measures/derived/si/siemens.hpp"
-#include "cmoon/measures/derived/si/weber.hpp"
-#include "cmoon/measures/derived/si/tesla.hpp"
-#include "cmoon/measures/derived/si/becquerel.hpp"
-#include "cmoon/measures/derived/si/gray.hpp"
-#include "cmoon/measures/derived/si/henry.hpp"
-#include "cmoon/measures/derived/si/katal.hpp"
-#include "cmoon/measures/derived/si/lumen.hpp"
-#include "cmoon/measures/derived/si/lux.hpp"
-#include "cmoon/measures/constants.hpp"
-#include "cmoon/test/test_case.hpp"
-#include "cmoon/test/runner.hpp"
-#include "cmoon/test/assert.hpp"
-#include "cmoon/test/test_suite.hpp"
-#include "cmoon/utility.hpp"
+import cmoon.test;
+import cmoon.utility;
+import cmoon.measures;
+import cmoon.measures.time;
+import cmoon.measures.distance;
+import cmoon.measures.mass;
+import cmoon.measures.temperature;
+import cmoon.measures.amount;
+import cmoon.measures.electric_current;
+import cmoon.measures.luminous;
+import cmoon.measures.coherent;
+import cmoon.measures.derived;
 
 class measures_suffix_test : public cmoon::test::test_case
 {

@@ -1,6 +1,6 @@
 export module cmoon.windows.window_handle;
 
-import <windows.h>;
+import <Windows.h>;
 
 namespace cmoon::windows
 {

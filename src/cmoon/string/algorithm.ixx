@@ -6,6 +6,8 @@ import <ranges>;
 import <string>;
 import <sstream>;
 import <string_view>;
+import <functional>;
+import <algorithm>;
 
 namespace cmoon
 {

@@ -1,5 +1,7 @@
 export module cmoon.math.cot;
 
+import <cmath>;
+
 import cmoon.concepts;
 
 namespace cmoon

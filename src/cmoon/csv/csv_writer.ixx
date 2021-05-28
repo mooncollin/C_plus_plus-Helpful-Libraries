@@ -5,28 +5,31 @@ import <ranges>;
 import <iterator>;
 import <functional>;
 import <type_traits>;
+import <format>;
 
-import cmoon.format;
+import cmoon.string;
+
 import cmoon.csv.dialect;
 
 namespace cmoon::csv
 {
 	export
-	class csv_writer
+	template<class CharT, class Traits = std::char_traits<CharT>>
+	class basic_csv_writer
 	{
 		public:
-			csv_writer(std::ostream& os, const dialect& dialect={})
+			basic_csv_writer(std::basic_ostream<CharT, Traits>& os, const basic_dialect<CharT, Traits>& dialect={})
 				: os{os}, dialect_{dialect} {}
 
-			csv_writer(std::ostream& os, dialect&& dialect)
+			basic_csv_writer(std::basic_ostream<CharT, Traits>& os, basic_dialect<CharT, Traits>&& dialect)
 				: os{os}, dialect_{std::move(dialect)} {}
 
-			dialect& get_dialect()
+			basic_dialect<CharT, Traits>& get_dialect()
 			{
 				return dialect_;
 			}
 
-			const dialect& get_dialect() const
+			const basic_dialect<CharT, Traits>& get_dialect() const
 			{
 				return dialect_;
 			}
@@ -59,8 +62,8 @@ namespace cmoon::csv
 				os.get() << dialect_.line_terminator;
 			}
 		private:
-			std::reference_wrapper<std::ostream> os;
-			dialect dialect_;
+			std::reference_wrapper<std::basic_ostream<CharT, Traits>> os;
+			basic_dialect<CharT, Traits> dialect_;
 
 			template<class Arg>
 			void write_variadic_element(Arg&& arg)
@@ -83,7 +86,7 @@ namespace cmoon::csv
 				{
 					case dialect::quoting_option::QUOTE_MINIMAL:
 						{
-							const auto str = cmoon::format("{}", element);
+							const auto str = cmoon::to_string(element);
 							const auto needs_quotes = str.find(dialect_.delimiter) != std::string::npos;
 							if (needs_quotes)
 							{
@@ -109,4 +112,10 @@ namespace cmoon::csv
 				}
 			}
 	};
+
+	export
+	using csv_writer = basic_csv_writer<char>;
+
+	export
+	using wcsv_writer = basic_csv_writer<wchar_t>;
 }

@@ -1,6 +1,6 @@
 module;
 
-#include "cmoon/string/literals.hpp";
+#include "cmoon/string/literals.hpp"
 
 export module cmoon.measures.metric_system;
 

@@ -3,7 +3,7 @@ module;
 #include <sysinfoapi.h>
 #include <winbase.h>
 #include <lmcons.h>
-#include <windows.h>
+#include <Windows.h>
 
 #ifdef max
 #undef max

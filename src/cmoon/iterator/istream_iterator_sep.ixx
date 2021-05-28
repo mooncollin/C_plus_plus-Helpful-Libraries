@@ -7,20 +7,23 @@ import <memory>;
 import <concepts>;
 
 import cmoon.string;
+import cmoon.iostream.read;
 
 namespace cmoon
 {
     export
-	template<class T = std::string>
-    class istream_iterator_sep : public std::istream_iterator<T>
+	template<class T, class CharT = char, class Traits = std::char_traits<CharT>>
+    class istream_iterator_sep : public std::istream_iterator<T, CharT, Traits>
     {
-        using parent = std::istream_iterator<T>;
+        using parent = std::istream_iterator<T, CharT, Traits>;
         static constexpr auto end_of_input = nullptr;
 
         public:
-			istream_iterator_sep() noexcept = default;
-            explicit istream_iterator_sep(std::istream& input, std::string_view sep = " ") noexcept
-				: input{std::addressof(input)}, sep_{sep} {}
+			istream_iterator_sep(std::default_sentinel_t = {}) noexcept
+                : input{end_of_input}, has_processed{false} {}
+
+            explicit istream_iterator_sep(std::basic_istream<CharT, Traits>& input, std::basic_string_view<CharT, Traits> sep = " ") noexcept
+				: input{std::addressof(input)}, sep_{sep}, has_processed{false} {}
 
             istream_iterator_sep end() const noexcept
             {
@@ -34,7 +37,7 @@ namespace cmoon
 
             typename parent::reference operator*()
             {
-				if (!have_processed)
+				if (!has_processed)
 				{
 					next_input();
 				}
@@ -44,7 +47,7 @@ namespace cmoon
 
             typename parent::pointer operator->()
             {
-				if (!have_processed)
+				if (!has_processed)
 				{
 					next_input();
 				}
@@ -66,35 +69,36 @@ namespace cmoon
                 return l;
             }
 
-			void seperator(std::string_view sep)
+			void separator(std::basic_string_view<CharT, Traits> sep)
 			{
 				sep_ = sep;
 			}
 
-			const std::string& seperator() const noexcept
+			const std::string& separator() const noexcept
 			{
 				return sep_;
 			}
 
-            bool operator==(const istream_iterator_sep& rhs) const noexcept
+            [[nodiscard]] friend bool operator==(const istream_iterator_sep& lhs, const istream_iterator_sep& rhs) noexcept
             {
-                return input == rhs.input;
+                return lhs.input == rhs.input;
             }
 
-            bool operator!=(const istream_iterator_sep& rhs) const noexcept
+            [[nodiscard]] friend bool operator!=(const istream_iterator_sep& lhs, const istream_iterator_sep& rhs) noexcept = default;
+            [[nodiscard]] friend bool operator==(const istream_iterator_sep& lhs, std::default_sentinel_t)
             {
-                return !(*this == rhs);
+                return lhs.input == end_of_input;
             }
 
         private:
-            std::istream* input {end_of_input};
+            std::basic_istream<CharT, Traits>* input {end_of_input};
 			std::string sep_;
-			bool have_processed {false};
+			bool has_processed;
             T current;
 
             void next_input()
             {
-				have_processed = true;
+				has_processed = true;
                 if(input != end_of_input)
                 {
                     if(input->fail() || input->eof())
@@ -105,15 +109,13 @@ namespace cmoon
                     {
                         if constexpr(std::same_as<T, std::string>)
                         {
-							current.clear();
-                            cmoon::getline(*input, current, sep_);
+                            cmoon::read_until(*input, current, std::basic_string_view<CharT, Traits>{sep_});
                         }
                         else
                         {
                             std::string str;
-                            cmoon::getline(*input, str, sep_);
-
-                            current = cmoon::from_string<T>(str);
+                            cmoon::read_until(*input, str, std::basic_string_view<CharT, Traits>{sep_});
+                            cmoon::from_string<T>(std::basic_string_view<CharT, Traits>{str}, current);
                         }
                     }
                 }

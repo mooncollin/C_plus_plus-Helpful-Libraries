@@ -1,3 +1,7 @@
+module;
+
+#include <Windows.h>
+
 export module cmoon.windows.gui.icon_size;
 
 namespace cmoon::windows

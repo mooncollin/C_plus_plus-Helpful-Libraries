@@ -1,6 +1,6 @@
 module;
 
-#include <WinUser.h>
+#include <Windows.h>
 
 export module cmoon.windows.gui.size_request;
 

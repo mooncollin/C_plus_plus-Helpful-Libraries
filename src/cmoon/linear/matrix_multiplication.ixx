@@ -1,6 +1,6 @@
 module;
 
-#include "cmoon/linear/matrix_definitions.hpp";
+#include "cmoon/linear/matrix_definitions.hpp"
 
 export module cmoon.linear.matrix_multiplication;
 

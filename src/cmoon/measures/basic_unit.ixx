@@ -1,21 +1,27 @@
 export module cmoon.measures.basic_unit;
 
-import <cstddint>;
+import <cstdint>;
 import <type_traits>;
 import <numeric>;
 import <ratio>;
 import <concepts>;
 import <iostream>;
 import <sstream>;
+import <format>;
 
 import cmoon.ratio;
-import cmoon.format;
-import cmoon.format.base_formatter;
-import cmoon.format.write_string_view;
+import cmoon.math;
 
 import cmoon.measures.dimension_type;
 import cmoon.measures.is_basic_unit;
 import cmoon.measures.suffix;
+
+namespace cmoon::measures
+{
+	export
+	template<class Rep, cmoon::ratio_type Ratio, class UnitValues, class System, dimension_type Dimension>
+	class basic_unit;
+}
 
 namespace std
 {
@@ -24,12 +30,12 @@ namespace std
 	struct common_type<cmoon::measures::basic_unit<Rep1, Ratio1, UnitValues, System, Dimension>, cmoon::measures::basic_unit<Rep2, Ratio2, UnitValues, System, Dimension>>
 	{
 		private:
-            using num_ = std::gcd(Ratio1::num, Ratio2::num);
-            using den_ = std::gcd(Ratio1::den, Ratio2::den);
+			static constexpr auto num_ {std::gcd(Ratio1::num, Ratio2::num)};
+            static constexpr auto den_ {std::gcd(Ratio1::den, Ratio2::den)};
             using cr_  = std::common_type_t<Rep1, Rep2>;
-            using r_   = std::ratio<num_::value, (Ratio1::den / den_::value) * Ratio2::den>;
+            using r_   = std::ratio<num_, (Ratio1::den / den_) * Ratio2::den>;
         public:
-            using type = cmoon::measures::basic_unit<cr_, r_, UnitValues, System>;
+            using type = cmoon::measures::basic_unit<cr_, r_, UnitValues, System, Dimension>;
 	};
 }
 
@@ -205,7 +211,7 @@ namespace cmoon::measures
 				using common_type = std::common_type_t<lhs_t, rhs_t>;
 
 				const auto amount = std::same_as<lhs_t, rhs_t> ? lhs.count() * rhs.count()
-																	: details::unit_cast<common_type>(lhs).count() * details::unit_cast<common_type>(rhs).count();
+																	: unit_cast_impl<common_type>(lhs).count() * unit_cast_impl<common_type>(rhs).count();
 
 				constexpr auto result_dimension = Dimension + Dimension2;
 				if constexpr (result_dimension == 0)
@@ -227,7 +233,7 @@ namespace cmoon::measures
 				using common_type = std::common_type_t<lhs_t, rhs_t>;
 
 				const auto amount = std::is_same_v<lhs_t, rhs_t> ? lhs.count() / rhs.count()
-					: details::unit_cast<common_type>(lhs).count() / details::unit_cast<common_type>(rhs).count();
+					: unit_cast_impl<common_type>(lhs).count() / unit_cast_impl<common_type>(rhs).count();
 
 				constexpr auto result_dimension = Dimension - Dimension2;
 				if constexpr (result_dimension == 0)
@@ -406,20 +412,23 @@ namespace cmoon::measures
     }
 }
 
-namespace cmoon
+namespace std
 {
 	export
-	template<cmoon::measures::basic_unit_type T, typename CharT>
-	struct formatter<T, CharT> : public base_formatter<T, CharT>
+	template<cmoon::measures::basic_unit_type T>
+	struct formatter<T> : public std::formatter<std::string>
 	{
-		template<class OutputIt>
-		auto format(const T& val, basic_format_context<OutputIt, CharT>& ctx)
+		private:
+			using base = std::formatter<std::string>;
+		public:
+		template<class FormatContext>
+		auto format(const T& val, FormatContext& ctx)
 		{
-			std::basic_stringstream<CharT> ss;
+			std::stringstream ss;
 			ss.imbue(ctx.locale());
 			ss << val;
 			const auto str = ss.str();
-			return write_string_view(std::basic_string_view<CharT>{str.data(), str.size()}, ctx, this->parser);
+			return base::format(str, ctx);
 		}
 	};
 }

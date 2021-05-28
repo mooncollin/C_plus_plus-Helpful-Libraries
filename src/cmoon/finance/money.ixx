@@ -3,7 +3,7 @@ export module cmoon.finance.money;
 import <cstdlib>;
 import <stdexcept>;
 
-import cmoon.finance.decimal
+import cmoon.finance.decimal;
 import cmoon.finance.currency;
 
 namespace cmoon::finance

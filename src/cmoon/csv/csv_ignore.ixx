@@ -1,4 +1,4 @@
-export module csv_ignore;
+export module cmoon.csv.csv_ignore;
 
 namespace cmoon::csv
 {

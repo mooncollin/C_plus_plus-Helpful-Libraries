@@ -1,6 +1,6 @@
 module;
 
-#include <WinUser.h>
+#include <Windows.h>
 
 export module cmoon.windows.gui.scroll_bar_type;
 

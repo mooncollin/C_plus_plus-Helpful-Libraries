@@ -9,6 +9,7 @@ import <numbers>;
 import <iostream>;
 import <iomanip>;
 import <concepts>;
+import <numeric>;
 
 import cmoon.concepts;
 import cmoon.math;
@@ -16,6 +17,8 @@ import cmoon.math;
 namespace cmoon::finance
 {
 	using decimal_storage_t = std::intmax_t;
+
+	export
 	using round_conversion_t = long double;
 
 	template<std::size_t Precision>
@@ -33,7 +36,6 @@ namespace cmoon::finance
 	template<std::size_t P>
 	constexpr auto decimal_factor_v = decimal_factor<P>::value;
 
-	export
 	template<cmoon::arithmetic T>
 	[[nodiscard]] constexpr decimal_storage_t truncate(const T& value) noexcept
 	{
@@ -369,6 +371,13 @@ namespace cmoon::finance
 				return *this;
 			}
 
+			template<std::floating_point N>
+			constexpr decimal& operator+=(const N& n) noexcept
+			{
+				*this += decimal{n};
+				return *this;
+			}
+
 			template<std::size_t Precision2>
 			friend constexpr auto operator+(const decimal<Precision, RoundPolicy>& lhs, const decimal<Precision2, RoundPolicy>& rhs) noexcept
 			{
@@ -386,7 +395,7 @@ namespace cmoon::finance
 				}
 			}
 
-			template<std::integral N>
+			template<cmoon::arithmetic N>
 			friend constexpr auto operator+(const decimal<Precision, RoundPolicy>& lhs, const N& rhs) noexcept
 			{
 				auto result = lhs;
@@ -395,7 +404,7 @@ namespace cmoon::finance
 			}
 
 
-			template<std::integral N>
+			template<cmoon::arithmetic N>
 			friend constexpr auto operator+(const N& lhs, const decimal<Precision, RoundPolicy>& rhs) noexcept
 			{
 				auto result = rhs;
@@ -418,6 +427,13 @@ namespace cmoon::finance
 				return *this;
 			}
 
+			template<std::floating_point N>
+			constexpr decimal& operator-=(const N& n) noexcept
+			{
+				*this -= decimal{n};
+				return *this;
+			}
+
 			template<std::size_t Precision2>
 			friend constexpr auto operator-(const decimal<Precision, RoundPolicy>& lhs, const decimal<Precision2, RoundPolicy>& rhs) noexcept
 			{
@@ -435,7 +451,7 @@ namespace cmoon::finance
 				}
 			}
 
-			template<std::integral N>
+			template<cmoon::arithmetic N>
 			friend constexpr auto operator-(const decimal<Precision, RoundPolicy>& lhs, const N& rhs) noexcept
 			{
 				auto result = lhs;
@@ -444,7 +460,7 @@ namespace cmoon::finance
 			}
 
 
-			template<std::integral N>
+			template<cmoon::arithmetic N>
 			friend constexpr auto operator-(const N& lhs, const decimal<Precision, RoundPolicy>& rhs) noexcept
 			{
 				auto result = decimal{lhs};
@@ -471,12 +487,21 @@ namespace cmoon::finance
 				amount_ *= rhs;
 				return *this;
 			}
+
 				
 			template<std::size_t OtherPrecision>
 				requires(OtherPrecision <= Precision)
 			constexpr decimal& operator*=(const decimal<OtherPrecision, RoundPolicy>& rhs) noexcept
 			{
 				amount_ = mult_div(amount_, rhs.unbiased() * decimal_factor_v<Precision - OtherPrecision>, precision_factor());
+				return *this;
+			}
+
+			template<std::floating_point T>
+				requires(std::convertible_to<T, decimal_storage_t>)
+			constexpr decimal& operator*=(const T& rhs) noexcept
+			{
+				*this *= decimal{rhs};
 				return *this;
 			}
 
@@ -497,7 +522,7 @@ namespace cmoon::finance
 				}
 			}
 
-			template<std::integral T>
+			template<cmoon::arithmetic T>
 				requires(std::convertible_to<T, decimal_storage_t>)
 			friend constexpr decimal operator*(const decimal& lhs, const T& rhs) noexcept
 			{
@@ -506,7 +531,7 @@ namespace cmoon::finance
 				return result;
 			}
 
-			template<std::integral T>
+			template<cmoon::arithmetic T>
 				requires(std::convertible_to<T, decimal_storage_t>)
 			friend constexpr decimal operator*(const T& lhs, const decimal& rhs) noexcept
 			{
@@ -539,6 +564,14 @@ namespace cmoon::finance
 				return *this;
 			}
 
+			template<std::floating_point T>
+				requires(std::convertible_to<T, decimal_storage_t>)
+			constexpr decimal& operator/=(const T& rhs) noexcept
+			{
+				*this /= decimal{rhs};
+				return *this;
+			}
+
 			template<std::size_t Precision2>
 			friend constexpr decimal operator/(const decimal<Precision, RoundPolicy>& lhs, const decimal<Precision2, RoundPolicy>& rhs) noexcept
 			{
@@ -556,7 +589,7 @@ namespace cmoon::finance
 				}
 			}
 
-			template<std::integral T>
+			template<cmoon::arithmetic T>
 				requires(std::convertible_to<T, decimal_storage_t>)
 			friend constexpr decimal operator/(const decimal& lhs, const T& rhs) noexcept
 			{
@@ -565,7 +598,7 @@ namespace cmoon::finance
 				return result;
 			}
 
-			template<std::integral T>
+			template<cmoon::arithmetic T>
 				requires(std::convertible_to<T, decimal_storage_t>)
 			friend constexpr decimal operator/(const T& lhs, const decimal& rhs) noexcept
 			{
@@ -619,11 +652,18 @@ namespace cmoon::finance
 			decimal_storage_t amount_ {0};
 
 			template<std::floating_point F>
-			[[nodiscard]] static constexpr auto fp_to_storage(const F& value) noexcept
+			[[nodiscard]] static constexpr decimal_storage_t fp_to_storage(const F& value) noexcept
 			{
-				const auto int_part = truncate(value);
-				const F fractional_part = value - int_part;
-				return round_policy::round(static_cast<F>(precision_factor()) * fractional_part) + (precision_factor() * int_part);
+				if constexpr (Precision == 0)
+				{
+					return 0;
+				}
+				else
+				{
+					const auto int_part = truncate(value);
+					const F fractional_part = value - int_part;
+					return round_policy::round(static_cast<F>(precision_factor()) * fractional_part) + (precision_factor() * int_part);
+				}
 			}
 
 			[[nodiscard]] static constexpr decimal_storage_t mult_div(const decimal_storage_t a, const decimal_storage_t b, decimal_storage_t divisor) noexcept

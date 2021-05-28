@@ -1,3 +1,4 @@
 export module cmoon.algorithm;
 export import cmoon.algorithm.repeat;
-export import cmoon.algorithm.sequence_compare;
+export import cmoon.algorithm.min;
+export import cmoon.algorithm.max;

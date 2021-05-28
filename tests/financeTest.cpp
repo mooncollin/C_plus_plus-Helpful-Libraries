@@ -1,14 +1,7 @@
-#include <iostream>
+import <iostream>;
 
-#include "cmoon/test/test_case.hpp"
-#include "cmoon/test/assert.hpp"
-#include "cmoon/test/test_suite.hpp"
-#include "cmoon/test/runner.hpp"
-#include "cmoon/finance/formulas.hpp"
-#include "cmoon/finance/time.hpp"
-#include "cmoon/finance/decimal.hpp"
-#include "cmoon/measures/time.hpp"
-#include "cmoon/finance/money.hpp"
+import cmoon.test;
+import cmoon.finance;
 
 class decimal_zero_constructor_test : public cmoon::test::test_case
 {
@@ -306,13 +299,8 @@ class simple_interest_test : public cmoon::test::test_case
 
 			constexpr auto principal2 = cmoon::finance::decimal<6>{50000.25};
 			constexpr auto rate2 = cmoon::finance::decimal<6>{0.09};
-			constexpr auto months1 = cmoon::measures::months{48};
+			constexpr auto months1 = std::chrono::months{48};
 			constexpr auto goal2 = cmoon::finance::decimal<6>{18000.09};
-
-			constexpr auto principal3 = cmoon::finance::decimal<6>{50.77};
-			constexpr auto rate3 = cmoon::finance::decimal<6>{0.09};
-			constexpr auto days1 = cmoon::measures::basic_days<double>{90};
-			constexpr auto goal3 = cmoon::finance::decimal<6>{1.126675};
 
 			constexpr auto principal4 = cmoon::finance::decimal<6>{100};
 			constexpr auto rate4 = cmoon::finance::decimal<6>{.06};
@@ -324,9 +312,6 @@ class simple_interest_test : public cmoon::test::test_case
 
 			cmoon::test::assert_equal(cmoon::finance::simple_interest(principal2, rate2, months1), goal2);
 			static_assert(cmoon::finance::simple_interest(principal2, rate2, months1) == goal2);
-
-			cmoon::test::assert_equal(cmoon::finance::simple_interest(principal3, rate3, days1), goal3);
-			static_assert(cmoon::finance::simple_interest(principal3, rate3, days1) == goal3);
 
 			cmoon::test::assert_equal(cmoon::finance::simple_interest(principal4, rate4, years2), goal4);
 			constexpr auto t = cmoon::finance::simple_interest(principal4, rate4, years2);
@@ -344,20 +329,20 @@ class compound_interest_test : public cmoon::test::test_case
 		{
 			constexpr auto principal1 = cmoon::finance::decimal<6>{4000};
 			constexpr auto rate1 = cmoon::finance::decimal<6>{.07};
-			constexpr auto years1 = cmoon::measures::years{5};
-			constexpr auto days1 = cmoon::measures::days{1825};
+			constexpr auto years1 = std::chrono::years{5};
+			constexpr auto days1 = std::chrono::days{1825};
 			constexpr auto num_compounds1 = cmoon::finance::compound_yearly<6>;
 			constexpr auto goal1 = cmoon::finance::decimal<6>{1610.208};
 
 			constexpr auto principal2 = cmoon::finance::decimal<6>{1000};
 			constexpr auto rate2 = cmoon::finance::decimal<6>{.09};
-			constexpr auto months1 = cmoon::measures::months{18};
+			constexpr auto months1 = std::chrono::months{18};
 			constexpr auto num_compounds2 = cmoon::finance::compound_monthly<6>;
 			constexpr auto goal2 = cmoon::finance::decimal<6>{143.960};
 
 			constexpr auto principal3 = cmoon::finance::decimal<6>{1000};
 			constexpr auto rate3 = cmoon::finance::decimal<6>{.05};
-			constexpr auto years2 = cmoon::measures::years{5};
+			constexpr auto years2 = std::chrono::years{5};
 			constexpr auto goal3 = cmoon::finance::decimal<6>{284.025};
 
 			cmoon::test::assert_equal(cmoon::finance::compound_interest(principal1, rate1, num_compounds1, years1), goal1);

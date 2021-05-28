@@ -5,3 +5,4 @@ export import cmoon.test.test_case;
 export import cmoon.test.test_result;
 export import cmoon.test.test_suite;
 export import cmoon.test.runner;
+export import cmoon.test.text_test_runner;

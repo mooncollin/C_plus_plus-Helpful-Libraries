@@ -14,7 +14,7 @@ namespace cmoon::measures
 	constexpr auto is_numerator_unit_v = is_numerator_unit<Unit>::value;
 
 	template<basic_unit_type Unit>
-	struct is_denominator_unit : std::bool_constant<(Unit::dimension < static_cast<dimension_type>(0)))> {};
+	struct is_denominator_unit : std::bool_constant<(Unit::dimension < static_cast<dimension_type>(0))> {};
 
 	template<basic_unit_type Unit>
 	constexpr auto is_denominator_unit_v = is_denominator_unit<Unit>::value;

@@ -1,3 +1,7 @@
+module;
+
+#include <Windows.h>
+
 export module cmoon.windows.input.scroll_bar_command;
 
 namespace cmoon::windows

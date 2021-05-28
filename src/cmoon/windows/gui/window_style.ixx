@@ -1,7 +1,6 @@
 module;
 
 #include <Windows.h>
-#include <WinUser.h>
 
 export module cmoon.windows.gui.window_style;
 

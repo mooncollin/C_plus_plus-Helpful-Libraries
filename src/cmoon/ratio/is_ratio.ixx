@@ -1,8 +1,8 @@
 export module cmoon.ratio.is_ratio;
 
+import <cstdint>;
 import <ratio>;
 import <type_traits>;
-import <cstdint>;
 
 namespace cmoon
 {

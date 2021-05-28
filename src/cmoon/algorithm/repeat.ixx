@@ -2,6 +2,7 @@ export module cmoon.algorithm.repeat;
 
 import <concepts>;
 import <cstdint>;
+import <functional>;
 
 namespace cmoon
 {
@@ -9,6 +10,6 @@ namespace cmoon
 	template<std::invocable<> F>
 	constexpr void repeat(std::uintmax_t n, F&& f) noexcept(noexcept(f()))
 	{
-		while(n--) f();
+		while(n--) std::invoke(f);
 	}
 }

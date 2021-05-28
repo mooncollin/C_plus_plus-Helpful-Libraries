@@ -3,6 +3,10 @@ export module cmoon.concepts;
 import <type_traits>;
 import <concepts>;
 import <cstddef>;
+import <iterator>;
+import <memory>;
+import <format>;
+import <string>;
 
 import cmoon.type_traits;
 
@@ -23,7 +27,8 @@ namespace cmoon
 	
 	export
 	template<class F, class Result>
-	concept unary_operator = supplier<F, Result, Result>;
+	concept unary_operator = std::invocable<F, Result> &&
+							 std::same_as<std::remove_reference_t<std::invoke_result_t<F, Result>>, Result>;
 
 	export
 	template<class F, class... Args>
@@ -37,6 +42,14 @@ namespace cmoon
 	export
 	template<class T>
 	concept arithmetic = std::is_arithmetic_v<T>;
+
+	export
+	template<class T>
+	concept signed_arithmetic = std::is_signed_v<T>;
+
+	export
+	template<class T>
+	concept unsigned_arithmetic = std::is_unsigned_v<T>;
 
 	export
 	template<class T>
@@ -104,4 +117,16 @@ namespace cmoon
 		{ t != r } noexcept;
 		{ r != t } noexcept;
 	};
+
+	export
+	template<class T, class CharT = char, class Out = std::back_insert_iterator<std::basic_string<CharT>>>
+	concept formattable = 
+		requires(const T& t, std::basic_format_context<Out, CharT>& ctx, std::formatter<T, CharT> f)
+	{
+		f.format(t, ctx);
+	};
+
+	export
+	template<class Type, template<typename...> class Template>
+	concept specialization_of = is_specialization_v<Type, Template>;
 }

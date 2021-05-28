@@ -1,6 +1,6 @@
 module;
 
-#include "cmoon/string/literals.hpp";
+#include "cmoon/string/literals.hpp"
 
 export module cmoon.measures.basic_derived_unit;
 
@@ -9,14 +9,13 @@ import <concepts>;
 import <ratio>;
 import <type_traits>;
 import <iostream>;
+import <format>;
+import <string>;
 
 import cmoon.ratio;
 import cmoon.math;
 import cmoon.string;
 import cmoon.meta;
-import cmoon.format;
-import cmoon.format.base_formatter;
-import cmoon.format.write_string_view;
 
 import cmoon.measures.is_basic_derived_unit;
 import cmoon.measures.basic_unit;
@@ -507,20 +506,22 @@ namespace cmoon::measures
 	}
 }
 
-namespace cmoon
+namespace std
 {
 	export
-	template<cmoon::measures::basic_derived_unit_type T, typename CharT>
-	struct formatter<T, CharT> : public base_formatter<T, CharT>
+	template<cmoon::measures::basic_derived_unit_type T>
+	struct formatter<T> : public std::formatter<std::string>
 	{
-		template<class OutputIt>
-		auto format(const T& val, basic_format_context<OutputIt, CharT>& ctx)
-		{
-			std::basic_stringstream<CharT> ss;
-			ss.imbue(ctx.locale());
-			ss << val;
-			const auto str = ss.str();
-			return write_string_view(std::basic_string_view<CharT>{str.data(), str.size()}, ctx, this->parser);
-		}
+		private:
+			using base = std::formatter<std::string>;
+		public:
+			template<class FormatContext>
+			auto format(const T& val, FormatContext& ctx)
+			{
+				std::stringstream ss;
+				ss.imbue(ctx.locale());
+				ss << val;
+				return base::format(ss.str(), ctx);
+			}
 	};
 }

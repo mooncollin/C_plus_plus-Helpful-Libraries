@@ -1,3 +1,5 @@
+import <iostream>;
+
 import cmoon.test;
 import cmoon.math;
 
@@ -163,7 +165,231 @@ class pow_test : public cmoon::test::test_case
 
 		void operator()() override
 		{
+			cmoon::test::assert_equal(cmoon::pow(2, 0), 1);
+			cmoon::test::assert_equal(cmoon::pow(2, 1), 2);
+			cmoon::test::assert_equal(cmoon::pow(2, 2), 4);
+			cmoon::test::assert_equal(cmoon::pow(2, 3), 8);
+			cmoon::test::assert_equal(cmoon::pow(34, 3), 39304);
+			cmoon::test::assert_equal(cmoon::pow(9, 5), 59049);
+			cmoon::test::assert_almost_equal(cmoon::pow(1.5, 5), 7.59375, 0.000001);
+			cmoon::test::assert_almost_equal(cmoon::pow(9, 0.5), 3.0, 0.01);
 
+			static_assert(cmoon::pow(2, 0) == 1);
+			static_assert(cmoon::pow(2, 1) == 2);
+			static_assert(cmoon::pow(2, 2) == 4);
+			static_assert(cmoon::pow(2, 3) == 8);
+			static_assert(cmoon::pow(34, 3) == 39304);
+			static_assert(cmoon::pow(9, 5) == 59049);
+			static_assert(cmoon::abs(cmoon::pow(1.5, 5) - 7.59375) <= 0.000001);
+		}
+};
+
+class static_pow_test : public cmoon::test::test_case
+{
+	public:
+		static_pow_test()
+			: cmoon::test::test_case{"static_pow_test"} {}
+
+		void operator()() override
+		{
+			cmoon::test::assert_equal(cmoon::static_pow<0>(2), 1);
+			cmoon::test::assert_equal(cmoon::static_pow<1>(2), 2);
+			cmoon::test::assert_equal(cmoon::static_pow<2>(2), 4);
+			cmoon::test::assert_equal(cmoon::static_pow<3>(2), 8);
+			cmoon::test::assert_equal(cmoon::static_pow<3>(34), 39304);
+			cmoon::test::assert_equal(cmoon::static_pow<5>(9), 59049);
+
+			static_assert(cmoon::static_pow<0>(2) == 1);
+			static_assert(cmoon::static_pow<1>(2) == 2);
+			static_assert(cmoon::static_pow<2>(2) == 4);
+			static_assert(cmoon::static_pow<3>(2) == 8);
+			static_assert(cmoon::static_pow<3>(34) == 39304);
+			static_assert(cmoon::static_pow<5>(9) == 59049);
+		}
+};
+
+class abs_test : public cmoon::test::test_case
+{
+	public:
+		abs_test()
+			: cmoon::test::test_case{"abs_test"} {}
+
+		void operator()() override
+		{
+			cmoon::test::assert_equal(cmoon::abs(1), 1);
+			cmoon::test::assert_equal(cmoon::abs(2), 2);
+			cmoon::test::assert_equal(cmoon::abs(3), 3);
+			cmoon::test::assert_equal(cmoon::abs(4), 4);
+			cmoon::test::assert_equal(cmoon::abs(5), 5);
+			cmoon::test::assert_equal(cmoon::abs(6), 6);
+			cmoon::test::assert_equal(cmoon::abs(7), 7);
+			cmoon::test::assert_equal(cmoon::abs(8), 8);
+			cmoon::test::assert_equal(cmoon::abs(9), 9);
+			cmoon::test::assert_equal(cmoon::abs(10), 10);
+
+			cmoon::test::assert_equal(cmoon::abs(-1), 1);
+			cmoon::test::assert_equal(cmoon::abs(-2), 2);
+			cmoon::test::assert_equal(cmoon::abs(-3), 3);
+			cmoon::test::assert_equal(cmoon::abs(-4), 4);
+			cmoon::test::assert_equal(cmoon::abs(-5), 5);
+			cmoon::test::assert_equal(cmoon::abs(-6), 6);
+			cmoon::test::assert_equal(cmoon::abs(-7), 7);
+			cmoon::test::assert_equal(cmoon::abs(-8), 8);
+			cmoon::test::assert_equal(cmoon::abs(-9), 9);
+			cmoon::test::assert_equal(cmoon::abs(-10), 10);
+
+			cmoon::test::assert_equal(cmoon::abs(1.0), 1.0);
+			cmoon::test::assert_equal(cmoon::abs(2.0), 2.0);
+			cmoon::test::assert_equal(cmoon::abs(3.0), 3.0);
+			cmoon::test::assert_equal(cmoon::abs(4.0), 4.0);
+			cmoon::test::assert_equal(cmoon::abs(5.0), 5.0);
+			cmoon::test::assert_equal(cmoon::abs(6.0), 6.0);
+			cmoon::test::assert_equal(cmoon::abs(7.0), 7.0);
+			cmoon::test::assert_equal(cmoon::abs(8.0), 8.0);
+			cmoon::test::assert_equal(cmoon::abs(9.0), 9.0);
+			cmoon::test::assert_equal(cmoon::abs(10.0), 10.0);
+
+			cmoon::test::assert_equal(cmoon::abs(-1.0), 1.0);
+			cmoon::test::assert_equal(cmoon::abs(-2.0), 2.0);
+			cmoon::test::assert_equal(cmoon::abs(-3.0), 3.0);
+			cmoon::test::assert_equal(cmoon::abs(-4.0), 4.0);
+			cmoon::test::assert_equal(cmoon::abs(-5.0), 5.0);
+			cmoon::test::assert_equal(cmoon::abs(-6.0), 6.0);
+			cmoon::test::assert_equal(cmoon::abs(-7.0), 7.0);
+			cmoon::test::assert_equal(cmoon::abs(-8.0), 8.0);
+			cmoon::test::assert_equal(cmoon::abs(-9.0), 9.0);
+			cmoon::test::assert_equal(cmoon::abs(-10.0), 10.0);
+
+			static_assert(cmoon::abs(1) == 1);
+			static_assert(cmoon::abs(2) == 2);
+			static_assert(cmoon::abs(3) == 3);
+			static_assert(cmoon::abs(4) == 4);
+			static_assert(cmoon::abs(5) == 5);
+			static_assert(cmoon::abs(6) == 6);
+			static_assert(cmoon::abs(7) == 7);
+			static_assert(cmoon::abs(8) == 8);
+			static_assert(cmoon::abs(9) == 9);
+			static_assert(cmoon::abs(10) == 10);
+
+			static_assert(cmoon::abs(-1) == 1);
+			static_assert(cmoon::abs(-2) == 2);
+			static_assert(cmoon::abs(-3) == 3);
+			static_assert(cmoon::abs(-4) == 4);
+			static_assert(cmoon::abs(-5) == 5);
+			static_assert(cmoon::abs(-6) == 6);
+			static_assert(cmoon::abs(-7) == 7);
+			static_assert(cmoon::abs(-8) == 8);
+			static_assert(cmoon::abs(-9) == 9);
+			static_assert(cmoon::abs(-10) == 10);
+
+			static_assert(cmoon::abs(1.0) == 1.0);
+			static_assert(cmoon::abs(2.0) == 2.0);
+			static_assert(cmoon::abs(3.0) == 3.0);
+			static_assert(cmoon::abs(4.0) == 4.0);
+			static_assert(cmoon::abs(5.0) == 5.0);
+			static_assert(cmoon::abs(6.0) == 6.0);
+			static_assert(cmoon::abs(7.0) == 7.0);
+			static_assert(cmoon::abs(8.0) == 8.0);
+			static_assert(cmoon::abs(9.0) == 9.0);
+			static_assert(cmoon::abs(10.0) == 10.0);
+
+			static_assert(cmoon::abs(-1.0) == 1.0);
+			static_assert(cmoon::abs(-2.0) == 2.0);
+			static_assert(cmoon::abs(-3.0) == 3.0);
+			static_assert(cmoon::abs(-4.0) == 4.0);
+			static_assert(cmoon::abs(-5.0) == 5.0);
+			static_assert(cmoon::abs(-6.0) == 6.0);
+			static_assert(cmoon::abs(-7.0) == 7.0);
+			static_assert(cmoon::abs(-8.0) == 8.0);
+			static_assert(cmoon::abs(-9.0) == 9.0);
+			static_assert(cmoon::abs(-10.0) == 10.0);
+		}
+};
+
+class ceil_test : public cmoon::test::test_case
+{
+	public:
+		ceil_test()
+			: cmoon::test::test_case{"ceil_test"} {}
+
+		void operator()() override
+		{
+			cmoon::test::assert_equal(cmoon::ceil(5), 5);
+			cmoon::test::assert_equal(cmoon::ceil(5.6), 6);
+			cmoon::test::assert_equal(cmoon::ceil(-1), -1);
+			cmoon::test::assert_equal(cmoon::ceil(-1.2), -1);
+
+			static_assert(cmoon::ceil(5) == 5);
+			static_assert(cmoon::ceil(5.6) == 6);
+			static_assert(cmoon::ceil(-1) == -1);
+			static_assert(cmoon::ceil(-1.2) == -1);
+		}
+};
+
+class floor_test : public cmoon::test::test_case
+{
+	public:
+		floor_test()
+			: cmoon::test::test_case{"floor_test"} {}
+
+		void operator()()
+		{
+			cmoon::test::assert_equal(cmoon::floor(5), 5);
+			cmoon::test::assert_equal(cmoon::floor(5.6), 5);
+			cmoon::test::assert_equal(cmoon::floor(-1), -1);
+			cmoon::test::assert_equal(cmoon::floor(-1.2), -2);
+
+			static_assert(cmoon::floor(5) == 5);
+			static_assert(cmoon::floor(5.6) == 5);
+			static_assert(cmoon::floor(-1) == -1);
+			static_assert(cmoon::floor(-1.2) == -2);
+		}
+};
+
+class cot_test : public cmoon::test::test_case
+{
+	public:
+		cot_test()
+			: cmoon::test::test_case{"cot_test"} {}
+
+		void operator()() override
+		{
+			cmoon::test::assert_almost_equal(cmoon::cot(0.523599), 1.73205, 0.00001);
+			cmoon::test::assert_almost_equal(cmoon::cot(1.5708), 0, 0.1);
+		}
+};
+
+class sign_test : public cmoon::test::test_case
+{
+	public:
+		sign_test()
+			: cmoon::test::test_case{"sign_test"} {}
+
+		void operator()() override
+		{
+			cmoon::test::assert_equal(cmoon::sign(0), 1);
+			cmoon::test::assert_equal(cmoon::sign(1), 1);
+			cmoon::test::assert_equal(cmoon::sign(-1), -1);
+
+			static_assert(cmoon::sign(0) == 1);
+			static_assert(cmoon::sign(1) == 1);
+			static_assert(cmoon::sign(-1) == -1);
+
+			cmoon::test::assert_true(cmoon::is_positive(0));
+			cmoon::test::assert_true(cmoon::is_positive(1));
+			cmoon::test::assert_false(cmoon::is_positive(-1));
+
+			static_assert(cmoon::is_positive(0));
+			static_assert(cmoon::is_positive(1));
+			static_assert(!cmoon::is_positive(-1));
+
+			cmoon::test::assert_false(cmoon::is_negative(0));
+			cmoon::test::assert_false(cmoon::is_negative(1));
+			cmoon::test::assert_true(cmoon::is_negative(-1));
+
+			static_assert(!cmoon::is_negative(0));
+			static_assert(!cmoon::is_negative(1));
+			static_assert(cmoon::is_negative(-1));
 		}
 };
 
@@ -175,6 +401,12 @@ int main()
 	suite.add_test_case<factorial_test>();
 	suite.add_test_case<rational_test>();
 	suite.add_test_case<pow_test>();
+	suite.add_test_case<static_pow_test>();
+	suite.add_test_case<abs_test>();
+	suite.add_test_case<ceil_test>();
+	suite.add_test_case<floor_test>();
+	suite.add_test_case<cot_test>();
+	suite.add_test_case<sign_test>();
 
 	cmoon::test::text_test_runner runner{std::cout};
 

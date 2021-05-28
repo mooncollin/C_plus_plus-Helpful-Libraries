@@ -3,8 +3,13 @@ export module cmoon.math.rational;
 import <memory>;
 import <concepts>;
 import <iostream>;
+import <ratio>;
+import <numeric>;
+import <format>;
+import <string>;
 
 import cmoon.math.pow;
+import cmoon.math.floor;
 
 namespace cmoon
 {
@@ -330,4 +335,21 @@ namespace cmoon
 	{
 		return os << r.numerator() << "/" << r.denominator();
 	}
+}
+
+namespace std
+{
+	// TODO: MSVC is not seeing this overload in external modules. Not sure what to do...
+	export
+	template<class Rep>
+	struct formatter<cmoon::basic_rational<Rep>> : public formatter<std::string>
+	{
+		template<class FormatContext>
+		auto format(const cmoon::basic_rational<Rep>& r, FormatContext& ctx)
+		{
+			return formatter<std::string>::format(
+				std::format("{}/{}", r.numerator(), r.denominator()), ctx
+			);
+		}
+	};
 }
