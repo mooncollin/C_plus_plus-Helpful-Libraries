@@ -1,4 +1,4 @@
 export module cmoon.multidimensional;
-export import cmoon.multidimensional.multidimensional_array;
-export import cmoon.multidimensional.fixed_multidimensional_array;
 export import cmoon.multidimensional.static_multidimensional_array;
+export import cmoon.multidimensional.fixed_multidimensional_array;
+export import cmoon.multidimensional.multidimensional_array;

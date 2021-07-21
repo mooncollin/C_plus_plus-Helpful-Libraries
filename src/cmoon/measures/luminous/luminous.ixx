@@ -7,7 +7,6 @@ export module cmoon.measures.luminous;
 import <type_traits>;
 import <ratio>;
 
-import cmoon.ratio;
 import cmoon.string;
 
 import cmoon.measures;
@@ -19,10 +18,10 @@ namespace cmoon::measures
 	struct luminous_intensity_values;
 
 	export
-	template<class Rep, class System, cmoon::ratio_type Ratio = std::ratio<1>, dimension_type Dimension = 1>
+	template<class Rep, class System, class Ratio = std::ratio<1>, dimension_type Dimension = 1>
 	using luminous_intensity = basic_unit<Rep, Ratio, luminous_intensity_values<Rep>, System, Dimension>;
 
-	template<class Rep, class System, cmoon::ratio_type Ratio, dimension_type Dimension>
+	template<class Rep, class System, class Ratio, dimension_type Dimension>
 	std::true_type is_luminous_intensity_base_impl(const luminous_intensity<Rep, System, Ratio, Dimension>&);
 
 	std::false_type is_luminous_intensity_base_impl(...);
@@ -32,7 +31,7 @@ namespace cmoon::measures
 
 	export
 	template<class T>
-	struct is_luminous_intensity : std::bool_constant<details::is_based_in_luminous_intensity<T>> {};
+	struct is_luminous_intensity : std::bool_constant<is_based_in_luminous_intensity<T>> {};
 
 	export
 	template<class T>

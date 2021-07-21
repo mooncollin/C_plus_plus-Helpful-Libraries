@@ -5,6 +5,8 @@ import <cstddef>;
 import <type_traits>;
 import <algorithm>;
 import <numeric>;
+import <span>;
+import <functional>;
 
 import cmoon.utility;
 

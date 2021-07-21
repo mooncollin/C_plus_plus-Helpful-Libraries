@@ -1,9 +1,9 @@
 module;
 
-#include <sysinfoapi.h>
-#include <winbase.h>
-#include <lmcons.h>
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <sysinfoapi.h>
+#include <lmcons.h>
 
 #ifdef max
 #undef max
@@ -19,7 +19,7 @@ import <vector>;
 import <algorithm>;
 import <type_traits>;
 
-import cmoon.platform;
+import cmoon.string;
 
 namespace cmoon::windows
 {

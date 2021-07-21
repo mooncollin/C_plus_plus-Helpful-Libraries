@@ -17,7 +17,7 @@ namespace cmoon
 			return 6;
 		}
 
-		return static_cast<std::size_t>(upper_bound / (std::log(upper_bound) - 1.5));
+		return static_cast<std::size_t>(upper_bound / (std::log(static_cast<long double>(upper_bound)) - 1.5));
 	}
 
 	void sieve_of_eratosthenes(std::vector<bool>& composite) noexcept

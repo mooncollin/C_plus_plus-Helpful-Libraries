@@ -8,14 +8,14 @@ import <string_view>;
 import <ratio>;
 
 import cmoon.string;
-import cmoon.ratio;
 
 import cmoon.measures;
+import cmoon.measures.luminous;
 import cmoon.measures.derived.base;
 
 namespace cmoon::measures
 {
-	template<class Rep, cmoon::ratio_type Ratio>
+	template<class Rep, class Ratio>
 	struct base_lumens : public luminous_intensity<Rep, metric_system, Ratio, 1>
 	{
 		using luminous_intensity<Rep, metric_system, Ratio, 1>::luminous_intensity;
@@ -134,7 +134,7 @@ namespace cmoon::measures
 	using lumens = basic_lumens<std::intmax_t>;
 
 	export
-	template<class Rep, cmoon::ratio_type Ratio, class CharT>
+	template<class Rep, class Ratio, class CharT>
 	struct suffix<base_lumens<Rep, Ratio>, CharT>
 	{
 		static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("lm"))};

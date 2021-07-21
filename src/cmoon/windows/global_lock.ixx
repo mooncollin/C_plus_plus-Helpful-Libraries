@@ -1,5 +1,6 @@
 module;
 
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
 export module cmoon.windows.global_lock;
@@ -28,7 +29,7 @@ namespace cmoon::windows
 		return cmoon::make_unique_resource_checked(
 			static_cast<T*>(::GlobalLock(static_cast<::HGLOBAL>(ptr))),
 			nullptr,
-			details::global_lock_default_deleter<T>{}
+			global_lock_default_deleter<T>{}
 		);
 	}
 }

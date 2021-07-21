@@ -305,15 +305,16 @@ namespace cmoon::test
 
 	export
 	template<std::ranges::input_range Range1, std::ranges::input_range Range2,
+				class Pred = std::ranges::equal_to,
 				class Proj1 = std::identity, class Proj2 = std::identity>
 		requires(std::indirectly_comparable<std::ranges::iterator_t<Range1>, 
 											std::ranges::iterator_t<Range2>, 
-											std::equal_to<>,
+											Pred,
 											Proj1,
 											Proj2>)
-	void assert_sequence_equal(Range1&& r1, Range2&& r2, std::string_view message = "", Proj1 proj1 = {}, Proj2 proj2 = {}, const std::source_location& location = std::source_location::current())
+	void assert_sequence_equal(Range1&& r1, Range2&& r2, std::string_view message = "", Pred pred = {}, Proj1 proj1 = {}, Proj2 proj2 = {}, const std::source_location& location = std::source_location::current())
 	{
-		if (!std::ranges::equal(r1, r2, std::ranges::equal_to, proj1, proj2))
+		if (!std::ranges::equal(r1, r2, pred, proj1, proj2))
 		{
 			throw assert_exception{std::format("assert_sequence_equal failed at line {} ({}): {}\n", location.line(), location.file_name(), message)};
 		}
@@ -410,15 +411,16 @@ namespace cmoon::test
 
 	export
 	template<std::ranges::input_range Range1, std::ranges::input_range Range2,
+				class Pred = std::ranges::not_equal_to,
 				class Proj1 = std::identity, class Proj2 = std::identity>
 		requires(std::indirectly_comparable<std::ranges::iterator_t<Range1>, 
 											std::ranges::iterator_t<Range2>, 
-											std::equal_to<>,
+											Pred,
 											Proj1,
 											Proj2>)
-	void assert_sequence_not_equal(Range1&& r1, Range2&& r2, std::string_view message = "", Proj1 proj1 = {}, Proj2 proj2 = {}, const std::source_location& location = std::source_location::current())
+	void assert_sequence_not_equal(Range1&& r1, Range2&& r2, std::string_view message = "", Pred pred = {}, Proj1 proj1 = {}, Proj2 proj2 = {}, const std::source_location& location = std::source_location::current())
 	{
-		if (std::ranges::equal(r1, r2, std::ranges::equal_to, proj1, proj2))
+		if (std::ranges::equal(r1, r2, pred, proj1, proj2))
 		{
 			throw assert_exception{std::format("assert_sequence_not_equal failed at line {} ({}): {}\n", location.line(), location.file_name(), message)};
 		}

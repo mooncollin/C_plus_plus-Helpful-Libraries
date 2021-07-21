@@ -10,7 +10,6 @@ import <type_traits>;
 import <cstdint>;
 import <concepts>;
 
-import cmoon.ratio;
 import cmoon.string;
 
 import cmoon.measures;
@@ -22,10 +21,10 @@ namespace cmoon::measures
     struct mass_values;
 
     export
-    template<class Rep, class System, cmoon::ratio_type Ratio = std::ratio<1>, dimension_type Dimension = 1>
+    template<class Rep, class System, class Ratio = std::ratio<1>, dimension_type Dimension = 1>
     using mass = basic_unit<Rep, Ratio, mass_values<Rep>, System, Dimension>;
 
-    template<class Rep, class System, cmoon::ratio_type Ratio, dimension_type Dimension>
+    template<class Rep, class System, class Ratio, dimension_type Dimension>
     std::true_type is_mass_base_impl(const mass<Rep, System, Ratio, Dimension>&);
 
     std::false_type is_mass_base_impl(...);
@@ -245,7 +244,7 @@ namespace cmoon::measures
             return std::numeric_limits<Rep>::max();
         }
 
-        template<mass_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, cmoon::ratio_type Ratio, dimension_type Dimension>
+        template<mass_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, class Ratio, dimension_type Dimension>
             requires(std::same_as<ToSystem, metric_system>)
         static constexpr ToBasicUnit system_cast(const mass<Rep, imperial_system, Ratio, Dimension>& unit) noexcept
         {
@@ -255,7 +254,7 @@ namespace cmoon::measures
             return ToBasicUnit{nanograms_conversion};
         }
 
-        template<mass_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, cmoon::ratio_type Ratio, dimension_type Dimension>
+        template<mass_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, class Ratio, dimension_type Dimension>
             requires(std::same_as<ToSystem, imperial_system>)
         static constexpr ToBasicUnit system_cast(const mass<Rep, metric_system, Ratio, Dimension>& unit) noexcept
         {
@@ -267,7 +266,7 @@ namespace cmoon::measures
     };
 
     export
-    template<class Rep, cmoon::ratio_type Ratio, dimension_type Dimension, class CharT>
+    template<class Rep, class Ratio, dimension_type Dimension, class CharT>
     struct suffix<mass<Rep, metric_system, Ratio, Dimension>, CharT>
     {
         static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("g"))};

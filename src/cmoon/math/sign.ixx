@@ -21,7 +21,7 @@ namespace cmoon
 			template<std::convertible_to<T> T2>
 			[[nodiscard]] explicit constexpr operator T2() const noexcept
 			{
-				return is_positive ? T2{1} : T2 {-1};
+				return is_positive ? T2{1} : T2{-1};
 			}
 
 			[[nodiscard]] constexpr bool negative() const noexcept
@@ -46,7 +46,7 @@ namespace cmoon
 				return !(lhs == rhs);
 			}
 		private:
-			const bool is_positive;
+			bool is_positive;
 	};
 
 	template<cmoon::unsigned_arithmetic T>

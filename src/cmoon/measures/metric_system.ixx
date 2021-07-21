@@ -11,6 +11,7 @@ import cmoon.string;
 
 namespace cmoon::measures
 {
+    export
 	struct metric_system
     {
         template<class T, class CharT>

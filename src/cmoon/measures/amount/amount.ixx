@@ -5,8 +5,9 @@ module;
 export module cmoon.measures.amount;
 
 import <type_traits>;
+import <utility>;
+import <cstdint>;
 
-import cmoon.ratio;
 import cmoon.string;
 
 import cmoon.measures;
@@ -18,10 +19,10 @@ namespace cmoon::measures
 	struct substance_amount_values;
 
 	export
-	template<class Rep, class System, cmoon::ratio_type Ratio = std::ratio<1>, dimension_type Dimension = 1>
+	template<class Rep, class System, class Ratio = std::ratio<1>, dimension_type Dimension = 1>
 	using substance_amount = basic_unit<Rep, Ratio, substance_amount_values<Rep>, System, Dimension>;
 
-	template<class Rep, class System, cmoon::ratio_type Ratio, dimension_type Dimension>
+	template<class Rep, class System, class Ratio, std::intmax_t Dimension>
 	std::true_type is_substance_amount_base_impl(const substance_amount<Rep, System, Ratio, Dimension>&);
 
 	std::false_type is_substance_amount_base_impl(...);

@@ -11,6 +11,9 @@ import cmoon.string;
 import cmoon.ratio;
 
 import cmoon.measures;
+import cmoon.measures.mass;
+import cmoon.measures.distance;
+import cmoon.measures.electric_current;
 import cmoon.measures.derived.base;
 
 namespace cmoon::measures

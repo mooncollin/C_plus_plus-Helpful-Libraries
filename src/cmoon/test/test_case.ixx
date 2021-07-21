@@ -26,7 +26,7 @@ namespace cmoon::test
 			virtual void tear_down() {}
 			virtual ~test_case() {}
 
-			test_result run()
+			test_result run() noexcept
 			{
 				test_result result;
 

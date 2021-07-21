@@ -4,7 +4,13 @@ module;
 
 export module cmoon.linear.matrix_multiplication;
 
+import <type_traits>;
+import <numeric>;
+import <future>;
+
 import cmoon.linear.is_matrix;
+import cmoon.linear.square_matrix;
+
 
 namespace cmoon::linear
 {
@@ -23,21 +29,21 @@ namespace cmoon::linear
 	};
 
 	template<class T, class T2, class Allocator, std::size_t Rows, std::size_t Cols>
-	struct common_matrix_type<matrix<T, Allocator>, fixed_matrix<T2, Rows, Cols>>
+	struct common_matrix_type<matrix<T, Allocator>, static_matrix<T2, Rows, Cols>>
 		: public common_matrix_type<matrix<T, Allocator>, matrix<T2, Allocator>> {};
 
 	template<class T, class T2, class Allocator, std::size_t Rows, std::size_t Cols>
-	struct common_matrix_type<fixed_matrix<T2, Rows, Cols>, matrix<T, Allocator>>
+	struct common_matrix_type<static_matrix<T2, Rows, Cols>, matrix<T, Allocator>>
 		: public common_matrix_type<matrix<T, Allocator>, matrix<T2, Allocator>> {};
 
 	template<class T, class T2, std::size_t Rows, std::size_t Cols, std::size_t Cols2>
-	struct common_matrix_type<fixed_matrix<T, Rows, Cols>, fixed_matrix<T2, Cols, Cols2>>
+	struct common_matrix_type<static_matrix<T, Rows, Cols>, static_matrix<T2, Cols, Cols2>>
 	{
 		using common_rep = std::common_type_t<T, T2>;
-		using type = fixed_matrix<common_rep, Rows, Cols2>;
-		using half_type_first = fixed_matrix<T, Rows / 2, Cols / 2>;
-		using half_type_second = fixed_matrix<T2, Cols / 2, Cols2 / 2>;
-		using half_type_common = fixed_matrix<common_rep, Rows / 2, Cols2 / 2>;
+		using type = static_matrix<common_rep, Rows, Cols2>;
+		using half_type_first = static_matrix<T, Rows / 2, Cols / 2>;
+		using half_type_second = static_matrix<T2, Cols / 2, Cols2 / 2>;
+		using half_type_common = static_matrix<common_rep, Rows / 2, Cols2 / 2>;
 		static constexpr auto is_fixed {true};
 	};
 

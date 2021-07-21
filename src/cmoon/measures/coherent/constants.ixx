@@ -3,6 +3,7 @@ export module cmoon.measures.coherent.constants;
 import <cstdint>;
 
 import cmoon.measures.coherent;
+import cmoon.measures.distance;
 
 namespace cmoon::measures
 {

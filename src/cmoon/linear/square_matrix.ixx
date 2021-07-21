@@ -10,5 +10,5 @@ namespace cmoon::linear
 {
 	export
 	template<class T, std::size_t S>
-	using square_matrix = fixed_matrix<T, S, S>;
+	using square_matrix = static_matrix<T, S, S>;
 }

@@ -8,15 +8,15 @@ import <string_view>;
 import <ratio>;
 
 import cmoon.string;
-import cmoon.ratio;
 
 import cmoon.measures;
+import cmoon.measures.distance;
 import cmoon.measures.derived.base;
 import cmoon.measures.derived.lumen;
 
 namespace cmoon::measures
 {
-	template<class Rep, cmoon::ratio_type Ratio>
+	template<class Rep, class Ratio>
 	using base_lux = illuminance<Rep, Ratio, basic_lumens<Rep>, basic_meters<Rep>>;
 
 	export
@@ -132,7 +132,7 @@ namespace cmoon::measures
 	using lux = basic_lux<std::intmax_t>;
 
 	export
-	template<class Rep, cmoon::ratio_type Ratio, class CharT>
+	template<class Rep, class Ratio, class CharT>
 	struct suffix<base_lux<Rep, Ratio>, CharT>
 	{
 		static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("lx"))};

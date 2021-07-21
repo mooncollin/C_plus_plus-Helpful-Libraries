@@ -3,6 +3,7 @@ export import cmoon.utility.throw_on_error;
 export import cmoon.utility.extent_type;
 export import cmoon.utility.expected;
 export import cmoon.utility.stopwatch;
+export import cmoon.utility.to_underlying;
 
 import <iterator>;
 import <utility>;
@@ -48,31 +49,31 @@ namespace cmoon
 		return construct_value<Container>(args...);
 	}
 
-	template<class Array, std::size_t... I>
-	constexpr auto a2t_impl(const Array& a, std::index_sequence<I...>) noexcept(noexcept(std::make_tuple(a[I]...)))
-	{
-		return std::make_tuple(a[I]...);
-	}
+	//template<class Array, std::size_t... I>
+	//constexpr auto a2t_impl(const Array& a, std::index_sequence<I...>) noexcept(noexcept(std::make_tuple(a[I]...)))
+	//{
+	//	return std::make_tuple(a[I]...);
+	//}
 
-	export
-	template<typename T, std::size_t N, typename Indices = std::make_index_sequence<N>>
-	constexpr auto array_to_tuple(const std::array<T, N>& a) noexcept(noexcept(a2t_impl(a, Indices{})))
-	{
-		return a2t_impl(a, Indices{});
-	}
+	//export
+	//template<typename T, std::size_t N>
+	//constexpr auto array_to_tuple(const std::array<T, N>& a) noexcept(noexcept(a2t_impl(a, Indices{})))
+	//{
+	//	return a2t_impl(a, std::make_index_sequence<N>{});
+	//}
 
-	template<std::size_t... I>
-	constexpr auto index_array_helper(std::index_sequence<I...>) noexcept(noexcept(std::array<std::size_t, sizeof...(I)>{I...}))
-	{
-		return std::array<std::size_t, sizeof...(I)>{I...};
-	}
+	//template<std::size_t... I>
+	//constexpr auto index_array_helper(std::index_sequence<I...>) noexcept(noexcept(std::array<std::size_t, sizeof...(I)>{I...}))
+	//{
+	//	return std::array<std::size_t, sizeof...(I)>{I...};
+	//}
 
-	export
-	template<std::size_t N>
-	constexpr auto index_array() noexcept(noexcept(index_array_helper(std::make_index_sequence<N>{})))
-	{
-		return index_array_helper(std::make_index_sequence<N>{});
-	}
+	//export
+	//template<std::size_t N>
+	//constexpr auto index_array() noexcept(noexcept(index_array_helper(std::make_index_sequence<N>{})))
+	//{
+	//	return index_array_helper(std::make_index_sequence<N>{});
+	//}
 
 	template<class T, std::size_t... I>
 	constexpr std::array<T, sizeof...(I)> initializer_list_to_array_helper(std::initializer_list<T> values, std::index_sequence<I...>) noexcept(noexcept(std::array<T, sizeof...(I)>{{*(std::begin(values) + I)...}}))

@@ -1,5 +1,6 @@
 export module cmoon.tests.csv;
 export import cmoon.tests.csv.csv_reader;
+export import cmoon.tests.csv.csv_writer;
 
 import <utility>;
 
@@ -16,6 +17,8 @@ namespace cmoon::tests
 		cmoon::test::test_suite suite{"Csv library tests"};
 		suite.add_test_case<csv::csv_reader_typed_test>();
 		suite.add_test_case<csv::csv_reader_any_test>();
+		suite.add_test_case<csv::csv_writer_test>();
+		suite.add_test_case<csv::csv_write_read_test>();
 
 		return std::move(suite);
 	}

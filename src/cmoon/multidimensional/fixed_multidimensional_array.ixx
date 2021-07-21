@@ -7,13 +7,14 @@ import <ranges>;
 import <array>;
 import <type_traits>;
 import <algorithm>;
+import <numeric>;
 
-import "cmoon/multidimensional/container_definitions.hpp";
+import cmoon.multidimensional.static_multidimensional_array;
 
 namespace cmoon
 {
 	export
-	template<class T, std::size_t Dimensions, class Allocator>
+	template<class T, std::size_t Dimensions, class Allocator = std::allocator<T>>
 	class fixed_multidimensional_array
 	{
 		static_assert(Dimensions > 0);
@@ -64,12 +65,6 @@ namespace cmoon
 				data_.resize(most_significant_dimension() * dimensions_.front());
 				std::ranges::copy(other, begin());
 			}
-
-			fixed_multidimensional_array(const fixed_multidimensional_array&) = default;
-			fixed_multidimensional_array(fixed_multidimensional_array&&) noexcept = default;
-
-			fixed_multidimensional_array& operator=(const fixed_multidimensional_array&) = default;
-			fixed_multidimensional_array& operator=(fixed_multidimensional_array&&) noexcept = default;
 
 			fixed_multidimensional_array& operator=(std::initializer_list<value_type> elements)
 			{

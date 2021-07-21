@@ -20,7 +20,7 @@ namespace cmoon::tests
 	template<>
 	cmoon::test::test_suite get_test_suite<library::ratio>()
 	{
-		cmoon::test::test_suite suite;
+		cmoon::test::test_suite suite{"ratio library tests"};
 		suite.add_test_case<ratio::is_ratio_test>();
 		suite.add_test_case<ratio::is_ratio_v_test>();
 		suite.add_test_case<ratio::ratio_type_test>();

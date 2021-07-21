@@ -8,14 +8,15 @@ import <string_view>;
 import <ratio>;
 
 import cmoon.string;
-import cmoon.ratio;
 
 import cmoon.measures;
+import cmoon.measures.mass;
+import cmoon.measures.electric_current;
 import cmoon.measures.derived.base;
 
 namespace cmoon::measures
 {
-	template<class Rep, cmoon::ratio_type Ratio>
+	template<class Rep, class Ratio>
 	using base_teslas = magnetic_induction<Rep, Ratio, basic_kilograms<Rep>, basic_ampere<Rep>>;
 
 	export
@@ -131,7 +132,7 @@ namespace cmoon::measures
 	using teslas = basic_teslas<std::intmax_t>;
 
 	export
-	template<class Rep, cmoon::ratio_type Ratio, class CharT>
+	template<class Rep, class Ratio, class CharT>
 	struct suffix<base_teslas<Rep, Ratio>, CharT>
 	{
 		static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("T"))};

@@ -10,6 +10,8 @@ import <type_traits>;
 import <limits>;
 import <concepts>;
 
+import cmoon.concepts;
+
 namespace cmoon
 {
 	export
@@ -135,6 +137,17 @@ namespace cmoon
 											>>>>;
 
 	export
+	template<auto LeastValue>
+	using least_value_float = std::conditional_t<(LeastValue <= std::numeric_limits<float>::max()),
+																float,
+																std::conditional_t<(LeastValue <= std::numeric_limits<double>::max()),
+																double,
+																long double
+																>>;
+
+	
+
+	export
 	template<std::size_t AmountDigits>
 	concept float_trivial_type = AmountDigits <= std::numeric_limits<long double>::max_exponent10;
 
@@ -148,6 +161,10 @@ namespace cmoon
 									long double>>;
 
 	export
-	template<std::floating_point F>
-	using least_int_type = least_value_int<static_cast<std::intmax_t>(std::numeric_limits<F>::max())>;
+	template<cmoon::arithmetic T>
+	using least_int_type = least_value_int<static_cast<std::intmax_t>(std::numeric_limits<T>::max())>;
+
+	export
+	template<cmoon::arithmetic T>
+	using least_float_type = least_value_float<static_cast<long double>(std::numeric_limits<T>::max())>;
 }

@@ -1,6 +1,7 @@
 module;
 
 #ifdef _WIN32
+	#pragma comment(lib, "d2d1")
 	#include <d2d1.h>
 #endif
 
@@ -17,7 +18,7 @@ namespace cmoon::graphics
 	{
 		using type = T;
 
-		constexpr basic_size2D() = default;
+		constexpr basic_size2D() noexcept(std::is_nothrow_default_constructible<T>) = default;
 
 		constexpr basic_size2D(const T& w, const T& h) noexcept(std::is_nothrow_copy_constructible_v<T>)
 			: width{w}, height{h} {}

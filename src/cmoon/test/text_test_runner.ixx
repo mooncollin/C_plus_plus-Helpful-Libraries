@@ -6,6 +6,7 @@ import <iomanip>;
 import <type_traits>;
 import <vector>;
 import <format>;
+import <string_view>;
 import <iterator>;
 
 import cmoon.utility;
@@ -16,48 +17,57 @@ import cmoon.test.test_suite;
 import cmoon.test.test_result;
 import cmoon.test.runner;
 
+#define INSERTION 0
+
 namespace cmoon::test
 {
 	export
+	template<class Stream>
+		requires(requires(Stream s) { cmoon::fprint(s, ""); })
 	class text_test_runner : public test_runner
 	{
 		public:
-			text_test_runner(std::ostream& out)
+			text_test_runner(Stream& out)
+				requires (!std::is_pointer_v<Stream>)
+				: out_{out} {}
+
+			text_test_runner(Stream out)
+				requires (std::is_pointer_v<Stream>)
 				: out_{out} {}
 
 			bool run(test_case& t_case) override
 			{
 				if (!t_case.name().empty())
 				{
-					cmoon::fprint(out_.get(), "\nRunning test case: {}\n", t_case.name());
+					cmoon::fprint(get_stream(), "\nRunning test case: {}\n", t_case.name());
 				}
 				print_header();
-				cmoon::fprint(out_.get(), "\n\n");
+				cmoon::fprint(get_stream(), "\n\n");
 
 				const auto result = t_case.run();
 				print_test_result(result);
 
-				cmoon::fprint(out_.get(), "=======================================\n");
+				cmoon::fprint(get_stream(), "=======================================\n");
 				print_footer();
 
 				if (result.passed())
 				{
-					cmoon::fprint(out_.get(), "\nOK! 1 passed.\n");
+					cmoon::fprint(get_stream(), "\nOK! 1 passed.\n");
 				}
 				else
 				{
-					cmoon::fprint(out_.get(), "\nFAILED! 1 ");
+					cmoon::fprint(get_stream(), "\nFAILED! 1 ");
 					if (!result.errors().empty())
 					{
-						cmoon::fprint(out_.get(), "error.\n");
+						cmoon::fprint(get_stream(), "error.\n");
 					}
 					else
 					{
-						cmoon::fprint(out_.get(), "failure.\n");
+						cmoon::fprint(get_stream(), "failure.\n");
 					}
 				}
 
-				out_.get() << std::endl;
+				cmoon::fprint(get_stream(), '\n');
 				return result.passed();
 			}
 
@@ -70,10 +80,18 @@ namespace cmoon::test
 
 				if (!t_suite.name().empty())
 				{
-					cmoon::fprint(out_.get(), "\nRunning test suite: {}\n", t_suite.name());
+					#if INSERTION
+					get_stream() << std::format("Running test suite: {}\n", t_suite.name());
+					#else
+					cmoon::fprint(get_stream(), "Running test suite: {}\n", t_suite.name());
+					#endif
 				}
 				print_header();
-				cmoon::fprint(out_.get(), "\n\n");
+				#if INSERTION
+				get_stream() << "\n\n";
+				#else
+				cmoon::fprint(get_stream(), "\n\n");
+				#endif
 
 				for (auto& t_case : t_suite)
 				{
@@ -81,55 +99,79 @@ namespace cmoon::test
 					if (!result.errors().empty())
 					{
 						num_errored++;
-						cmoon::fprint(out_.get(), 'E');
+						cmoon::fprint(get_stream(), 'E');
 						results.emplace_back(result, t_case->name());
 					}
 					else if (!result.failures().empty())
 					{
 						num_failed++;
-						cmoon::fprint(out_.get(), 'F');
+						cmoon::fprint(get_stream(), 'F');
 						results.emplace_back(result, t_case->name());
 					}
 					else
 					{
 						num_passed++;
-						cmoon::fprint(out_.get(), '.');
+						#if INSERTION
+						get_stream() << '.';
+						#else
+						cmoon::fprint(get_stream(), '.');
+						#endif
 					}
 				}
 
-				cmoon::fprint(out_.get(), "\n\n=======================================\n");
+				#if INSERTION
+				get_stream() << "\n\n=======================================\n";
+				#else
+				cmoon::fprint(get_stream(), "\n\n=======================================\n");
+				#endif
 
 				for (const auto& [result, name] : results)
 				{
-					cmoon::fprint(out_.get(), "\n{}:\n", name);
+					cmoon::fprint(get_stream(), "\n{}:\n", name);
 					print_test_result(result);
 				}
 
-				cmoon::fprint(out_.get(), "=======================================\n");
+				#if INSERTION
+				get_stream() << "=======================================\n";
+				#else
+				cmoon::fprint(get_stream(), "=======================================\n");
+				#endif
 				print_footer();
 
 				if (results.empty())
 				{
-					cmoon::fprint(out_.get(), "\nOK!");
+					#if INSERTION
+					get_stream() << "\nOK!";
+					#else
+					cmoon::fprint(get_stream(), "\nOK!");
+					#endif
 				}
 				else
 				{
-					cmoon::fprint(out_.get(), "\nFAILED!");
+					cmoon::fprint(get_stream(), "\nFAILED!");
 				}
 
 				if (num_passed != 0)
 				{
-					cmoon::fprint(out_.get(), " {} passed.", num_passed);
+					#if INSERTION
+					get_stream() << std::format(" {} passed.", num_passed);
+					#else
+					cmoon::fprint(get_stream(), " {} passed.", num_passed);
+					#endif
 				}
 				if (num_errored != 0)
 				{
-					cmoon::fprint(out_.get(), " {} errored.", num_errored);
+					cmoon::fprint(get_stream(), " {} errored.", num_errored);
 				}
 				if (num_failed != 0)
 				{
-					cmoon::fprint(out_.get(), " {} failed.", num_failed);
+					cmoon::fprint(get_stream(), " {} failed.", num_failed);
 				}
-				cmoon::fprint(out_.get(), '\n');
+				#if INSERTION
+				get_stream() << '\n';
+				#else
+				cmoon::fprint(get_stream(), '\n');
+				#endif
 
 				return results.empty();
 			}
@@ -137,28 +179,40 @@ namespace cmoon::test
 			void print_header()
 			{
 				stopwatch.reset();
-				cmoon::fprint(out_.get(), "Starting testing at {:%F %T}", stopwatch.get_start_time());
+				#if INSERTION
+				get_stream() << std::format("Starting testing at {:%F %T}", stopwatch.get_start_time());
+				#else
+				cmoon::fprint(get_stream(), "Starting testing at {:%F %T}", stopwatch.get_start_time());
+				#endif
 			}
 
 			void print_footer()
 			{
 				const auto duration = stopwatch.get_elapsed_time();
-				cmoon::fprint(out_.get(), "Ending testing at {:%F %T} : ", stopwatch.get_start_time() + duration);
+				#if INSERTION
+				get_stream() << std::format("Ending testing at {:%F %T} : ", stopwatch.get_start_time() + duration);
+				#else
+				cmoon::fprint(get_stream(), "Ending testing at {:%F %T} : ", stopwatch.get_start_time() + duration);
+				#endif
 
 				if (const auto seconds = std::chrono::duration_cast<std::chrono::duration<double>>(duration); 
 					seconds.count() > 1)
 				{
-					out_.get() << seconds;
+					cmoon::fprint(get_stream(), "{:.3f}s", seconds.count());
 				}
 				else if (const auto milliseconds = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(duration);
 						 milliseconds.count() > 1)
 				{
-					out_.get() << milliseconds;
+					#if INSERTION
+					get_stream() << std::format("{:.3f}ms", milliseconds.count());
+					#else
+					cmoon::fprint(get_stream(), "{:.3f}ms", milliseconds.count());
+					#endif
 				}
 				else
 				{
 					const auto nanoseconds = std::chrono::duration_cast<std::chrono::duration<double, std::nano>>(duration);
-					out_.get() << nanoseconds;
+					cmoon::fprint(get_stream(), "{:.3f}ns", nanoseconds.count());
 				}
 			}
 
@@ -166,26 +220,42 @@ namespace cmoon::test
 			{
 				if (!result.errors().empty())
 				{
-					cmoon::fprint(out_.get(), "Errors:\n");
+					cmoon::fprint(get_stream(), "Errors:\n");
 
 					for (const auto& error : result.errors())
 					{
-						cmoon::fprint(out_.get(), "{}\n", error.what());
+						cmoon::fprint(get_stream(), error.what());
+						cmoon::fprint(get_stream(), '\n');
 					}
 				}
 
 				if (!result.failures().empty())
 				{
-					cmoon::fprint(out_.get(), "Failures:\n");
+					cmoon::fprint(get_stream(), "Failures:\n");
 
 					for (const auto& failure : result.failures())
 					{
-						cmoon::fprint(out_.get(), "{}\n", failure.what());
+						cmoon::fprint(get_stream(), failure.what());
+						cmoon::fprint(get_stream(), '\n');
 					}
 				}
 			}
 
-			std::reference_wrapper<std::ostream> out_;
+			[[nodiscard]] inline decltype(auto) get_stream() noexcept
+			{
+				if constexpr (std::is_pointer_v<Stream>)
+				{
+					return out_;
+				}
+				else
+				{
+					return out_.get();
+				}
+			}
+
+			std::conditional_t<std::is_pointer_v<Stream>,
+							   Stream,
+							   std::reference_wrapper<Stream>> out_;
 			cmoon::stopwatch stopwatch;
 	};
 }

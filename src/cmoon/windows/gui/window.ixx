@@ -1,27 +1,32 @@
 module;
 
-#include <d2d1.h>
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <d2d1.h>
 
 export module cmoon.windows.gui.window;
 
 import <string_view>;
 
 import cmoon.graphics;
-import cmoon.windows;
+
+import cmoon.windows.window_handle;
+import cmoon.windows.system_message;
+import cmoon.windows.system_info;
+import cmoon.windows.message_params;
 
 import cmoon.windows.gui.window_style;
 
 namespace cmoon::windows
 {
 	export
-	[[nodiscard]] graphics::size2D_u get_client_window_size(window_handle handle) noexcept
+	[[nodiscard]] cmoon::graphics::size2D_u32 get_client_window_size(window_handle handle) noexcept
 	{
 		::RECT rc;
 		::GetClientRect(handle, std::addressof(rc));
 
-		return {static_cast<typename graphics::size2D_u::type>(rc.right),
-				static_cast<typename graphics::size2D_u::type>(rc.bottom)};
+		return {static_cast<typename cmoon::graphics::size2D_u32::type>(rc.right),
+				static_cast<typename cmoon::graphics::size2D_u32::type>(rc.bottom)};
 	}
 
 	export
@@ -90,7 +95,7 @@ namespace cmoon::windows
 			}
 
 			virtual windows::string_view_type class_name() const = 0;
-			virtual ::LRESULT handle_message(cmoon::windows::message, ::WPARAM, ::LPARAM) = 0;
+			virtual ::LRESULT handle_message(const cmoon::windows::system_message, ::WPARAM, ::LPARAM) = 0;
 		protected:
 			window_handle hwnd{nullptr};
 	};

@@ -1,6 +1,9 @@
-export module cmoon.windows.window_handle;
+module;
 
-import <Windows.h>;
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+
+export module cmoon.windows.window_handle;
 
 namespace cmoon::windows
 {

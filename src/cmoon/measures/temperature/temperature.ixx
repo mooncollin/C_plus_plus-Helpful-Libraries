@@ -7,7 +7,6 @@ export module cmoon.measures.temperature;
 import <string_view>;
 import <concepts>;
 
-import cmoon.ratio;
 import cmoon.math;
 import cmoon.string;
 
@@ -20,10 +19,10 @@ namespace cmoon::measures
 	struct temperature_values;
 	
 	export
-	template<class Rep, class System, cmoon::ratio_type Ratio = std::ratio<1>, dimension_type Dimension = 1>
+	template<class Rep, class System, class Ratio = std::ratio<1>, dimension_type Dimension = 1>
 	using temperature = basic_unit<Rep, Ratio, temperature_values<Rep>, System, Dimension>;
 
-	template<class Rep, class System, cmoon::ratio_type Ratio, dimension_type Dimension>
+	template<class Rep, class System, class Ratio, dimension_type Dimension>
 	std::true_type is_temperature_base_impl(const temperature<Rep, System, Ratio, Dimension>&);
 
 	std::false_type is_temperature_base_impl(...);
@@ -98,7 +97,7 @@ namespace cmoon::measures
 			return std::numeric_limits<Rep>::max();
 		}
 
-		template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, cmoon::ratio_type Ratio, dimension_type Dimension>
+		template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, class Ratio, dimension_type Dimension>
 		static constexpr ToBasicUnit system_cast(const temperature<Rep, fahrenheit_scale, Ratio, Dimension>& unit) noexcept
 		{
 			constexpr auto rational_5_9 = cmoon::basic_rational<typename ToBasicUnit::rep>{5, 9};
@@ -112,7 +111,7 @@ namespace cmoon::measures
 			}
 		}
 
-		template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, cmoon::ratio_type Ratio, dimension_type Dimension>
+		template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, class Ratio, dimension_type Dimension>
 		static constexpr ToBasicUnit system_cast(const temperature<Rep, kelvin_scale, Ratio, Dimension>& unit) noexcept
 		{
 			if constexpr (std::same_as<ToSystem, celsius_scale>)
@@ -126,7 +125,7 @@ namespace cmoon::measures
 			}
 		}
 
-		template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, cmoon::ratio_type Ratio, dimension_type Dimension>
+		template<temperature_type ToBasicUnit, class ToSystem = typename ToBasicUnit::system, class Ratio, dimension_type Dimension>
 		static constexpr ToBasicUnit system_cast(const temperature<Rep, celsius_scale, Ratio, Dimension>& unit) noexcept
 		{
 			if constexpr(std::same_as<ToSystem, fahrenheit_scale>)

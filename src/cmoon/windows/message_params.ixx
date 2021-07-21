@@ -4,15 +4,26 @@ module;
 #include <windowsx.h>
 #include <Dbt.h>
 #include <CommCtrl.h>
+#include <d2d1.h>
 
 export module cmoon.windows.message_params;
 
 import <cstdint>;
 import <type_traits>;
+import <utility>;
 
-import cmoon.windows.input;
-import cmoon.windows.gui.hit_value;
+import cmoon.windows.window_handle;
+import cmoon.windows.global_lock;
 import cmoon.windows.system_message;
+import cmoon.windows.input;
+
+import cmoon.windows.gui.hit_value;
+import cmoon.windows.gui.multiple_document_interface;
+import cmoon.windows.gui.icon_size;
+import cmoon.windows.gui.show_window;
+import cmoon.windows.gui.size_request;
+import cmoon.windows.gui.window_sizing;
+import cmoon.windows.gui.style_change;
 
 namespace cmoon::windows
 {
@@ -1951,7 +1962,7 @@ namespace cmoon::windows
 	export
 	template<>
 	struct l_params<messages::wm_show_window>
-		: public single_type<show_window, ::LPARAM> {};
+		: public single_type<show_window_command, ::LPARAM> {};
 
 	export
 	template<>

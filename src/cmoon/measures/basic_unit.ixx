@@ -13,14 +13,33 @@ import cmoon.ratio;
 import cmoon.math;
 
 import cmoon.measures.dimension_type;
-import cmoon.measures.is_basic_unit;
 import cmoon.measures.suffix;
 
 namespace cmoon::measures
 {
 	export
-	template<class Rep, cmoon::ratio_type Ratio, class UnitValues, class System, dimension_type Dimension>
+	template<class Rep, class Ratio, class UnitValues, class System, dimension_type Dimension = 1>
 	class basic_unit;
+
+	template<class Rep, class Ratio, class UnitValues, class System, dimension_type Dimension>
+	std::true_type is_basic_unit_base_impl(const basic_unit<Rep, Ratio, UnitValues, System, Dimension>&);
+
+	std::false_type is_basic_unit_base_impl(...);
+
+	template<class U>
+	constexpr auto is_based_in_basic_unit = decltype(is_basic_unit_base_impl(std::declval<U>()))::value;
+
+	export
+	template<class T>
+	struct is_basic_unit : std::bool_constant<is_based_in_basic_unit<T>> {};
+
+	export
+	template<class T>
+	constexpr bool is_basic_unit_v = is_basic_unit<T>::value;
+
+	export
+	template<class T>
+	concept basic_unit_type = is_basic_unit_v<T>;
 }
 
 namespace std
@@ -93,7 +112,7 @@ namespace cmoon::measures
 	}
 
 	export
-	template<class Rep, cmoon::ratio_type Ratio, class UnitValues, class System, dimension_type Dimension>
+	template<class Rep, class Ratio, class UnitValues, class System, dimension_type Dimension>
 	class basic_unit
 	{
 		public:
@@ -325,7 +344,7 @@ namespace cmoon::measures
 	};
 
 	export
-	template<basic_unit_type Unit, dimension_type Dimension>
+	template<class Unit, dimension_type Dimension>
 	using convert_unit_dimension = basic_unit<typename Unit::rep, typename Unit::ratio, typename Unit::unit_values, typename Unit::system, Dimension>;
 
 	export
@@ -403,11 +422,11 @@ namespace cmoon::measures
 	}
 
 	export
-	template<class CharT, class Traits, basic_unit_type T>
-    std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& os, const T& unit)
+	template<class CharT, class Traits, class Rep, cmoon::ratio_type Ratio, class UnitValues, class System, dimension_type Dimension>
+    std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& os, const basic_unit<Rep, Ratio, UnitValues, System, Dimension>& unit)
     {
         os << unit.count();
-		output_unit_details<T>(os);
+		output_unit_details<basic_unit<Rep, Ratio, UnitValues, System, Dimension>>(os);
 		return os;
     }
 }

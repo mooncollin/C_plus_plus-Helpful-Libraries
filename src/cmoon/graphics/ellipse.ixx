@@ -1,6 +1,7 @@
 module;
 
 #ifdef _WIN32
+	#pragma comment(lib, "d2d1")
 	#include <d2d1.h>
 #endif
 

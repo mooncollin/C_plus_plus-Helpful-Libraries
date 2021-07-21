@@ -8,18 +8,17 @@ import <string_view>;
 import <ratio>;
 
 import cmoon.string;
-import cmoon.ratio;
 
 import cmoon.measures;
+import cmoon.measures.mass;
+import cmoon.measures.distance;
+import cmoon.measures.electric_current;
 import cmoon.measures.derived.base;
 
 namespace cmoon::measures
 {
-	namespace details
-	{
-		template<class Rep, cmoon::ratio_type Ratio>
-		using base_webers = magnetic_flux<Rep, Ratio, basic_kilograms<Rep>, basic_meters<Rep>, basic_ampere<Rep>>;
-	}
+	template<class Rep, class Ratio>
+	using base_webers = magnetic_flux<Rep, Ratio, basic_kilograms<Rep>, basic_meters<Rep>, basic_ampere<Rep>>;
 
 	export
 	template<class Rep>
@@ -134,7 +133,7 @@ namespace cmoon::measures
 	using webers = basic_webers<std::intmax_t>;
 
 	export
-	template<class Rep, cmoon::ratio_type Ratio, class CharT>
+	template<class Rep, class Ratio, class CharT>
 	struct suffix<base_webers<Rep, Ratio>, CharT>
 	{
 		static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("Wb"))};

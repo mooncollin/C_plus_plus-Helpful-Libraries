@@ -9,6 +9,7 @@ import <algorithm>;
 import <numeric>;
 import <concepts>;
 import <stdexcept>;
+import <type_traits>;
 
 import cmoon.math;
 import cmoon.multidimensional;
@@ -27,7 +28,7 @@ namespace cmoon::linear
 	template<class Rep, std::size_t Rows, std::size_t Cols>
 	class static_matrix
 	{
-		using storage_t = cmoon::constant_multidimensional_array<Rep, Rows, Cols>;
+		using storage_t = cmoon::static_multidimensional_array<Rep, Rows, Cols>;
 
 		public:
 			using value_type = typename storage_t::value_type;
@@ -45,19 +46,12 @@ namespace cmoon::linear
 			static constexpr auto num_rows = Rows;
 			static constexpr auto num_columns = Cols;
 
-			constexpr static_matrix() = default;
-
-			constexpr static_matrix(const static_matrix&) = default;
-
-			constexpr static_matrix(static_matrix&&) noexcept = default;
+			constexpr static_matrix() noexcept(std::is_nothrow_default_constructible_v<storage_t>) = default;
 
 			template<std::convertible_to<Rep>... Elements>
 				requires (sizeof...(Elements) > 0)
-			constexpr static_matrix(Elements&&... elements)
+			constexpr static_matrix(Elements&&... elements) noexcept(std::is_nothrow_constructible_v<storage_t, Elements...>)
 				: data_{std::forward<Elements>(elements)...} {}
-
-			constexpr static_matrix& operator=(const static_matrix&) = default;
-			constexpr static_matrix& operator=(static_matrix&&) noexcept = default;
 
 			[[nodiscard]] constexpr std::size_t rows() const noexcept
 			{
@@ -381,11 +375,15 @@ namespace cmoon::linear
 				return !(lhs == rhs);
 			}
 		private:
-			storage_t data_;
+			storage_t data_ {};
 
 			template<class T, class Allocator>
 			friend class matrix;
 	};
+
+	export
+	template<class T>
+	using matrix3x2 = static_matrix<T, 3, 2>;
 
 	export
 	template<class T, class T2, std::size_t Rows, std::size_t Cols, std::size_t Cols2>

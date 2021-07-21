@@ -1,24 +1,25 @@
 export module cmoon.multidimensional.static_multidimensional_array;
 
+import <cstddef>;
 import <initializer_list>;
 import <ranges>;
 import <array>;
 import <type_traits>;
 
-import "cmoon/multidimensional/container_definitions.hpp";
-
 namespace cmoon
 {
+	export
 	template<class T, std::size_t... Dimensions>
 		requires(sizeof...(Dimensions) > 0)
 	class static_multidimensional_array
 	{
 		static_assert((... && (Dimensions > 0)));
 
-		static constexpr std::size_t size_ = (... * Dimensions);
+		static constexpr auto size_ {(... * Dimensions)};
 		using storage_t = std::array<T, size_>;
-		static constexpr auto dimensions_ = std::array{Dimensions...};
-		static constexpr auto dimensions_size = sizeof...(Dimensions);
+
+		static constexpr auto dimensions_size {sizeof...(Dimensions)};
+		static constexpr std::array<std::size_t, dimensions_size> dimensions_ {Dimensions...};
 
 		public:
 			using value_type = typename storage_t::value_type;
@@ -33,32 +34,11 @@ namespace cmoon
 			using reverse_iterator = typename storage_t::reverse_iterator;
 			using const_reverse_iterator = typename storage_t::const_reverse_iterator;
 
-			constexpr static_multidimensional_array() noexcept(std::is_nothrow_default_constructible_v<value_type>) {}
-
-			template<std::convertible_to<value_type> T2>
-			constexpr static_multidimensional_array(const static_multidimensional_array<T2>& other) noexcept(std::is_nothrow_copy_constructible_v<value_type>)
-				: data_{other.data_} {}
+			constexpr static_multidimensional_array() noexcept(std::is_nothrow_default_constructible_v<value_type>) = default;
 
 			template<std::convertible_to<value_type>... Elements>
 			constexpr static_multidimensional_array(Elements&&... elements) noexcept(std::is_nothrow_constructible_v<value_type>)
 				: data_{static_cast<value_type>(std::forward<Elements>(elements))...} {}
-
-			constexpr static_multidimensional_array(const static_multidimensional_array&) noexcept(std::is_nothrow_copy_constructible_v<value_type>) = default;
-			constexpr static_multidimensional_array(static_multidimensional_array&&) noexcept = default;
-
-			template<std::convertible_to<value_type> T2>
-			constexpr static_multidimensional_array& operator=(const static_multidimensional_array<T2>& other) noexcept(std::is_nothrow_copy_assignable_v<value_type>)
-			{
-				if (this != std::addressof(other))
-				{
-					data_ = other.data_;
-				}
-
-				return *this;
-			}
-
-			constexpr static_multidimensional_array& operator=(const static_multidimensional_array&) noexcept(std::is_nothrow_copy_assignable_v<value_type>) = default;
-			constexpr static_multidimensional_array& operator=(static_multidimensional_array&&) noexcept = default;
 
 			[[nodiscard]] constexpr const auto& dimensions() const noexcept
 			{

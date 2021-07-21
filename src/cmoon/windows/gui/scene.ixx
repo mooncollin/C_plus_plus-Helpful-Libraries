@@ -8,9 +8,9 @@ import <memory>;
 
 import cmoon.graphics;
 
-import cmoon.windows;
+import cmoon.windows.window_handle;
+import cmoon.windows.comptr;
 import cmoon.windows.gui.window;
-import cmoon.windows.gui.comptr;
 
 namespace cmoon::windows
 {
@@ -56,7 +56,7 @@ namespace cmoon::windows
 				}
 			}
 
-			::HRESULT resize(const cmoon::graphics::size2D_u& size)
+			::HRESULT resize(const cmoon::graphics::size2D_u32& size)
 			{
 				auto hr = S_OK;
 				if (render_target)

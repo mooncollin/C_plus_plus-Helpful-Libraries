@@ -2,6 +2,7 @@ export module cmoon.linear.rows_slice;
 
 import <cstddef>;
 import <iterator>;
+import <stdexcept>;
 
 import cmoon.utility;
 

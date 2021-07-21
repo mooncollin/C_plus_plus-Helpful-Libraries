@@ -1,5 +1,6 @@
 module;
 
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
 export module cmoon.windows.gui.message_box;
@@ -8,6 +9,8 @@ import <string_view>;
 import <cstdint>;
 import <concepts>;
 import <type_traits>;
+
+import cmoon.windows.window_handle;
 
 namespace cmoon::windows
 {
@@ -115,7 +118,7 @@ namespace cmoon::windows
 			template<is_message_box_option T>
 			[[nodiscard]] friend constexpr message_box_options operator|(const message_box_options& lhs, const T& rhs) noexcept
 			{
-				return message_box_option{lhs.value_ | rhs};
+				return message_box_options{lhs.value_ | rhs};
 			}
 		private:
 			constexpr explicit message_box_options(std::uint32_t v)
@@ -125,15 +128,15 @@ namespace cmoon::windows
 	};
 
 	export
-	message_box_result show_message_box(::HWND owner, std::string_view message, std::string_view title, message_box_options options)
+	message_box_result show_message_box(window_handle owner, std::string_view message, std::string_view title, message_box_options options)
 	{
 		return message_box_result{::MessageBoxA(owner, message.data(), title.data(), static_cast<::UINT>(options))};
 	}
 
 	export
-	message_box_result show_message_box(::HWND owner, std::wstring_view message, std::wstring_view title, message_box_options options)
+	message_box_result show_message_box(window_handle owner, std::wstring_view message, std::wstring_view title, message_box_options options)
 	{
-		return message_box_result{::MessageBoxW(owner, message.data(), title.data(), static_cast<::UINT>(options)))};
+		return message_box_result{::MessageBoxW(owner, message.data(), title.data(), static_cast<::UINT>(options))};
 	}
 
 	export

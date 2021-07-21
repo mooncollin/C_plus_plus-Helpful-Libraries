@@ -8,14 +8,14 @@ import <string_view>;
 import <ratio>;
 
 import cmoon.string;
-import cmoon.ratio;
 
 import cmoon.measures;
+import cmoon.measures.amount;
 import cmoon.measures.derived.base;
 
 namespace cmoon::measures
 {
-	template<class Rep, cmoon::ratio_type Ratio>
+	template<class Rep, class Ratio>
 	using base_katals = catalytic_activity<Rep, Ratio, basic_mole<Rep>>;
 
 	export
@@ -131,7 +131,7 @@ namespace cmoon::measures
 	using katals = basic_katals<std::intmax_t>;
 
 	export
-	template<class Rep, cmoon::ratio_type Ratio, class CharT>
+	template<class Rep, class Ratio, class CharT>
 	struct suffix<base_katals<Rep, Ratio>, CharT>
 	{
 		static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("kat"))};

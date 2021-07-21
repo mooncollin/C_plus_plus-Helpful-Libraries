@@ -2,6 +2,8 @@ export module cmoon.linear.row;
 
 import <span>;
 import <algorithm>;
+import <functional>;
+import <numeric>;
 
 namespace cmoon::linear
 {

@@ -45,7 +45,6 @@ namespace cmoon::tests
 		stats,
 		stemmer,
 		string,
-		tuple,
 		type_traits,
 		utility,
 		windows

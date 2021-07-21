@@ -8,7 +8,6 @@ import <chrono>;
 import <ratio>;
 import <cstdint>;
 
-import cmoon.ratio;
 import cmoon.string;
 
 import cmoon.measures;
@@ -20,10 +19,10 @@ namespace cmoon::measures
 	struct time_values : public std::chrono::duration_values<Rep> {};
 
     export
-	template<class Rep, class System, cmoon::ratio_type Ratio = std::ratio<1>, dimension_type Dimension = 1>
+	template<class Rep, class System, class Ratio = std::ratio<1>, dimension_type Dimension = 1>
 	using time = basic_unit<Rep, Ratio, time_values<Rep>, System, Dimension>;
 
-    template<class Rep, class System, cmoon::ratio_type Ratio, dimension_type Dimension>
+    template<class Rep, class System, class Ratio, dimension_type Dimension>
     std::true_type is_time_base_impl(const time<Rep, System, Ratio, Dimension>&);
 
     std::false_type is_time_base_impl(...);
@@ -205,7 +204,7 @@ namespace cmoon::measures
     using years = basic_years<std::intmax_t>;
 
     export
-    template<class Rep, cmoon::ratio_type Ratio, dimension_type Dimension, class CharT>
+    template<class Rep, class Ratio, dimension_type Dimension, class CharT>
     struct suffix<time<Rep, metric_system, Ratio, Dimension>, CharT>
     {
         static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("s"))};
@@ -258,7 +257,7 @@ namespace cmoon::measures
     using chrono_t = std::chrono::duration<typename Time::rep, typename Time::ratio>;
 
     export
-    template<class Rep, cmoon::ratio_type Ratio>
+    template<class Rep, class Ratio>
     constexpr std::chrono::duration<Rep, Ratio> to_chrono(const basic_unit<Rep, Ratio, time_values<Rep>, metric_system, 1>& t)
     {
         return std::chrono::duration<Rep, Ratio>{t.count()};

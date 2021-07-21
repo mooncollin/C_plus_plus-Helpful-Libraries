@@ -5,8 +5,8 @@ module;
 export module cmoon.measures.electric_current;
 
 import <type_traits>;
+import <utility>;
 
-import cmoon.ratio;
 import cmoon.string;
 
 import cmoon.measures;
@@ -18,10 +18,10 @@ namespace cmoon::measures
 	struct electric_current_values;
 
 	export
-	template<class Rep, class System, cmoon::ratio_type Ratio = std::ratio<1>, dimension_type Dimension = 1>
+	template<class Rep, class System, class Ratio = std::ratio<1>, dimension_type Dimension = 1>
 	using electric_current = basic_unit<Rep, Ratio, electric_current_values<Rep>, System, Dimension>;
 
-	template<class Rep, class System, cmoon::ratio_type Ratio, dimension_type Dimension>
+	template<class Rep, class System, class Ratio, dimension_type Dimension>
 	std::true_type is_electric_current_base_impl(const electric_current<Rep, System, Ratio, Dimension>&);
 
 	std::false_type is_electric_current_base_impl(...);
@@ -31,7 +31,7 @@ namespace cmoon::measures
 
 	export
 	template<class T>
-	struct is_electric_current : std::bool_constant<details::is_based_in_electric_current<T>> {};
+	struct is_electric_current : std::bool_constant<is_based_in_electric_current<T>> {};
 
 	export
 	template<class T>
@@ -174,7 +174,7 @@ namespace cmoon::measures
 	};
 
 	export
-	template<class Rep, cmoon::ratio_type Ratio, dimension_type Dimension, class CharT>
+	template<class Rep, class Ratio, dimension_type Dimension, class CharT>
 	struct suffix<electric_current<Rep, metric_system, Ratio, Dimension>, CharT>
 	{
 		static constexpr std::basic_string_view<CharT> value{cmoon::choose_str_literal<CharT>(STR_LITERALS("A"))};

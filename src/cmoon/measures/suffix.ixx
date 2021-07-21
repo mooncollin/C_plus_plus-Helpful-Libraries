@@ -20,6 +20,7 @@ namespace cmoon::measures
 		requires(requires() { T::dimension_opt_out; })
 	struct suffix_dimension<T> : std::bool_constant<T::dimension_opt_out> {};
 
+	export
 	template<class T, class CharT>
 	struct suffix
 	{
@@ -27,9 +28,11 @@ namespace cmoon::measures
 		static constexpr bool dimension_opt_out {false};
 	};
 
+	export
 	template<class T, class CharT>
 	constexpr auto suffix_v = suffix<T, CharT>::value;
 
+	export
 	template<class T, class CharT>
 	constexpr auto suffix_dimension_v = suffix_dimension<suffix<T, CharT>>::value;
 }

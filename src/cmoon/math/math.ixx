@@ -5,7 +5,7 @@ export import cmoon.math.abs;
 export import cmoon.math.ceil;
 export import cmoon.math.floor;
 export import cmoon.math.pow;
-export import cmoon.math.cot;
+export import cmoon.math.trig;
 export import cmoon.math.sign;
 export import cmoon.math.log;
 export import cmoon.math.prime_sieve;

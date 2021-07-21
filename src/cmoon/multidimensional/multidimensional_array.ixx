@@ -4,8 +4,11 @@ import <memory>;
 import <initializer_list>;
 import <vector>;
 import <ranges>;
+import <numeric>;
+import <concepts>;
 
-import "cmoon/multidimensional/container_definitions.hpp";
+import cmoon.multidimensional.fixed_multidimensional_array;
+import cmoon.multidimensional.static_multidimensional_array;
 
 namespace cmoon
 {
@@ -48,8 +51,8 @@ namespace cmoon
 				std::copy(other.begin(), other.end(), begin());
 			}
 
-			template<std::size_t OtherDimensions>
-			multidimensional_array(const fixed_multidimensional_array<T, OtherDimensions>& other, const Allocator& alloc = Allocator{})
+			template<std::size_t OtherDimensions, class OtherAllocator>
+			multidimensional_array(const fixed_multidimensional_array<T, OtherDimensions, OtherAllocator>& other, const Allocator& alloc = Allocator{})
 				: data_{alloc}, dimensions_(OtherDimensions), dimensions_cache_(OtherDimensions == 1 ? 1 : OtherDimensions - 1)
 			{
 				std::ranges::copy(other.dimensions(), std::ranges::begin(dimensions_));
@@ -58,11 +61,8 @@ namespace cmoon
 				std::copy(other.begin(), other.end(), begin());
 			}
 
-			multidimensional_array(const multidimensional_array&) = default;
-			multidimensional_array(multidimensional_array&&) noexcept = default;
-
 			template<std::convertible_to<value_type> T2>
-			multidimensional_array& operator=(const multidimensional_array<T2, Allocator>&other)
+			multidimensional_array& operator=(const multidimensional_array<T2, Allocator>& other)
 			{
 				if (this != std::addressof(other))
 				{
@@ -92,8 +92,8 @@ namespace cmoon
 				return *this;
 			}
 
-			template<std::convertible_to<T> T2, std::size_t OtherDimensions>
-			multidimensional_array& operator=(const fixed_multidimensional_array<T2, OtherDimensions>& other)
+			template<std::convertible_to<T> T2, std::size_t OtherDimensions, class OtherAllocator>
+			multidimensional_array& operator=(const fixed_multidimensional_array<T2, OtherDimensions, OtherAllocator>& other)
 			{
 				dimensions_.resize(OtherDimensions);
 				std::ranges::copy(other.dimensions(), std::begin(dimensions_));
@@ -110,9 +110,6 @@ namespace cmoon
 				std::ranges::copy(other, begin());
 				return *this;
 			}
-				
-			multidimensional_array& operator=(const multidimensional_array&) = default;
-			multidimensional_array& operator=(multidimensional_array&&) noexcept = default;
 
 			multidimensional_array& operator=(std::initializer_list<T> elements)
 			{
