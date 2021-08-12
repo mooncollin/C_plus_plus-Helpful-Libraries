@@ -3,7 +3,6 @@ export import cmoon.utility.throw_on_error;
 export import cmoon.utility.extent_type;
 export import cmoon.utility.expected;
 export import cmoon.utility.stopwatch;
-export import cmoon.utility.to_underlying;
 
 import <iterator>;
 import <utility>;
