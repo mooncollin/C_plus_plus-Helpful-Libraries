@@ -62,6 +62,9 @@ namespace cmoon::ranges
 			template<class... Its>
 			class zip_view_iterator
 			{
+				template<class... OtherIts>
+				friend class zip_view_iterator;
+
 				private:
 					static constexpr auto ranges_index_sequence = std::index_sequence_for<Its...>{};
 					using internal_iterator_category = std::common_type_t<iterator_category_chooser_t<Its>...>;
@@ -148,6 +151,12 @@ namespace cmoon::ranges
 						return std::get<0>(lhs.itrs_) - std::get<0>(rhs.iters_);
 					}
 
+					constexpr reference operator[](difference_type idx)
+						requires(std::derived_from<internal_iterator_category, std::random_access_iterator_tag>)
+					{
+						return std::apply([idx](auto&... it) { return value_type{ *(it[idx])... }; }, itrs_);
+					}
+
 					template<class... OtherIts>
 					[[nodiscard]] friend constexpr bool operator==(const zip_view_iterator& lhs, const zip_view_iterator<OtherIts...>& rhs)
 					{
@@ -187,13 +196,10 @@ namespace cmoon::ranges
 					std::tuple<Its...> itrs_;
 
 					template<class... OtherIts, std::size_t... I>
-					[[nodiscard]] friend constexpr bool equal_helper(const zip_view_iterator& lhs, const zip_view_iterator<OtherIts...>& rhs, std::index_sequence<I...>)
+					[[nodiscard]] static constexpr bool equal_helper(const zip_view_iterator& lhs, const zip_view_iterator<OtherIts...>& rhs, std::index_sequence<I...>)
 					{
 						return ((std::get<I>(lhs.itrs_) == std::get<I>(rhs.itrs_)) || ...);
 					}
-
-					template<class... OtherIts>
-					friend class zip_view_iterator;
 			};
 		public:
 			constexpr zip_view() noexcept
@@ -235,11 +241,68 @@ namespace cmoon::ranges
 			}
 
 			[[nodiscard]] constexpr auto size() const
-				requires((std::ranges::sized_range<Rngs> && ...))
+				requires((std::ranges::sized_range<Rngs> || ...))
 			{
-				return std::apply([](const auto&... rngs) { return cmoon::min(std::ranges::size(rngs)...); }, ranges_);
+				return std::apply([this](const auto&... rngs) { return size_helper(rngs...); }, ranges_);
+			}
+
+			constexpr auto front()
+			{
+				return *begin();
+			}
+
+			constexpr auto front() const
+			{
+				return *begin();
+			}
+
+			constexpr auto back()
+				requires(std::bidirectional_iterator<decltype(begin())>)
+			{
+				return *(--end());
+			}
+
+			constexpr auto back() const
+				requires(std::bidirectional_iterator<decltype(begin())>)
+			{
+				return *(--end());
+			}
+
+			constexpr auto operator[](std::size_t idx)
+				requires(std::random_access_iterator<decltype(begin())>)
+			{
+				return begin()[idx];
+			}
+
+			constexpr auto operator[](std::size_t idx) const
+				requires(std::random_access_iterator<decltype(begin())>)
+			{
+				return begin()[idx];
 			}
 		private:
+			template<class R1, class... RN>
+			[[nodiscard]] constexpr auto size_helper(const R1& r1, const RN&... rn) const
+			{
+				if constexpr (std::ranges::sized_range<R1>)
+				{
+					using can_get_more_sizes = decltype(size_helper(rn...));
+					if constexpr (std::is_void_v<can_get_more_sizes>)
+					{
+						return std::ranges::size(r1);
+					}
+					else
+					{
+						return std::min(std::ranges::size(r1), size_helper(rn...));
+					}
+				}
+				else
+				{
+					return size_helper(rn...);
+				}
+			}
+
+			[[nodiscard]] constexpr void size_helper() const {}
+
 			std::tuple<ref_or_value_t<Rngs>...> ranges_;
 	};
 
@@ -259,7 +322,7 @@ namespace cmoon::ranges
 		requires(requires(T t) { is_empty_view_impl(t); })
 	struct is_empty_view<T> : public std::true_type {};
 
-	// TODO: MSVC gives C1001 here
+	 //TODO: MSVC gives C1001 here
 	//export
 	//template<std::ranges::range... Rngs>
 	//	requires((is_empty_view<Rngs>::value || ...))

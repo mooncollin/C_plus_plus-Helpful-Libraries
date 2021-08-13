@@ -17,12 +17,9 @@ namespace cmoon::tests
 		cmoon::test::test_suite suite{"ranges library tests"};
 		suite.add_test_case<ranges::enumerate_view_constructor_test>();
 		suite.add_test_case<ranges::enumerate_view_increment_test>();
-		suite.add_test_case<ranges::enumerate_view_decrement_test>();
 		suite.add_test_case<ranges::enumerate_view_empty_test>();
 		suite.add_test_case<ranges::enumerate_view_size_test>();
-		suite.add_test_case<ranges::enumerate_view_index_operator_test>();
 		suite.add_test_case<ranges::enumerate_view_front_test>();
-		suite.add_test_case<ranges::enumerate_view_back_test>();
 		suite.add_test_case<ranges::zip_view_constructor_test>();
 		suite.add_test_case<ranges::zip_view_empty_test>();
 		suite.add_test_case<ranges::zip_view_increment_test>();

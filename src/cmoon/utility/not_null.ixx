@@ -4,7 +4,7 @@ import <concepts>;
 import <utility>;
 import <iostream>;
 
-import cmoon.test;
+import cmoon.test.assert;
 
 namespace cmoon
 {

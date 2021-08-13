@@ -1,12 +1,9 @@
 export module cmoon.iostream.lines;
 
-import <string>;
 import <iterator>;
 import <iostream>;
 import <vector>;
-import <locale>;
 
-import cmoon.string;
 import cmoon.iterator;
 
 namespace cmoon
