@@ -67,9 +67,8 @@ namespace cmoon::ranges
 
 				private:
 					static constexpr auto ranges_index_sequence = std::index_sequence_for<Its...>{};
-					using internal_iterator_category = std::common_type_t<iterator_category_chooser_t<Its>...>;
 				public:
-					using iterator_category = std::common_type_t<std::bidirectional_iterator_tag, internal_iterator_category>;
+					using iterator_category = std::common_type_t<iterator_category_chooser_t<Its>...>;
 
 					using difference_type = std::ptrdiff_t;
 					using value_type = typename value_type_chooser<ref_or_value_t<Rngs>...>::type;
@@ -81,7 +80,7 @@ namespace cmoon::ranges
 					constexpr zip_view_iterator(Its... itrs)
 						: itrs_{itrs...} {}
 
-					constexpr reference operator*()
+					constexpr reference operator*() const
 					{
 						return std::apply([](auto&... it) { return value_type{*it...}; }, itrs_);
 					}
@@ -101,14 +100,14 @@ namespace cmoon::ranges
 					}
 
 					constexpr zip_view_iterator& operator--()
-						requires(std::derived_from<internal_iterator_category, std::bidirectional_iterator_tag>)
+						requires(std::derived_from<iterator_category, std::bidirectional_iterator_tag>)
 					{
 						std::apply([](auto&... it) { (--it, ...); }, itrs_);
 						return *this;
 					}
 
 					constexpr zip_view_iterator operator--(int)
-						requires(std::derived_from<internal_iterator_category, std::bidirectional_iterator_tag>)
+						requires(std::derived_from<iterator_category, std::bidirectional_iterator_tag>)
 					{
 						auto tmp = *this;
 						--*this;
@@ -116,29 +115,37 @@ namespace cmoon::ranges
 					};
 
 					constexpr zip_view_iterator& operator+=(difference_type n)
-						requires(std::derived_from<internal_iterator_category, std::random_access_iterator_tag>)
+						requires(std::derived_from<iterator_category, std::random_access_iterator_tag>)
 					{
 						std::apply([n](auto&... it) { ((it += n), ...); }, itrs_);
 						return *this;
 					}
 
 					constexpr zip_view_iterator& operator-=(difference_type n)
-						requires(std::derived_from<internal_iterator_category, std::random_access_iterator_tag>)
+						requires(std::derived_from<iterator_category, std::random_access_iterator_tag>)
 					{
 						std::apply([n](auto&... it) { ((it -= n), ...); }, itrs_);
 						return *this;
 					}
 
 					[[nodiscard]] friend constexpr zip_view_iterator operator+(const zip_view_iterator& lhs, difference_type rhs)
-						requires(std::derived_from<internal_iterator_category, std::random_access_iterator_tag>)
+						requires(std::derived_from<iterator_category, std::random_access_iterator_tag>)
 					{
 						auto tmp = lhs;
 						tmp += rhs;
 						return tmp;
 					}
 
+					[[nodiscard]] friend constexpr zip_view_iterator operator+(difference_type lhs, const zip_view_iterator& rhs)
+						requires(std::derived_from<iterator_category, std::random_access_iterator_tag>)
+					{
+						auto tmp = rhs;
+						tmp += lhs;
+						return tmp;
+					}
+
 					[[nodiscard]] friend constexpr zip_view_iterator operator-(const zip_view_iterator& lhs, difference_type rhs)
-						requires(std::derived_from<internal_iterator_category, std::random_access_iterator_tag>)
+						requires(std::derived_from<iterator_category, std::random_access_iterator_tag>)
 					{
 						auto tmp = lhs;
 						tmp -= rhs;
@@ -146,15 +153,15 @@ namespace cmoon::ranges
 					}
 
 					[[nodiscard]] friend constexpr difference_type operator-(const zip_view_iterator& lhs, const zip_view_iterator& rhs)
-						requires(std::derived_from<internal_iterator_category, std::random_access_iterator_tag>)
+						requires(std::derived_from<iterator_category, std::random_access_iterator_tag>)
 					{
 						return std::get<0>(lhs.itrs_) - std::get<0>(rhs.iters_);
 					}
 
-					constexpr reference operator[](difference_type idx)
-						requires(std::derived_from<internal_iterator_category, std::random_access_iterator_tag>)
+					constexpr reference operator[](difference_type idx) const
+						requires(std::derived_from<iterator_category, std::random_access_iterator_tag>)
 					{
-						return std::apply([idx](auto&... it) { return value_type{ *(it[idx])... }; }, itrs_);
+						return std::apply([idx](auto&... it) { return value_type{ *(it + idx)... }; }, itrs_);
 					}
 
 					template<class... OtherIts>
@@ -169,26 +176,30 @@ namespace cmoon::ranges
 						return !equal_helper(lhs, rhs, ranges_index_sequence);
 					}
 
-					[[nodiscard]] friend constexpr bool operator<(const zip_view_iterator& lhs, const zip_view_iterator& rhs)
-						requires(std::derived_from<internal_iterator_category, std::random_access_iterator_tag>)
+					template<class... OtherIts>
+					[[nodiscard]] friend constexpr bool operator<(const zip_view_iterator& lhs, const zip_view_iterator<OtherIts...>& rhs)
+						requires(std::derived_from<iterator_category, std::random_access_iterator_tag>)
 					{
-						return std::get<0>(lhs.iters_) < std::get<0>(rhs.iters_);
+						return std::get<0>(lhs.itrs_) < std::get<0>(rhs.itrs_);
 					}
 
-					[[nodiscard]] friend constexpr bool operator>(const zip_view_iterator& lhs, const zip_view_iterator& rhs)
-						requires(std::derived_from<internal_iterator_category, std::random_access_iterator_tag>)
+					template<class... OtherIts>
+					[[nodiscard]] friend constexpr bool operator>(const zip_view_iterator& lhs, const zip_view_iterator<OtherIts...>& rhs)
+						requires(std::derived_from<iterator_category, std::random_access_iterator_tag>)
 					{
 						return rhs < lhs;
 					}
 
-					[[nodiscard]] friend constexpr bool operator<=(const zip_view_iterator& lhs, const zip_view_iterator& rhs)
-						requires(std::derived_from<internal_iterator_category, std::random_access_iterator_tag>)
+					template<class... OtherIts>
+					[[nodiscard]] friend constexpr bool operator<=(const zip_view_iterator& lhs, const zip_view_iterator<OtherIts...>& rhs)
+						requires(std::derived_from<iterator_category, std::random_access_iterator_tag>)
 					{
 						return !(rhs < lhs);
 					}
 
-					[[nodiscard]] friend constexpr bool operator>=(const zip_view_iterator& lhs, const zip_view_iterator& rhs)
-						requires(std::derived_from<internal_iterator_category, std::random_access_iterator_tag>)
+					template<class... OtherIts>
+					[[nodiscard]] friend constexpr bool operator>=(const zip_view_iterator& lhs, const zip_view_iterator<OtherIts...>& rhs)
+						requires(std::derived_from<iterator_category, std::random_access_iterator_tag>)
 					{
 						return !(lhs < rhs);
 					}
@@ -269,14 +280,22 @@ namespace cmoon::ranges
 			}
 
 			constexpr auto operator[](std::size_t idx)
-				requires(std::random_access_iterator<decltype(begin())>)
+				// MSVC will disallow this function with the below
+				// constraint, even though the static_assert confirms
+				// it.
+				//requires(std::random_access_iterator<decltype(begin())>)
 			{
+				static_assert(std::random_access_iterator<decltype(begin())>);
 				return begin()[idx];
 			}
 
 			constexpr auto operator[](std::size_t idx) const
-				requires(std::random_access_iterator<decltype(begin())>)
+				// MSVC will disallow this function with the below
+				// constraint, even though the static_assert confirms
+				// it.
+				//requires(std::random_access_iterator<decltype(begin())>)
 			{
+				static_assert(std::random_access_iterator<decltype(begin())>);
 				return begin()[idx];
 			}
 		private:

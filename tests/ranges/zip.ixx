@@ -338,7 +338,31 @@ namespace cmoon::tests::ranges
 
 			void operator()() override
 			{
+				std::vector<std::string> vec1{"Hello", "there"};
+				std::vector<int> vec2{1, 2};
+				std::vector<double> vec3{5.5, 444.4};
 
+				auto z = cmoon::ranges::views::zip(vec1, vec2, vec3);
+				auto it1 = std::ranges::begin(z);
+				auto it2 = std::ranges::begin(z);
+
+				cmoon::test::assert_equal(it1, it2);
+				cmoon::test::assert_greater_equal(it1, it2);
+				cmoon::test::assert_less_equal(it1, it2);
+				cmoon::test::assert_greater_equal(it2, it1);
+				cmoon::test::assert_less_equal(it2, it1);
+
+				++it2;
+
+				cmoon::test::assert_not_equal(it1, it2);
+				cmoon::test::assert_greater(it2, it1);
+				cmoon::test::assert_greater_equal(it2, it1);
+				cmoon::test::assert_less(it1, it2);
+				cmoon::test::assert_less_equal(it1, it2);
+
+				++it2;
+
+				cmoon::test::assert_equal(it2, std::ranges::end(z));
 			}
 	};
 
@@ -391,6 +415,51 @@ namespace cmoon::tests::ranges
 				}
 
 				cmoon::test::assert_equal(count4, 6);
+			}
+	};
+
+	export
+	class zip_view_index_test : public cmoon::test::test_case
+	{
+		public:
+			zip_view_index_test()
+				: cmoon::test::test_case{"zip_view_index_test"} {}
+
+			void operator()() override
+			{
+				std::vector<int> vec1{1, 2, 3, 4, 5};
+				std::vector<int> vec2{10, 20, 30, 40, 50};
+				std::vector<int> vec3{100, 200, 300, 400};
+
+				auto z = cmoon::ranges::views::zip(vec1, vec2, vec3);
+
+				{
+					auto [v1, v2, v3] = z[0];
+					cmoon::test::assert_equal(v1, 1);
+					cmoon::test::assert_equal(v2, 10);
+					cmoon::test::assert_equal(v3, 100);
+				}
+
+				{
+					auto [v1, v2, v3] = z[1];
+					cmoon::test::assert_equal(v1, 2);
+					cmoon::test::assert_equal(v2, 20);
+					cmoon::test::assert_equal(v3, 200);
+				}
+
+				{
+					auto [v1, v2, v3] = z[2];
+					cmoon::test::assert_equal(v1, 3);
+					cmoon::test::assert_equal(v2, 30);
+					cmoon::test::assert_equal(v3, 300);
+				}
+
+				{
+					auto [v1, v2, v3] = z[3];
+					cmoon::test::assert_equal(v1, 4);
+					cmoon::test::assert_equal(v2, 40);
+					cmoon::test::assert_equal(v3, 400);
+				}
 			}
 	};
 }

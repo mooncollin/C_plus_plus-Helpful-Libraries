@@ -28,6 +28,7 @@ namespace cmoon::tests
 		suite.add_test_case<ranges::zip_view_decrement_different_sizes_test>();
 		suite.add_test_case<ranges::zip_view_relational_test>();
 		suite.add_test_case<ranges::zip_view_iteration_test>();
+		suite.add_test_case<ranges::zip_view_index_test>();
 
 		return std::move(suite);
 	}
