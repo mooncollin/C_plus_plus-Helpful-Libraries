@@ -1,6 +1,7 @@
 export module cmoon.tests.ranges;
 export import cmoon.tests.ranges.enumerate;
 export import cmoon.tests.ranges.zip;
+export import cmoon.tests.ranges.to;
 
 import <utility>;
 
@@ -29,6 +30,7 @@ namespace cmoon::tests
 		suite.add_test_case<ranges::zip_view_relational_test>();
 		suite.add_test_case<ranges::zip_view_iteration_test>();
 		suite.add_test_case<ranges::zip_view_index_test>();
+		suite.add_test_case<ranges::to_vector_test>();
 
 		return std::move(suite);
 	}

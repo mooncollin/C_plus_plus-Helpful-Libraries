@@ -7,7 +7,7 @@ import <memory>;
 import <concepts>;
 
 import cmoon.string;
-import cmoon.iostream.read;
+import cmoon.io.read;
 
 namespace cmoon
 {

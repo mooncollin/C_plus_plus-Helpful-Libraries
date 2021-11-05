@@ -1,19 +1,16 @@
-export module cmoon.execution.invocable_archetype
+export module cmoon.execution.invocable_archetype;
 
 import <concepts>;
 
 namespace cmoon::execution
 {
-	struct invocable_archetype_t
-	{
-		void operator()()
-		{
-
-		}
-	};
-
 	export
-	using invocable_archetype = invocable_archetype_t;
+	struct invocable_archetype
+	{
+		invocable_archetype() = delete;
+
+		constexpr void operator()() const noexcept {}
+	};
 
 	static_assert(std::invocable<invocable_archetype&>);
 }

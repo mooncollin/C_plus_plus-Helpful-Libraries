@@ -7,190 +7,240 @@ import <concepts>;
 import <algorithm>;
 import <iterator>;
 import <execution>;
-import <vector>;
+import <cmath>;
+import <limits>;
 
 import cmoon.math;
 
 import cmoon.stats.concepts;
-import cmoon.stats.stats_error;
+import cmoon.stats.stats_result_t;
 
 namespace cmoon::stats
 {
 	export
-	template<typename R, typename P = std::identity, typename Result = std::conditional_t<
-																			std::integral<typename std::projected<std::ranges::iterator_t<R>, P>::value_type>,
-																			double,
-																			typename std::projected<std::ranges::iterator_t<R>, P>::value_type>;
-		requires(std::is_execution_policy_v<std::decay_t<ExecutionPolicy>> && std::weighted_stats_range<R, P1, Weights, P2> && std::is_arithmetic_v<Result>)
-	constexpr Result harmonic_mean(R&& r, P proj = P{})
+	template<std::ranges::input_range R, typename P = std::identity, std::floating_point Result = stats_result_t<R, P>>
+	constexpr Result harmonic_mean(R&& r, P proj = P{}) noexcept
 	{
-		if (std::ranges::empty(r))
-		{
-			throw stats_error{};
-		}
+		constexpr Result inf {std::numeric_limits<Result>::infinity()};
+		constexpr Result nan {std::numeric_limits<Result>::quiet_NaN()};
 
 		std::size_t size {0};
+		Result sum {0};
 
-		const auto sum = std::transform_reduce(std::ranges::begin(r), std::ranges::end(r), std::plus{}, [proj = std::ref(proj), &size](const auto& x) {
-			const auto p = std::invoke(proj, x);
+		auto values_transform = r |
+								std::ranges::views::transform(std::move(proj));
 
-			if (p <= 0)
+		for (const auto v : values_transform)
+		{
+			if (is_invalid_input(v) ||
+				cmoon::is_negative(v))
 			{
-				throw stats_error{};
+				return nan;
+			}
+
+			if (v == 0)
+			{
+				return inf;
 			}
 
 			++size;
-			return 1.0 / p;
-		});
+			sum += Result{1.0} / v;
+		}
+
+		if (size == 0)
+		{
+			return inf;
+		}
 
 		return size / sum;
 	}
 
 	export
-	template<typename R, typename P1 = std::identity, typename Weights, typename P2 = std::identity, typename Result = std::conditional_t<
-																															std::integral<typename std::projected<std::ranges::iterator_t<R>, P1>::value_type>,
-																															double,
-																															typename std::projected<
-																																std::ranges::iterator_t<R>, P1>::value_type>
-		requires(std::weighted_stats_range<R, P1, Weights, P2> && std::is_arithmetic_v<Result>)
-	constexpr Result harmonic_mean(R&& r, Weights&& w, P1 proj1 = P1{}, P2 proj2 = P2{})
+	template<std::ranges::input_range R, typename P1 = std::identity, std::ranges::input_range W, typename P2 = std::identity, std::floating_point Result = stats_result_t<R, P1>>
+		requires(std::arithmetic<typename std::projected<std::ranges::iterator_t<W>, P2>::value_type>)
+	constexpr Result harmonic_mean(R&& r, W&& w, P1 proj1 = {}, P2 proj2 = {}) noexcept
 	{
-		if (std::ranges::empty(r) || std::ranges::empty(w))
+		constexpr Result inf {std::numeric_limits<Result>::infinity()};
+		constexpr Result nan {std::numeric_limits<Result>::quiet_NaN()};
+
+		auto values_transform = r |
+								std::ranges::views::transform(std::move(proj1));
+
+		auto weights_transform = w |
+								 std::ranges::views::transform(std::move(proj2));
+
+		std::size_t size {0};
+		Result sum_of_weights {0};
+		Result divisor {0};
+		const auto r_end = std::ranges::end(values_transform);
+		const auto w_end = std::ranges::end(weights_transform);
+
+		auto r_it = std::ranges::begin(values_transform);
+		auto w_it = std::ranges::begin(weights_transform);
+
+		if (r_it == r_end || w_it == w_end)
 		{
-			throw stats_error{};
+			return inf;
 		}
 
-		if constexpr (std::ranges::input_range<R> || std::ranges::input_range<Weights>)
+		for (; r_it != r_end && w_it != w_end; ++r_it, ++w_it)
 		{
-			std::vector<Result> projected_range;
-			std::vector<Result> projected_weights;
+			const auto value = *r_it;
 
-			std::transform(std::ranges::begin(r), std;:ranges::end(r), std::back_inserter(projected_range), [proj1 = std::ref(proj1)](const auto& x) {
-				const auto p = std::invoke(proj1, x):
-
-				if (p == 0)
-				{
-					throw stats_error {};
-				}
-
-				return p;
-			});
-			std::transform(std::ranges::begin(w), std::ranges::end(w), std::back_inserter(projected_weights), std::ref(proj2));
-
-			if (projected_range.size() != projected_weights.size())
+			if (is_invalid_input(value) ||
+				cmoon::is_negative(value))
 			{
-				throw stats_error{};
+				return nan;
 			}
 
-			Result sum_of_weights {0};
-
-			const auto denominator = std::transform_reduce(std::begin(projected_range), std::end(projected_range), std::begin(projected_weights), Result{}, std::plus{}, 
-			[&sum_of_weights](const auto& x, const auto& y) {
-				sum_of_weights = std::move(sum_of_weights) + y;
-				return y / x;
-			});
-
-			if (sum_of_weights == 0)
+			if (value == 0)
 			{
-				throw stats_error{};
+				return inf;
 			}
 
-			return sum_of_weights / denominator;
+			const auto weight = *w_it;
+
+			if (is_invalid_input(weight))
+			{
+				return nan;
+			}
+
+			sum_of_weights += weight;
+			divisor += weight / value;
 		}
-		else
+
+		if (((r_it == r_end) != (w_it == w_end)) ||
+			sum_of_weights == 0)
 		{
-			if (std::ranges::distance(r) != std::ranges::distance(w))
-			{
-				throw stats_error{};
-			}
-
-			Result sum_of_weights {0};
-
-			const auto denominator = std::transform_reduce(std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(w), Result{}, std::plus{}, 
-			[proj1 = std::ref(proj1), proj2 = std::ref(proj2), &sum_of_weights](const auto& x, const auto& y) {
-				const auto p1 = std::invoke(proj1, x);
-				
-				if (p1 == 0)
-				{
-					throw stats_error{};
-				}
-
-				const auto p2 = std::invoke(proj2, y);
-
-				sum_of_weights = std::move(sum_of_weights) + p2;
-				return p2 / p1;
-			});
-
-			if (sum_of_weights == 0)
-			{
-				throw stats_error{};
-			}
-
-			return sum_of_weights / denominator;
+			return inf;
 		}
+
+		return sum_of_weights / divisor;
 	}
 
 	export
-	template<typename ExecutionPolicy, typename R, typename P = std::identity, typename Result = std::conditional_t<
-																			std::integral<typename std::projected<std::ranges::iterator_t<R>, P>::value_type>,
-																			double,
-																			typename std::projected<std::ranges::iterator_t<R>, P>::value_type>;
-		requires(std::is_execution_policy_v<std::decay_t<ExecutionPolicy>> && std::stats_range<R, P> && std::is_arithmetic_v<Result>)
-	constexpr Result harmonic_mean(ExecutionPolicy&& policy, R&& r, P proj = P{})
+	template<typename ExecutionPolicy, std::ranges::input_range R, typename P = std::identity, std::floating_point Result = stats_result_t<R, P>>
+		requires(std::is_execution_policy_v<std::remove_cvref_t<ExecutionPolicy>>)
+	constexpr Result harmonic_mean(ExecutionPolicy&& policy, R&& r, P proj = {}) noexcept
 	{
-		if constexpr (std::ranges::input_range<R> || std::is_constant_evaluated())
+		constexpr Result inf {std::numeric_limits<Result>::infinity()};
+		constexpr Result nan {std::numeric_limits<Result>::quiet_NaN()};
+
+		if constexpr (std::ranges::input_range<R> ||
+					  std::ranges::forward_range<R> ||
+					  std::is_constant_evaluated())
 		{
-			return harmonic_mean(std::forward<R>(r), std::ref(proj));
+			return harmonic_mean(std::forward<R>(r), std::move(proj));
 		}
 		else
 		{
 			if (std::ranges::empty(r))
 			{
-				throw stats_error{};
+				return inf;
 			}
 
-			if (std::any_of(policy, std::ranges::begin(r), std::ranges::end(r), [proj = std::ref(proj)](const auto& x) { std::invoke(proj, x) == 0; }))
+			auto values_transform = r |
+									std::ranges::views::transform(std::move(proj));
+
+			for (const auto v : values_transform)
 			{
-				throw stats_error{};
+				if (is_invalid_input(v) || cmoon::is_negative(v))
+				{
+					return nan;
+				}
+
+				if (v == 0)
+				{
+					return inf;
+				}
+
 			}
 
-			const auto sum = std::transform_reduce(policy, std::ranges::begin(r), std::ranges::end(r), Result{}, std::plus{}, [proj = std::ref(proj)](const auto& x) {
-				return 1.0 / std::invoke(proj, x);
+			const auto sum = std::transform_reduce(policy,
+												   std::ranges::begin(values_transform),
+												   std::ranges::end(values_transform),
+												   Result{},
+												   std::plus{},
+				[](const auto v) {
+				return Result{1.0} / v;
 			});
 
-			return std::ranges::distance(r) / sum;
+			return std::ranges::size(r) / sum;
 		}
 	}
 
 	export
-	template<typename ExecutionPolicy, typename R, typename P1 = std::identity, typename Weights, typename P2 = std::identity, typename Result = std::conditional_t<
-																															std::integral<typename std::projected<std::ranges::iterator_t<R>, P1>::value_type>,
-																															double,
-																															typename std::projected<
-																																std::ranges::iterator_t<R>, P1>::value_type>
-		requires(std::is_execution_policy_v<std::decay_t<ExecutionPolicy>> && std::weighted_stats_range<R, P1, Weights, P2> && std::is_arithmetic_v<Result>)
-	constexpr Result harmonic_mean(ExecutionPolicy&& policy, R&& r, Weights&& w, P1 proj1 = P1{}, P2 proj2 = P2{})
+	template<typename ExecutionPolicy, std::ranges::input_range R, typename P1 = std::identity, std::ranges::input_range W, typename P2 = std::identity, std::floating_point Result = stats_result_t<R, P1>>
+		requires(std::is_execution_policy_v<std::remove_cvref_t<ExecutionPolicy>> &&
+				 std::arithmetic<typename std::projected<std::ranges::iterator_t<W>, P2>::value_type>)
+	constexpr Result harmonic_mean(ExecutionPolicy&& policy, R&& r, W&& w, P1 proj1 = {}, P2 proj2 = {}) noexcept
 	{
-		if constexpr (std::ranges::input_range<R> || std::ranges::input_range<W> || std::is_constant_evaluated())
+		constexpr Result inf {std::numeric_limits<Result>::infinity()};
+		constexpr Result nan {std::numeric_limits<Result>::quiet_NaN()};
+
+		if constexpr (std::ranges::input_range<R>||
+					  std::ranges::input_range<W> ||
+					  std::ranges::forward_range<R> ||
+					  std::ranges::forward_range<W> ||
+					  std::is_constant_evaluated())
 		{
-			return harmonic_mean(std::forward<R>(r), std::ref(proj));
+			return harmonic_mean(std::forward<R>(r), std::move(proj));
 		}
 		else
 		{
-			if (std::ranges::empty(r) || std::ranges::distance(r) != std::ranges::distance(w))
+			if (std::ranges::empty(r) || std::ranges::size(r) != std::ranges::size(w))
 			{
-				throw stats_error{};
+				return inf;
 			}
 
-			if (std::any_of(policy, std::ranges::begin(r), std::ranges::end(r), [proj = std::ref(proj)](const auto& x) { std::invoke(proj, x) == 0; }))
+			auto values_transform = r |
+									std::ranges::views::transform(std::move(proj1));
+
+			for (const auto v : values_transform)
 			{
-				throw stats_error{};
+				if (is_invalid_input(v) || cmoon::is_negative(v))
+				{
+					return nan;
+				}
+
+				if (v == 0)
+				{
+					return inf;
+				}
+
 			}
 
-			const auto sum_of_weights = std::transform_reduce(std::ranges::begin(w), std::ranges::end(w), Result{}, std::plus{}, std::ref(proj2));
-			const auto denominator = std::transform_reduce(std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(w), Result{}, std::plus{},
-			[proj1 = std::ref(proj1), proj2 = std::ref(proj2)](const auto& x, const auto& y) {
-				return std::invoke(proj2, y) / std::invoke(proj1, x);
+			auto weights_transform = r |
+									 std::ranges::views::transform(std::move(proj2));
+
+			if (std::any_of(policy,
+							 std::ranges::begin(weights_transform),
+							 std::ranges::end(weights_transform),
+				[](const auto w) {
+					return is_invalid_input(w);
+				})
+			{
+				return nan;
+			}
+
+			const auto sum_of_weights = std::reduce(policy,
+													std::ranges::begin(weights_transform),
+													std::ranges::end(weights_transform),
+													Result{});
+
+			if (sum_of_weights == 0)
+			{
+				return inf;
+			}
+
+			const auto denominator = std::transform_reduce(policy,
+														   std::ranges::begin(values_transform),
+														   std::ranges::end(values_transform),
+														   std::ranges::begin(weights_transform),
+														   Result{},
+														   std::plus{},
+			[](const auto v, const auto w) {
+				return w / v;
 			});
 
 			return sum_of_weights / denominator;

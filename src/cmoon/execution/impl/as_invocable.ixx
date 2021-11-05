@@ -1,24 +1,20 @@
-export module cmoon.execution.as_invocable;
+export module cmoon.execution.impl.as_invocable;
 
-import <utility>;
-import <stdexcept>;
 import <memory>;
-
-import cmoon.memory;
+import <utility>;
+import <exception>;
 
 import cmoon.execution.set_value;
 import cmoon.execution.set_error;
 import cmoon.execution.set_done;
-import cmoon.execution.receiver;
-
 
 namespace cmoon::execution
 {
 	export
-	template<receiver<> R, class>
+	template<class R, class>
 	struct as_invocable
 	{
-		cmoon::observer_ptr<R> r_;
+		R* r_;
 
 		explicit as_invocable(R& r) noexcept
 			: r_{std::addressof(r)} {}
@@ -34,7 +30,7 @@ namespace cmoon::execution
 			}
 		}
 
-		void operator()() noexcept try
+		void operator()() & noexcept try
 		{
 			execution::set_value(std::move(*r_));
 			r_ = nullptr;

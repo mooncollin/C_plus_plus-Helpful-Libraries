@@ -6,74 +6,54 @@ import cmoon.meta;
 
 namespace cmoon::execution
 {
-	namespace set_done_cpo
+	namespace set_done_ns
 	{
 		void set_done();
 
-		template<class R>
-		concept has_adl =
-			requires(R&& r)
-		{
-			set_done(std::forward<R>(r));
-		};
-
-		template<class R>
-		concept can_member_call =
-			requires(R&& r)
-		{
-			std::forward<R>(r).set_done();
-		};
-
-		struct cpo
+		class set_done_t
 		{
 			private:
-				enum class state { none, member_call, non_member_call };
+				enum class state { none, member_fn, default_fn };
 
-				template<class R>
-				[[nodiscard]] static consteval cmoon::meta::choice_t<state> choose() noexcept
+				template<class R, class... Vs>
+				static consteval cmoon::meta::choice_t<state> choose() noexcept
 				{
-					if constexpr (can_member_call<R>)
+					if constexpr (requires(R&& r) {
+						std::forward<R>(r).set_done();
+					})
 					{
-						return {state::member_call, noexcept((std::declval<R>()).set_done())};
+						return {state::member_fn, noexcept(std::declval<R>().set_done())};
 					}
-					else if constexpr (has_adl<R>)
+					else if constexpr (requires(R&& r) {
+						set_done(std::forward<R>(r));
+					})
 					{
-						return {state::non_member_call, noexcept(set_done(std::declval<R>()))};
+						return {state::default_fn, noexcept(set_done(std::declval<R>()))};
 					}
 					else
 					{
 						return {state::none};
 					}
 				}
-
-				template<class R>
-				static constexpr auto choice = choose<R>();
 			public:
 				template<class R>
-					requires(choice<R>.strategy != state::none)
-				constexpr decltype(auto) operator()(R&& r) const noexcept(choice<R>.no_throw)
+					requires(choose<R>().strategy != state::none)
+				constexpr void operator()(R&& r) const noexcept(choose<R>().no_throw)
 				{
-					if constexpr (choice<R>.strategy == state::member_call)
+					constexpr auto choice {choose<R>()};
+
+					if constexpr (choice.strategy == state::member_fn)
 					{
-						return std::forward<R>(r).set_done();
+						std::forward<R>(r).set_done();
 					}
-					else if constexpr (choice<R>.strategy == state::non_member_call)
+					else if constexpr (choice.strategy == state::default_fn)
 					{
-						return set_done(std::forward<R>(r));
-					}
-					else
-					{
-						static_assert(false, "should be unreachable");
+						set_done(std::forward<R>(r));
 					}
 				}
 		};
 	}
 
-	namespace cpos
-	{
-		export
-		inline constexpr set_done_cpo::cpo set_done {};
-	}
-
-	using namespace cpos;
+	export
+	inline constexpr set_done_ns::set_done_t set_done{};
 }

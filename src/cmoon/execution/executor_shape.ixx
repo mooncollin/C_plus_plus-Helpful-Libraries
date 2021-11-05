@@ -1,9 +1,11 @@
 export module cmoon.execution.executor_shape;
 
-import <utility>;
 import <concepts>;
+import <utility>;
+import <cstddef>;
 
 import cmoon.type_traits;
+import cmoon.property;
 
 import cmoon.execution.bulk_guarantee_t;
 
@@ -18,7 +20,9 @@ namespace cmoon::execution
 			using helper = typename T::shape_type;
 		public:
 			using type = cmoon::detected_or_t<
-			std::size_t, helper, decltype(cmoon::require(std::declval<const Executor&>(), execution::bulk_guarentee_t))
+				std::size_t,
+				helper,
+				Executor
 			>;
 
 			static_assert(std::integral<type>, "shape type must be an integral type");

@@ -1,4 +1,5 @@
 export module cmoon.type_traits.is_string_literal;
+
 import <cstddef>;
 
 namespace cmoon

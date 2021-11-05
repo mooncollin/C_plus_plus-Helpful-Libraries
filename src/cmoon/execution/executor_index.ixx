@@ -2,6 +2,7 @@ export module cmoon.execution.executor_index;
 
 import <concepts>;
 import <utility>;
+import <cstddef>;
 
 import cmoon.type_traits;
 import cmoon.property;
@@ -20,7 +21,9 @@ namespace cmoon::execution
 			using helper = typename T::index_type;
 		public:
 			using type = cmoon::detected_or_t<
-			executor_shape_t<Executor>, helper, decltype(cmoon::require(std::declval<const Executor&>(), execution::bulk_guarentee_t))
+				executor_shape_t<Executor>,
+				helper,
+				Executor
 			>;
 
 			static_assert(std::integral<type>, "index type must be an integral type");

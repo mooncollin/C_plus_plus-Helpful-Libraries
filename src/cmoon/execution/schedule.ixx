@@ -1,138 +1,99 @@
 export module cmoon.execution.schedule;
 
 import <utility>;
-import <concepts>;
+import <exception>;
+import <type_traits>;
 
 import cmoon.meta;
 
-import cmoon.execution.connect;
+import cmoon.execution.receiver;
 import cmoon.execution.sender;
 import cmoon.execution.executor;
+import cmoon.execution.connect;
 
 namespace cmoon::execution
 {
-	namespace schedule_cpo
+	template<class E>
+	struct as_sender
 	{
-		template<class E>
-		struct as_sender
-		{
-			public:
-				template<template<class...> class Tuple, template<class...> class Varient>
-				using value_types = Varient<Tuple<>>;
+		private:
+			E ex_;
+		public:
+			template<template<class...> class Tuple, template<class...> class Variant>
+			using value_types = Variant<Tuple<>>;
 
-				template<template<class...> class Varient>
-				using error_types = Varient<std::exception_ptr>;
+			template<template<class...> class Variant>
+			using error_types = Variant<std::exception_ptr>;
 
-				static constexpr bool sends_done = true;
+			static constexpr bool sends_done {true};
 
-				explicit as_sender(E e) noexcept
-					: ex_{std::move(e)} {}
+			explicit as_sender(E&& e) noexcept
+				: ex_{std::forward<E>(e)} {}
 
-				template<receiver_of R>
-				connect_result_t<E, R> connect(R&& r)
-				{
-					return execution::connect(std::move(ex_), std::forward<R>(r));
-				}
+			template<class R>
+				requires(receiver_of<R>)
+			connect_result_t<const E&, R> connect(R&& r) const&
+			{
+				return execution::connect(ex_, std::forward<R>(r));
+			}
+	};
 
-				template<receiver_of R>
-				connect_result_t<const E&, R> connect(R&& r) const
-				{
-					return execution::connect(ex_, std::forward<R>(r));
-				}
-			private:
-				E ex_;
-		};
-
+	namespace schedule_ns
+	{
 		void schedule();
 
-		template<class S>
-		concept has_adl = sender<S> &&
-			requires(S&& s)
-		{
-			schedule(std::forward<S>(s));
-		};
-			
-		template<class S>
-		concept can_member_call = sender<S> &&
-			requires(S&& s)
-		{
-			std::forward<S>(s).schedule();
-		};
-
-		template<class S>
-		concept can_as_sender = executor<S> &&
-			requires(S&& s)
-		{
-			as_sender<std::remove_cvref_t<S>>{std::forward<S>(s)};
-		};
-
-		struct cpo
+		class schedule_t
 		{
 			private:
-				enum class state { none, member_call, non_member_call, as_sender_call };
+				enum class state { none, member_fn, default_fn, as_sender_s };
 
 				template<class S>
-				[[nodiscard]] static consteval cmoon::meta::choice_t<state> choose() noexcept
+				static consteval cmoon::meta::choice_t<state> choose() noexcept
 				{
-					if constexpr (can_member_call<S>)
+					if constexpr (requires(S&& s) {
+						{ s.schedule() } -> sender;
+					})
 					{
-						return {state::member_call, noexcept(std::declval<S>().schedule())};
+						return {state::member_fn, noexcept(std::declval<S>().schedule())};
 					}
-					else if constexpr (has_adl<S>)
+					else if constexpr (requires(S&& s) {
+						{ schedule(std::forward<S>(s)) } -> sender;
+					})
 					{
-						return {state::non_member_call, noexcept(schedule(std::declval<S>()))};
+						return {state::default_fn, noexcept(schedule(std::declval<S>()))};
 					}
-					else if constexpr (can_as_sender<S>)
+					else if constexpr (executor<S>)
 					{
-						return {state::as_sender_call, noexcept(as_sender<std::remove_cvref_t<S>>{std::declval<S>()})};
+						return {state::as_sender_s, std::is_nothrow_constructible_v<as_sender<S>, S>};
 					}
 					else
 					{
 						return {state::none};
 					}
 				}
-
-				template<class S>
-				static constexpr auto choice = choose<S>();
 			public:
 				template<class S>
-					requires(choice<S>.strategy != state::none)
-				constexpr decltype(auto) operator()(S&& s) const noexcept(choice<S>.no_throw)
+					requires(choose<S>().strategy != state::none)
+				constexpr sender auto operator()(S&& s) const noexcept(choose<S>().no_throw)
 				{
-					if constexpr (choice<S>.strategy == state::member_call)
+					constexpr auto choice {choose<S>()};
+
+					if constexpr (choice.strategy == state::member_fn)
 					{
-						return std::forward<S>(s).schedule();
+						return s.schedule();
 					}
-					else if constexpr (choice<S>.strategy == state::non_member_call)
+					else if constexpr (choice.strategy == state::default_fn)
 					{
 						return schedule(std::forward<S>(s));
 					}
-					else if constexpr (choice<S>.strategy == state::as_sender_call)
+					else if constexpr (choice.strategy == state::as_sender_s)
 					{
-						return as_sender<std::remove_cvref_t<S>>{std::forward<S>(s)};
-					}
-					else
-					{
-						static_assert(false, "should be unreachable");
+						return as_sender<S>{std::forward<S>(s)};
 					}
 				}
 		};
 	}
 
-	namespace cpos
-	{
-		export
-		inline constexpr schedule_cpo::cpo schedule {};
-	}
-
-	using namespace cpos;
-
 	export
-	template<class S>
-	concept scheduler = std::copy_constructible<std::remove_cvref_t<S>> &&
-						std::equality_comparable<std::remove_cvref_t<S>> &&
-		requires(S&& s)
-	{
-		execution::schedule(std::forward<S>(s));
-	};
+	inline constexpr schedule_ns::schedule_t schedule{};
 }

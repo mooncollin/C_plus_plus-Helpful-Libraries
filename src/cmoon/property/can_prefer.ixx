@@ -12,7 +12,7 @@ namespace cmoon
 
 	export
 	template<class T, class... Ps>
-		requires(requires { cmoon::prefer(std::declval<const T>(), std::declval<Ps>()...); })
+		requires(requires(const T t, const Ps&... ps) { cmoon::prefer(t, ps...); })
 	struct can_prefer<T, Ps...> : std::true_type {};
 
 	export

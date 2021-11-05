@@ -6,48 +6,47 @@ import cmoon.property;
 
 namespace cmoon::execution
 {
-	template<class Property>
-	struct polymorphic_query_result_type_extension {};
-
-	template<class Property>
-		requires (requires { typename Property::polymorphic_query_result_type; })
-	struct polymorphic_query_result_type_extension<Property>
+	template<class InnerProperty>
+	struct base_prefer_only
 	{
-		using polymorphic_query_result_type = typename Property::polymorphic_query_result_type;
-	};
+		InnerProperty property;
 
-	export
-	template<class Property>
-	struct prefer_only : polymorphic_query_result_type_extension<Property>
-	{
-		Property property;
-
-		static constexpr bool is_requirable = false;
-		static constexpr bool is_preferable = Property::is_preferable;
+		static constexpr bool is_requirable {false};
+		static constexpr bool is_preferable {InnerProperty::is_preferable};
 
 		template<class Executor>
-		static constexpr auto static_query_v = Property::template static_query_v<Executor>;
+		static constexpr auto static_query_v {InnerProperty::template static_query_v<Executor>};
 
-		constexpr prefer_only(const Property& p) noexcept
+		constexpr base_prefer_only(const InnerProperty& p)
 			: property{p} {}
 
-		constexpr auto value() const noexcept(noexcept(std::declval<const Property>().value()))
+		constexpr auto value() const noexcept(noexcept(std::declval<const InnerProperty>().value()))
 		{
 			return property.value();
 		}
 
-		template<class Executor, class Property2>
-			requires(requires(Executor ex, prefer_only p) { cmoon::prefer(std::move(ex), p.property); })
-		friend constexpr auto prefer(Executor ex, const prefer_only& p) noexcept(noexcept(cmoon::prefer(std::move(ex), std::declval<const Property>())))
+		template<class Executor>
+		friend constexpr auto prefer(Executor ex, const base_prefer_only& p) noexcept(noexcept(cmoon::prefer(std::move(ex), std::declval<const InnerProperty>())))
 		{
 			return cmoon::prefer(std::move(ex), p.property);
 		}
 
-		template<class Executor, class Property2>
-			requires(requires(Executor ex, prefer_only p) { cmoon::query(ex, p.property); })
-		friend constexpr auto query(Executor ex, const prefer_only& p) noexcept(noexcept(cmoon::query(ex, std::declval<const Property>())))
+		template<class Executor>
+		friend constexpr auto query(Executor ex, const base_prefer_only& p) noexcept(noexcept(cmoon::query(ex, std::declval<const InnerProperty>())))
 		{
 			return cmoon::query(ex, p.property);
 		}
+	};
+
+	export
+	template<class InnerProperty>
+	struct prefer_only : public base_prefer_only<InnerProperty> {};
+
+	export
+	template<class InnerProperty>
+		requires(requires { typename InnerProperty::polymorphic_query_result_type; })
+	struct prefer_only<InnerProperty> : public base_prefer_only<InnerProperty>
+	{
+		using polymorphic_query_result_type = typename InnerProperty::polymorphic_query_result_type;
 	};
 }

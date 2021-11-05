@@ -1,40 +1,90 @@
 export module cmoon.execution.relationship_t;
 
-import cmoon.execution.property_t;
+import <concepts>;
+import <cstddef>;
+
+import cmoon.property;
+
+import cmoon.execution.executor;
+import cmoon.execution.impl.executor_property;
 
 namespace cmoon::execution
 {
-	template<class B>
-	struct fork_t : nested_property_t<B, fork_t> {};
-
-	template<class B>
-	struct continuation_t : nested_property_t<B, continuation_t> {};
-
 	export
-	struct relationship_t : property_t<relationship_t,
-									   fork_t<relationship_t>,
-									   continuation_t<relationship_t>>
+	struct relationship_t
 	{
 		private:
-			using base = property_t<relationship_t,
-									fork_t<relationship_t>,
-									continuation_t<relationship_t>>;
+			enum class value { fork_v, continuation_v, none };
 		public:
-			[[nodiscard]] friend constexpr bool operator==(const relationship_t& a, const relationship_t& b) noexcept = default;
-			[[nodiscard]] friend constexpr bool operator!=(const relationship_t& a, const relationship_t& b) noexcept = default;
+			template<class T>
+			static constexpr bool is_applicable_property_v {executor<T>};
 
-			using fork_t = fork_t<relationship_t>;
-			static constexpr fork_t fork {};
-
-			using continuation_t = continuation_t<relationship_t>;
-			static constexpr continuation_t continuation {};
-
-			template<class NN>
-			constexpr relationship_t(const NN n) noexcept
-				: base{n} {}
+			static constexpr bool is_requirable {false};
+			static constexpr bool is_preferable {false};
+			using polymorphic_query_result_type = relationship_t;
+			[[nodiscard]] constexpr friend bool operator==(const relationship_t& lhs, const relationship_t& rhs) noexcept = default;
 
 			constexpr relationship_t() noexcept
-				: base{} {}
+				: v{value::none} {}
+
+			struct continuation_t
+			{
+				static constexpr bool is_requirable {true};
+				static constexpr bool is_preferable {true};
+				using polymorphic_query_result_type = relationship_t;
+
+				template<class Executor>
+				static constexpr auto static_query_v {inner_static_query<Executor, continuation_t>()};
+
+				[[nodiscard]] static constexpr relationship_t value() noexcept
+				{
+					return relationship_t{continuation_t{}};
+				}
+			};
+
+			struct fork_t
+			{
+				static constexpr bool is_requirable {true};
+				static constexpr bool is_preferable {true};
+				using polymorphic_query_result_type = relationship_t;
+
+				template<class Executor>
+				static constexpr auto static_query_v {first_inner_static_query<Executor, fork_t, continuation_t>()};
+
+				[[nodiscard]] static constexpr relationship_t value() noexcept
+				{
+					return relationship_t{fork_t{}};
+				}
+			};
+
+			constexpr relationship_t(fork_t) noexcept
+				: v{value::fork_v} {}
+
+			constexpr relationship_t(continuation_t) noexcept
+				: v{value::continuation_v} {}
+
+			static constexpr fork_t fork {};
+			static constexpr continuation_t continuation {};
+
+			template<class Executor, class Property>
+				requires(cmoon::can_query_v<Executor, continuation_t> ||
+						 cmoon::can_query_v<Executor, fork_t>)
+			friend constexpr relationship_t query(const Executor& ex, const relationship_t& p)
+			{
+				if constexpr (cmoon::can_query_v<Executor, fork_t>)
+				{
+					return cmoon::query(ex, fork_t{});
+				}
+				else if constexpr (cmoon::can_query_v<Executor, continuation_t>)
+				{
+					return cmoon::query(ex, continuation_t{});
+				}
+			}
+
+			template<class Executor>
+			static constexpr auto static_query_v {static_query<Executor, relationship_t, fork_t, continuation_t>()};
+		private:
+			value v;
 	};
 
 	export

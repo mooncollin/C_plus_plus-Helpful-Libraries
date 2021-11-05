@@ -1,138 +1,111 @@
-export module cmooon.execution.submit;
+export module cmoon.execution.submit;
 
 import <utility>;
+import <type_traits>;
 
 import cmoon.meta;
 
-import cmoon.execution.set_error;
-import cmoon.execution.set_value;
-import cmoon.execution.set_done;
-import cmoon.execution.start;
 import cmoon.execution.receiver;
+import cmoon.execution.sender;
+import cmoon.execution.sender_to;
+import cmoon.execution.start;
 import cmoon.execution.connect;
+import cmoon.execution.set_value;
+import cmoon.execution.set_error;
+import cmoon.execution.set_done;
 
 namespace cmoon::execution
 {
-	namespace submit_cpo
+	template<class S, class R>
+	struct submit_receiver
 	{
-		template<class S, class R>
-		struct submit_state
+		struct wrap
 		{
-			struct submit_receiver
+			submit_receiver* p_;
+			
+			template<class... As>
+				requires(receiver_of<R, As...>)
+			void set_value(As&&... as) && noexcept(is_nothrow_receiver_of_v<R, As...>)
 			{
-				submit_state* p_;
+				execution::set_value(std::move(p_->r_), std::forward<As>(as)...);
+				delete p_;
+			}
 
-				template<class... Args>
-					requires(receiver_of<R, Args...>)
-				void set_value(Args&&... args) noexcept(is_nothrow_receiver_of_v<R, Args...>)
-				{
-					execution::set_value(std::move(p_->r_), std::forward<Args>(args)...);
-					delete p_;
-				}
+			template<class E>
+				requires(receiver<R, E>)
+			void set_error(E&& e) && noexcept
+			{
+				execution::set_error(std::move(p_->r_), std::forward<E>(e));
+				delete p_;
+			}
 
-				template<class E>
-					requires(receiver<R, E>)
-				void set_error(E&& e) noexcept
-				{
-					execution::set_error(std::move(p_->r_), std::forward<E>(e));
-					delete p_;
-				}
-
-				void set_done() noexcept
-				{
-					execution::set_done(std::move(p_->r_));
-					delete p_;
-				}
-			};
-
-			std::remove_cvref_t<R> r_;
-			connect_result_t<S, submit_receiver> state_;
-
-			submit_state(S&& s, R&& r)
-				: r_{std::forward<R>(R)}, state_{execution::connect(std::forward<S>(s), submit_receiver{this})} {}
+			void set_done() && noexcept
+			{
+				execution::set_done(std::move(p_->r_));
+				delete p_;
+			}
 		};
 
+		std::remove_cvref_t<R> r_;
+		connect_result_t<S, wrap> state_;
+
+		submit_receiver(S&& s, R&& r)
+			: r_{std::forward<R>(r)},
+			  state_{execution::connect(std::forward<S>(s), wrap{this})} {}
+	};
+
+	namespace submit_ns
+	{
 		void submit();
 
-		template<class S, class R>
-		concept has_adl = receiver<R> &&
-			requires(S&& s, R&& r)
-		{
-			submit(std::forward<S>(s), std::forward<R>(r));
-		};
-
-		template<class S, class R>
-		concept can_member_call = receiver<R> &&
-			requires(S&& s, R&& r)
-		{
-			std::forward<S>(s).submit(std::forward<R>(r));
-		};
-
-		template<class S, class R>
-		concept can_submit_state_call = receiver<R> &&
-			requires(S&& s, R&& r)
-		{
-			execution::start((new submit_state<S, R>{std::forward<S>(s), std::forward<R>(r)})->state_);
-		};
-
-		struct cpo
+		class submit_t
 		{
 			private:
-				enum class state { none, member_call, non_member_call, submit_state_call };
+				enum class state { member_fn, default_fn, start_fn };
 
 				template<class S, class R>
-				[[nodiscard]] static consteval cmoon::meta::choice_t<state> choose() noexcept
+				static consteval cmoon::meta::choice_t<state> choose() noexcept
 				{
-					if constexpr (can_member_call<S, R>)
+					if constexpr (sender<S> && requires(S&& s, R&& r) {
+						s.submit(std::forward<R>(r));
+					})
 					{
-						return {state::member_call, noexcept((std::declval<S>()).connect(std::declval<R>()))};
+						return {state::member_fn, noexcept(std::declval<S>().submit(std::declval<R>()))};
 					}
-					else if constexpr (has_adl<S, R>)
+					else if constexpr (sender<S> && requires(S&& s, R&& r) {
+						submit(std::forward<S>(s), std::forward<R>(r));
+					})
 					{
-						return {state::non_member_call, noexcept(connect(std::declval<S>(), std::declval<R>()))};
-					}
-					else if constexpr (can_submit_state_call<S, R>)
-					{
-						return {state::submit_state_call};
+						return {state::default_fn, noexcept(submit(std::declval<S>(), std::declval<R>()))};
 					}
 					else
 					{
-						return {state::none};
+						return {state::start_fn};
 					}
 				}
-
-				template<class S, class R>
-				static constexpr auto choice = choose<S, R>();
 			public:
 				template<class S, class R>
-					requires(choice<S, R>.strategy != state::none)
-				void operator()(S&& s, R&& r) const noexcept(choice<S, R>.no_throw)
+					requires(sender_to<S, R>)
+				constexpr void operator()(S&& s, R&& r) const noexcept(choose<S, R>().no_throw)
 				{
-					if constexpr (choice<S, R>.strategy == state::member_call)
+					constexpr auto choice {choose<S, R>()};
+
+					if constexpr (choice.strategy == state::member_fn)
 					{
-						return std::forward<S>(s).submit(std::forward<R>(r));
+						std::forward<S>(s).submit(std::forward<R>(r));
 					}
-					else if constexpr (choice<S, R>.strategy == state::non_member_call)
+					else if constexpr (choice.strategy == state::default_fn)
 					{
-						return submit(std::forward<S>(s), std::forward<R>(r));
-					}
-					else if constexpr (choice<S, R>.strategy == state::submit_state_call)
-					{
-						return execution::start((new submit_state<S, R>{std::forward<S>(s), std::forward<R>(r)})->state_);
+						submit(std::forward<S>(s), std::forward<R>(r));
 					}
 					else
 					{
-						static_assert(false, "should be unreachable");
+						execution::start((new submit_receiver<S, R>{std::forward<S>(s), std::forward<R>(r)})->state_);
 					}
 				}
 		};
 	}
 
-	namespace cpos
-	{
-		export
-		inline constexpr submit_cpo::cpo submit {};
-	}
-
-	using namespace cpos;
+	export
+	inline constexpr submit_ns::submit_t submit{};
 }

@@ -1,108 +1,81 @@
 export module cmoon.execution.bulk_execute;
 
-import <utility>;
-import <type_traits>;
 import <concepts>;
+import <cstddef>;
+import <type_traits>;
+import <functional>;
 
 import cmoon.meta;
 import cmoon.property;
 import cmoon.utility;
 
-import cmoon.execution.sender;
 import cmoon.execution.bulk_guarantee_t;
 import cmoon.execution.executor_index;
 
 namespace cmoon::execution
 {
-	namespace bulk_execute_cpo
+	namespace bulk_execute_ns
 	{
 		void bulk_execute();
 
-		template<class N>
-		concept correct_size_type = std::convertible_to<N, std::size_t>;
-
-		template<class S, class F, class N>
-		concept has_adl =
-			requires(S&& s, F&& f, N&& n)
-		{
-			bulk_execute(std::forward<S>(s), std::forward<F>(f), std::forward<N>(n));
-		};
-
-		template<class S, class F, class N>
-		concept can_member_call =
-			requires(S&& s, F&& f, N&& n)
-		{
-			std::forward<S>(s).bulk_execute(std::forward<F>(f), std::forward<N>(n));
-		};
-
-		template<class S, class F>
-		concept can_execute = std::invocable<F> &&
-								std::invocable<executor_index_t<std::remove_cvref_t<S>>> &&
-								(cmoon::query(S{}, execution::bulk_guarentee) == execution::bulk_guarentee.unsequenced);
-
-		struct cpo
+		class bulk_execute_t
 		{
 			private:
-				enum class state { none, member_call, non_member_call, execution };
+				enum class state { none, member_fn, default_fn, inline_fn };
 
-				template<class S, class F, class N>
-				[[nodiscard]] static consteval cmoon::meta::choice_t<state> choose() noexcept
+				template<class S, class F, std::convertible_to<std::size_t> N>
+				static consteval cmoon::meta::choice_t<state> choose() noexcept
 				{
-					if constexpr (can_member_call<S, F, N>)
+					if constexpr (requires(S&& s, F&& f, N n) {
+						std::forward<S>(s).bulk_execute(std::forward<F>(f), n);
+					})
 					{
-						return {state::member_call, noexcept(std::declval<S>().bulk_execute(std::declval<F>(), std::declval<N>()))};
+						return {state::member_fn, noexcept(std::declval<S>().bulk_execute(std::declval<F>(), std::declval<N>()))};
 					}
-					else if constexpr (has_adl<S, F, N>)
+					else if constexpr (requires(S&& s, F&& f, N n) {
+						bulk_execute(std::forward<S>(s), std::forward<F>(f), n);
+					})
 					{
-						return {state::non_member_call, noexcept(bulk_execute(std::declval<S>(), std::declval<F>(), std::declval<N>()))};
+						return {state::default_fn, noexcept(bulk_execute(std::declval<S>(), std::declval<F>(), std::declval<N>()))};
 					}
-					else if constexpr (can_execute<S, F>)
+					else if constexpr (std::invocable<F, executor_index_t<std::remove_cvref_t<S>>> &&
+									   cmoon::query(std::remove_cvref_t<S>{}, execution::bulk_guarantee) == execution::bulk_guarantee.unsequenced)
 					{
-						return {state::execution, noexcept(cmoon::decay_copy(std::declval<F&&>())) && noexcept(decltype(cmoon::decay_copy(std::declval<F&&>()))(std::declval<N>()))};
+						return {state::inline_fn};
 					}
 					else
 					{
 						return {state::none};
 					}
 				}
-
-				template<class S, class F, class N>
-				static constexpr auto choice = choose<S, F, N>();
 			public:
-				template<class S, class F, class N>
-					requires(choice<S, F, N>.strategy != state::none)
-				constexpr decltype(auto) operator()(S&& s, F&& f, N&& n) const noexcept(choice<S, F, N>.no_throw)
+				template<class S, class F, std::convertible_to<std::size_t> N>
+					requires(choose<S, F, N>().strategy != state::none)
+				constexpr auto operator()(S&& s, F&& f, N n) const noexcept(choose<S, F, N>().no_throw)
 				{
-					if constexpr (choice<S, F, N>.strategy == state::member_call)
+					constexpr auto choice {choose<S, F, N>()};
+
+					if constexpr (choice.strategy == state::member_fn)
 					{
-						return std::forward<S>(s).bulk_execute(std::forward<F>(f), std::forward<N>(n));
+						return std::forward<S>(s).bulk_execute(std::forward<F>(f), n);
 					}
-					else if constexpr (choice<S, F, N>.strategy == state::non_member_call)
+					else if constexpr (choice.strategy == state::default_fn)
 					{
-						return bulk_execute(std::forward<S>(s), std::forward<F>(f), std::forward<N>(n));
+						return bulk_execute(std::forward<S>(s), std::forward<F>(f), n);
 					}
-					else if constexpr (choice<S, F, N>.strategy == state::execution)
+					else if constexpr (choice.strategy == state::inline_fn)
 					{
 						auto cf = cmoon::decay_copy(std::forward<F>(f));
-							
-						for (std::size_t i {0}; i < n; ++i)
+						for (N i {0}; i < n; ++i)
 						{
-							cf(i);
+							std::invoke(cf, i);
 						}
-					}
-					else
-					{
-						static_assert(false, "should be unreachable");
+						return std::forward<S>(s);
 					}
 				}
 		};
 	}
 
-	namespace cpos
-	{
-		export
-		inline constexpr bulk_execute_cpo::cpo bulk_execute {};
-	}
-
-	using namespace cpos;
+	export
+	inline constexpr bulk_execute_ns::bulk_execute_t bulk_execute {};
 }

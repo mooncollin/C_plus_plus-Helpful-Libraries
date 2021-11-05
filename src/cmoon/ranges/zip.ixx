@@ -13,36 +13,27 @@ import cmoon.algorithm;
 
 namespace cmoon::ranges
 {
-	template<std::ranges::range R>
+	template<std::ranges::input_range R>
 	struct ref_or_value : public std::type_identity<std::remove_cvref_t<R>> {};
 
-	template<std::ranges::range R>
+	template<std::ranges::input_range R>
 		requires(std::is_lvalue_reference_v<R> && std::ranges::borrowed_range<R>)
 	struct ref_or_value<R> : public std::type_identity<std::ranges::ref_view<std::remove_reference_t<R>>> {};
 
 	export
-	template<std::ranges::range R>
+	template<std::ranges::input_range R>
 	using ref_or_value_t = typename ref_or_value<R>::type;
 
 	export
-	template<std::ranges::range... Rngs>
+	template<std::ranges::input_range... Rngs>
 	constexpr bool can_all_be_views = (std::ranges::view<ref_or_value_t<Rngs>> && ...);
 
 	struct empty {};
 
 	template<typename T>
-	using copy_or_reference_type = std::conditional_t<std::ranges::input_range<T> || !std::ranges::borrowed_range<T>,
+	using copy_or_reference_type = std::conditional_t<std::ranges::input_range<T>,
 														std::ranges::range_value_t<T>,
 														std::ranges::range_reference_t<T>>;
-
-	template<class... Ts>
-	struct value_type_chooser : public std::type_identity<std::tuple<copy_or_reference_type<Ts>...>> {};
-
-	template<class T1, class T2>
-	struct value_type_chooser<T1, T2> : public std::type_identity<std::pair<copy_or_reference_type<T1>, copy_or_reference_type<T2>>> {};
-
-	template<class T1>
-	struct value_type_chooser<T1> : public std::type_identity<copy_or_reference_type<T1>> {};
 
 	template<class T>
 	struct iterator_category_chooser : public std::type_identity<std::input_iterator_tag> {};
@@ -55,7 +46,7 @@ namespace cmoon::ranges
 	using iterator_category_chooser_t = typename iterator_category_chooser<T>::type;
 
 	export
-	template<std::ranges::range... Rngs>
+	template<std::ranges::input_range... Rngs>
 	class zip_view : public std::conditional_t<can_all_be_views<Rngs...>, std::ranges::view_interface<zip_view<Rngs...>>, empty>
 	{
 		private:
@@ -71,7 +62,7 @@ namespace cmoon::ranges
 					using iterator_category = std::common_type_t<iterator_category_chooser_t<Its>...>;
 
 					using difference_type = std::ptrdiff_t;
-					using value_type = typename value_type_chooser<ref_or_value_t<Rngs>...>::type;
+					using value_type = std::tuple<copy_or_reference_type<ref_or_value_t<Rngs>>...>;
 					using pointer = void;
 					using reference = value_type;
 
@@ -353,16 +344,27 @@ namespace cmoon::ranges
 	//};
 
 	export
-	template<std::ranges::range... Rngs>
+	template<std::ranges::input_range... Rngs>
 	zip_view(Rngs&&...)->zip_view<Rngs...>;
 
 	namespace views
 	{
 		export
-		template<std::ranges::range... Rngs>
+		template<std::ranges::input_range... Rngs>
 		[[nodiscard]] constexpr zip_view<Rngs...> zip(Rngs&&... rngs)
 		{
 			return zip_view{std::forward<Rngs>(rngs)...};
+		}
+
+		export
+		template<class F, std::ranges::input_range... Rngs>
+			requires(std::invocable<F, std::ranges::range_reference_t<Rngs>...>)
+		[[nodiscard]] constexpr auto zip_transform(F&& f, Rngs&&... rngs)
+		{
+			return zip(std::forward<Rngs>(rngs)...) |
+				std::ranges::views::transform([f = std::forward<F>(f)](auto&& t) {
+					return std::apply(f, std::forward<decltype(t)>(t));
+			});
 		}
 	}
 }

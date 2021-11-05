@@ -8,6 +8,7 @@ import <memory>;
 import <initializer_list>;
 import <span>;
 import <stdexcept>;
+import <algorithm>;
 
 import cmoon.multidimensional;
 

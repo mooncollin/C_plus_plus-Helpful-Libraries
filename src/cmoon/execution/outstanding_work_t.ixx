@@ -1,40 +1,90 @@
 export module cmoon.execution.outstanding_work_t;
 
-import cmoon.execution.property_t;
+import <concepts>;
+import <cstddef>;
+
+import cmoon.property;
+
+import cmoon.execution.executor;
+import cmoon.execution.impl.executor_property;
 
 namespace cmoon::execution
 {
-	template<class B>
-	struct untracked_t : nested_property_t<B, untracked_t> {};
-
-	template<class B>
-	struct tracked_t : nested_property_t<B, tracked_t> {};
-
 	export
-	struct outstanding_work_t : property_t<outstanding_work_t,
-										   untracked_t<outstanding_work_t>,
-										   tracked_t<outstanding_work_t>>
+	struct outstanding_work_t
 	{
 		private:
-			using base = property_t<outstanding_work_t,
-									untracked_t<outstanding_work_t>,
-									tracked_t<outstanding_work_t>>;
+			enum class value { untracked_v, tracked_v, none };
 		public:
-			[[nodiscard]] friend constexpr bool operator==(const outstanding_work_t& a, const outstanding_work_t& b) noexcept = default;
-			[[nodiscard]] friend constexpr bool operator!=(const outstanding_work_t& a, const outstanding_work_t& b) noexcept = default;
+			template<class T>
+			static constexpr bool is_applicable_property_v {executor<T>};
 
-			using untracked_t = untracked_t<outstanding_work_t>;
-			static constexpr untracked_t untracked {};
-
-			using tracked_t = tracked_t<outstanding_work_t>;
-			static constexpr tracked_t tracked {};
-
-			template<class NN>
-			constexpr outstanding_work_t(const NN n) noexcept
-				: base{n} {}
+			static constexpr bool is_requirable {false};
+			static constexpr bool is_preferable {false};
+			using polymorphic_query_result_type = outstanding_work_t;
+			[[nodiscard]] constexpr friend bool operator==(const outstanding_work_t& lhs, const outstanding_work_t& rhs) noexcept = default;
 
 			constexpr outstanding_work_t() noexcept
-				: base{} {}
+				: v{value::none} {}
+
+			struct tracked_t
+			{
+				static constexpr bool is_requirable {true};
+				static constexpr bool is_preferable {true};
+				using polymorphic_query_result_type = outstanding_work_t;
+
+				template<class Executor>
+				static constexpr auto static_query_v {inner_static_query<Executor, tracked_t>()};
+
+				[[nodiscard]] static constexpr outstanding_work_t value() noexcept
+				{
+					return outstanding_work_t{tracked_t{}};
+				}
+			};
+
+			struct untracked_t
+			{
+				static constexpr bool is_requirable {true};
+				static constexpr bool is_preferable {true};
+				using polymorphic_query_result_type = outstanding_work_t;
+
+				template<class Executor>
+				static constexpr auto static_query_v {first_inner_static_query<Executor, untracked_t, tracked_t>()};
+
+				[[nodiscard]] static constexpr outstanding_work_t value() noexcept
+				{
+					return outstanding_work_t{untracked_t{}};
+				}
+			};
+
+			constexpr outstanding_work_t(untracked_t) noexcept
+				: v{value::untracked_v } {}
+
+			constexpr outstanding_work_t(tracked_t) noexcept
+				: v{value::tracked_v} {}
+
+			static constexpr untracked_t untracked {};
+			static constexpr tracked_t tracked {};
+
+			template<class Executor, class Property>
+				requires(cmoon::can_query_v<Executor, tracked_t> ||
+						 cmoon::can_query_v<Executor, untracked_t>)
+			friend constexpr outstanding_work_t query(const Executor& ex, const outstanding_work_t& p)
+			{
+				if constexpr (cmoon::can_query_v<Executor, untracked_t>)
+				{
+					return cmoon::query(ex, untracked_t{});
+				}
+				else if constexpr (cmoon::can_query_v<Executor, tracked_t>)
+				{
+					return cmoon::query(ex, tracked_t{});
+				}
+			}
+
+			template<class Executor>
+			static constexpr auto static_query_v {static_query<Executor, outstanding_work_t, untracked_t, tracked_t>()};
+		private:
+			value v;
 	};
 
 	export

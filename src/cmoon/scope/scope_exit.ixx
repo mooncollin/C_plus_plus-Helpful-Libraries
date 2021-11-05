@@ -26,7 +26,7 @@ namespace cmoon
 
 			scope_exit(scope_exit&& other) noexcept
 				requires(std::is_nothrow_move_constructible_v<EF>)
-				: fn_{std::forward<EF>(other.fn_)}, active_{other.active_}
+				: fn_{std::move<EF>(other.fn_)}, active_{other.active_}
 			{
 				other.release();
 			}

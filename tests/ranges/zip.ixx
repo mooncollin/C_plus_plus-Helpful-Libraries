@@ -105,9 +105,9 @@ namespace cmoon::tests::ranges
 				const auto v3 = cmoon::ranges::views::zip(vec1, vec2, vec3);
 
 				auto it1 = std::ranges::begin(v1);
-				cmoon::test::assert_equal(*it1, "Hello");
+				cmoon::test::assert_equal(std::get<0>(*it1), "Hello");
 				++it1;
-				cmoon::test::assert_equal(*it1, "there");
+				cmoon::test::assert_equal(std::get<0>(*it1), "there");
 				++it1;
 				cmoon::test::assert_equal(it1, std::ranges::end(v1));
 
@@ -163,15 +163,15 @@ namespace cmoon::tests::ranges
 				const auto v3 = cmoon::ranges::views::zip(vec1, vec2, vec3);
 
 				auto it1 = std::ranges::begin(v1);
-				cmoon::test::assert_equal(*it1, "Hello");
+				cmoon::test::assert_equal(std::get<0>(*it1), "Hello");
 				++it1;
-				cmoon::test::assert_equal(*it1, "there");
+				cmoon::test::assert_equal(std::get<0>(*it1), "there");
 				++it1;
 				cmoon::test::assert_equal(it1, std::ranges::end(v1));
 				--it1;
-				cmoon::test::assert_equal(*it1, "there");
+				cmoon::test::assert_equal(std::get<0>(*it1), "there");
 				--it1;
-				cmoon::test::assert_equal(*it1, "Hello");
+				cmoon::test::assert_equal(std::get<0>(*it1), "Hello");
 				cmoon::test::assert_equal(it1, std::ranges::begin(v1));
 
 				auto it2 = std::ranges::begin(v2);
@@ -393,7 +393,7 @@ namespace cmoon::tests::ranges
 
 				cmoon::test::assert_equal(count, 1110);
 
-				for (const auto val : cmoon::ranges::views::zip(std::ranges::views::iota(1, 11)))
+				for (const auto [val] : cmoon::ranges::views::zip(std::ranges::views::iota(1, 11)))
 				{
 					count2 += val;
 				}
@@ -409,7 +409,7 @@ namespace cmoon::tests::ranges
 
 				cmoon::test::assert_equal(count3, 12);
 
-				for (const auto val : cmoon::ranges::views::zip(std::vector{1, 2, 3}))
+				for (const auto [val] : cmoon::ranges::views::zip(std::vector{1, 2, 3}))
 				{
 					count4 += val;
 				}

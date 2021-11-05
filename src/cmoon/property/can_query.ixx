@@ -12,7 +12,7 @@ namespace cmoon
 
 	export
 	template<class T, class P>
-		requires(requires { cmoon::query(std::declval<const T>(), std::declval<P>()); })
+		requires(requires(const T t, P p) { cmoon::query(t, p); })
 	struct can_query<T, P> : std::true_type {};
 
 	export

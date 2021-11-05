@@ -1,4 +1,4 @@
-export module cmoon.execution.set_error
+export module cmoon.execution.set_error;
 
 import <utility>;
 
@@ -6,74 +6,54 @@ import cmoon.meta;
 
 namespace cmoon::execution
 {
-	namespace set_error_cpo
+	namespace set_error_ns
 	{
 		void set_error();
 
-		template<class R, class E>
-		concept has_adl =
-			requires(R&& r, E&& e)
-		{
-			set_error(std::forward<R>(r), std::forward<E>(e));
-		};
-
-		template<class R, class E>
-		concept can_member_call =
-			requires(R&& r, E&& e)
-		{
-			std::forward<R>(r).set_error(std::forward<E>(e));
-		};
-
-		struct cpo
+		class set_error_t
 		{
 			private:
-				enum class state { none, member_call, non_member_call };
+				enum class state { none, member_fn, default_fn };
 
 				template<class R, class E>
-				[[nodiscard]] static consteval cmoon::meta::choice_t<state> choose() noexcept
+				static consteval cmoon::meta::choice_t<state> choose() noexcept
 				{
-					if constexpr (can_member_call<R, E>)
+					if constexpr (requires(R&& r, E&& e) {
+						std::forward<R>(r).set_error(std::forward<E>(e));
+					})
 					{
-						return {state::member_call, noexcept((std::declval<R>()).set_error(std::declval<E>()))};
+						return {state::member_fn, noexcept(std::declval<R>().set_error(std::declval<E>()))};
 					}
-					else if constexpr (has_adl<R, E>)
+					else if constexpr (requires(R&& r, E&& e) {
+						set_error(std::forward<R>(r), std::forward<E>(e));
+					})
 					{
-						return {state::non_member_call, noexcept(set_error(std::declval<R>(), std::declval<E>()))};
+						return {state::default_fn, noexcept(set_error(std::declval<R>(), std::declval<E>()))};
 					}
 					else
 					{
 						return {state::none};
 					}
 				}
-
-				template<class R, class E>
-				static constexpr auto choice = choose<R, E>();
 			public:
 				template<class R, class E>
-					requires(choice<R, E>.strategy != state::none)
-				constexpr decltype(auto) operator()(R&& r, E&& e) const noexcept(choice<R, E>.no_throw)
+					requires(choose<R, E>().strategy != state::none)
+				constexpr void operator()(R&& r, E&& e) const noexcept(choose<R, E>().no_throw)
 				{
-					if constexpr (choice<R, E>.strategy == state::member_call)
+					constexpr auto choice {choose<R, E>()};
+
+					if constexpr (choice.strategy == state::member_fn)
 					{
-						return std::forward<R>(r).set_error(std::forward<E>(e));
+						std::forward<R>(r).set_error(std::forward<E>(e));
 					}
-					else if constexpr (choice<R, E>.strategy == state::non_member_call)
+					else if constexpr (choice.strategy == state::default_fn)
 					{
-						return set_error(std::forward<R>(r), std::forward<E>(e));
-					}
-					else
-					{
-						static_assert(false, "should be unreachable");
+						set_error(std::forward<R>(r), std::forward<E>(e));
 					}
 				}
 		};
 	}
 
-	namespace cpos
-	{
-		export
-		inline constexpr set_error_cpo::cpo set_error {};
-	}
-
-	using namespace cpos;
+	export
+	inline constexpr set_error_ns::set_error_t set_error{};
 }

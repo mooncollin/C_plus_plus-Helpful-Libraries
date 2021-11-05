@@ -9,13 +9,14 @@ import <string>;
 import <string_view>;
 import <vector>;
 import <array>;
+import <tuple>;
 
-import cmoon.iostream;
+import cmoon.io;
 import cmoon.string;
 
 import cmoon.csv.dialect;
 import cmoon.csv.csv_any;
-import cmoon.csv.csv_ignore;
+import cmoon.csv.ignore;
 import cmoon.csv.parse_line;
 
 namespace cmoon::csv
@@ -64,8 +65,9 @@ namespace cmoon::csv
 		requires((... && !std::is_void_v<Args>))
 	class basic_csv_reader : public base_csv_reader<CharT, Traits>
 	{
-		static constexpr std::size_t num_types{sizeof...(Args)};
 		using base = base_csv_reader<CharT, Traits>;
+
+		static constexpr std::size_t num_types{sizeof...(Args)};
 
 		public:
 			using difference_type = std::ptrdiff_t;
@@ -100,7 +102,7 @@ namespace cmoon::csv
 
 			basic_csv_reader& operator++()
 			{
-				if (cmoon::getline(*this->is, line, std::basic_string_view<CharT, Traits>{this->dialect_.line_terminator.data(), this->dialect_.line_terminator.size()}).eof())
+				if (cmoon::read_until(*(this->is), line, std::basic_string_view<CharT, Traits>{this->dialect_.line_terminator.data(), this->dialect_.line_terminator.size()}).eof())
 				{
 					this->is = this->end_of_input;
 					return *this;
@@ -125,11 +127,11 @@ namespace cmoon::csv
 			std::basic_string<CharT, Traits> line;
 
 			template<class T>
-			inline static auto before_from_string(std::basic_string_view<CharT, Traits> v)
+			inline static constexpr auto before_from_string(std::basic_string_view<CharT, Traits> v)
 			{
-				if constexpr (std::is_same_v<T, csv_ignore>)
+				if constexpr (std::is_same_v<T, csv_ignore_t>)
 				{
-					return csv_ignore{};
+					return csv_ignore;
 				}
 				else
 				{

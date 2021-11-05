@@ -8,11 +8,11 @@ namespace cmoon::execution
 	class bad_executor : public std::exception
 	{
 		public:
-			bad_executor() noexcept {}
+			bad_executor() noexcept = default;
 
-			const char* what() const noexcept
+			const char* what() const noexcept override
 			{
-				return "bad executor";
+				return "executor object has no target";
 			}
 	};
 }

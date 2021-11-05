@@ -11,13 +11,7 @@ namespace cmoon
 {
 	namespace prefer_cpo
 	{
-		struct cpo;
-
-		template <class T, class P>
-		void prefer(T&, const P&) = delete;
-
-		template <class T, class P>
-		void prefer(const T&, const P&) = delete;
+		void prefer();
 
 		template<class E, class P0>
 		concept has_adl = 
@@ -52,13 +46,6 @@ namespace cmoon
 			std::forward<E>(e).prefer(std::forward<P0>(p0));
 		};
 
-		template<class E, class P0, class... Pn>
-		concept can_chain_require =
-			requires(E&& e, P0&& p0, Pn&&... pn)
-		{
-			cpo{}(cpo{}(std::forward<E>(e), std::forward<P0>(p0)), std::forward<Pn>(pn)...);
-		};
-
 		struct cpo
 		{
 			private:
@@ -83,9 +70,9 @@ namespace cmoon
 						{
 							return {state::non_member_call, noexcept(prefer(std::declval<E>(), std::declval<P0>()))};
 						}
-						else if constexpr (can_chain_require<E, P0, Pn...> && N > 0)
+						else if constexpr (N > 0)
 						{
-							return {state::chain_call, noexcept(cpo{}(cpo{}(std::declval<E>(), std::declval<P0>()), std::declval<Pn>()...))};
+							return {state::chain_call};
 						}
 						else
 						{
@@ -98,42 +85,33 @@ namespace cmoon
 					}
 				}
 
-				template<class E, class P0, class... Pn>
-				static constexpr auto choice = choose<E, P0, Pn...>();
 			public:
 				template<class E, class P0, class... Pn>
-					requires(choice<E, P0, Pn...>.strategy != state::none)
-				constexpr decltype(auto) operator()(E&& e, P0&& p0, Pn&&... pn) const noexcept(choice<E, P0, Pn...>.no_throw)
+					requires(choose<E, P0, Pn...>().strategy != state::none)
+				constexpr decltype(auto) operator()(E&& e, P0&& p0, Pn&&... pn) const noexcept(choose<E, P0, Pn...>().no_throw)
 				{
-					if constexpr (choice<E, P0, Pn...>.strategy == state::static_query)
+					constexpr auto choice {choose<E, P0, Pn...>()};
+
+					if constexpr (choice.strategy == state::static_query)
 					{
 						return std::forward<E>(e);
 					}
-					else if constexpr (choice<E, P0, Pn...>.strategy == state::member_call)
+					else if constexpr (choice.strategy == state::member_call)
 					{
 						return std::forward<E>(e).prefer(std::forward<P0>(p0));
 					}
-					else if constexpr (choice<E, P0, Pn...>.strategy == state::non_member_call)
+					else if constexpr (choice.strategy == state::non_member_call)
 					{
 						return prefer(std::forward<E>(e), std::forward<P0>(p0));
 					}
-					else if constexpr (choice<E, P0, Pn...>.strategy == state::chain_call)
+					else if constexpr (choice.strategy == state::chain_call)
 					{
 						return (*this)((*this)(std::forward<E>(e), std::forward<P0>(p0)), std::forward<Pn>(pn)...);
-					}
-					else
-					{
-						static_assert(false, "should be unreachable");
 					}
 				}
 		};
 	}
 
-	namespace cpos
-	{
-		export
-		inline constexpr prefer_cpo::cpo prefer {};
-	}
-
-	using namespace cpos;
+	export
+	inline constexpr prefer_cpo::cpo prefer {};
 }

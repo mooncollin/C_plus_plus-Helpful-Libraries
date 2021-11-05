@@ -7,160 +7,201 @@ import <concepts>;
 import <algorithm>;
 import <iterator>;
 import <execution>;
-import <vector>;
+import <limits>;
+import <cmath>;
 
-import cmoon.stats.concepts;
-import cmoon.stats.stats_error;
+import cmoon.stats.stats_result_t;
+import cmoon.stats.impl.invalid_input
 
 namespace cmoon::stats
 {
 	export
-	template<typename R, typename P = std::identity, typename Result = std::conditional_t<
-																			std::integral<typename std::projected<std::ranges::iterator_t<R>, P>::value_type>,
-																			double,
-																			typename std::projected<std::ranges::iterator_t<R>, P>::value_type>;
-		requires(std::stats_range<R, P> && std::is_arithmetic_v<Result>)
-	constexpr Result mean(R&& r, P proj = P{})
+	template<std::ranges::input_range R, typename P = std::identity, std::floating_point Result = stats_result_t<R, P>>
+	constexpr Result mean(R&& r, P proj = {}) noexcept
 	{
-		if (std::ranges::empty(r))
-		{
-			throw stats_error{};
-		}
+		constexpr Result inf {std::numeric_limits<Result>::infinity()};
+		constexpr Result nan {std::numeric_limits<Result>::quiet_NaN()};
 
-		if constexpr (std::ranges::input_range<R>)
-		{
-			std::size_t size {0};
-			Result sum {0};
+		std::size_t size {0};
+		Result sum {0};
 
-			for (const auto& x : r)
+		for (const auto v : r | std::ranges::views::transform(std::move(proj)))
+		{
+			if (is_invalid_input(v))
 			{
-				++size;
-				sum = std::move(sum) + std::invoke(proj, x);
+				return nan;
 			}
 
-			return sum / size;
+			++size;
+			sum += v;
 		}
-		else
+
+		if (size == 0)
 		{
-			return std::transform_reduce(std::ranges::begin(r), std::ranges::end(r), Result{}, std::plus{}, std::ref(proj)) / std::ranges::distance(r);
+			return inf;
 		}
+
+		return sum / size;
 	}
 
 	export
-	template<typename R, typename P1 = std::identity, typename Weights, typename P2 = std::identity, typename Result = std::conditional_t<
-																															std::integral<typename std::projected<std::ranges::iterator_t<R>, P1>::value_type>,
-																															double,
-																															typename std::projected<
-																																std::ranges::iterator_t<R>, P1>::value_type>
-		requires(std::weighted_stats_range<R, P1, Weights, P2> && std::is_arithmetic_v<Result>)
-	constexpr Result mean(R&& r, Weights&& w, P1 proj1 = P1{}, P2 proj2 = P2{})
+	template<std::ranges::input_range R, typename P1 = std::identity, std::ranges::input_range W, typename P2 = std::identity, std::floating_point Result = stats_result_t<R, P1>>
+		requires(std::arithmetic<typename std::projected<std::ranges::iterator_t<W>, P2>::value_type>)
+	constexpr Result mean(R&& r, W&& w, P1 proj1 = P1{}, P2 proj2 = P2{}) noexcept
 	{
-		if (std::ranges::empty(r) || std::ranges::empty(w))
+		constexpr Result inf {std::numeric_limits<Result>::infinity()};
+		constexpr Result nan {std::numeric_limits<Result>::quiet_NaN()};
+
+		auto values_transform = r |
+								std::ranges::views::transform(std::move(proj1));
+								
+		auto weights_transform = w |
+								 std::ranges::views::transform(std::move(proj2));
+
+		Result sum_weights {0};
+		Result sum_products {0};
+		const auto r_end = std::ranges::end(values_transform);
+		const auto w_end = std::ranges::end(weights_transform);
+
+		auto r_it = std::ranges::begin(values_transform);
+		auto w_it = std::ranges::begin(weights_transform);
+
+		for (; r_it != r_end && w_it != w_end; ++r_it, ++w_it)
 		{
-			throw stats_error{};
+			const auto value = *r_it;
+
+			if (is_invalid_input(value))
+			{
+				return nan;
+			}
+
+			const auto weight = *w_it;
+
+			if (is_invalid_input(weight))
+			{
+				return nan;
+			}
+
+			sum_weights += weight;
+			sum_products += value * weight;
 		}
 
-		if constexpr (std::ranges::input_range<R>)
+		if (((r_it == r_end) != (w_it == w_end)) ||
+			sum_weights == 0)
 		{
-			std::vector<Result> projected_range;
-			std::vector<Result> projected_weights;
-
-			std::transform(std::ranges::begin(r), std::ranges::end(r), std::back_inserter(projected_range), std::ref(proj1));
-			std::transform(std::ranges::begin(w), std::ranges::end(w), std::back_inserter(projected_weights), std::ref(proj2));
-
-			if (projected_weights.size() != projected_range.size())
-			{
-				throw stats_error{};
-			}
-
-			const auto sum_of_weights = std::reduce(std::begin(projected_weights), std::end(projected_weights));
-
-			if (sum_of_weights == 0)
-			{
-				throw stats_error{};
-			}
-
-			const auto sum_of_products = std::transform_reduce(std::begin(projected_range), std::end(projected_range), std::begin(projected_weights), Result{});
-
-			return sum_of_products / sum_of_weights;
+			return inf;
 		}
-		else
-		{
-			if (std::ranges::distance(r) != std::ranges::distance(w))
-			{
-				throw stats_error{};
-			}
 
-			const auto sum_of_weights = std::transform_reduce(std::ranges::begin(w), std::ranges::end(w), Result{}, std::plus{}, std::ref(proj2));
-
-			if (sum_of_weights == 0)
-			{
-				throw stats_error{};
-			}
-
-			const auto sum_of_products = std::transform_reduce(std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(w), Result{}, std::plus{},
-			[proj1 = std::ref(proj1), proj2 = std::ref(proj2)] (const auto& x, const auto& y) {
-				return std::invoke(proj1, x) * std::invoke(proj2, y);
-			});
-
-			return sum_of_products / sum_of_weights;
-		}
+		return sum_products / sum_weights;
 	}
 
 	export
-	template<typename ExecutionPolicy, typename R, typename P = std::identity, typename Result = std::conditional_t<
-																			std::integral<typename std::projected<std::ranges::iterator_t<R>, P>::value_type>,
-																			double,
-																			typename std::projected<std::ranges::iterator_t<R>, P>::value_type>;
-		requires(std::is_execution_policy_v<st::decay_t<ExecutionPolicy>> && std::stats_range<R, P> && std::is_arithmetic_v<Result>)
-	constexpr Result mean(ExecutionPolicy&& policy, R&& r, P proj = P{})
+	template<typename ExecutionPolicy, std::ranges::input_range R, typename P = std::identity, std::floating_point Result = stats_result_t<R, P>>;
+		requires(std::is_execution_policy_v<std::remove_cvref_t<ExecutionPolicy>>)
+	constexpr Result mean(ExecutionPolicy&& policy, R&& r, P proj = {}) noexcept
 	{
-		if constexpr (std::ranges::input_range<R> || std::is_constant_evaluated())
+		constexpr Result inf {std::numeric_limits<Result>::infinity()};
+		constexpr Result nan {std::numeric_limits<Result>::quiet_NaN()};
+
+		if constexpr (std::ranges::input_range<R> || std::ranges::forward_range<R> || std::is_constant_evaluated())
 		{
-			return mean(std::forward<R>(r), std::ref(proj));
+			return mean(std::forward<R>(r), std::move(proj));
 		}
 		else
 		{
 			if (std::ranges::empty(r))
 			{
-				throw stats_error{};
+				return inf;
 			}
 
-			return std::transform_reduce(policy, std::ranges::begin(r), std::ranges::end(r), Result{}, std::plus{}, std::ref(proj)) / std::ranges::distance(r);
+			auto values_transform = r |
+									std::ranges::views::transform(std::move(proj));
+
+			if (std::any_of(policy,
+							std::ranges::begin(values_transform),
+							std::ranges::end(values_transform),
+				[](const auto v) {
+					return is_invalid_input(v);
+				}))
+			{
+				return nan;
+			}
+
+			const auto sum = std::reduce(policy,
+										 std::ranges::begin(values_transform),
+										 std::ranges::end(values_transform),
+										 Result{});
+
+			return sum / std::ranges::size(r);
 		}
 	}
 
 	export
-	template<typename ExecutionPolicy, typename R, typename P1 = std::identity, typename Weights, typename P2 = std::identity, typename Result = std::conditional_t<
-																															std::integral<typename std::projected<std::ranges::iterator_t<R>, P1>::value_type>,
-																															double,
-																															typename std::projected<
-																																std::ranges::iterator_t<R>, P1>::value_type>
-		requires(std::is_execution_policy_v<std::decay_t<ExecutionPolicy>> && std::weighted_stats_range<R, P1, Weights, P2> && std::is_arithmetic_v<Result>)
-	constexpr Result mean(ExecutionPolicy&& policy, R&& r, Weights&& w, P1 proj1 = P1{}, P2 proj2 = P2{})
+	template<typename ExecutionPolicy, std::ranges::input_range R, typename P1 = std::identity, std::ranges::input_range W, class P2 = std::identity, std::floating_point Result = stats_result_t<R, P1>>
+		requires(std::is_execution_policy_v<std::remove_cvref_t<ExecutionPolicy>> &&
+				 std::arithmetic<typename std::projected<std::ranges::iterator_t<W>, P2>::value_type>)
+	constexpr Result mean(ExecutionPolicy&& policy, R&& r, W&& w, P1 proj1 = {}, P2 proj2 = {}) noexcept
 	{
-		if constexpr (std::ranges::input_range<R> || std::is_constant_evaluated())
+		constexpr Result inf {std::numeric_limits<Result>::infinity()};
+		constexpr Result nan {std::numeric_limits<Result>::quiet_NaN()};
+
+		if constexpr (std::ranges::input_range<R> ||
+					  std::ranges::input_range<W> ||
+					  std::ranges::forward_range<R> ||
+					  std::ranges::forward_range<W> ||
+					  std::is_constant_evaluated())
 		{
-			return mean(std::forward<R>(r), std::forward<Weight>(w), std::ref(proj1), std::ref(proj2));
+			return mean(std::forward<R>(r), std::forward<Weight>(w), std::move(proj1), std::move(proj2));
 		}
 		else
 		{
-			if (std::ranges::empty(r) || std::ranges::empty(w) || std::ranges::distance(r) != std::ranges::distance(w))
+			if (std::ranges::empty(r) || std::ranges::size(r) != std::ranges::size(w))
 			{
-				throw stats_error{};
+				return inf;
 			}
 
-			const auto sum_of_weights = std::transform_reduce(policy, std::ranges::begin(w), Result{}, std::plus{}, std::ref(proj2));
+			auto values_transform = r |
+									std::ranges::views::transform(std::move(proj1));
+
+
+			if (std::any_of(policy,
+							std::ranges::begin(values_transform),
+							std::ranges::end(values_transform),
+				[](const auto v) {
+					return is_invalid_input(v);
+				}))
+			{
+				return nan;
+			}
+
+			auto weights_transform = w |
+									 std::ranges::views::transform(std::move(proj2));
+
+			if (std::any_of(policy,
+							std::ranges::begin(weights_transform),
+							std::ranges::end(weights_transform),
+				[inf](const auto v) {
+					return is_invalid_input(v);
+				}))
+			{
+				return nan;
+			}
+
+			const auto sum_of_weights = std::reduce(policy,
+													std::ranges::begin(weights_transform),
+													std::ranges::end(weights_transform),
+													Result{});
 
 			if (sum_of_weights == 0)
 			{
-				throw stats_error{};
+				return inf;
 			}
 
-			const auto sum_of_products = std::transform_reduce(policy, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(w), Result{}, std::plus{},
-			[proj1 = std::ref(proj1), proj2 = std::ref(proj2)] (const auto& x, const auto& y) {
-				return std::invoke(proj1, x) * std::invoke(proj2, y);
-			});
+			const auto sum_of_products = std::transform_reduce(policy,
+															   std::ranges::begin(values_transform),
+															   std::ranges::end(values_transform),
+															   std::ranges::begin(weights_transform),
+															   Result{});
 
 			return sum_of_products / sum_of_weights;
 		}

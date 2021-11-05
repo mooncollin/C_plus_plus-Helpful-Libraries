@@ -24,7 +24,6 @@ namespace cmoon
 		concept applicable = 
 			requires
 		{
-			cmoon::is_applicable_property_v<std::decay_t<E>, P>;
 			P::is_requirable_concept;
 		} && 
 			cmoon::is_applicable_property_v<std::decay_t<E>, P> && 
@@ -78,40 +77,29 @@ namespace cmoon
 						return {state::none};
 					}
 				}
-
-				template<class E, class P>
-				static constexpr auto choice = choose<E, P>();
-
 			public:
 				template<class E, class P>
-					requires(choice<E, P>.strategy != state::none)
-				constexpr decltype(auto) operator()(E&& e, P&& p) const noexcept(choice<E, P>.no_throw)
+					requires(choose<E, P>().strategy != state::none)
+				constexpr auto operator()(E&& e, P&& p) const noexcept(choose<E, P>().no_throw)
 				{
-					if constexpr (choice<E, P>.strategy == state::static_query)
+					constexpr auto choice {choose<E, P>()};
+
+					if constexpr (choice.strategy == state::static_query)
 					{
 						return std::forward<E>(e);
 					}
-					else if constexpr (choice<E, P>.strategy == state::member_call)
+					else if constexpr (choice.strategy == state::member_call)
 					{
 						return std::forward<E>(e).require_concept(std::forward<P>(p));
 					}
-					else if constexpr (choice<E, P>.strategy == state::non_member_call)
+					else if constexpr (choice.strategy == state::non_member_call)
 					{
 						return require_concept(std::forward<E>(e), std::forward<P>(p));
-					}
-					else
-					{
-						static_assert(false, "should be unreachable");
 					}
 				}
 		};
 	}
 
-	namespace cpos
-	{
-		export
-		inline constexpr require_concept_cpo::cpo require_concept {};
-	}
-
-	using namespace cpos;
+	export
+	inline constexpr require_concept_cpo::cpo require_concept {};
 }

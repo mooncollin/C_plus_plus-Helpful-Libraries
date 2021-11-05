@@ -20,6 +20,7 @@ namespace cmoon::meta
 
 		public:
 			using index_type = std::size_t;
+			using tuple_t = std::tuple<Types...>;
 
 			[[nodiscard]] static constexpr index_type size() noexcept
 			{
@@ -27,7 +28,7 @@ namespace cmoon::meta
 			}
 
 			template<index_type N>
-			using type = std::tuple_element_t<N, std::tuple<Types...>>;
+			using type = std::tuple_element_t<N, tuple_t>;
 		private:
 			template<typename T, index_type I>
 				requires (I != size())
@@ -134,6 +135,12 @@ namespace cmoon::meta
 
 			template<index_type Count>
 			struct sub_list_helper<Count, 0> : std::type_identity<type_list<>> {};
+
+			template<class T>
+			struct is_unique_helper
+			{
+				static constexpr bool value {!cmoon::is_any_of_v<T, Types...>};
+			};
 		public:
 			template<template<typename> class Predicate>
 			using filter = typename filter_helper<Predicate, Types...>::type;
@@ -144,6 +151,8 @@ namespace cmoon::meta
 			template<index_type Offset, index_type Count = -1>
 				requires(Offset < size())
 			using sub_list = typename sub_list_helper<Offset, Count>::type;
+
+			using unique = typename filter<is_unique_helper>;
 
 			template<template<typename...> typename T, typename... ExtraArgs>
 			using complete_type = T<ExtraArgs..., Types...>;
@@ -177,6 +186,20 @@ namespace cmoon::meta
 	export
 	template<cmoon::specialization_of<type_list>... TypeList>
 	using concatenate_types = typename type_list<>::template concatenate<TypeList...>;
+
+	template<typename... Types>
+	struct is_unique_outer
+	{
+		template<class T>
+		struct is_unique_inner
+		{
+			static constexpr bool value {!cmoon::is_any_of_v<T, Types...>};
+		};
+	};
+
+	export
+	template<typename... Types>
+	using unique_types = typename type_list<Types...>::unique;
 }
 
 namespace std

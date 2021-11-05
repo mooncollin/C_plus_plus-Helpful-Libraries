@@ -7,200 +7,243 @@ import <concepts>;
 import <algorithm>;
 import <iterator>;
 import <execution>;
-import <vector>;
+import <cmath>;
+import <limits>;
 
 import cmoon.math;
 import cmoon.ranges;
+import cmoon.algorithm;
+import cmoon.concepts;
 
 import cmoon.stats.concepts;
-import cmoon.stats.stats_error;
+import cmoon.stats.stats_result_t;
+import cmoon.stats.invalid_input;
 
 namespace cmoon::stats
 {
 	export
-	template<typename R, typename P = std::identity, typename Result = std::conditional_t<
-																			std::integral<typename std::projected<std::ranges::iterator_t<R>, P>::value_type>,
-																			double,
-																			typename std::projected<std::ranges::iterator_t<R>, P>::value_type>;
-		requires(std::stats_range<R, P> && std::is_arithmetic_v<Result>)
-	constexpr Result geometric_mean(R&& r, P proj = P{})
+	template<std::ranges::input_range R, typename P = std::identity, std::floating_point Result = stats_result_t<R, P>>;
+	constexpr Result geometric_mean(R&& r, P proj = {}) noexcept
 	{
-		if (std::ranges::empty(r))
-		{
-			throw stats_error{};
-		}
+		constexpr Result inf {std::numeric_limits<Result>::infinity()};
+		constexpr Result nan {std::numeric_limits<Result>::quiet_NaN()};
 
 		std::size_t size {0};
+		Result product {1};
 
-		const auto product = std::transform_reduce(std::ranges::begin(r), std::ranges::end(r), Result{}, std::multiplies{},
-		[proj = std::ref(proj), &size](const auto& x) {
-			const auto p = std::invoke(proj, x);
-			if (p < 0)
+		auto value_transform = r |
+								std::ranges::views::transform(std::move(proj));
+
+		for (const auto v : value_transform)
+		{
+			if (is_invalid_input(v))
 			{
-				throw stats_error{};
+				return nan;
 			}
 
 			++size;
-			return p;
-		});
+			product *= v;
+		}
 
-		return cmoon::pow(product, 1.0 / size);
+		if (size == 0)
+		{
+			return inf;
+		}
+
+		if (cmoon::is_negative(product) && cmoon::is_even(size))
+		{
+			return nan;
+		}
+			
+		return cmoon::pow(product, Result{1.0} / size);
 	}
 
 	export
-	template<typename R, typename P1 = std::identity, typename Weights, typename P2 = std::identity, typename Result = std::conditional_t<
-																															std::integral<typename std::projected<std::ranges::iterator_t<R>, P1>::value_type>,
-																															double,
-																															typename std::projected<
-																																std::ranges::iterator_t<R>, P1>::value_type>
-		requires(std::weighted_stats_range<R, P1, Weights, P2> && std::is_arithmetic_v<Result>)
-	constexpr Result geometric_mean(R&& r, Weights&& w, P1 proj1 = P1{}, P2 proj2 = P2{})
+	template<std::ranges::input_range R, typename P1 = std::identity, std::ranges::input_range W, typename P2 = std::identity, std::floating_point Result = stats_result_t<R, P1>>
+		requires(std::arithmetic<typename std::projected<std::ranges::iterator_t<W>, P2>::value_type>)
+	constexpr Result geometric_mean(R&& r, W&& w, P1 proj1 = {}, P2 proj2 = {}) noexcept
 	{
-		if (std::ranges::empty(r) || std::ranges::empty(w))
+		constexpr Result inf {std::numeric_limits<Result>::infinity()};
+		constexpr Result nan {std::numeric_limits<Result>::quiet_NaN()};
+
+		auto value_transform = std::ranges::views::all(r) |
+							   std::ranges::views::transform(std::move(proj1));
+
+		auto weight_transform = std::ranges::views::all(w) |
+								std::ranges::views::transform(std::move(proj2));
+
+		Result sum_of_weights {0};
+		Result product_of_powers {1};
+		std::size_t size {0};
+
+		const auto r_end = std::ranges:::end(value_transform);
+		const auto w_end = std::ranges::end(weight_transform);
+
+		auto r_it = std::ranges::begin(value_transform);
+		auto w_it = std::ranges::begin(weight_transform);
+
+		if ((r_it == r_end) || (w_it == w_end))
 		{
-			throw stats_error{};
+			return inf;
 		}
 
-		if constexpr (std::ranges::input_range<R> || std::ranges::input_range<Weights>)
+		for (; r_it != r_end && w_it != w_end; ++r_it, ++w_it)
 		{
-			std::vector<Result> projected_range;
-			std::vector<Result> projected_weights;
+			const auto value = *r_it;
 
-			std::transform(std::ranges::begin(r), std::ranges::end(r), std::back_inserter(projected_range), std::ref(proj1));
-			std::transform(std::ranges::begin(w), std::ranges::end(w), std::back_inserter(projected_weights), std::ref(proj2));
-
-			if (projected_range.size() != projected_weights.size())
+			if (is_invalid_input(value))
 			{
-				throw stats_error{};
+				return nan;
 			}
 
-			Result sum_of_weights {0};
+			const auto weight = *w_it;
 
-			const auto product_of_powers = std::transform_reduce(std::begin(projected_range), std::end(projected_range), std::begin(projected_weights), Result{}, std::multiplies{},
-			[&sum_of_weights] (const auto& x, const auto& y) {
-				if (x < 0 || y < 0 || (x == 0 && y == 0))
-				{
-					throw stats_error{};
-				}
-
-				sum_of_weights = std::move(sum_of_weights) + y;
-				return cmoon::pow(x, y);
-			});
-
-if (sum_of_weights == 0)
-{
-	throw stats_error{};
-}
-
-return cmoon::pow(product_of_powers, 1.0 / sum_of_weights);
-		}
-		else
-		{
-		if (std::ranges::distance(r) != std::ranges::distance(w))
-		{
-			throw stats_error{};
-		}
-
-		Result sum_of_weights{ 0 };
-
-		const auto product_of_powers = std::transform_reduce(std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(w), Result{}, std::multiplies{},
-			[proj1 = std::ref(proj1), proj2 = std::ref(proj2), &sum_of_weights](const auto& x, const auto& y) {
-			const auto p1 = std::invoke(proj1, x);
-			const auto p2 = std::invoke(proj2, y);
-
-			if (p1 < 0 || p2 < 0 || (p1 == 0 && p2 == 0))
+			if (is_invalid_input(weight))
 			{
-				throw stats_error{};
+				return nan;
 			}
 
-			sum_of_weights = std::move(sum_of_weights) + p2;
-			return cmoon::pow(p1, p2);
-		});
+			sum_of_weights += weight;
+			products_of_powers *= cmoon::pow(value, weight);
+			++size;
+		}
+
+		if (((r_it == r_end) != (w_it == w_end)) ||
+			(cmoon::is_negative(product) && cmoon::is_even(size)))
+		{
+			return inf;
+		}
 
 		if (sum_of_weights == 0)
 		{
-			throw stats_error{};
+			return inf;
 		}
 
-		return cmoon::pow(product_of_powers, 1.0 / sum_of_weights);
-		}
+		return cmoon::pow(product_of_powers, Result{1.0} / sum_of_weights);
 	}
 
 	export
-		template<typename ExecutionPolicy, typename R, typename P = std::identity, typename Result = std::conditional_t<
-		std::integral<typename std::projected<std::ranges::iterator_t<R>, P>::value_type>,
-		double,
-		typename std::projected<std::ranges::iterator_t<R>, P>::value_type>;
-	requires(std::is_execution_policy_v<std::decay_t<ExecutionPolicy>>&& std::stats_range<R, P>&& std::is_arithmetic_v<Result>)
-		constexpr Result geometric_mean(ExecutionPolicy&& policy, R&& r, P proj = P{})
+	template<typename ExecutionPolicy, std::ranges::input_range R, typename P = std::identity, std::floating_point Result = stats_result_t<R, P>>
+		requires(std::is_execution_policy_v<std::remove_cvref_t<ExecutionPolicy>>)
+	constexpr Result geometric_mean(ExecutionPolicy&& policy, R&& r, P proj = {}) noexcept
 	{
-		if constexpr (std::ranges::input_range<R> || std::is_constant_evaluated())
+		constexpr Result inf {std::numeric_limits<Result>::infinity()};
+		constexpr Result nan {std::numeric_limits<Result>::quiet_NaN()};
+
+		if constexpr (std::ranges::input_range<R> ||
+					  std::ranges::forward_range<R> ||
+					  std::is_constant_evaluated())
 		{
-			return geometric_mean(std::forward<R>(r), std::ref(proj));
+			return geometric_mean(std::forward<R>(r), std::move(proj));
 		}
 		else
 		{
 			if (std::ranges::empty(r))
 			{
-				throw stats_error{};
+				return inf;
 			}
 
-			if (std::any_of(policy, std::ranges::begin(r), std::ranges::end(r), [proj = std::ref(proj)](const auto& x) { return std::invoke(proj, x) < 0; }))
+			auto values_transform = r |
+									std::ranges::views::transform(std::move(proj));
+
+			if (std::any_of(policy,
+							std::ranges::begin(values_transform),
+							std::ranges::end(values_transform),
+							[](const auto v) { return is_invalid_input(v); }))
 			{
-				throw stats_error{};
+				return nan;
 			}
 
-			const auto product = std::transform_reduce(policy, std::ranges::begin(r), std::ranges::end(r), Result{}, std::multiplies{}, std::ref(proj));
-			return cmoon::pow(product, 1.0 / std::ranges::distance(r));
+			const auto product = std::reduce(policy,
+											 std::ranges::begin(values_transform),
+											 std::ranges::end(values_transform),
+											 Result{});
+
+			const auto size = std::ranges::size(r);
+
+			if (cmoon::is_negative(product) && cmoon::is_even(size))
+			{
+				return nan;
+			}
+
+			return cmoon::pow(product, Result{1.0} / size);
 		}
 	}
 
 	export
-		template<typename ExecutionPolicy, typename R, typename P1 = std::identity, typename Weights, typename P2 = std::identity, typename Result = std::conditional_t<
-		std::integral<typename std::projected<std::ranges::iterator_t<R>, P1>::value_type>,
-		double,
-		typename std::projected<
-		std::ranges::iterator_t<R>, P1>::value_type>
-		requires(std::is_execution_policy_v<std::decay_t<ExecutionPolicy>>&& std::weighted_stats_range<R, P1, Weights, P2>&& std::is_arithmetic_v<Result>)
-		constexpr Result geometric_mean(ExecutionPolicy&& policy, R&& r, Weights&& w, P1 proj1 = P1{}, P2 proj2 = P2{})
+	template<typename ExecutionPolicy, std::ranges::input_range R, typename P1 = std::identity, std::ranges::input_range W, typename P2 = std::identity, std::floating_point Result = stats_result_t<R, P1>>
+		requires(std::is_execution_policy_v<std::remove_cvref_t<ExecutionPolicy>> &&
+				 std::arithmetic<typename std::projected<std::ranges::iterator_t<W>, P2>::value_type>)
+	constexpr Result geometric_mean(ExecutionPolicy&& policy, R&& r, W&& w, P1 proj1 = {}, P2 proj2 = {}) noexcept
 	{
-		if constexpr (std::ranges::input_range<R> || std::ranges::input_range<Weights> || std::is_constant_evaluated())
+		constexpr Result inf {std::numeric_limits<Result>::infinity()};
+		constexpr Result nan {std::numeric_limits<Result>::quiet_NaN()};
+
+		if constexpr (std::ranges::input_range<R> ||
+					  std::ranges::input_range<W> ||
+					  std::ranges::forward_range<R> ||
+					  std::ranges::forward_range<W> ||
+					  std::is_constant_evaluated())
 		{
-			return geometric_mean(std::forward<R>(r), std::forward<Weights>(w), std::ref(proj1), std::ref(proj2));
+			return geometric_mean(std::forward<R>(r), std::forward<Weights>(w), std::move(proj1), std::move(proj2));
 		}
 		else
 		{
-			if (std::ranges::empty(r) || std::ranges::distance(r) != std::ranges::distance(w))
+			if (std::ranges::empty(r) || std::ranges::size(r) != std::ranges::size(w))
 			{
-				throw stats_error{};
+				return inf;
 			}
 
-			const auto sum_of_weights = std::transform_reduce(policy, std::ranges::begin(w), std::ranges::end(w), Result{}, std::plus{}, std::ref(proj2));
+			auto values_transform = r |
+									std::ranges::views::transform(std::move(proj1));
+
+
+			if (std::any_of(policy,
+							std::ranges::begin(values_transform),
+							std::ranges::end(values_transform),
+				[](const auto v) {
+					return is_invalid_input(v);
+				}))
+			{
+				return nan;
+			}
+			
+			auto weights_transform = w |
+									 std::ranges::views::transform(std::move(proj2));
+
+			if (std::any_of(policy,
+							std::ranges::begin(weights_transform),
+							std::ranges::end(weights_transform),
+				[](const auto w) {
+					return is_invalid_input(w);
+				}))
+			{
+				return nan;
+			}
+
+			const auto sum_of_weights = std::reduce(policy,
+													std::ranges::begin(weights_transform),
+													std::ranges::end(weights_transform),
+													Result{});
 
 			if (sum_of_weights == 0)
 			{
-				throw stats_error{};
+				return inf;
 			}
 
-			auto ranges_together = cmoon::ranges::views::zip(r, w);
-
-			if (std::any_of(policy, std::ranges::begin(ranges_together), std::ranges::end(ranges_together),
-				[proj1 = std::ref(proj1), proj2 = std::ref(proj2)](const auto& x) { 
-					const auto& [num, weight] = x;
-					const auto p1 = std::invoke(proj1, num);
-					const auto p2 = std::invoke(proj2, weight);
-
-					return p1 < 0 || p2 < 0 || (p1 == 0 && p2 == 0);
-				})
-			   )
-			{
-				throw stats_error{};
-			}
-
-			const auto product_of_powers = std::transform_reduce(policy, std::ranges::begin(r), std::ranges::end(r), std::ranges::begin(w), Result{}, std::multiplies{},
-			[proj1 = std::ref(proj1), proj2 = std::ref(proj2)] (const auto& x, const auto& y) {
-				return cmoon::pow(std::invoke(proj1, x), std::invoke(proj2, x));
+			const auto product_of_powers = std::transform_reduce(policy,
+																 std::ranges::begin(values_transform),
+																 std::ranges::end(values_transform),
+																 std::ranges::begin(weights_transform),
+																 Result{}, std::multiplies{},
+			[] (const auto v, const auto w) {
+				return cmoon::pow(v, w);
 			});
+
+			if (cmoon::is_negative(product_of_powers) && cmoon::is_even(std::ranges::size(r)))
+			{
+				return nan;
+			}
 
 			return cmoon::pow(product_of_powers, 1.0 / sum_of_weights);
 		}

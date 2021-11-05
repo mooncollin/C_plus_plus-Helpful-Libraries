@@ -6,74 +6,54 @@ import cmoon.meta;
 
 namespace cmoon::execution
 {
-	namespace start_cpo
+	namespace start_ns
 	{
 		void start();
 
-		template<class O>
-		concept has_adl =
-			requires(O&& o)
-		{
-			start(std::forward<O>(o));
-		};
-
-		template<class O>
-		concept can_member_call =
-			requires(O&& o)
-		{
-			std::forward<O>(o).start();
-		};
-
-		struct cpo
+		class start_t
 		{
 			private:
-				enum class state { none, member_call, non_member_call };
+				enum class state { none, member_fn, default_fn };
 
 				template<class O>
-				[[nodiscard]] static consteval cmoon::meta::choice_t<state> choose() noexcept
+				static consteval cmoon::meta::choice_t<state> choose() noexcept
 				{
-					if constexpr (can_member_call<O>)
+					if constexpr (requires(O&& o) {
+						{ std::forward<O>(o).start() } noexcept;
+					})
 					{
-						return {state::member_call, noexcept((std::declval<O>()).start())};
+						return {state::member_fn, true};
 					}
-					else if constexpr (has_adl<O>)
+					else if constexpr (requires(O&& o) {
+						{ start(std::forward<O>(o)) } noexcept;
+					})
 					{
-						return {state::non_member_call, noexcept(start(std::declval<O>()))};
+						return {state::default_fn, true};
 					}
 					else
 					{
 						return {state::none};
 					}
 				}
-
-				template<class O>
-				static constexpr auto choice = choose<O>();
 			public:
 				template<class O>
-					requires(choice<O>.strategy != state::none)
-				void operator()(O&& o) const noexcept(choice<O>.no_throw)
+					requires(choose<O>().strategy != state::none)
+				constexpr void operator()(O&& o) const noexcept(choose<O>().no_throw)
 				{
-					if constexpr (choice<O>.strategy == state::member_call)
+					constexpr auto choice {choose<O>()};
+
+					if constexpr (choice.strategy == state::member_fn)
 					{
-						return std::forward<O>(o).start();
+						std::forward<O>(o).start();
 					}
-					else if constexpr (choice<O>.strategy == state::non_member_call)
+					else if constexpr (choice.strategy == state::default_fn)
 					{
-						return start(std::forward<O>(o));
-					}
-					else
-					{
-						static_assert(false, "should be unreachable");
+						start(std::forward<O>(o));
 					}
 				}
 		};
 	}
 
-	namespace cpos
-	{
-		export
-		inline constexpr start_cpo::cpo start {};
-	}
-
-	using namespace cpos;
+	export
+	inline constexpr start_ns::start_t start{};
 }

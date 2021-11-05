@@ -11,13 +11,7 @@ namespace cmoon
 {
 	namespace require_cpo
 	{
-		struct cpo;
-
-		template <class T, class P>
-		void require(T&, const P&) = delete;
-
-		template <class T, class P>
-		void require(const T&, const P&) = delete;
+		void require();
 
 		template<class E, class P0>
 		concept has_adl = 
@@ -27,18 +21,15 @@ namespace cmoon
 		};
 
 		template<class E, class P0>
-		concept applicable = 
-			requires
+		concept applicable = requires 
 		{
-			cmoon::is_applicable_property_v<std::decay_t<E>, std::decay_t<P0>>;
 			std::decay_t<P0>::is_requirable;
-		} && 
-			cmoon::is_applicable_property_v<std::decay_t<E>, std::decay_t<P0>> && 
+		} &&
+			cmoon::is_applicable_property_v<std::decay_t<E>, std::decay_t<P0>> &&
 			std::decay_t<P0>::is_requirable;
 
 		template<class E, class P0>
-		concept can_static_query = 
-			requires
+		concept can_static_query = requires
 		{
 			std::decay_t<P0>::template static_query_v<std::decay_t<E>>;
 			std::decay_t<P0>::value();
@@ -52,17 +43,10 @@ namespace cmoon
 			std::forward<E>(e).require(std::forward<P0>(p0));
 		};
 
-		template<class E, class P0, class... Pn>
-		concept can_chain_require =
-			requires(E&& e, P0&& p0, Pn&&... pn)
-		{
-			cpo{}(cpo{}(std::forward<E>(e), std::forward<P0>(p0)), std::forward<Pn>(pn)...);
-		};
-
 		struct cpo
 		{
 			private:
-				enum class state { none, static_query, member_call, non_member_call, chain_call };
+				enum class state {none, static_query, member_call, non_member_call, chain_call};
 
 				template<class E, class P0, class... Pn>
 				[[nodiscard]] static consteval cmoon::meta::choice_t<state> choose() noexcept
@@ -73,7 +57,7 @@ namespace cmoon
 					{
 						if constexpr (can_static_query<E, P0> && N == 0)
 						{
-							return {state::static_query, noexcept(std::declval<E>())};
+							return {state::static_query, std::is_nothrow_default_constructible_v<E>};
 						}
 						else if constexpr (can_member_call<E, P0> && N == 0)
 						{
@@ -83,9 +67,9 @@ namespace cmoon
 						{
 							return {state::non_member_call, noexcept(require(std::declval<E>(), std::declval<P0>()))};
 						}
-						else if constexpr (can_chain_require<E, P0, Pn...> && N > 0)
+						else if constexpr (N > 0)
 						{
-							return {state::chain_call, noexcept(cpo{}(cpo{}(std::declval<E>(), std::declval<P0>()), std::declval<Pn>()...))};
+							return {state::chain_call};
 						}
 						else
 						{
@@ -98,42 +82,33 @@ namespace cmoon
 					}
 				}
 
-				template<class E, class P0, class... Pn>
-				static constexpr auto choice = choose<E, P0, Pn...>();
 			public:
 				template<class E, class P0, class... Pn>
-					requires(choice<E, P0, Pn...>.strategy != state::none)
-				constexpr decltype(auto) operator()(E&& e, P0&& p0, Pn&&... pn) const noexcept(choice<E, P0, Pn...>.no_throw)
+					requires(choose<E, P0, Pn...>().strategy != state::none)
+				constexpr auto operator()(E&& e, P0&& p0, Pn&&... pn) const noexcept(choose<E, P0, Pn...>().no_throw)
 				{
-					if constexpr (choice<E, P0, Pn...>.strategy == state::static_query)
+					constexpr auto choice {choose<E, P0, Pn...>()};
+
+					if constexpr (choice.strategy == state::static_query)
 					{
 						return std::forward<E>(e);
 					}
-					else if constexpr (choice<E, P0, Pn...>.strategy == state::member_call)
+					else if constexpr (choice.strategy == state::member_call)
 					{
 						return std::forward<E>(e).require(std::forward<P0>(p0));
 					}
-					else if constexpr (choice<E, P0, Pn...>.strategy == state::non_member_call)
+					else if constexpr (choice.strategy == state::non_member_call)
 					{
 						return require(std::forward<E>(e), std::forward<P0>(p0));
 					}
-					else if constexpr (choice<E, P0, Pn...>.strategy == state::chain_call)
+					else if constexpr (choice.strategy == state::chain_call)
 					{
 						return (*this)((*this)(std::forward<E>(e), std::forward<P0>(p0)), std::forward<Pn>(pn)...);
-					}
-					else
-					{
-						static_assert(false, "should be unreachable");
 					}
 				}
 		};
 	}
 
-	namespace cpos
-	{
-		export
-		inline constexpr require_cpo::cpo require {};
-	}
-
-	using namespace cpos;
+	export
+	inline constexpr require_cpo::cpo require {};
 }

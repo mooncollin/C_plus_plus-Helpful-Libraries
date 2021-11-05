@@ -21,19 +21,11 @@ namespace cmoon
 		};
 
 		template<class E, class P>
-		concept applicable = 
-			requires
-		{
-			cmoon::is_applicable_property_v<std::decay_t<E>, std::decay_t<P>>;
-		} && 
-			cmoon::is_applicable_property_v<std::decay_t<E>, std::decay_t<P>>;
-
-		template<class E, class P>
 		concept can_static_query = 
 			requires
 		{
 			std::decay_t<P>::template static_query_v<std::decay_t<E>>;
-		} && std::decay_t<P>::template static_query_v<std::decay_t<E>>;
+		};
 
 		template<class E, class P>
 		concept can_member_call = 
@@ -50,7 +42,7 @@ namespace cmoon
 				template<class E, class P>
 				[[nodiscard]] static consteval cmoon::meta::choice_t<state> choose() noexcept
 				{
-					if constexpr (applicable<E, P>)
+					if constexpr (cmoon::is_applicable_property_v<std::decay_t<E>, std::decay_t<P>>)
 					{
 						if constexpr (can_static_query<E, P>)
 						{
@@ -75,38 +67,29 @@ namespace cmoon
 					}
 				}
 
-				template<class E, class P>
-				static constexpr auto choice = choose<E, P>();
 			public:
 				template<class E, class P>
-					requires(choice<E, P>.strategy != state::none)
-				constexpr decltype(auto) operator()(E&& e, P&& p) const noexcept(choice<E, P>.no_throw)
+					requires(choose<E, P>().strategy != state::none)
+				constexpr auto operator()(E&& e, P&& p) const noexcept(choose<E, P>().no_throw)
 				{
-					if constexpr (choice<E, P>.strategy == state::static_query)
+					constexpr auto choice {choose<E, P>()};
+
+					if constexpr (choice.strategy == state::static_query)
 					{
 						return std::decay_t<P>::template static_query_v<std::decay_t<E>>;
 					}
-					else if constexpr (choice<E, P>.strategy == state::member_call)
+					else if constexpr (choice.strategy == state::member_call)
 					{
 						return std::forward<E>(e).query(std::forward<P>(p));
 					}
-					else if constexpr (choice<E, P>.strategy == state::non_member_call)
+					else if constexpr (choice.strategy == state::non_member_call)
 					{
 						return query(std::forward<E>(e), std::forward<P>(p));
-					}
-					else
-					{
-						static_assert(false, "should be unreachable");
 					}
 				}
 		};
 	}
 
-	namespace cpos
-	{
-		export
-		inline constexpr query_cpo::cpo query {};
-	}
-
-	using namespace cpos;
+	export
+	inline constexpr query_cpo::cpo query {};
 }
