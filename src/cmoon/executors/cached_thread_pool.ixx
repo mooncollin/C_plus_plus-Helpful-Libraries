@@ -1,4 +1,4 @@
-export module cmoon.executors.static_thread_pool;
+export module cmoon.executors.cached_thread_pool;
 
 import <cstddef>;
 import <atomic>;
@@ -16,13 +16,14 @@ import <algorithm>;
 import <ranges>;
 import <condition_variable>;
 import <set>;
+import <chrono>;
 
 import cmoon.execution;
 
 namespace cmoon::executors
 {
 	export
-	class static_thread_pool
+	class cached_thread_pool
 	{
 		template<auto B = cmoon::execution::blocking.possibly,
 				 auto R = cmoon::execution::relationship.fork,
@@ -34,7 +35,7 @@ namespace cmoon::executors
 			struct op
 			{
 				public:
-					op(static_thread_pool& p, const A& alloc, Receiver&& r)
+					op(cached_thread_pool& p, const A& alloc, Receiver&& r)
 						: pool_{p}, alloc{alloc}, r_{std::forward<Receiver>(r)} {}
 
 					void start() noexcept
@@ -60,12 +61,20 @@ namespace cmoon::executors
 									std::allocate_shared<scheduler_job<Receiver>>(alloc, std::forward<Receiver>(r_))
 								);
 								++pool_.get().outstanding_work_;
-								pool_.get().job_notify.notify_one();
+								std::scoped_lock l2 {pool_.get().thread_access};
+								if (pool_.get().available_threads() == 0)
+								{
+									pool_.get().add_thread();
+								}
+								else
+								{
+									pool_.get().job_notify.notify_one();
+								}
 							}
 						}
 					}
 				private:
-					std::reference_wrapper<static_thread_pool> pool_;
+					std::reference_wrapper<cached_thread_pool> pool_;
 					A alloc;
 					Receiver r_;
 			};
@@ -192,10 +201,10 @@ namespace cmoon::executors
 					}
 				}
 			private:
-				sender_t(static_thread_pool& p, const A& a = {})
+				sender_t(cached_thread_pool& p, const A& a = {})
 					: pool_{p}, a_{a} {}
 						
-				std::reference_wrapper<static_thread_pool> pool_;
+				std::reference_wrapper<cached_thread_pool> pool_;
 				A a_;
 
 				template<class Allocator>
@@ -228,7 +237,7 @@ namespace cmoon::executors
 					return require(cmoon::execution::allocator(std::allocator<void>{}));
 				}
 
-				static_thread_pool& query(const cmoon::execution::context_t) const noexcept
+				cached_thread_pool& query(const cmoon::execution::context_t) const noexcept
 				{
 					return pool_.get();
 				}
@@ -274,13 +283,13 @@ namespace cmoon::executors
 					return {};
 				}
 			private:
-				scheduler_t(static_thread_pool& pool, const Allocator& a = {})
+				scheduler_t(cached_thread_pool& pool, const Allocator& a = {})
 					: pool_{pool}, a_{a} {}
 
-				std::reference_wrapper<static_thread_pool> pool_;
+				std::reference_wrapper<cached_thread_pool> pool_;
 				Allocator a_;
 
-				friend class static_thread_pool;
+				friend class cached_thread_pool;
 		};
 
 		template<auto B = cmoon::execution::blocking.possibly,
@@ -333,7 +342,15 @@ namespace cmoon::executors
 						{
 							pool_.get().jobs.push_back(std::allocate_shared<executor_job<Function>>(a_, std::forward<Function>(f)));
 							++pool_.get().outstanding_work_;
-							pool_.get().job_notify.notify_one();
+							std::scoped_lock l2 {pool_.get().thread_access};
+							if (pool_.get().available_threads() == 0)
+							{
+								pool_.get().add_thread();
+							}
+							else
+							{
+								pool_.get().job_notify.notify_one();
+							}
 						}
 					}
 				}
@@ -367,13 +384,27 @@ namespace cmoon::executors
 								pool_.get().jobs.push_back(std::allocate_shared<bulk_executor_job<Function>>(a_, std::forward<Function>(f), i));
 							}
 
-							if (n == 1)
+							std::scoped_lock l2 {pool_.get().thread_access};
+							const auto available_threads {pool_.get().available_threads()};
+							if (std::size_t threads_needed {std::max(n, available_threads) - std::min(n, available_threads)};
+								threads_needed > 0)
 							{
-								pool_.get().job_notify.notify_one();
+								for (std::size_t i {0}; i < threads_needed; ++i)
+								{
+									pool_.get().add_thread();
+								}
 							}
-							else
+							
+							if (available_threads > 0)
 							{
-								pool_.get().job_notify.notify_all();
+								if (n == 1)
+								{
+									pool_.get().job_notify.notify_one();
+								}
+								else
+								{
+									pool_.get().job_notify.notify_all();
+								}
 							}
 						}
 					}
@@ -487,37 +518,29 @@ namespace cmoon::executors
 					return sender_t<B, R, O, A>{pool_, a_};
 				}
 			private:
-				executor_t(static_thread_pool& pool, const A& a = {})
+				executor_t(cached_thread_pool& pool, const A& a = {})
 					: pool_{pool}, a_{a} {}
 
-				std::reference_wrapper<static_thread_pool> pool_;
+				std::reference_wrapper<cached_thread_pool> pool_;
 				A a_;
 
-				friend class static_thread_pool;
+				friend class cached_thread_pool;
 		};
 
 		public:
 			using scheduler_type = scheduler_t<>;
 			using executor_type = executor_t<>;
 
-			static_thread_pool(std::size_t num_threads)
-			{
-				threads.reserve(num_threads);
+			cached_thread_pool(const std::chrono::nanoseconds& timeout = std::chrono::seconds{60})
+				: timeout_{timeout} {}
 
-				for (std::size_t i {0}; i < num_threads; ++i)
-				{
-					threads.emplace_back(&static_thread_pool::thread_loop, this);
-					thread_ids.insert(threads.back().get_id());
-				}
-			}
+			cached_thread_pool(const cached_thread_pool&) = delete;
+			cached_thread_pool(cached_thread_pool&&) = default;
 
-			static_thread_pool(const static_thread_pool&) = delete;
-			static_thread_pool(static_thread_pool&&) = default;
+			cached_thread_pool& operator=(const cached_thread_pool&) = delete;
+			cached_thread_pool& operator=(cached_thread_pool&&) = default;
 
-			static_thread_pool& operator=(const static_thread_pool&) = delete;
-			static_thread_pool& operator=(static_thread_pool&&) = default;
-
-			~static_thread_pool() noexcept
+			~cached_thread_pool() noexcept
 			{
 				stop();
 				wait();
@@ -526,7 +549,7 @@ namespace cmoon::executors
 			void attach()
 			{
 				{
-					std::scoped_lock s {thread_access};
+					std::scoped_lock s{thread_access};
 					thread_ids.insert(std::this_thread::get_id());
 				}
 				thread_loop();
@@ -574,6 +597,16 @@ namespace cmoon::executors
 			executor_type executor() noexcept
 			{
 				return {*this};
+			}
+
+			const std::chrono::nanoseconds& timeout() const noexcept
+			{
+				return timeout_;
+			}
+
+			void timeout(const std::chrono::nanoseconds& t) noexcept
+			{
+				timeout_ = t;
 			}
 		private:
 			struct job
@@ -661,7 +694,8 @@ namespace cmoon::executors
 				F f_;
 				typename executor_type::index_type i_;
 			};
-
+			
+			std::chrono::nanoseconds timeout_;
 			std::shared_mutex thread_access;
 			std::mutex job_access;
 			std::condition_variable job_notify;
@@ -671,6 +705,7 @@ namespace cmoon::executors
 			bool stopped {false};
 			bool complete {false};
 			std::size_t outstanding_work_{0};
+			std::size_t busy_threads{0};
 
 			template<class Allocator>
 			friend class scheduler_t;
@@ -681,38 +716,55 @@ namespace cmoon::executors
 			template<auto B, auto R, auto O, typename A>
 			friend class executor_t;
 
+			void add_thread()
+			{
+				threads.emplace_back(&cached_thread_pool::thread_loop, this);
+				thread_ids.insert(threads.back().get_id());
+			}
+
+			[[nodiscard]] std::size_t available_threads() const noexcept
+			{
+				return std::size(threads) - busy_threads;
+			}
+
 			void thread_loop()
 			{
-				bool did_work {false};
 				while (true)
 				{
 					std::shared_ptr<job> j;
 					{
 						std::unique_lock l {job_access};
-						if (did_work)
+						if (!job_notify.wait_for(l, timeout_, [this] {
+								return stopped || !jobs.empty() || (complete && outstanding_work_ == 0);
+							}) && jobs.empty())
 						{
-							--outstanding_work_;
-							if (complete)
-							{
-								job_notify.notify_all();
-							}
+							l.unlock();
+							std::scoped_lock l2{thread_access};
+							auto it {std::ranges::find_if(threads, [](const auto& t) { return t.get_id() == std::this_thread::get_id(); })};
+							it->detach();
+							threads.erase(it);
+							thread_ids.erase(std::this_thread::get_id());
+							return;
 						}
-
-						job_notify.wait(l, [this] {
-							return stopped || !jobs.empty() || (complete && outstanding_work_ == 0);
-						});
 
 						if (stopped || (complete && outstanding_work_ == 0))
 						{
 							return;
 						}
 
+						++busy_threads;
 						j = std::move(jobs.front());
 						jobs.pop_front();
 					}
 
 					j->execute();
-					did_work = true;
+					std::scoped_lock l {job_access};
+					--outstanding_work_;
+					--busy_threads;
+					if (complete)
+					{
+						job_notify.notify_all();
+					}
 				}
 			}
 	};

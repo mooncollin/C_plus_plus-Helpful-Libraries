@@ -47,6 +47,7 @@ namespace cmoon::execution
 			static constexpr bool is_preferable {true};
 
 			template<class Executor>
+				requires (requires { Executor::query(std::declval<allocator_t>()); })
 			static constexpr auto static_query_v {Executor::query(allocator_t)};
 
 			template<typename OtherProtoAllocator>

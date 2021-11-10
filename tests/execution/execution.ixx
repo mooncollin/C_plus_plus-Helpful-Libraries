@@ -13,6 +13,8 @@ export import cmoon.tests.execution.then;
 export import cmoon.tests.execution.retry;
 export import cmoon.tests.execution.sync_wait;
 export import cmoon.tests.execution.when_all;
+export import cmoon.tests.execution.transform;
+export import cmoon.tests.execution.async;
 
 import <utility>;
 
@@ -60,6 +62,8 @@ namespace cmoon::tests
 		suite.add_test_case<execution::when_all_error_test>();
 		suite.add_test_case<execution::when_all_done_test>();
 		suite.add_test_case<execution::when_all_error_and_done_test>();
+		suite.add_test_case<execution::transform_test>();
+		suite.add_test_case<execution::async_test>();
 
 		return std::move(suite);
 	}

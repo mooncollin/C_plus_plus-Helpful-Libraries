@@ -131,7 +131,7 @@ namespace cmoon::execution
 					  values_left{sizeof...(Ss)},
 					  op_states{execution::connect(std::forward<Ss>(ss2), single_receiver<Ints>{*this})...} {}
 
-				void start() && noexcept
+				constexpr void start() && noexcept
 				{
 					std::apply([](auto&&... ops) {
 						(execution::start(std::forward<decltype(ops)>(ops)), ...);

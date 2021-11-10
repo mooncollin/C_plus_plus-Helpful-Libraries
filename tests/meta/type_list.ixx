@@ -183,4 +183,23 @@ namespace cmoon::tests::meta
 				cmoon::test::assert_is_type<l5, cmoon::meta::type_list<int>>();
 			}
 	};
+
+	export
+	class type_list_unique_test : public cmoon::test::test_case
+	{
+		public:
+			type_list_unique_test()
+				: cmoon::test::test_case{"type_list_unique_test"} {}
+
+			void operator()() override
+			{
+				using l = cmoon::meta::type_list<int, double, int, float, char>;
+				using l2 = cmoon::meta::type_list<int, double, float, char>;
+
+				cmoon::test::assert_false(l::is_unique());
+				cmoon::test::assert_true(l2::is_unique());
+
+				cmoon::test::assert_is_type<typename l::unique, l2>();
+			}
+	};
 }

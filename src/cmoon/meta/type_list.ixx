@@ -5,6 +5,7 @@ import <cstddef>;
 import <concepts>;
 import <utility>;
 import <functional>;
+import <type_traits>;
 
 import cmoon.concepts;
 import cmoon.type_traits;
@@ -136,11 +137,35 @@ namespace cmoon::meta
 			template<index_type Count>
 			struct sub_list_helper<Count, 0> : std::type_identity<type_list<>> {};
 
-			template<class T>
-			struct is_unique_helper
+			template<class Out, class In>
+			struct unique_helper;
+
+			template<class... Out, class In1, class... InN>
+			struct unique_helper<type_list<Out...>, type_list<In1, InN...>>
 			{
-				static constexpr bool value {!cmoon::is_any_of_v<T, Types...>};
+				using type = std::conditional_t<
+					type_list<Out...>::template contains<In1>(),
+					typename unique_helper<type_list<Out...>, type_list<InN...>>::type,
+					typename unique_helper<type_list<Out..., In1>, type_list<InN...>>::type
+				>;
 			};
+
+			template<class Out>
+			struct unique_helper<Out, type_list<>>
+			{
+				using type = Out;
+			};
+
+			template<template<typename> class Predicate, class...>
+			struct find_helper;
+
+			template<template<typename> class Predicate, class T1, class... TN>
+			struct find_helper<Predicate, T1, TN...> : std::type_identity<
+				std::conditional_t<Predicate<T1>::value,
+				T1,
+				typename find_helper<Predicate, TN...>::type>
+			> {};
+
 		public:
 			template<template<typename> class Predicate>
 			using filter = typename filter_helper<Predicate, Types...>::type;
@@ -149,10 +174,17 @@ namespace cmoon::meta
 			using transform = type_list<typename Function<Types>::type...>;
 
 			template<index_type Offset, index_type Count = -1>
-				requires(Offset < size())
+				requires(Offset <= size())
 			using sub_list = typename sub_list_helper<Offset, Count>::type;
 
-			using unique = typename filter<is_unique_helper>;
+			using unique = typename unique_helper<type_list<>, type_list>::type;
+
+			template<template<typename> class Predicate>
+			static constexpr bool can_find {size() > 0 && std::disjunction_v<Predicate<Types>::value...>};
+
+			template<template<typename> class Predicate>
+				requires(can_find<Predicate>)
+			using find = typename find_helper<Predicate, Types...>::type;
 
 			template<template<typename...> typename T, typename... ExtraArgs>
 			using complete_type = T<ExtraArgs..., Types...>;
@@ -186,16 +218,6 @@ namespace cmoon::meta
 	export
 	template<cmoon::specialization_of<type_list>... TypeList>
 	using concatenate_types = typename type_list<>::template concatenate<TypeList...>;
-
-	template<typename... Types>
-	struct is_unique_outer
-	{
-		template<class T>
-		struct is_unique_inner
-		{
-			static constexpr bool value {!cmoon::is_any_of_v<T, Types...>};
-		};
-	};
 
 	export
 	template<typename... Types>

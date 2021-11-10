@@ -1,7 +1,6 @@
 export module cmoon.utility.stopwatch;
 
 import <chrono>;
-import <iostream>;
 
 namespace cmoon
 {

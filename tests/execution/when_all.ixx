@@ -102,7 +102,6 @@ namespace cmoon::tests::execution
 
 			void operator()() override
 			{
-				int value {0};
 				receiver_s r;
 
 				auto work = cmoon::execution::when_all(

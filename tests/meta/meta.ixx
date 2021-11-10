@@ -22,6 +22,7 @@ namespace cmoon::tests
 		suite.add_test_case<meta::type_list_filter_test>();
 		suite.add_test_case<meta::type_list_transform_test>();
 		suite.add_test_case<meta::type_list_sub_list_test>();
+		suite.add_test_case<meta::type_list_unique_test>();
 		suite.add_test_case<meta::value_list_empty_test>();
 		suite.add_test_case<meta::value_list_test>();
 		suite.add_test_case<meta::value_list_all_of_test>();
