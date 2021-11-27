@@ -10,15 +10,15 @@ namespace cmoon::tests::execution
 	{
 		struct then_r
 		{
-			void set_value(int v)
+			constexpr friend void tag_invoke(cmoon::execution::set_value_t, then_r&& r, int v)
 			{
-				value = v;
+				r.value = v;
 			}
 
 			template<class E>
-			void set_error(E&&) noexcept {}
+			constexpr friend void tag_invoke(cmoon::execution::set_error_t, then_r&&, E&&) noexcept {}
 
-			void set_done() noexcept {}
+			constexpr friend void tag_invoke(cmoon::execution::set_done_t, then_r&&) noexcept {}
 
 			int value {0};
 		};

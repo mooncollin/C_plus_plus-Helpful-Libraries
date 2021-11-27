@@ -6,11 +6,11 @@ namespace cmoon::execution
 {
 	export
 	template<template<template<class...> class, template<class...> class> class>
-	struct has_value_types;
+	struct has_value_types {};
 
 	export
 	template<template<template<class...> class> class>
-	struct has_error_types;
+	struct has_error_types {};
 
 	export
 	template<class S>

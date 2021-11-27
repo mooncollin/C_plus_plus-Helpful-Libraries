@@ -28,9 +28,4 @@ namespace cmoon::execution
 	{
 		execution::set_value(std::move(t), std::forward<An>(an)...);
 	};
-
-	export
-	template<class R, class... An>
-	inline constexpr bool is_nothrow_receiver_of_v = receiver_of<R, An...> &&
-													 std::is_nothrow_invocable_v<decltype(set_value), R, An...>;
 }

@@ -7,9 +7,9 @@ import <functional>;
 import <optional>;
 import <atomic>;
 import <tuple>;
-import <variant>;
 
 import cmoon.meta;
+import cmoon.functional;
 
 import cmoon.execution.receiver;
 import cmoon.execution.sender;
@@ -17,133 +17,200 @@ import cmoon.execution.sender_traits;
 import cmoon.execution.typed_sender;
 import cmoon.execution.connect;
 import cmoon.execution.start;
+import cmoon.execution.into_variant;
+import cmoon.execution.set_value;
+import cmoon.execution.set_error;
+import cmoon.execution.set_done;
+import cmoon.execution.get_completion_scheduler;
 
 namespace cmoon::execution
 {
-	enum class sync_wait_result { none, value, error, done };
+	template<class... Ts>
+		requires(sizeof...(Ts) == 1)
+	using one = void;
 
-	template<class ValueType>
+	template<typed_sender S>
+	using sync_wait_type = std::optional<value_types_of_t<S, std::tuple, std::type_identity_t>>;
+
+	template<typed_sender S>
+	using sync_wait_error_type = std::optional<error_types_of_t<S>>;
+
+	template<typed_sender S>
+	using sync_wait_with_variant_type = std::optional<value_types_of_t<S>>;
+
+	template<typed_sender S>
 	struct sync_wait_receiver
 	{
-		constexpr sync_wait_receiver(std::atomic<sync_wait_result>& a) noexcept
-			: a_{a} {}
+		constexpr sync_wait_receiver(std::atomic_flag& a,
+									 sync_wait_type<S>& v,
+									 sync_wait_error_type<S>& e) noexcept
+			: a_{a}, value{v}, error{e} {}
 
-		constexpr void set_value(ValueType&& v)
+		template<class... Args>
+		friend void tag_invoke(set_value_t, sync_wait_receiver&& r, Args&&... args)
 		{
-			value = std::forward<ValueType>(v);
-			a_ = sync_wait_result::value;
-			a_.notify_one();
+			r.value.get() = std::make_tuple(std::forward<Args>(args)...);
+			r.a_.get().test_and_set();
+			r.a_.get().notify_one();
 		}
 
 		template<class E>
-		constexpr void set_error(E&& e) noexcept
+		friend void tag_invoke(set_error_t, sync_wait_receiver&& r, E&& e) noexcept
 		{
-			error = [e = std::forward<E>(e)] {
-				if constexpr (std::same_as<std::remove_cvref_t<E>, std::exception_ptr>)
+			r.error.get() = std::forward<E>(e);
+			r.a_.get().test_and_set();
+			r.a_.get().notify_one();
+		}
+
+		friend void tag_invoke(set_done_t, sync_wait_receiver&& r) noexcept
+		{
+			r.a_.get().test_and_set();
+			r.a_.get().notify_one();
+		}
+
+		std::reference_wrapper<std::atomic_flag> a_;
+		std::reference_wrapper<sync_wait_type<S>> value;
+		std::reference_wrapper<sync_wait_error_type<S>> error;
+	};
+
+	struct error_throw_fn
+	{
+		[[noreturn]] void operator()(std::exception_ptr e) const
+		{
+			std::rethrow_exception(std::move(e));
+		}
+
+		template<class E>
+		[[noreturn]] void operator()(E&& e) const
+		{
+			throw std::forward<E>(e);
+		}
+	};
+
+	export
+	struct sync_wait_t
+	{
+		private:
+			enum class state { completion_scheduler_fn, tag_invoke_fn, other };
+
+			template<class S>
+			[[nodiscard]] static consteval cmoon::meta::choice_t<state> choose() noexcept
+			{
+				if constexpr (requires(sync_wait_t t, S&& s) {
+					{ tag_invoke(t, get_completion_scheduler<set_value_t>(s), std::forward<S>(s)) } -> std::same_as<sync_wait_type<S>>;
+				})
 				{
-					std::rethrow_exception(e);
+					using cs = std::invoke_result_t<get_completion_scheduler_t<set_value_t>, S>;
+					return {state::completion_scheduler_fn, cmoon::nothrow_tag_invocable<sync_wait_t, cs, S>};
+				}
+				else if constexpr (requires(sync_wait_t t, S&& s) {
+					{ tag_invoke(t, std::forward<S>(s)) } -> std::same_as<sync_wait_type<S>>;
+				})
+				{
+					return {state::tag_invoke_fn, cmoon::nothrow_tag_invocable<sync_wait_t, S>};
 				}
 				else
 				{
-					throw e;
+					return {state::other};
 				}
-			};
+			}
+		public:
+			template<typed_sender S>
+				requires(requires {
+					typename value_types_of_t<S, std::tuple, one>;
+				})
+			constexpr sync_wait_type<S> operator()(S&& s) const noexcept(choose<S>().no_throw)
+			{
+				constexpr auto choice {choose<S>()};
 
-			a_ = sync_wait_result::error;
-			a_.notify_one();
-		}
+				if constexpr (choice.strategy == state::completion_scheduler_fn)
+				{
+					return tag_invoke(*this, get_completion_scheduler<set_value_t>(s), std::forward<S>(s));
+				}
+				else if constexpr (choice.strategy == state::tag_invoke_fn)
+				{
+					return tag_invoke(*this, std::forward<S>(s));
+				}
+				else if constexpr (choice.strategy == state::other)
+				{
+					std::atomic_flag sync;
+					sync_wait_type<S> results;
+					sync_wait_error_type<S> err;
 
-		constexpr void set_done() noexcept
-		{
-			a_ = sync_wait_result::done;
-			a_.notify_one();
-		}
+					cmoon::execution::start(
+						cmoon::execution::connect(
+							std::forward<S>(s),
+							sync_wait_receiver<S>{sync, results, err}
+						)
+					);
 
-		std::atomic<sync_wait_result>& a_;
-		std::function<void()> error;
-		std::optional<std::remove_cvref_t<ValueType>> value;
+					sync.wait(false);
+					if (results)
+					{
+						return std::move(results.value());
+					}
+
+					if (err)
+					{
+						std::visit(error_throw_fn{}, std::move(err.value()));
+					}
+
+					return {};
+				}
+			}
 	};
 
-	namespace sync_wait_ns
-	{
-		void sync_wait();
-
-		class sync_wait_t
-		{
-			private:
-				enum class state { member_fn, default_fn, sync_fn };
-
-				template<sender S>
-				[[nodiscard]] static consteval cmoon::meta::choice_t<state> choose() noexcept
-				{
-					if constexpr (requires(S&& s) {
-						std::forward<S>(s).sync_wait();
-					})
-					{
-						return {state::member_fn, noexcept(std::declval<S>().sync_wait())};
-					}
-					else if constexpr (requires(S&& s) {
-						sync_wait(std::forward<S>(s));
-					})
-					{
-						return {state::default_fn, noexcept(sync_wait(std::declval<S>()))};
-					}
-					else
-					{
-						return {state::sync_fn, false};
-					}
-				}
-			public:
-				template<class ValueType, sender S>
-				constexpr ValueType operator()(S&& s) const noexcept(choose<S>().no_throw)
-				{
-					constexpr auto choice {choose<S>()};
-
-					if constexpr (choice.strategy == state::member_fn)
-					{
-						return std::forward<S>(s).sync_wait();
-					}
-					else if constexpr (choice.strategy == state::default_fn)
-					{
-						return sync_wait(std::forward<S>(s));
-					}
-					else if constexpr (choice.strategy == state::sync_fn)
-					{
-						std::atomic<sync_wait_result> sync {sync_wait_result::none};
-						sync_wait_receiver<ValueType> r{sync};
-
-						cmoon::execution::start(cmoon::execution::connect(std::forward<S>(s), r));
-
-						sync.wait(sync_wait_result::none);
-						switch (sync.load(std::memory_order::relaxed))
-						{
-							case sync_wait_result::error:
-								std::invoke(r.error);
-								break;
-							case sync_wait_result::done:
-								std::terminate();
-								break;
-						}
-
-						return std::move(r.value.value());
-					}
-				}
-
-				template<typed_sender S>
-				constexpr typename sender_traits<S>::template value_types<std::tuple, std::variant> operator()(S&& s) const noexcept(choose<S>().no_throw)
-				{
-					return (*this).operator()<sender_traits<S>::template value_types<std::tuple, std::variant>>(std::forward<S>(s));
-				}
-		};
-	}
+	export
+	inline constexpr sync_wait_t sync_wait{};
 
 	export
-	inline constexpr sync_wait_ns::sync_wait_t sync_wait {};
+	struct sync_wait_with_variant_t
+	{
+		private:
+			enum class state { completion_scheduler_fn, tag_invoke_fn, other };
+
+			template<class S>
+			[[nodiscard]] static consteval cmoon::meta::choice_t<state> choose() noexcept
+			{
+				if constexpr (requires(sync_wait_with_variant_t t, S&& s) {
+					{ tag_invoke(t, get_completion_scheduler<set_value_t>(s), std::forward<S>(s)) } -> std::same_as<sync_wait_with_variant_type<S>>;
+				})
+				{
+					using cs = std::invoke_result_t<get_completion_scheduler_t<set_value_t>, S>;
+					return {state::completion_scheduler_fn, cmoon::nothrow_tag_invocable<sync_wait_with_variant_t, cs, S>};
+				}
+				else if constexpr (requires(sync_wait_with_variant_t t, S&& s) {
+					{ tag_invoke(t, std::forward<S>(s)) } -> std::same_as<sync_wait_with_variant_type<S>>;
+				})
+				{
+					return {state::tag_invoke_fn, cmoon::nothrow_tag_invocable<sync_wait_with_variant_t, S>};
+				}
+				else
+				{
+					return {state::other};
+				}
+			}
+		public:
+			template<typed_sender S>
+			constexpr sync_wait_with_variant_type<S> operator()(S&& s) const noexcept(choose<S>().no_throw)
+			{
+				constexpr auto choice {choose<S>()};
+
+				if constexpr (choice.strategy == state::completion_scheduler_fn)
+				{
+					return tag_invoke(*this, get_completion_scheduler<set_value_t>(s), std::forward<S>(s));
+				}
+				else if constexpr (choice.strategy == state::tag_invoke_fn)
+				{
+					return tag_invoke(*this, std::forward<S>(s));
+				}
+				else if constexpr (choice.strategy == state::other)
+				{
+					return sync_wait(into_variant(std::forward<S>(s)));
+				}
+			}
+	};
 
 	export
-	template<class ValueType, sender S>
-	constexpr auto sync_wait_r(S&& s)
-	{
-		return sync_wait.operator()<ValueType>(std::forward<S>(s));
-	}
+	inline constexpr sync_wait_with_variant_t sync_wait_with_variant{};
 }

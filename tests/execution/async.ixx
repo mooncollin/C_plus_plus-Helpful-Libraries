@@ -11,18 +11,37 @@ namespace cmoon::tests::execution
 	export
 	class async_test : public cmoon::test::test_case
 	{
-		struct system_executor
-		{
-			template<class F>
-			void execute(F&& f) const
-			{
-				std::thread{std::forward<F>(f)}.detach();
-			}
-
-			[[nodiscard]] constexpr friend auto operator<=>(const system_executor&, const system_executor&) = default;
-		};
-
 		public:
+			struct dummy_sender : public cmoon::execution::sender_base
+			{
+				template<class R>
+				struct op
+				{
+					R r_;
+
+					friend void tag_invoke(cmoon::execution::start_t, op& o) noexcept
+					{
+						cmoon::execution::set_value(std::move(o.r_));
+					}
+				};
+
+				template<class R>
+				friend auto tag_invoke(cmoon::execution::connect_t, dummy_sender&&, R&& r)
+				{
+					return op<R>{std::forward<R>(r)};
+				}
+			};
+
+			struct executor_s
+			{
+				friend dummy_sender tag_invoke(cmoon::execution::schedule_t, executor_s&)
+				{
+					return dummy_sender{};
+				}
+
+				[[nodiscard]] constexpr friend bool operator==(const executor_s&, const executor_s&) noexcept = default;
+			};
+
 			async_test()
 				: cmoon::test::test_case{"async_test"} {}
 
@@ -30,7 +49,7 @@ namespace cmoon::tests::execution
 			{
 				constexpr int expected {8};
 
-				system_executor e;
+				executor_s e;
 
 				auto r = cmoon::execution::async(e, std::plus<>{}, 3, 5);
 				cmoon::test::assert_equal(r.get(), expected);

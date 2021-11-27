@@ -43,6 +43,18 @@ namespace cmoon::test
 	}
 
 	export
+	void fail(std::string_view message="", const std::source_location& location = std::source_location::current())
+	{
+		throw assert_exception{std::format("failure at line {} ({}): {}", location.line(), location.file_name(), message)};
+	}
+
+	export
+	void error(std::string_view message = "", const std::source_location& location = std::source_location::current())
+	{
+		throw std::runtime_error{std::format("error at line {} ({}): {}", location.line(), location.file_name(), message)};
+	}
+
+	export
 	template<class T, class F>
 		requires(requires(const T& t, const F& f) {
 			{ t == f } -> std::convertible_to<bool>;
@@ -200,11 +212,20 @@ namespace cmoon::test
 		try
 		{
 			std::forward<F>(callable)(std::forward<Args>(args)...);
-			throw assert_exception{std::format("assert_throws failed at line {} ({}): {}\n", location.line(), location.file_name(), message)};
+			throw assert_exception{std::format("assert_throws failed at line {} ({}): {}\nExpected {} to be thrown, but didn't", location.line(), location.file_name(), message, typeid(T).name())};
 		}
-		catch (decltype(exception))
+		catch (assert_exception e)
+		{
+			throw e;
+		}
+		catch (std::decay_t<T>)
 		{
 			// Do nothing, it passed.
+		}
+		catch (...)
+		{
+			// Not the exception we were expecting
+			throw assert_exception{std::format("assert_throws failed at line {} ({}): {}\nExpected {} to be thrown, but another was thrown instead", location.line(), location.file_name(), message, typeid(T).name())};
 		}
 	}
 

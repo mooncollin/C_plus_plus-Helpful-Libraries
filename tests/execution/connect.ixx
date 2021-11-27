@@ -10,31 +10,31 @@ namespace cmoon::tests::execution
 {
 	struct void_receiver
 	{
-		void set_done() noexcept {}
+		friend void tag_invoke(cmoon::execution::set_done_t, void_receiver&&) noexcept {}
 
 		template<class E>
-		void set_error(E&& e) noexcept {}
+		friend void tag_invoke(cmoon::execution::set_error_t, void_receiver&&, E&&) noexcept {}
 
-		void set_value() {}
+		friend void tag_invoke(cmoon::execution::set_value_t, void_receiver&&) {}
 	};
 
 	static_assert(cmoon::execution::receiver<void_receiver>);
 
 	export
-	class connect_member_fn_test : public cmoon::test::test_case
+	class connect_test : public cmoon::test::test_case
 	{
 		struct connect_s : public cmoon::execution::sender_base
 		{
 			template<class R>
 			struct op_state
 			{
-				void start() noexcept {}
+				friend void tag_invoke(cmoon::execution::start_t, op_state&) noexcept {}
 			};
 
 			template<class R>
-			op_state<R> connect(R&&)
+			friend op_state<R> tag_invoke(cmoon::execution::connect_t, connect_s& s, R&&)
 			{
-				connected = true;
+				s.connected = true;
 				return op_state<R>{};
 			}
 
@@ -45,50 +45,12 @@ namespace cmoon::tests::execution
 		static_assert(cmoon::execution::sender<connect_s>);
 
 		public:
-			connect_member_fn_test()
-				: cmoon::test::test_case{"connect_member_fn_test"} {}
+			connect_test()
+				: cmoon::test::test_case{"connect_test"} {}
 
 			void operator()() override
 			{
 				connect_s c;
-
-				auto o = cmoon::execution::connect(c, void_receiver{});
-
-				cmoon::test::assert_true(c.connected);
-			}
-	};
-
-	struct connect_default_s : public cmoon::execution::sender_base
-	{
-		template<class R>
-		struct op_state_default
-		{
-			void start() noexcept {}
-		};
-
-		bool connected {false};
-	};
-
-	static_assert(cmoon::execution::operation_state<connect_default_s::op_state_default<void_receiver>>);
-	static_assert(cmoon::execution::sender<connect_default_s>);
-
-	template<class R>
-	connect_default_s::op_state_default<R> connect(connect_default_s& s, R&&)
-	{
-		s.connected = true;
-		return {};
-	}
-
-	export
-	class connect_default_fn_test : public cmoon::test::test_case
-	{
-		public:
-			connect_default_fn_test()
-				: cmoon::test::test_case{"connect_default_fn_test"} {}
-
-			void operator()() override
-			{
-				connect_default_s c;
 
 				auto o = cmoon::execution::connect(c, void_receiver{});
 

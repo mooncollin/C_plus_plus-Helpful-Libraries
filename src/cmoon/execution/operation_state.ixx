@@ -11,8 +11,8 @@ namespace cmoon::execution
 	template<class O>
 	concept operation_state = std::destructible<O> &&
 							  std::is_object_v<O> &&
-		requires(O&& o)
+		requires(O& o)
 	{
-		{ execution::start(std::forward<O>(o)) } noexcept;
+		{ execution::start(o) } noexcept;
 	};
 }

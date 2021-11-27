@@ -1,6 +1,7 @@
 export module cmoon.tests.execution.when_all;
 
 import <exception>;
+import <variant>;
 
 import cmoon.execution;
 import cmoon.test;
@@ -10,20 +11,30 @@ namespace cmoon::tests::execution
 {
 	struct receiver_s
 	{
-		void set_value(int v1, int v2, int v3)
+		friend void tag_invoke(cmoon::execution::set_value_t, receiver_s&& r, int v1, int v2, int v3)
 		{
-			value = v1 + v2 + v3;
+			r.value = v1 + v2 + v3;
+		}
+
+		friend void tag_invoke(cmoon::execution::set_value_t, receiver_s&&)
+		{
+
+		}
+
+		friend void tag_invoke(cmoon::execution::set_value_t, receiver_s&& r, int v)
+		{
+			r.value = v;
 		}
 
 		template<class E>
-		void set_error(E&&) noexcept
+		friend void tag_invoke(cmoon::execution::set_error_t, receiver_s&& r, E&&) noexcept
 		{
-			error_set = true;
+			r.error_set = true;
 		}
 
-		void set_done() noexcept
+		friend void tag_invoke(cmoon::execution::set_done_t, receiver_s&& r) noexcept
 		{
-			done_set = true;
+			r.done_set = true;
 		}
 
 		int value {0};
@@ -31,66 +42,73 @@ namespace cmoon::tests::execution
 		bool done_set{false};
 	};
 
-	template<cmoon::execution::typed_sender S>
-	struct always_send_done
+	export
+	class when_all_single_value_test : public cmoon::test::test_case
 	{
-		template<template<class...> class Tuple, template<class...> class Variant>
-		using value_types = typename cmoon::execution::sender_traits<S>::template value_types<Tuple, Variant>;
+		public:
+			when_all_single_value_test()
+				: cmoon::test::test_case{"when_all_single_value_test"} {}
 
-		template<template<class...> class Variant>
-		using error_types = Variant<>;
-
-		static constexpr bool sends_done {true};
-
-		template<class R>
-		struct op
-		{
-			constexpr void start() && noexcept
+			void operator()() override
 			{
-				r_.set_done();
+				receiver_s r;
+
+				auto work = cmoon::execution::when_all(
+					cmoon::execution::just(1)
+				);
+
+				cmoon::execution::start(cmoon::execution::connect(std::move(work), r));
+
+				cmoon::test::assert_equal(r.value, 1);
+				cmoon::test::assert_false(r.error_set);
+				cmoon::test::assert_false(r.done_set);
 			}
-
-			R r_;
-		};
-
-		template<class R>
-		constexpr auto connect(R&& r) &&
-		{
-			return op<R>{std::forward<R>(r)};
-		}
-
-		S s_;
 	};
 
-	template<cmoon::execution::typed_sender S>
-	struct always_send_error
+	export
+	class when_all_single_error_test : public cmoon::test::test_case
 	{
-		template<template<class...> class Tuple, template<class...> class Variant>
-		using value_types = typename cmoon::execution::sender_traits<S>::template value_types<Tuple, Variant>;
+		public:
+			when_all_single_error_test()
+				: cmoon::test::test_case{"when_all_single_error_test"} {}
 
-		template<template<class...> class Variant>
-		using error_types = Variant<std::exception>;
-
-		static constexpr bool sends_done {false};
-
-		template<class R>
-		struct op
-		{
-			constexpr void start() && noexcept
+			void operator()() override
 			{
-				r_.set_error(std::exception{});
+				receiver_s r;
+
+				auto work = cmoon::execution::when_all(
+					cmoon::execution::just_error(std::exception{})
+				);
+
+				cmoon::execution::start(cmoon::execution::connect(std::move(work), r));
+
+				cmoon::test::assert_equal(r.value, 0);
+				cmoon::test::assert_true(r.error_set);
+				cmoon::test::assert_false(r.done_set);
 			}
+	};
 
-			R r_;
-		};
+	export
+	class when_all_single_done_test : public cmoon::test::test_case
+	{
+		public:
+			when_all_single_done_test()
+				: cmoon::test::test_case{"when_all_single_done_test"} {}
 
-		template<class R>
-		constexpr auto connect(R&& r) &&
-		{
-			return op<R>{std::forward<R>(r)};
-		}
+			void operator()() override
+			{
+				receiver_s r;
 
-		S s_;
+				auto work = cmoon::execution::when_all(
+					cmoon::execution::just_done()
+				);
+
+				cmoon::execution::start(cmoon::execution::connect(std::move(work), r));
+
+				cmoon::test::assert_equal(r.value, 0);
+				cmoon::test::assert_false(r.error_set);
+				cmoon::test::assert_true(r.done_set);
+			}
 	};
 
 	export
@@ -132,7 +150,7 @@ namespace cmoon::tests::execution
 				auto work = cmoon::execution::when_all(
 					cmoon::execution::just(1),
 					cmoon::execution::just(2),
-					always_send_error{cmoon::execution::just(3)}
+					cmoon::execution::just_error(std::exception{})
 				);
 
 				cmoon::execution::start(cmoon::execution::connect(std::move(work), r));
@@ -146,37 +164,6 @@ namespace cmoon::tests::execution
 	export
 	class when_all_done_test : public cmoon::test::test_case
 	{
-		template<cmoon::execution::typed_sender S>
-		struct always_send_done
-		{
-			template<template<class...> class Tuple, template<class...> class Variant>
-			using value_types = typename cmoon::execution::sender_traits<S>::template value_types<Tuple, Variant>;
-
-			template<template<class...> class Variant>
-			using error_types = Variant<>;
-
-			static constexpr bool sends_done {true};
-
-			template<class R>
-			struct op
-			{
-				constexpr void start() && noexcept
-				{
-					r_.set_done();
-				}
-
-				R r_;
-			};
-
-			template<class R>
-			constexpr auto connect(R&& r) &&
-			{
-				return op<R>{std::forward<R>(r)};
-			}
-
-			S s_;
-		};
-
 		public:
 			when_all_done_test()
 				: cmoon::test::test_case{"when_all_done_test"} {}
@@ -188,7 +175,7 @@ namespace cmoon::tests::execution
 				auto work = cmoon::execution::when_all(
 					cmoon::execution::just(1),
 					cmoon::execution::just(2),
-					always_send_done{cmoon::execution::just(3)}
+					cmoon::execution::just_done()
 				);
 
 				cmoon::execution::start(cmoon::execution::connect(std::move(work), r));
@@ -212,8 +199,8 @@ namespace cmoon::tests::execution
 
 				auto work = cmoon::execution::when_all(
 					cmoon::execution::just(1),
-					always_send_error{cmoon::execution::just(2)},
-					always_send_done{cmoon::execution::just(3)}
+					cmoon::execution::just_error(std::exception{}),
+					cmoon::execution::just_done()
 				);
 
 				cmoon::execution::start(cmoon::execution::connect(std::move(work), r));

@@ -2,22 +2,14 @@ export module cmoon.execution.sender_traits;
 
 import <concepts>;
 import <exception>;
-
+import <type_traits>;
 
 import cmoon.execution.impl.has_sender_types;
-import cmoon.execution.impl.as_invocable;
-import cmoon.execution.impl.executor_of_impl;
+import cmoon.execution.impl.is_awaitable;
 import cmoon.execution.sender_base;
 
 namespace cmoon::execution
 {
-	struct void_receiver
-	{
-		void set_value() noexcept;
-		void set_error(std::exception_ptr) noexcept;
-		void set_done() noexcept;
-	};
-
 	template<class S>
 	struct sender_traits_base
 	{
@@ -38,7 +30,14 @@ namespace cmoon::execution
 
 	template<class S>
 		requires(!has_sender_types<S> &&
-				 executor_of_impl<S, as_invocable<void_receiver, S>>)
+				 std::derived_from<S, sender_base>)
+	struct sender_traits_base<S> {};
+
+	template<class S>
+		requires(!has_sender_types<S> &&
+				 !std::derived_from<S, sender_base> &&
+				 is_awaitable<S> &&
+				 std::is_void_v<std::remove_cv_t<await_result_type<S>>>)
 	struct sender_traits_base<S>
 	{
 		template<template<class...> class Tuple, template<class...> class Variant>
@@ -47,14 +46,24 @@ namespace cmoon::execution
 		template<template<class...> class Variant>
 		using error_types = Variant<std::exception_ptr>;
 
-		static constexpr bool sends_done {true};
+		static constexpr bool sends_done {false};
 	};
 
 	template<class S>
 		requires(!has_sender_types<S> &&
-				 !executor_of_impl<S, as_invocable<void_receiver, S>> &&
-				 std::derived_from<S, sender_base>)
-	struct sender_traits_base<S> {};
+				 !std::derived_from<S, sender_base> &&
+				 is_awaitable<S> &&
+				 !std::is_void_v<std::remove_cv_t<await_result_type<S>>>)
+	struct sender_traits_base<S>
+	{
+		template<template<class...> class Tuple, template<class...> class Variant>
+		using value_types = Variant<Tuple<await_result_type<S>>>;
+
+		template<template<class...> class Variant>
+		using error_types = Variant<std::exception_ptr>;
+
+		static constexpr bool sends_done {false};
+	};
 
 	export
 	template<class S>

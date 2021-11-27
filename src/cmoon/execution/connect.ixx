@@ -3,97 +3,215 @@ export module cmoon.execution.connect;
 import <utility>;
 import <type_traits>;
 import <exception>;
+import <coroutine>;
+import <functional>;
+import <concepts>;
 
+import cmoon.functional;
 import cmoon.meta;
-import cmoon.type_traits;
 
-import cmoon.execution.impl.executor_of_impl;
-import cmoon.execution.impl.as_invocable;
-import cmoon.execution.as_receiver;
-import cmoon.execution.set_error;
+import cmoon.execution.impl.is_awaitable;
 import cmoon.execution.operation_state;
 import cmoon.execution.receiver;
 import cmoon.execution.sender;
-import cmoon.execution.execute;
+import cmoon.execution.set_value;
+import cmoon.execution.set_done;
+import cmoon.execution.set_error;
+import cmoon.execution.start;
 
 namespace cmoon::execution
 {
-	template<class S, class R>
-	struct as_operation
+	struct op_base
 	{
-		std::remove_cvref_t<S> e_;
-		std::remove_cvref_t<R> r_;
+		struct promise_base
+		{
+			std::suspend_always initial_suspend() noexcept
+			{
+				return {};
+			}
 
-		void start() noexcept try
+			[[noreturn]] std::suspend_always final_suspend() noexcept
+			{
+				std::terminate();
+			}
+
+			[[noreturn]] void unhandled_exception() noexcept
+			{
+				std::terminate();
+			}
+
+			[[noreturn]] void return_void() noexcept
+			{
+				std::terminate();
+			}
+
+			template<class F>
+			auto yield_value(F&& f) noexcept
+			{
+				struct awaiter
+				{
+					F f;
+
+					bool await_ready() noexcept
+					{
+						return false;
+					}
+
+					void await_suspend(std::coroutine_handle<>) noexcept(std::is_nothrow_invocable_v<F>)
+					{
+						std::invoke(std::forward<F>(f));
+					}
+
+					[[noreturn]] void await_resume() noexcept
+					{
+						std::terminate();
+					}
+				};
+
+				return awaiter{std::forward<F>(f)};
+			}
+		};
+
+		std::coroutine_handle<> coro;
+
+		explicit op_base(std::coroutine_handle<> coro) noexcept
+			: coro{coro} {}
+
+		op_base(op_base&& other) noexcept
+			: coro{std::exchange(other.coro, {})} {}
+
+		~op_base()
 		{
-			execution::execute(std::move(e_), as_invocable<std::remove_cvref_t<R>, S>{r_});
+			if (coro)
+			{
+				coro.destroy();
+			}
 		}
-		catch (...)
+
+		friend void tag_invoke(start_t, op_base& self) noexcept
 		{
-			execution::set_error(std::move(r_), std::current_exception());
+			self.coro.resume();
 		}
 	};
 
-	namespace connect_ns
+	template<class R>
+	class op : public op_base
 	{
-		void connect();
+		public:
+			struct promise_type : promise_base
+			{
+				template<class A>
+				explicit promise_type(A&, R& r) noexcept
+					: r_{r} {}
 
-		class connect_t
+				std::coroutine_handle<> unhandled_done() noexcept
+				{
+					set_done(std::move(r_));
+
+					return std::noop_coroutine();
+				}
+
+				op get_return_object() noexcept
+				{
+					return op{std::coroutine_handle<promise_type>::from_promise(*this)};
+				}
+
+				template<class... As, std::invocable<R&, As...> CPO>
+					requires(!std::same_as<set_value_t, CPO> &&
+							 !std::same_as<set_error_t, CPO> &&
+							 !std::same_as<set_done_t, CPO>)
+				friend auto tag_invoke(CPO cpo, const promise_type& self, As&&... as) noexcept(std::is_nothrow_invocable_v<CPO, R&, As...>)
+				{
+					return cpo(self.r_, std::forward<As>(as)...);
+				}
+
+				R& r_;
+			};
+
+		using op_base::op_base;
+	};
+
+	inline constexpr struct connect_awaitable_t
+	{
+		template<is_awaitable A, receiver R>
+		auto operator()(A&& a, R&& r) const
 		{
-			private:
-				enum class state { none, member_fn, default_fn, as_operation_s };
-
-				template<class S, class R>
-				static consteval cmoon::meta::choice_t<state> choose() noexcept
+			std::exception_ptr ex;
+			try
+			{
+				auto fn = [&](auto&&... as) noexcept
 				{
-					if constexpr (sender<S> && requires(S&& s, R&& r) {
-						{ std::forward<S>(s).connect(std::forward<R>(r)) } -> operation_state;
-					})
-					{
-						return {state::member_fn, noexcept(std::declval<S>().connect(std::declval<R>()))};
-					}
-					else if constexpr (sender<S> && requires(S&& s, R&& r) {
-						{ connect(std::forward<S>(s), std::forward<R>(r)) } -> operation_state;
-					})
-					{
-						return {state::default_fn, noexcept(connect(std::declval<S>(), std::declval<R>()))};
-					}
-					else if constexpr (!cmoon::is_specialization_v<R, as_receiver> &&
-									   receiver_of<R> &&
-									   executor_of_impl<std::remove_cvref_t<S>, as_invocable<std::remove_cvref_t<S>, S>>)
-					{
-						return {state::as_operation_s, std::is_nothrow_constructible_v<as_operation<S, R>, S, R>};
-					}
-					else
-					{
-						return {state::none};
-					}
-				}
-			public:
-				template<class S, class R>
-					requires(choose<S, R>().strategy != state::none)
-				constexpr operation_state auto operator()(S&& s, R&& r) const noexcept(choose<S, R>().no_throw)
-				{
-					constexpr auto choice {choose<S, R>()};
+					return [&]() {
+						set_value(std::forward<R>(r), std::forward<decltype(as)>(as)...);
+					};
+				};
 
-					if constexpr (choice.strategy == state::member_fn)
-					{
-						return std::forward<S>(s).connect(std::forward<R>(r));
-					}
-					else if constexpr (choice.strategy == state::default_fn)
-					{
-						return connect(std::forward<S>(s), std::forward<R>(r));
-					}
-					else if constexpr (choice.strategy == state::as_operation_s)
-					{
-						return as_operation<S, R>{std::forward<S>(s), std::forward<R>(r)};
-					}
+				if constexpr (std::is_void_v<await_result_type<A>>)
+				{
+					co_yield (co_await std::forward<A>(a), std::invoke(fn));
 				}
-		};
-	}
+				else
+				{
+					co_yield std::invoke(fn, co_await std::forward<A>(a));
+				}
+			}
+			catch (...)
+			{
+				ex = std::current_exception();
+			}
+
+			co_yield [&]() noexcept {
+				set_error(std::forward<R>(r), std::move(ex));
+			};
+		}
+	} connect_awaitable {};
 
 	export
-	inline constexpr connect_ns::connect_t connect{};
+	struct connect_t
+	{
+		private:
+			enum class state { none, tag_invoke_fn, awaitable_fn };
+
+			template<class S, class R>
+			[[nodiscard]] static consteval cmoon::meta::choice_t<state> choose() noexcept
+			{
+				if constexpr (requires(connect_t t, S&& s, R&& r) {
+					{ tag_invoke(t, std::forward<S>(s), std::forward<R>(r)) } -> operation_state;
+				})
+				{
+					return {state::tag_invoke_fn, cmoon::nothrow_tag_invocable<connect_t, S, R>};
+				}
+				else if constexpr (is_awaitable<S> && requires(S&& s, R&& r) {
+					connect_awaitable(std::forward<S>(s), std::forward<R>(r));
+				})
+				{
+					return {state::awaitable_fn};
+				}
+				else
+				{
+					return {state::none};
+				}
+			}
+		public:
+			template<sender S, receiver R>
+				requires(choose<S, R>().strategy != state::none)
+			constexpr decltype(auto) operator()(S&& s, R&& r) const noexcept(choose<S, R>().no_throw)
+			{
+				constexpr auto choice {choose<S, R>()};
+
+				if constexpr (choice.strategy == state::tag_invoke_fn)
+				{
+					return tag_invoke(*this, std::forward<S>(s), std::forward<R>(r));
+				}
+				else if constexpr (choice.strategy == state::awaitable_fn)
+				{
+					return connect_awaitable(std::forward<S>(s), std::forward<R>(r));
+				}
+			}
+	};
+
+	export
+	inline constexpr connect_t connect{};
 
 	export
 	template<class S, class R>
