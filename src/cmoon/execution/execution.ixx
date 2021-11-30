@@ -15,6 +15,7 @@ export import cmoon.execution.sender;
 export import cmoon.execution.connect;
 export import cmoon.execution.schedule;
 export import cmoon.execution.scheduler;
+export import cmoon.execution.get_forward_progress_guarantee;
 export import cmoon.execution.get_completion_scheduler;
 export import cmoon.execution.start_detached;
 export import cmoon.execution.sender_to;

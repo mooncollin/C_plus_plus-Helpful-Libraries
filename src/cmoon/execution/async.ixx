@@ -59,7 +59,7 @@ namespace cmoon::execution
 				r.promise_.set_exception(std::make_exception_ptr(std::forward<E>(e)));
 			}
 
-			friend void tag_invoke(set_done_t, async_receiver&& r) noexcept
+			friend void tag_invoke(set_done_t, async_receiver&&) noexcept
 			{
 				std::terminate();
 			}

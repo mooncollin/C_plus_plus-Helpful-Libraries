@@ -45,7 +45,7 @@ namespace cmoon::execution
 				}
 				else if constexpr (choice.strategy == state::other)
 				{
-					return execution::start_detached(execution::then(execution::schedule(sch), std::forward<F>(f)));
+					return execution::start_detached(execution::then(execution::schedule(std::forward<Sch>(sch)), std::forward<F>(f)));
 				}
 			}
 	};

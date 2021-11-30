@@ -571,7 +571,7 @@ namespace cmoon::tests::execution
 			};
 
 			template<class R>
-			friend auto tag_invoke(cmoon::execution::connect_t, sync_wait_error_test::sender_s&& s, R&& r)
+			friend auto tag_invoke(cmoon::execution::connect_t, sync_wait_error_test::sender_s&&, R&& r)
 			{
 				return op<R>{std::forward<R>(r)};
 			}
@@ -587,7 +587,7 @@ namespace cmoon::tests::execution
 					cmoon::execution::sync_wait(sender_s{});
 				};
 
-				cmoon::test::assert_throws(std::exception{}, fn);
+				cmoon::test::assert_throws<std::exception>(fn);
 			}
 	};
 
@@ -615,7 +615,7 @@ namespace cmoon::tests::execution
 			};
 
 			template<class R>
-			friend auto tag_invoke(cmoon::execution::connect_t, sync_wait_done_test::sender_s&& s, R&& r)
+			friend auto tag_invoke(cmoon::execution::connect_t, sync_wait_done_test::sender_s&&, R&& r)
 			{
 				return op<R>{std::forward<R>(r)};
 			}

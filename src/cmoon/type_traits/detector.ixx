@@ -1,4 +1,5 @@
 export module cmoon.type_traits.detector;
+
 import <type_traits>;
 
 namespace cmoon

@@ -9,3 +9,4 @@ export import cmoon.type_traits.is_char_literal;
 export import cmoon.type_traits.detector;
 export import cmoon.type_traits.is_future;
 export import cmoon.type_traits.is_specialization;
+export import cmoon.type_traits.copy_traits;

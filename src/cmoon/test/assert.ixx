@@ -207,7 +207,7 @@ namespace cmoon::test
 	export
 	template<class T, class F, class... Args>
 		requires(std::invocable<F, Args...>)
-	void assert_throws(const T& exception, F&& callable, std::string_view message, Args&&... args, const std::source_location& location = std::source_location::current())
+	void assert_throws(F&& callable, std::string_view message, Args&&... args, const std::source_location& location = std::source_location::current())
 	{
 		try
 		{
@@ -232,9 +232,9 @@ namespace cmoon::test
 	export
 	template<class T, class F, class... Args>
 		requires(std::invocable<F, Args...>)
-	void assert_throws(const T& exception, F&& callable, Args&&... args, const std::source_location& location = std::source_location::current())
+	void assert_throws(F&& callable, Args&&... args, const std::source_location& location = std::source_location::current())
 	{
-		assert_throws(exception, callable, std::string_view{""}, std::forward<Args>(args)..., location);
+		assert_throws<T>(callable, std::string_view{""}, std::forward<Args>(args)..., location);
 	}
 
 	export

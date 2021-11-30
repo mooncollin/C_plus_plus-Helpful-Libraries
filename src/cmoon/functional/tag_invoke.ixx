@@ -7,13 +7,16 @@ import cmoon.utility;
 
 namespace cmoon
 {
-	namespace tag_invoke_ns_impl
+	namespace tag_invoke_ns
 	{
 		void tag_invoke();
 
-		struct tag_invoke_fn
+		struct tag_invoke_t
 		{
 			template<typename Tag, typename... Args>
+				requires(requires(Tag tag, Args&&... args) {
+					tag_invoke(cmoon::decay_copy(tag), std::forward<Args>(args)...);
+				})
 			constexpr decltype(auto) operator()(Tag tag, Args&&... args) const noexcept(noexcept(tag_invoke(cmoon::decay_copy(std::declval<Tag>()), std::forward<Args>(std::declval<Args>())...)))
 			{
 				return tag_invoke(cmoon::decay_copy(tag), std::forward<Args>(args)...);
@@ -21,11 +24,8 @@ namespace cmoon
 		};
 	}
 
-	inline namespace tag_invoke_ns
-	{
-		export
-		inline constexpr tag_invoke_ns_impl::tag_invoke_fn tag_invoke {};
-	}
+	export
+	inline constexpr tag_invoke_ns::tag_invoke_t tag_invoke {};
 
 	export
 	template<auto& Tag>

@@ -38,6 +38,8 @@ namespace cmoon::execution
 		}
 	};
 
+	static_assert(receiver<start_detached_receiver>);
+
 	export
 	struct start_detached_t
 	{
@@ -73,11 +75,11 @@ namespace cmoon::execution
 
 				if constexpr (choice.strategy == state::completion_scheduler_fn)
 				{
-					return tag_invoke(*this, get_completion_scheduler<set_value_t>(s), std::forward<S>(s));
+					tag_invoke(*this, get_completion_scheduler<set_value_t>(s), std::forward<S>(s));
 				}
 				else if constexpr (choice.strategy == state::tag_invoke_fn)
 				{
-					return tag_invoke(*this, std::forward<S>(s));
+					tag_invoke(*this, std::forward<S>(s));
 				}
 				else if constexpr (choice.strategy == state::other)
 				{

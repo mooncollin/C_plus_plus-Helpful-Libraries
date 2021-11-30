@@ -55,7 +55,7 @@ namespace cmoon::execution
 				Sch sch_;
 				R out_r;
 
-				friend class on_receiver;
+				friend struct on_receiver;
 		};
 
 		public:
