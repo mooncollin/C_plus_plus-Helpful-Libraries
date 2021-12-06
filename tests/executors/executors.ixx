@@ -2,6 +2,7 @@ export module cmoon.tests.executors;
 export import cmoon.tests.executors.inline_scheduler;
 export import cmoon.tests.executors.static_thread_pool;
 export import cmoon.tests.executors.cached_thread_pool;
+//export import cmoon.tests.executors.strand;
 
 import <utility>;
 
@@ -21,12 +22,12 @@ namespace cmoon::tests
 		suite.add_test_case<executors::static_thread_pool_bulk_execute_test>();
 		suite.add_test_case<executors::static_thread_pool_schedule_test>();
 		suite.add_test_case<executors::static_thread_pool_schedule_on_test>();
-		suite.add_test_case<executors::static_thread_pool_schedule_stop_test>();
 		suite.add_test_case<executors::cached_thread_pool_execute_test>();
 		suite.add_test_case<executors::cached_thread_pool_bulk_execute_test>();
 		suite.add_test_case<executors::cached_thread_pool_schedule_test>();
 		suite.add_test_case<executors::cached_thread_pool_schedule_on_test>();
 		suite.add_test_case<executors::cached_thread_pool_timeout_test>();
+		//suite.add_test_case<executors::strand_single_execute_test>();
 
 		return std::move(suite);
 	}

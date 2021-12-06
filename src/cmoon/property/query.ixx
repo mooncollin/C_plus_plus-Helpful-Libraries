@@ -13,27 +13,6 @@ namespace cmoon
 	{
 		void query();
 
-		template<class E, class P>
-		concept has_adl = 
-			requires(E&& e, P&& p)
-		{
-			query(std::forward<E>(e), std::forward<P>(p));
-		};
-
-		template<class E, class P>
-		concept can_static_query = 
-			requires
-		{
-			std::decay_t<P>::template static_query_v<std::decay_t<E>>;
-		};
-
-		template<class E, class P>
-		concept can_member_call = 
-			requires(E&& e, P&& p)
-		{
-			std::forward<E>(e).query(std::forward<P>(p));
-		};
-
 		struct cpo
 		{
 			private:
@@ -44,15 +23,21 @@ namespace cmoon
 				{
 					if constexpr (cmoon::is_applicable_property_v<std::decay_t<E>, std::decay_t<P>>)
 					{
-						if constexpr (can_static_query<E, P>)
+						if constexpr (requires {
+							std::decay_t<P>::template static_query_v<std::decay_t<E>>;
+						})
 						{
 							return {state::static_query, true};
 						}
-						else if constexpr (can_member_call<E, P>)
+						else if constexpr (requires(E&& e, P&& p) {
+							std::forward<E>(e).query(std::forward<P>(p));
+						})
 						{
 							return {state::member_call, noexcept((std::declval<E>()).query(std::declval<P>()))};
 						}
-						else if constexpr (has_adl<E, P>)
+						else if constexpr (requires(E&& e, P&& p) {
+							query(std::forward<E>(e), std::forward<P>(p));
+						})
 						{
 							return {state::non_member_call, noexcept(query(std::declval<E>(), std::declval<P>()))};
 						}
@@ -70,7 +55,7 @@ namespace cmoon
 			public:
 				template<class E, class P>
 					requires(choose<E, P>().strategy != state::none)
-				constexpr auto operator()(E&& e, P&& p) const noexcept(choose<E, P>().no_throw)
+				constexpr decltype(auto) operator()(E&& e, P&& p) const noexcept(choose<E, P>().no_throw)
 				{
 					constexpr auto choice {choose<E, P>()};
 

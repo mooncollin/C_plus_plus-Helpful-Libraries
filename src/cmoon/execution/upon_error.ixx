@@ -16,6 +16,7 @@ import cmoon.execution.set_done;
 import cmoon.execution.receiver;
 import cmoon.execution.get_completion_scheduler;
 import cmoon.execution.connect;
+import cmoon.execution.sender_adapter;
 
 namespace cmoon::execution
 {
@@ -143,26 +144,10 @@ namespace cmoon::execution
 			template<class F>
 			constexpr auto operator()(F&& f) const
 			{
-				return upon_error_adapter<F>{std::forward<F>(f)};
+				return sender_adapter<upon_error_t, F>{std::forward<F>(f)};
 			}
 	};
 
 	export
 	inline constexpr upon_error_t upon_error{};
-
-	template<class F>
-	struct upon_error_adapter
-	{
-		public:
-			constexpr upon_error_adapter(F&& f)
-				: f_{std::forward<F>(f)} {}
-
-			template<sender S>
-			constexpr friend auto operator|(S&& s, upon_error_adapter&& a)
-			{
-				return upon_error(std::forward<S>(s), std::move(a.f_));
-			}
-		private:
-			F f_;
-	};
 }

@@ -20,25 +20,36 @@ import cmoon.execution.start;
 
 namespace cmoon::execution
 {
-	struct start_detached_receiver
+	template<sender S>
+	struct start_detached_impl
 	{
-		template<class... Args>
-		constexpr friend void tag_invoke(set_value_t, start_detached_receiver&&, Args&&...) noexcept
+		struct wrap_r
 		{
-		}
+			template<class... Args>
+			constexpr friend void tag_invoke(set_value_t, start_detached_impl::wrap_r&& r, Args&&...) noexcept
+			{
+				delete r.impl;
+			}
 
-		template<class E>
-		constexpr friend void tag_invoke(set_error_t, start_detached_receiver&&, E&&) noexcept
-		{
-			std::terminate();
-		}
+			template<class E>
+			constexpr friend void tag_invoke(set_error_t, start_detached_impl::wrap_r&&, E&&) noexcept
+			{
+				std::terminate();
+			}
 
-		constexpr friend void tag_invoke(set_done_t, start_detached_receiver&&) noexcept
-		{
-		}
+			constexpr friend void tag_invoke(set_done_t, start_detached_impl::wrap_r&& r) noexcept
+			{
+				delete r.impl;
+			}
+
+			start_detached_impl* impl;
+		};
+
+		connect_result_t<S, wrap_r> state;
+
+		start_detached_impl(S&& s) noexcept(cmoon::nothrow_tag_invocable<connect_t, S, wrap_r>)
+			: state{execution::connect(std::forward<S>(s), wrap_r{this})} {}
 	};
-
-	static_assert(receiver<start_detached_receiver>);
 
 	export
 	struct start_detached_t
@@ -83,12 +94,8 @@ namespace cmoon::execution
 				}
 				else if constexpr (choice.strategy == state::other)
 				{
-					execution::start(
-						execution::connect(
-							std::forward<S>(s),
-							start_detached_receiver{}
-						)
-					);
+					auto impl {new start_detached_impl<std::decay_t<S>>{std::forward<S>(s)}};
+					execution::start(impl->state);
 				}
 			}
 	};

@@ -12,13 +12,7 @@ namespace cmoon
 	namespace prefer_cpo
 	{
 		void prefer();
-
-		template<class E, class P0>
-		concept has_adl = 
-			requires(E&& e, P0&& p0)
-		{
-			prefer(std::forward<E>(e), std::forward<P0>(p0));
-		};
+		void require();
 
 		template<class E, class P0>
 		concept applicable = 
@@ -43,7 +37,14 @@ namespace cmoon
 		concept can_member_call = 
 			requires(E&& e, P0&& p0)
 		{
-			std::forward<E>(e).prefer(std::forward<P0>(p0));
+			std::forward<E>(e).require(std::forward<P0>(p0));
+		};
+
+		template<class E, class P0>
+		concept can_non_member_call = 
+			requires(E&& e, P0&& p0)
+		{
+			require(std::forward<E>(e), std::forward<P0>(p0));
 		};
 
 		struct cpo
@@ -64,11 +65,11 @@ namespace cmoon
 						}
 						else if constexpr (can_member_call<E, P0> && N == 0)
 						{
-							return {state::member_call, noexcept((std::declval<E>()).prefer(std::declval<P0>()))};
+							return {state::member_call, noexcept((std::declval<E>()).require(std::declval<P0>()))};
 						}
-						else if constexpr (has_adl<E, P0> && N == 0)
+						else if constexpr (can_non_member_call<E, P0> && N == 0)
 						{
-							return {state::non_member_call, noexcept(prefer(std::declval<E>(), std::declval<P0>()))};
+							return {state::non_member_call, noexcept(require(std::declval<E>(), std::declval<P0>()))};
 						}
 						else if constexpr (N > 0)
 						{
@@ -98,11 +99,11 @@ namespace cmoon
 					}
 					else if constexpr (choice.strategy == state::member_call)
 					{
-						return std::forward<E>(e).prefer(std::forward<P0>(p0));
+						return std::forward<E>(e).require(std::forward<P0>(p0));
 					}
 					else if constexpr (choice.strategy == state::non_member_call)
 					{
-						return prefer(std::forward<E>(e), std::forward<P0>(p0));
+						return require(std::forward<E>(e), std::forward<P0>(p0));
 					}
 					else if constexpr (choice.strategy == state::chain_call)
 					{

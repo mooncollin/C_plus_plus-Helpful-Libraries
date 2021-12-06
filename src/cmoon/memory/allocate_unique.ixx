@@ -81,4 +81,8 @@ namespace cmoon
 		auto deleter = allocator_delete<T>{my_alloc};
 		return std::unique_ptr<T, decltype(deleter)>{hold.release(), std::move(deleter)};
 	}
+
+	export
+	template<class T, class Alloc>
+	using allocate_unique_t = decltype(allocate_unique<T>(std::declval<Alloc>()));
 }

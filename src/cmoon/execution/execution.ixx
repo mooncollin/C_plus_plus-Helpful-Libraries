@@ -12,6 +12,7 @@ export import cmoon.execution.operation_state;
 export import cmoon.execution.sender_base;
 export import cmoon.execution.sender_traits;
 export import cmoon.execution.sender;
+export import cmoon.execution.sender_adapter;
 export import cmoon.execution.connect;
 export import cmoon.execution.schedule;
 export import cmoon.execution.scheduler;

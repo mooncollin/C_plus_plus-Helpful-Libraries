@@ -134,4 +134,12 @@ namespace cmoon
 	template<class T>
 	concept moveable_value = std::move_constructible<std::remove_cvref_t<T>> &&
 							 std::constructible_from<std::remove_cvref_t<T>, T>;
+
+	export
+	template<class From, class To>
+	concept decays_to = std::same_as<std::decay_t<From>, To>;
+
+	export
+	template<class T>
+	concept class_type = decays_to<T, T> && std::is_class_v<T>;
 }

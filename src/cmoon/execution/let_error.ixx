@@ -16,6 +16,7 @@ import cmoon.execution.receiver;
 import cmoon.execution.connect;
 import cmoon.execution.start;
 import cmoon.execution.sender_base;
+import cmoon.execution.sender_adapter;
 
 namespace cmoon::execution
 {
@@ -130,26 +131,10 @@ namespace cmoon::execution
 			template<class F>
 			constexpr auto operator()(F&& f) const
 			{
-				return let_error_adapter<F>{std::forward<F>(f)};
+				return sender_adapter<let_error_t, F>{std::forward<F>(f)};
 			}
 	};
 
 	export
 	inline constexpr let_error_t let_error{};
-
-	template<class F>
-	struct let_error_adapter
-	{
-		public:
-			constexpr let_error_adapter(F&& f)
-				: f_{std::forward<F>(f)} {}
-
-			template<sender S>
-			constexpr friend auto operator|(S&& s, let_error_adapter&& a)
-			{
-				return let_error(std::forward<S>(s), std::move(a.f_));
-			}
-		private:
-			F f_;
-	};
 }

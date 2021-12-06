@@ -2,6 +2,7 @@ export module cmoon.tests.executors.static_thread_pool;
 
 import <array>;
 import <atomic>;
+import <concepts>;
 
 import cmoon.execution;
 import cmoon.executors;
@@ -34,7 +35,8 @@ namespace cmoon::tests::executors
 				cmoon::execution::execute(s, [&value2, expected2] { value2 = expected2; });
 				cmoon::execution::execute(s, [&value3, expected3] { value3 = expected3; });
 
-				p.wait();
+				p.request_stop();
+				p.join();
 
 				cmoon::test::assert_equal(value1, expected1);
 				cmoon::test::assert_equal(value2, expected2);
@@ -63,7 +65,8 @@ namespace cmoon::tests::executors
 
 				cmoon::execution::start_detached(std::move(s));
 
-				p.wait();
+				p.request_stop();
+				p.join();
 
 				cmoon::test::assert_equal(values[0], expected);
 				cmoon::test::assert_equal(values[1], expected);
@@ -91,7 +94,8 @@ namespace cmoon::tests::executors
 							cmoon::execution::then([&value](int arg) { value = arg; });
 
 				cmoon::execution::start_detached(std::move(work));
-				p.wait();
+				p.request_stop();
+				p.join();
 
 				cmoon::test::assert_equal(value, expected);
 			}
@@ -122,53 +126,6 @@ namespace cmoon::tests::executors
 				cmoon::execution::start_detached(std::move(work));
 				value.wait(0);
 				cmoon::test::assert_equal(value, expected);
-			}
-	};
-
-	export
-	class static_thread_pool_schedule_stop_test : public cmoon::test::test_case
-	{
-		public:
-			struct receiver_s
-			{
-				receiver_s(bool& value)
-					: done_set{value} {}
-
-				friend void tag_invoke(cmoon::execution::set_value_t, receiver_s&&) {}
-
-				friend void tag_invoke(cmoon::execution::set_done_t, receiver_s&& s) noexcept
-				{
-					s.done_set = true;
-				}
-
-				friend void tag_invoke(cmoon::execution::set_error_t, receiver_s&&, std::exception_ptr) noexcept {}
-
-				bool& done_set;
-			};
-
-			static_thread_pool_schedule_stop_test()
-				: cmoon::test::test_case{"static_thread_pool_schedule_stop_test"} {}
-
-			void operator()() override
-			{
-				bool value {false};
-				receiver_s r {value};
-				cmoon::executors::static_thread_pool p {0};
-
-				cmoon::execution::execute(p.get_scheduler(), []{});
-				auto work = cmoon::execution::schedule(p.get_scheduler());
-
-				cmoon::execution::start(
-					cmoon::execution::connect(
-						std::move(work),
-						receiver_s{value}
-					)
-				);
-
-				p.stop();
-				p.wait();
-
-				cmoon::test::assert_true(value);
 			}
 	};
 }

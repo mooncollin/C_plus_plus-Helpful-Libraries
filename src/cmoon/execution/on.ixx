@@ -3,6 +3,7 @@ export module cmoon.execution.on;
 import <utility>;
 import <type_traits>;
 import <exception>;
+import <optional>;
 
 import cmoon.functional;
 import cmoon.meta;
@@ -16,87 +17,129 @@ import cmoon.execution.schedule;
 import cmoon.execution.scheduler;
 import cmoon.execution.get_scheduler;
 import cmoon.execution.sender;
+import cmoon.execution.typed_sender;
 import cmoon.execution.sender_base;
+import cmoon.execution.sender_traits;
 import cmoon.execution.receiver;
 
 namespace cmoon::execution
 {
-	template<class S, class Sch, class R>
-	struct on_receiver
+	template<scheduler Sch, receiver R>
+	struct on_receiver2
 	{
-		struct on_receiver2
-		{
-			public:
-				constexpr on_receiver2(Sch&& sch, R&& r)
-					: sch_{std::forward<Sch>(sch)}, out_r{std::forward<R>(r)} {}
-
-				constexpr auto tag_invoke(get_scheduler_t, on_receiver& r) noexcept
-				{
-					return r.sch_;
-				}
-
-				template<class... Args>
-				constexpr friend void tag_invoke(set_value_t, on_receiver2&& r, Args&&... args)
-				{
-					execution::set_value(std::move(r.out_r), std::forward<Args>(args)...);
-				}
-
-				template<class E>
-				constexpr friend void tag_invoke(set_error_t, on_receiver2&& r, E&& e) noexcept
-				{
-					execution::set_error(std::move(r.out_r), std::forward<E>(e));
-				}
-
-				constexpr friend void tag_invoke(set_done_t, on_receiver2&& r) noexcept
-				{
-					execution::set_done(std::move(r.out_r));
-				}
-			private:
-				Sch sch_;
-				R out_r;
-
-				friend struct on_receiver;
-		};
-
 		public:
-			constexpr on_receiver(S&& s, Sch&& sch, R&& r)
-				: s_{std::forward<S>(s)}, sch_{std::forward<Sch>(sch)}, out_r{std::forward<R>(r)} {}
+			constexpr on_receiver2(Sch&& sch, R&& r)
+				: sch_{std::forward<Sch>(sch)}, out_r{std::forward<R>(r)} {}
 
-			constexpr friend void tag_invoke(set_value_t, on_receiver&& r)
+			template<class... Args>
+			constexpr friend void tag_invoke(set_value_t, on_receiver2&& r, Args&&... args)
 			{
-				try
-				{
-					execution::start(
-						execution::connect(
-							std::move(r.s_),
-							on_receiver2{std::move(r.sch_), std::move(r.out_r)}
-						)
-					);
-				}
-				catch (...)
-				{
-					execution::set_error(std::move(r.out_r), std::current_exception());
-				}
+				execution::set_value(std::move(r.out_r), std::forward<Args>(args)...);
 			}
 
 			template<class E>
-			constexpr friend void tag_invoke(set_error_t, on_receiver&& r, E&& e) noexcept
+			constexpr friend void tag_invoke(set_error_t, on_receiver2&& r, E&& e) noexcept
 			{
 				execution::set_error(std::move(r.out_r), std::forward<E>(e));
 			}
 
-			constexpr friend void tag_invoke(set_done_t, on_receiver&& r) noexcept
+			constexpr friend void tag_invoke(set_done_t, on_receiver2&& r) noexcept
 			{
 				execution::set_done(std::move(r.out_r));
 			}
+
+			constexpr friend auto tag_invoke(get_scheduler_t, on_receiver2& r) noexcept
+			{
+				return r.sch_;
+			}
 		private:
-			S s_;
 			Sch sch_;
 			R out_r;
 	};
 
-	template<class Sch, class S>
-	struct on_sender : public sender_base
+	template<class Sch, class S, class R>
+	struct operation
+	{
+		struct on_receiver
+		{
+			public:
+				constexpr on_receiver(operation* op_state1, Sch&& sch, S&& s, R&& out_r)
+					: op_state1{op_state1},
+					  sch_{std::forward<Sch>(sch)},
+					  s_{std::forward<S>(s)},
+					  out_r{std::forward<R>(out_r)} {}
+
+				constexpr friend void tag_invoke(set_value_t, on_receiver&& r) noexcept
+				{
+					r.set_value_helper();
+				}
+
+				template<class E>
+				constexpr friend void tag_invoke(set_error_t, on_receiver&& r, E&& e) noexcept
+				{
+					execution::set_error(std::move(r.out_r), std::forward<E>(e));
+				}
+
+				constexpr friend void tag_invoke(set_done_t, on_receiver&& r) noexcept
+				{
+					execution::set_done(std::move(r.out_r));
+				}
+			private:
+				operation* op_state1;
+				Sch sch_;
+				S s_;
+				R out_r;
+
+				inline void set_value_helper() noexcept
+				{
+					try
+					{
+						op_state1->op_state3.emplace(execution::connect(std::move(s_),
+													 on_receiver2{std::move(sch_), std::move(out_r)}));
+					}
+					catch (...)
+					{
+						execution::set_error(std::move(out_r), std::current_exception());
+					}
+
+					op_state1->op_state2.reset();
+					execution::start(op_state1->op_state3.value());
+				}
+		};
+
+		friend struct on_receiver;
+
+		constexpr operation(Sch&& sch, S&& s, R&& out_r)
+			:	op_state2{execution::connect(execution::schedule(sch),
+						  on_receiver{this, std::forward<Sch>(sch), std::forward<S>(s), std::forward<R>(out_r)})} {}
+
+		constexpr friend void tag_invoke(start_t, operation& op) noexcept
+		{
+			execution::start(op.op_state2.value());
+		}
+		private:
+			std::optional<connect_result_t<schedule_result_t<Sch>, on_receiver>> op_state2;
+			std::optional<connect_result_t<S, on_receiver2<Sch, R>>> op_state3;
+	};
+
+	template<sender S>
+	struct on_sender_base : public sender_base {};
+
+	template<typed_sender S>
+	struct on_sender_base<S>
+	{
+		template<template<class...> class Tuple, template<class...> class Variant>
+		using value_types = value_types_of_t<S, Tuple, Variant>;
+
+		template<template<class...> class Variant>
+		using error_types = error_types_of_t<S, Variant>;
+
+		static constexpr bool sends_done{sender_traits<S>::sends_done};
+	};
+
+
+	template<scheduler Sch, sender S>
+	struct on_sender : public on_sender_base<S>
 	{
 		public:
 			constexpr on_sender(Sch&& sch, S&& s)
@@ -105,8 +148,7 @@ namespace cmoon::execution
 			template<receiver R>
 			constexpr friend auto tag_invoke(connect_t, on_sender&& s, R&& out_r)
 			{
-				return execution::connect(execution::schedule(s.sch_),
-										  on_receiver<S, Sch, R>{std::move(s.s_), std::move(s.sch_), std::forward<R>(out_r)});
+				return operation<Sch, S, R>{std::move(s.sch_), std::move(s.s_), std::forward<R>(out_r)};
 			}
 		private:
 			Sch sch_;

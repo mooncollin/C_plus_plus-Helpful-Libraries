@@ -25,4 +25,8 @@ namespace cmoon::execution
 
 	export
 	inline constexpr schedule_t schedule{};
+
+	export
+	template<class Sch>
+	using schedule_result_t = std::invoke_result_t<decltype(schedule), Sch>;
 }

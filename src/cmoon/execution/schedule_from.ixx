@@ -90,8 +90,8 @@ namespace cmoon::execution
 			template<receiver R>
 			constexpr friend auto tag_invoke(connect_t, schedule_from_sender&& s, R&& out_r)
 			{
-				schedule_from_receiver<Sch, R> r(std::move(s.sch_), std::forward<R>(out_r));
-				return execution::connect(std::move(s.s_), std::move(r));
+				return execution::connect(std::move(s.s_),
+										  schedule_from_receiver<Sch, R>{std::move(s.sch_), std::forward<R>(out_r)});
 			}
 		private:
 			Sch sch_;

@@ -7,6 +7,7 @@ import <exception>;
 
 import cmoon.meta;
 import cmoon.functional;
+import cmoon.concepts;
 
 import cmoon.execution.receiver;
 import cmoon.execution.set_value;
@@ -19,6 +20,7 @@ import cmoon.execution.sender_base;
 import cmoon.execution.connect;
 import cmoon.execution.operation_state;
 import cmoon.execution.get_completion_scheduler;
+import cmoon.execution.sender_adapter;
 
 namespace cmoon::execution
 {
@@ -226,26 +228,10 @@ namespace cmoon::execution
 			template<class F>
 			constexpr auto operator()(F&& f) const
 			{
-				return then_adapter<F>{std::forward<F>(f)};
+				return sender_adapter<then_t, F>{std::forward<F>(f)};
 			}
 	};
 
 	export
 	inline constexpr then_t then{};
-
-	template<class F>
-	struct then_adapter
-	{
-		public:
-			constexpr then_adapter(F&& f)
-				: f_{std::forward<F>(f)} {}
-
-			template<sender S>
-			constexpr friend auto operator|(S&& s, then_adapter&& a)
-			{
-				return then(std::forward<S>(s), std::move(a.f_));
-			}
-		private:
-			F f_;
-	};
 }

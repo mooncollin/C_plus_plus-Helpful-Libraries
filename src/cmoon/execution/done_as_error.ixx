@@ -9,25 +9,10 @@ import cmoon.execution.then;
 import cmoon.execution.let_done;
 import cmoon.execution.sender;
 import cmoon.execution.just_error;
+import cmoon.execution.sender_adapter;
 
 namespace cmoon::execution
 {
-	template<std::move_constructible Error>
-	struct done_as_error_adapter
-	{
-		public:
-			done_as_error_adapter(Error e)
-				: e{std::move(e)} {}
-
-			template<sender S>
-			constexpr friend auto operator|(S&& s, done_as_error_adapter&& a)
-			{
-				return done_as_error(std::forward<S>(s), std::move(a.e));
-			}
-		private:
-			Error e;
-	};
-
 	export
 	struct done_as_error_t
 	{
@@ -43,7 +28,7 @@ namespace cmoon::execution
 		template<std::move_constructible Error>
 		constexpr auto operator()(Error err = Error{}) const noexcept
 		{
-			return done_as_error_adapter<Error>{std::move(err)};
+			return sender_adapter<done_as_error_t, Error>{std::move(err)};
 		}
 	};
 

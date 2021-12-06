@@ -9,18 +9,10 @@ import cmoon.execution.then;
 import cmoon.execution.let_done;
 import cmoon.execution.typed_sender;
 import cmoon.execution.single_typed_sender;
+import cmoon.execution.sender_adapter;
 
 namespace cmoon::execution
 {
-	struct done_as_optional_adapter
-	{
-		template<typed_sender S>
-		constexpr friend auto operator|(S&& s, done_as_optional_adapter&&)
-		{
-			return done_as_optional(std::forward<S>(s));
-		}
-	};
-
 	export
 	struct done_as_optional_t
 	{
@@ -46,7 +38,7 @@ namespace cmoon::execution
 
 		constexpr auto operator()() const noexcept
 		{
-			return done_as_optional_adapter{};
+			return sender_adapter<done_as_optional_t>{};
 		}
 	};
 

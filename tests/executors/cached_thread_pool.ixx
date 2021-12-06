@@ -35,7 +35,8 @@ namespace cmoon::tests::executors
 				cmoon::execution::execute(s, [&value2, expected2] { value2 = expected2; });
 				cmoon::execution::execute(s, [&value3, expected3] { value3 = expected3; });
 
-				p.wait();
+				p.request_stop();
+				p.join();
 
 				cmoon::test::assert_equal(value1, expected1);
 				cmoon::test::assert_equal(value2, expected2);
@@ -64,7 +65,8 @@ namespace cmoon::tests::executors
 
 				cmoon::execution::start_detached(std::move(s));
 
-				p.wait();
+				p.request_stop();
+				p.join();
 
 				cmoon::test::assert_equal(values[0], expected);
 				cmoon::test::assert_equal(values[1], expected);
@@ -91,7 +93,8 @@ namespace cmoon::tests::executors
 							cmoon::execution::then([&value](int arg) { value = 5 + arg; });
 
 				cmoon::execution::start_detached(std::move(work));
-				p.wait();
+				p.request_stop();
+				p.join();
 
 				cmoon::test::assert_equal(value, expected);
 			}
@@ -118,8 +121,6 @@ namespace cmoon::tests::executors
 							cmoon::execution::then([](int arg) { return 5 + arg; }) |
 							cmoon::execution::on(p.get_scheduler()) |
 							cmoon::execution::then([&value](int arg) { value = arg; value.notify_one(); });
-
-				constexpr auto s = sizeof(work);
 
 				cmoon::execution::start_detached(std::move(work));
 				value.wait(0);
@@ -150,7 +151,8 @@ namespace cmoon::tests::executors
 
 				cmoon::execution::execute(s, [&value2, expected2]{ value2 = expected2; });
 
-				p.wait();
+				p.request_stop();
+				p.join();
 
 				cmoon::test::assert_equal(value1, expected1);
 				cmoon::test::assert_equal(value2, expected2);
