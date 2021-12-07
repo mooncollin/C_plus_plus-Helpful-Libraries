@@ -1,0 +1,55 @@
+{% extends "templates/base.html" %}
+{% set breadcrumbs=[("Home", "/index.html")] %}
+{% block title %}Home{% endblock %}
+{% block content %}
+    <h1>Welcome to Collin Moon's C++ libraries documentation</h1>
+    <hr>
+    <p>
+        This wiki will contain documentation about each library and its following public API.
+        Because these libraries can change often, this wiki may be behind the current implementation. Over time, everything will get updated.
+    </p>
+    <p>
+        Currently, lots of libraries are not compiling because of use bleeding-edge features, such as <a href="https://en.cppreference.com/w/cpp/language/modules">modules</a>.
+        Each library home page will denote their development and test status.
+    </p>
+    <p>
+        This project is currently using C++20 features, and is mainly compiled using Visual Studio 2022 Preview.
+        At this moment, not all features that are used in this project are supported by Visual Studio 2022 Preview,
+        so some libraries are in limbo until those features get implemented.
+    </p>
+    <h2 id="structure-code">Structure of the Code</h2>
+    <hr>
+    <p>
+        All source code is under the <a href="{{github_url_src}}">src/cmoon</a> folder.
+        Each folder within is its own library. This project uses modules, and have taken an approach to <a href="#module-naming-convention">naming</a> of modules.
+    </p>
+    <p>
+        Inside each folder will contain a module file with the same name. This module file imports all files contained in the public API for that library.
+        Users of the public library are encouraged to just import the entire module (example: <code>import cmoon.geometry</code> to import the geometry library).
+        This is because not all module files within the library folder are part of the public API, and you are guaranteed to import everything correctly by
+        importing the entire library.
+    </p>
+    <p>
+        Many libraries within here may reference other libraries. Typically, they import the entire library as expected.
+        Sometimes they may import just part of the library for circular dependency reasons. In this case, care is taken to ensure the partial import is correct.
+    </p>
+    <h3>Tests</h3>
+    <p>
+        All tests are under the <a href="{{github_url_tests}}">tests</a> folder. Just like the structure of the source code, the test code will contain a folder for each library.
+        Each folder contains a module file named the same thing as the library and is where all tests for that library get exported.
+        A driver program is in each folder to run tests for that library. A driver program for the entire project is included, and will run all available tests.
+    </p>
+    <h2 id="module-naming-convention">Module Naming Convention</h2>
+    <hr>
+    <p>
+        Each library within this project will be its own module.
+        Every module is prefixed with <code>cmoon</code>, as to distinguish it from other projects.
+        The naming convention is similar to Java's packages/imports. For example, to import the <a href="{{github_url_src}}/json">json</a> library, you would type: <code>import cmoon.json</code>.
+    </p>
+    <h2 id="libraries">Libraries</h2>
+    <div class="p-4 bg-gray border rounded row">
+        <div class="col">
+            <a href="meta/index.html">Metaprogramming Library</a>
+        </div>
+    </div>
+{% endblock %}

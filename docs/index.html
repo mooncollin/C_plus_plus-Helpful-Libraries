@@ -1,1 +1,96 @@
-test
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <title>Home | Docs</title>
+    </head>
+    <body class="bootstrap">
+        <div id="header">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <div class="container-fluid">
+                    <a class="navbar-brand" href="index.html">C++ Docs</a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                            <a class="link-dark" href="https://github.com/mooncollin/C_plus_plus-Helpful-Libraries">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                            </a>
+                        </ul>
+                        <form class="d-flex" method="get" action="https://duckduckgo.com/">
+                            <input class="form-control me-2" name="q" type="text" placeholder="Search" aria-label="Search" required>
+                            <input class="visually-hidden" name="sites" id="search_sites">
+                            <input class="btn btn-outline-success" type="submit" value="Submit">
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <div id="content" class="container">
+            <nav class="my-3 pe-2 ps-2 bg-light border rounded d-inline-flex" style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                            <li class="breadcrumb-item active" aria-current="page">Home</li>
+                </ol>
+            </nav>
+    <h1>Welcome to Collin Moon's C++ libraries documentation</h1>
+    <hr>
+    <p>
+        This wiki will contain documentation about each library and its following public API.
+        Because these libraries can change often, this wiki may be behind the current implementation. Over time, everything will get updated.
+    </p>
+    <p>
+        Currently, lots of libraries are not compiling because of use bleeding-edge features, such as <a href="https://en.cppreference.com/w/cpp/language/modules">modules</a>.
+        Each library home page will denote their development and test status.
+    </p>
+    <p>
+        This project is currently using C++20 features, and is mainly compiled using Visual Studio 2022 Preview.
+        At this moment, not all features that are used in this project are supported by Visual Studio 2022 Preview,
+        so some libraries are in limbo until those features get implemented.
+    </p>
+    <h2 id="structure-code">Structure of the Code</h2>
+    <hr>
+    <p>
+        All source code is under the <a href="https://github.com/mooncollin/C_plus_plus-Helpful-Libraries/tree/master/src/cmoon">src/cmoon</a> folder.
+        Each folder within is its own library. This project uses modules, and have taken an approach to <a href="#module-naming-convention">naming</a> of modules.
+    </p>
+    <p>
+        Inside each folder will contain a module file with the same name. This module file imports all files contained in the public API for that library.
+        Users of the public library are encouraged to just import the entire module (example: <code>import cmoon.geometry</code> to import the geometry library).
+        This is because not all module files within the library folder are part of the public API, and you are guaranteed to import everything correctly by
+        importing the entire library.
+    </p>
+    <p>
+        Many libraries within here may reference other libraries. Typically, they import the entire library as expected.
+        Sometimes they may import just part of the library for circular dependency reasons. In this case, care is taken to ensure the partial import is correct.
+    </p>
+    <h3>Tests</h3>
+    <p>
+        All tests are under the <a href="https://github.com/mooncollin/C_plus_plus-Helpful-Libraries/tree/master/tests">tests</a> folder. Just like the structure of the source code, the test code will contain a folder for each library.
+        Each folder contains a module file named the same thing as the library and is where all tests for that library get exported.
+        A driver program is in each folder to run tests for that library. A driver program for the entire project is included, and will run all available tests.
+    </p>
+    <h2 id="module-naming-convention">Module Naming Convention</h2>
+    <hr>
+    <p>
+        Each library within this project will be its own module.
+        Every module is prefixed with <code>cmoon</code>, as to distinguish it from other projects.
+        The naming convention is similar to Java's packages/imports. For example, to import the <a href="https://github.com/mooncollin/C_plus_plus-Helpful-Libraries/tree/master/src/cmoon/json">json</a> library, you would type: <code>import cmoon.json</code>.
+    </p>
+    <h2 id="libraries">Libraries</h2>
+    <div class="p-4 bg-gray border rounded row">
+        <div class="col">
+            <a href="meta/index.html">Metaprogramming Library</a>
+        </div>
+    </div>
+
+        </div>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            let search_sites = document.getElementById("search_sites");
+            search_sites.value = window.location.host;
+        </script>
+    </body>
+</html>
