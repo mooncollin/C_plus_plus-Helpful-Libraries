@@ -93,9 +93,9 @@ namespace cmoon::meta
 			}
 
 			template<template<typename> typename Function>
-			static constexpr void for_each() noexcept
+			static constexpr void for_each() noexcept((std::is_nothrow_invocable_v<Function<Types>>) && ...)
 			{
-				(Function<Types>{}.operator()(), ...);
+				(std::invoke(Function<Types>{}), ...);
 			}
 
 			template<typename... Types2>
@@ -180,10 +180,13 @@ namespace cmoon::meta
 			using unique = typename unique_helper<type_list<>, type_list>::type;
 
 			template<template<typename> class Predicate>
-			static constexpr bool can_find {size() > 0 && std::disjunction_v<Predicate<Types>::value...>};
+			[[nodiscard]] static constexpr bool can_find() noexcept
+			{
+				return size() > 0 && std::disjunction_v<Predicate<Types>::value...>;
+			}
 
 			template<template<typename> class Predicate>
-				requires(can_find<Predicate>)
+				requires(can_find<Predicate>())
 			using find = typename find_helper<Predicate, Types...>::type;
 
 			template<template<typename...> typename T, typename... ExtraArgs>
