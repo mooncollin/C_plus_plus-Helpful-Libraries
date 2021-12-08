@@ -1,0 +1,89 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "choice_t" %}
+{% block content2 %}
+{{macros.defined("cmoon.meta.choice_t", github_url_src + "/meta/choice_t.ixx")}}
+<hr class="mb-0 mt-1">
+{{macros.code_block(
+"
+template<class T>
+struct choice_t
+{
+    T strategy {};
+    bool no_throw {false};
+};
+"
+, ["bg-transparent"])}}
+<p>
+    Used in meta programming to instantiate different <code>choice_t</code> based on compile-time choices about a given path.
+    The <code>no_throw</code> member can be queried to check if the choice is not throwing (such as a choice for a given function call).
+</p>
+{{macros.template_parameters([["T", "Custom strategy type"]])}}
+<br>
+{{macros.member_objects([["strategy", "T"], ["no_throw", "bool"]])}}
+{{macros.example_code(
+"
+#include <concepts>
+#include <type_traits>
+
+import cmoon.meta;
+
+template<class T>
+void func(const T& value) noexcept(std::integer<T>);
+
+enum class state
+{
+    floating_call,
+    integer_call,
+    none
+};
+
+template<class T>
+consteval cmoon::meta::choice_t<state> choose() noexcept
+{
+    if constexpr (std::integer<std::remove_cvref_t<T>>)
+    {
+        return {state::integer_call, noexcept(func(std::declval<T>()))};
+    }
+    else if constexpr (std::floating_point<std::remove_cvref_t<T>>)
+    {
+        return {state::floating_call, noexcept(func(std::declval<T>()))};
+    }
+    else
+    {
+        return {state::none, true};
+    }
+}
+
+template<class T>
+void func2(const T& value) noexcept(choose<T>().no_throw)
+{
+    // Find out what kind of call we can make, and whether that call
+    // is throwing or not
+    constexpr auto choice = choose<T>();
+
+    if constexpr (choice.strategy == state::integer_call)
+    {
+        // Do something before calling with an integer
+        func(value);
+    }
+    else if constexpr (choice.strategy == state::floating_call)
+    {
+        // Do something before calling with a float
+        func(value);
+    }
+    else if constexpr (choice.strategy == state::none)
+    {
+        // We don't want to call it
+    }
+}
+
+int main()
+{
+    const auto value = 5;
+    func2(value);
+}
+"
+)}}
+{% endblock %}

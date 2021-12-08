@@ -1,0 +1,8 @@
+{% import "templates/macros.html" as macros %}
+{% extends "templates/base.html" %}
+{% set breadcrumbs=[("Home", "../index.html"), (page_name, "")] %}
+{% block nested %}../{% endblock %}
+{% block content %}
+<h1>{{page_name}} Library</h1>
+<hr>
+{% endblock %}

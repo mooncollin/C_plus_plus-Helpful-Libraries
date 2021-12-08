@@ -1,0 +1,38 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "type_list" %}
+{% set end_name = "any_of" %}
+{% set templates = "<Types...>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+template<template<typename> class Predicate>
+[[nodiscard]] static constexpr bool any_of() noexcept;
+"
+])}}
+<br>
+<p>
+    Checks every type against the given predicate as such: <code>Predicate&lt;Types&gt;::value</code>.
+</p>
+{{macros.function_stats(
+    [],
+    "<code>true</code> if <code>Predicate&lt;Types&gt;::value</code> is true for any type in <code>Types...</code>, <code>false</code> otherwise.",
+    "This function never throws exceptions",
+    "Constant."
+)}}
+{{macros.example_code(
+"
+import <type_traits>;
+
+import cmoon.meta;
+
+int main()
+{
+    using tl = cmoon::meta::type_list<int, long, char, float>;
+
+    static_assert(tl::any_of<std::is_floating_point>());
+}
+"
+)}}
+{% endblock %}

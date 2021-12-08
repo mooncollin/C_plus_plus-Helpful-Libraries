@@ -3,10 +3,12 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/default.min.css">
         <title>Home | Docs</title>
     </head>
-    <body class="bootstrap">
+    <body class="lh-sm">
         <div id="header">
             <nav class="navbar navbar-expand-lg navbar-light bg-light">
                 <div class="container-fluid">
@@ -32,7 +34,7 @@
         <div id="content" class="container">
             <nav class="my-3 pe-2 ps-2 bg-light border rounded d-inline-flex" style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1">
-                            <li class="breadcrumb-item active" aria-current="page">Home</li>
+                                <li class="breadcrumb-item active" aria-current="page">Home</li>
                 </ol>
             </nav>
     <h1>Welcome to Collin Moon's C++ libraries documentation</h1>
@@ -54,28 +56,27 @@
     <hr>
     <p>
         All source code is under the <a href="https://github.com/mooncollin/C_plus_plus-Helpful-Libraries/tree/master/src/cmoon">src/cmoon</a> folder.
-        Each folder within is its own library. This project uses modules, and have taken an approach to <a href="#module-naming-convention">naming</a> of modules.
+        Each folder within is its own library. This project uses modules, and has taken an approach to <a href="#module-naming-convention">naming</a> of modules.
     </p>
     <p>
         Inside each folder will contain a module file with the same name. This module file imports all files contained in the public API for that library.
         Users of the public library are encouraged to just import the entire module (example: <code>import cmoon.geometry</code> to import the geometry library).
         This is because not all module files within the library folder are part of the public API, and you are guaranteed to import everything correctly by
-        importing the entire library.
+        importing the entire module.
     </p>
     <p>
         Many libraries within here may reference other libraries. Typically, they import the entire library as expected.
-        Sometimes they may import just part of the library for circular dependency reasons. In this case, care is taken to ensure the partial import is correct.
+        Sometimes they may import just part of the library for circular dependency reasons, although I do best to avoid this. In this case, care is taken to ensure the partial import is correct.
     </p>
     <h3>Tests</h3>
     <p>
-        All tests are under the <a href="https://github.com/mooncollin/C_plus_plus-Helpful-Libraries/tree/master/tests">tests</a> folder. Just like the structure of the source code, the test code will contain a folder for each library.
-        Each folder contains a module file named the same thing as the library and is where all tests for that library get exported.
-        A driver program is in each folder to run tests for that library. A driver program for the entire project is included, and will run all available tests.
+        All tests are under the <a href="https://github.com/mooncollin/C_plus_plus-Helpful-Libraries/tree/master/tests">tests</a> folder. Just like the structure of the source code, the test code will contain a folder for each module.
+        Each folder contains a module file named the same thing as the module and is where all tests for that module get exported.
+        A driver program is in each folder to run tests for that module. A driver program for the entire project is included, and will run all available tests.
     </p>
     <h2 id="module-naming-convention">Module Naming Convention</h2>
     <hr>
     <p>
-        Each library within this project will be its own module.
         Every module is prefixed with <code>cmoon</code>, as to distinguish it from other projects.
         The naming convention is similar to Java's packages/imports. For example, to import the <a href="https://github.com/mooncollin/C_plus_plus-Helpful-Libraries/tree/master/src/cmoon/json">json</a> library, you would type: <code>import cmoon.json</code>.
     </p>
@@ -92,5 +93,7 @@
             let search_sites = document.getElementById("search_sites");
             search_sites.value = window.location.host;
         </script>
+        <script src="js/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
     </body>
 </html>

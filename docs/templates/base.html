@@ -1,22 +1,23 @@
 {%- set github_url = "https://github.com/mooncollin/C_plus_plus-Helpful-Libraries" -%}
 {%- set github_url_src = github_url + "/tree/master/src/cmoon" -%}
 {%- set github_url_tests = github_url + "/tree/master/tests" -%}
-{%- set nested = False -%}
 <!DOCTYPE html>
 <html lang="en">
     <head>
         {%- block head %}
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <link rel="stylesheet" href="{%- block nested -%}{% endblock %}css/bootstrap.min.css">
+        <link rel="stylesheet" href="{{self.nested()}}css/main.css">
+        <link rel="stylesheet" href="{{self.nested()}}css/default.min.css">
         <title>{% block title %}{% endblock %} | Docs</title>
         {%- endblock %}
     </head>
-    <body class="bootstrap">
+    <body class="lh-sm">
         <div id="header">
             <nav class="navbar navbar-expand-lg navbar-light bg-light">
                 <div class="container-fluid">
-                    <a class="navbar-brand" href="index.html">C++ Docs</a>
+                    <a class="navbar-brand" href="{{self.nested()}}index.html">C++ Docs</a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
                     </button>
@@ -39,10 +40,12 @@
             <nav class="my-3 pe-2 ps-2 bg-light border rounded d-inline-flex" style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1">
                     {%- for name, url in breadcrumbs %}
-                        {%- if not loop.last %}
-                            <li class="breadcrumb-item action"><a href="{{url}}">{{name}}</a></li>
-                        {%- else %}
-                            <li class="breadcrumb-item active" aria-current="page">{{name}}</li>
+                        {%- if name != "" %}
+                            {%- if not loop.last %}
+                                <li class="breadcrumb-item action"><a href="{{url}}">{{name}}</a></li>
+                            {%- else %}
+                                <li class="breadcrumb-item active" aria-current="page">{{name}}</li>
+                            {%- endif %}
                         {%- endif %}
                     {%- endfor %}
                 </ol>
@@ -50,10 +53,12 @@
             {%- block content %}
             {%- endblock %}
         </div>
-        <script src="js/bootstrap.bundle.min.js"></script>
+        <script src="{{self.nested()}}js/bootstrap.bundle.min.js"></script>
         <script>
             let search_sites = document.getElementById("search_sites");
             search_sites.value = window.location.host;
         </script>
+        <script src="{{self.nested()}}js/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
     </body>
 </html>

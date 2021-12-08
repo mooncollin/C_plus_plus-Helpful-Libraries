@@ -24,4 +24,8 @@ def generate_templates(dir: str, ignore_files: Sequence = ()):
 
 generate_templates('templates', (
     'templates/base.html',
+    'templates/macros.html',
+    'templates/library.html',
+    'templates/item_page.html',
+    'templates/end_page.html'
 ))

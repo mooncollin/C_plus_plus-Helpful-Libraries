@@ -1,0 +1,36 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "type_list" %}
+{% set end_name = "index" %}
+{% set templates = "<Types...>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+template<typename T>
+[[nodiscard]] static constexpr index_type index() noexcept;    
+"
+])}}
+<br>
+<p>
+    Returns the index of type <code>T</code>. Any program calling <code>index()</code> with a type <code>T</code> that is not in the <code>type_list</code> is ill-formed.
+</p>
+{{macros.function_stats(
+    [],
+    "The index of type <code>T</code> from the <code>type_list</code>.",
+    "This function never throws exceptions",
+    "Constant."
+)}}
+{{macros.example_code(
+"
+import cmoon.meta;
+
+int main()
+{
+    using tl = cmoon::meta::type_list<int, float, char, int>;
+
+    static_assert(tl::index<char>() == 2);
+}
+"
+)}}
+{% endblock %}

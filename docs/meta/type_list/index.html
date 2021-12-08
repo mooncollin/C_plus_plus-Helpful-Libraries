@@ -1,0 +1,340 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="../../css/bootstrap.min.css">
+        <link rel="stylesheet" href="../../css/main.css">
+        <link rel="stylesheet" href="../../css/default.min.css">
+        <title>cmoon::meta::type_list | Docs</title>
+    </head>
+    <body class="lh-sm">
+        <div id="header">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <div class="container-fluid">
+                    <a class="navbar-brand" href="../../index.html">C++ Docs</a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                            <a class="link-dark" href="https://github.com/mooncollin/C_plus_plus-Helpful-Libraries">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                            </a>
+                        </ul>
+                        <form class="d-flex" method="get" action="https://duckduckgo.com/">
+                            <input class="form-control me-2" name="q" type="text" placeholder="Search" aria-label="Search" required>
+                            <input class="visually-hidden" name="sites" id="search_sites">
+                            <input class="btn btn-outline-success" type="submit" value="Submit">
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <div id="content" class="container">
+            <nav class="my-3 pe-2 ps-2 bg-light border rounded d-inline-flex" style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                                <li class="breadcrumb-item action"><a href="../../index.html">Home</a></li>
+                                <li class="breadcrumb-item action"><a href="../index.html">Metaprogramming</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">cmoon::meta::type_list</li>
+                </ol>
+            </nav>
+<h1>cmoon::meta::type_list</h1>
+<hr>
+<div class="mx-5">
+    
+<small>Defined in module <code><a href="https://github.com/mooncollin/C_plus_plus-Helpful-Libraries/tree/master/src/cmoon/meta/type_list.ixx">&lt;cmoon.meta.type_list&gt;</a></code></small>
+<hr class="my-0">
+    <div class="d-flex flex-row justify-content-between">
+            <div>
+                <small><pre class="mb-0">
+<code class="language-cpp rounded py-0 pe-0 bg-transparent">
+
+template&lt;typename... Types&gt;
+struct type_list;
+
+</code>
+</pre></small>
+            </div>
+            <div class="d-flex align-items-center me-4">
+                <small><tt>(1)</tt></small>
+            </div>
+        </div>
+        
+    <hr class="my-0">
+<p>
+    A <code>type_list</code> is used to store or manipulate a list of types. Similiar to a <code>std::tuple</code>, it has functionality to get a type at a given index,
+    get its overall size, and extra functionality that <code>std::tuple</code> does not have.
+</p>
+<p>
+    A <code>type_list</code> is not meant to be instantiated, but used as a type only.
+</p>
+<div class="container">
+    <h3>Template parameters</h3>
+    <div class="container">
+        <small>
+        <div class="row">
+                <div class="col-auto"><strong>Types...</strong></div>
+                <div class="col-auto"><strong>-</strong></div>
+                <div class="col-auto">Type types that are part of this list</div>
+            </div>
+        </small>
+    </div>
+</div>
+<br>
+<div class="container">
+    <div class="w-50">
+        <h3>Member Types</h3>
+        <hr class="my-0">
+        <small>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Member type</th>
+                        <th scope="col">Definition</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <tr>
+                        <td>index_type</td>
+                        <td>std::size_t</td>
+                    </tr><tr>
+                        <td>type</td>
+                        <td>Templated typedef indiciating the <var>N</var>th type of this <code>type_list</code></td>
+                    </tr><tr>
+                        <td>append</td>
+                        <td>Templated typedef that is the result of appending the given types to this <code>type_list</code></td>
+                    </tr><tr>
+                        <td>concatenate</td>
+                        <td>Templated typedef that is the result of concatenating the given <code>type_list</code>s' types to the end of this <code>type_list</code></td>
+                    </tr><tr>
+                        <td>filter</td>
+                        <td>Templated typedef that is a <code>type_list</code> containing the types from <code>Types...</code> that pass the given predicate</td>
+                    </tr><tr>
+                        <td>transform</td>
+                        <td>Templated typedef that is the result of transforming <code>Types...</code> with the given function</td>
+                    </tr><tr>
+                        <td>sub_list</td>
+                        <td>Templated typedef that is a sub-list of this <code>type_list</code></td>
+                    </tr><tr>
+                        <td>unique</td>
+                        <td>Templated typedef that is this <code>type_list</code> with duplicate types removed</td>
+                    </tr><tr>
+                        <td>find</td>
+                        <td>Templated typedef of a type from this <code>type_list</code> that first matches the given predicate</td>
+                    </tr><tr>
+                        <td>complete_type</td>
+                        <td>Templated typedef of a templated type whose templates are filled in by <code>Types...</code> and optional extra types</td>
+                    </tr>
+                </tbody>
+            </table>
+        </small>
+    </div>
+</div>
+<h3>Member type definitions</h3>
+<h4><code>type</code></h4>
+<pre class="mb-0">
+<code class="language-cpp rounded py-0 pe-0 ">
+
+template&lt;typename... Types&gt;
+template&lt;index_type N&gt;
+using type_list&lt;Types...&gt;::type&lt;N&gt; = /* see below */;
+
+</code>
+</pre>
+<p>The <code>type</code> alias denotes a type that is the <var>N</var>th type from the <code>type_list</code>c's <code>Types...</code> parameter pack, starting at <code>0</code>.</p>
+<h4><code>append</code></h4>
+<pre class="mb-0">
+<code class="language-cpp rounded py-0 pe-0 ">
+
+template&lt;typename... Types&gt;
+template&lt;typename... Types2&gt;
+using type_list&lt;Types...&gt;::append&lt;Types2...&gt; = type_list&lt;Types..., Types2...&gt;;
+
+</code>
+</pre>
+<h4><code>concatenate</code></h4>
+<pre class="mb-0">
+<code class="language-cpp rounded py-0 pe-0 ">
+
+template&lt;typename... Types&gt;
+template&lt;typename... TypeLists&gt;
+using type_list&lt;Types...&gt;::concatenate&lt;TypesLists...&gt; = /* see below */;
+
+</code>
+</pre>
+<p>
+    The <code>concatenate</code> alias denotes a <code>type_list</code> that contains all the types of this type_list and all types from each <code>TypeLists...</code> pack.
+    These types are in the order in which they appear in the pack. Empty <code>type_list</code>s (<code>type_list&lt;&gt;</code>) do not add any types.
+</p>
+<h4><code>filter</code></h4>
+<pre class="mb-0">
+<code class="language-cpp rounded py-0 pe-0 ">
+
+template&lt;typename... Types&gt;
+template&lt;template&lt;typename&gt; class Predicate&gt;
+using type_list&lt;Types...&gt;::filter&lt;Predicate&gt; = /* see below */;
+
+</code>
+</pre>
+<p>
+    The <code>filter</code> alias denotes a <code>type_list</code> containing types from <code>Types...</code> in which <code>Predicate&lt;Types&gt;::value</code> is true.
+</p>
+<h4><code>transform</code></h4>
+<pre class="mb-0">
+<code class="language-cpp rounded py-0 pe-0 ">
+
+template&lt;typename... Types&gt;
+template&lt;template&lt;typename&gt; class Function&gt;
+using type_list&lt;Types...&gt;::transform&lt;Function&gt; = type_list&lt;typename Function&lt;Types&gt;::type...&gt;;
+
+</code>
+</pre>
+<h4><code>sub_list</code></h4>
+<pre class="mb-0">
+<code class="language-cpp rounded py-0 pe-0 ">
+
+template&lt;typename... Types&gt;
+template&lt;index_type Offset, index_type Count = -1&gt;
+using type_list&lt;Types...&gt;::sub_list&lt;Offset, Count&gt; = /* see below */;
+
+</code>
+</pre>
+<p>
+    The <code>sub_list</code> alias denotes a <code>type_list</code> containing <code>Count</code> types from <code>Types...</code> that start at the given <code>Offset</code> in the parameter pack.
+</p>
+<p>
+    Calling <code>sub_list</code> with an <code>Offset</code> that is larger than or equal to <code>sizeof...(Types)</code> is ill-formed.
+</p>
+<h4><code>unique</code></h4>
+<pre class="mb-0">
+<code class="language-cpp rounded py-0 pe-0 ">
+
+template&lt;typename... Types&gt;
+using type_list&lt;Types...&gt;::unique = /* see below */;
+
+</code>
+</pre>
+<p>
+    The <code>unique</code> alias denotes a <code>type_list</code> containing only one of each type from its original <code>type_list</code>.
+</p>
+<h4><code>find</code></h4>
+<pre class="mb-0">
+<code class="language-cpp rounded py-0 pe-0 ">
+
+template&lt;typename... Types&gt;
+template&lt;template&lt;typename&gt; class Predicate&gt;
+using type_list&lt;Types...&gt;::find&lt;Predicate&gt; = /* see below */;
+
+</code>
+</pre>
+<p>
+    The <code>find</code> alias denotes a type from this <code>type_list</code> in which <code>Predicate&lt;Types&gt;::value</code> is <code>true</code> first.
+    If there is no type in which <code>Predicate&lt;Types&gt;::value</code> is <code>true</code>, then the program is ill-formed.
+</p>
+<h4><code>complete_type</code></h4>
+<pre class="mb-0">
+<code class="language-cpp rounded py-0 pe-0 ">
+
+template&lt;typename... Types&gt;
+template&lt;template&lt;typename...&gt; typename T, typename... ExtraArgs&gt;
+using type_list&lt;Types...&gt;::complete_type&lt;T, ExtraArgs...&gt; = T&lt;Types..., ExtraArgs...&gt;;
+
+</code>
+</pre>
+<h3>Member functions</h3>
+<hr>
+<div class="row fw-light">
+    <div class="col-3"><code><a href="size.html">size</a></code></div>
+    <div class="col">
+        Returns the number of types
+        <br>
+        <span class="meta-detail">(public member function)</span>
+    </div>
+</div>
+<hr>
+<div class="row fw-light">
+    <div class="col-3"><code><a href="index_f.html">index</a></code></div>
+    <div class="col">
+        Returns the index of a given type
+        <br>
+        <span class="meta-detail">(public member function)</span>
+    </div>
+</div>
+<hr>
+<div class="row fw-light">
+    <div class="col-3"><code><a href="contains.html">contains</a></code></div>
+    <div class="col">
+        Checks if a given type is present
+        <br>
+        <span class="meta-detail">(public member function)</span>
+    </div>
+</div>
+<hr>
+<div class="row fw-light">
+    <div class="col-3"><code><a href="is_unique.html">is_unique</a></code></div>
+    <div class="col">
+        Checks if all types are unique
+        <br>
+        <span class="meta-detail">(public member function)</span>
+    </div>
+</div>
+<hr>
+<div class="row fw-light">
+    <div class="col-3"><code><a href="is_all_same_type.html">is_all_same_type</a></code></div>
+    <div class="col">
+        Checks if all types are the same
+        <br>
+        <span class="meta-detail">(public member function)</span>
+    </div>
+</div>
+<hr>
+<div class="row fw-light">
+    <div class="col-3"><code><a href="all_of.html">all_of</a></code></div>
+    <div class="col">
+        Checks if all types return true from the given predicate
+        <br>
+        <span class="meta-detail">(public member function)</span>
+    </div>
+</div>
+<hr>
+<div class="row fw-light">
+    <div class="col-3"><code><a href="any_of.html">any_of</a></code></div>
+    <div class="col">
+        Checks if any types return true from the given predicate
+        <br>
+        <span class="meta-detail">(public member function)</span>
+    </div>
+</div>
+<hr>
+<div class="row fw-light">
+    <div class="col-3"><code><a href="none_of.html">none_of</a></code></div>
+    <div class="col">
+        Checks if no types return true from the given predicate
+        <br>
+        <span class="meta-detail">(public member function)</span>
+    </div>
+</div>
+<hr>
+<div class="row fw-light">
+    <div class="col-3"><code><a href="for_each.html">for_each</a></code></div>
+    <div class="col">
+        Calls the given function with each type
+        <br>
+        <span class="meta-detail">(public member function)</span>
+    </div>
+</div>
+
+</div>
+
+        </div>
+        <script src="../../js/bootstrap.bundle.min.js"></script>
+        <script>
+            let search_sites = document.getElementById("search_sites");
+            search_sites.value = window.location.host;
+        </script>
+        <script src="../../js/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
+    </body>
+</html>

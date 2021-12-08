@@ -1,0 +1,184 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="../../css/bootstrap.min.css">
+        <link rel="stylesheet" href="../../css/main.css">
+        <link rel="stylesheet" href="../../css/default.min.css">
+        <title>cmoon::meta::choice_t | Docs</title>
+    </head>
+    <body class="lh-sm">
+        <div id="header">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <div class="container-fluid">
+                    <a class="navbar-brand" href="../../index.html">C++ Docs</a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                            <a class="link-dark" href="https://github.com/mooncollin/C_plus_plus-Helpful-Libraries">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                            </a>
+                        </ul>
+                        <form class="d-flex" method="get" action="https://duckduckgo.com/">
+                            <input class="form-control me-2" name="q" type="text" placeholder="Search" aria-label="Search" required>
+                            <input class="visually-hidden" name="sites" id="search_sites">
+                            <input class="btn btn-outline-success" type="submit" value="Submit">
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <div id="content" class="container">
+            <nav class="my-3 pe-2 ps-2 bg-light border rounded d-inline-flex" style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                                <li class="breadcrumb-item action"><a href="../../index.html">Home</a></li>
+                                <li class="breadcrumb-item action"><a href="../index.html">Metaprogramming</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">cmoon::meta::choice_t</li>
+                </ol>
+            </nav>
+<h1>cmoon::meta::choice_t</h1>
+<hr>
+<div class="mx-5">
+    
+<small>Defined in module <code><a href="https://github.com/mooncollin/C_plus_plus-Helpful-Libraries/tree/master/src/cmoon/meta/choice_t.ixx">&lt;cmoon.meta.choice_t&gt;</a></code></small>
+<hr class="mb-0 mt-1">
+<pre class="mb-0">
+<code class="language-cpp rounded py-0 pe-0 bg-transparent">
+
+template&lt;class T&gt;
+struct choice_t
+{
+    T strategy {};
+    bool no_throw {false};
+};
+
+</code>
+</pre>
+<p>
+    Used in meta programming to instantiate different <code>choice_t</code> based on compile-time choices about a given path.
+    The <code>no_throw</code> member can be queried to check if the choice is not throwing (such as a choice for a given function call).
+</p>
+<div class="container">
+    <h3>Template parameters</h3>
+    <div class="container">
+        <small>
+        <div class="row">
+                <div class="col-auto"><strong>T</strong></div>
+                <div class="col-auto"><strong>-</strong></div>
+                <div class="col-auto">Custom strategy type</div>
+            </div>
+        </small>
+    </div>
+</div>
+<br>
+<div class="container">
+    <div class="w-50">
+        <h3>Member Objects</h3>
+        <hr class="my-0">
+        <small>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Member name</th>
+                        <th scope="col">Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <tr>
+                        <td>strategy</td>
+                        <td>T</td>
+                    </tr><tr>
+                        <td>no_throw</td>
+                        <td>bool</td>
+                    </tr>
+                </tbody>
+            </table>
+        </small>
+    </div>
+</div>
+<div class="container">
+    <h3>Example</h3>
+    <pre class="mb-0">
+<code class="language-cpp rounded py-0 pe-0 ">
+
+#include &lt;concepts&gt;
+#include &lt;type_traits&gt;
+
+import cmoon.meta;
+
+template&lt;class T&gt;
+void func(const T&amp; value) noexcept(std::integer&lt;T&gt;);
+
+enum class state
+{
+    floating_call,
+    integer_call,
+    none
+};
+
+template&lt;class T&gt;
+consteval cmoon::meta::choice_t&lt;state&gt; choose() noexcept
+{
+    if constexpr (std::integer&lt;std::remove_cvref_t&lt;T&gt;&gt;)
+    {
+        return {state::integer_call, noexcept(func(std::declval&lt;T&gt;()))};
+    }
+    else if constexpr (std::floating_point&lt;std::remove_cvref_t&lt;T&gt;&gt;)
+    {
+        return {state::floating_call, noexcept(func(std::declval&lt;T&gt;()))};
+    }
+    else
+    {
+        return {state::none, true};
+    }
+}
+
+template&lt;class T&gt;
+void func2(const T&amp; value) noexcept(choose&lt;T&gt;().no_throw)
+{
+    // Find out what kind of call we can make, and whether that call
+    // is throwing or not
+    constexpr auto choice = choose&lt;T&gt;();
+
+    if constexpr (choice.strategy == state::integer_call)
+    {
+        // Do something before calling with an integer
+        func(value);
+    }
+    else if constexpr (choice.strategy == state::floating_call)
+    {
+        // Do something before calling with a float
+        func(value);
+    }
+    else if constexpr (choice.strategy == state::none)
+    {
+        // We don&#39;t want to call it
+    }
+}
+
+int main()
+{
+    const auto value = 5;
+    func2(value);
+}
+
+</code>
+</pre>
+</div>
+
+</div>
+
+        </div>
+        <script src="../../js/bootstrap.bundle.min.js"></script>
+        <script>
+            let search_sites = document.getElementById("search_sites");
+            search_sites.value = window.location.host;
+        </script>
+        <script src="../../js/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
+    </body>
+</html>

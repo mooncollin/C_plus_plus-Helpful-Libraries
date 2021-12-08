@@ -1,0 +1,13 @@
+{% import "templates/macros.html" as macros %}
+{% extends "templates/base.html" %}
+{% set breadcrumbs=[("Home", "../../index.html"), (library_name, "../index.html"), ((namespaces if namespaces else "") + "::" + (item_name if item_name else ""), "")] %}
+{% block nested %}../../{% endblock %}
+{% block title %}{{namespaces}}::{{item_name}}{% endblock %}
+{% block content %}
+<h1>{{namespaces}}::{{item_name}}</h1>
+<hr>
+<div class="mx-5">
+    {% block content2 %}
+    {% endblock %}
+</div>
+{% endblock %}

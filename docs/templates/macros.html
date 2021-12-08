@@ -1,0 +1,164 @@
+{% macro module_item(name, description, type) -%}
+<div class="row fw-light">
+    <div class="col-2"><code><a href="{{name}}/index.html">{{name}}</a></code></div>
+    <div class="col">
+        {{description}}
+        <br>
+        <span class="meta-detail">({{type}})</span>
+    </div>
+</div>
+{%- endmacro %}
+
+{% macro member_item(name, description, type, url = None) -%}
+<hr>
+<div class="row fw-light">
+    <div class="col-3"><code><a href="{{url if url != None else name + '.html'}}">{{name}}</a></code></div>
+    <div class="col">
+        {{description}}
+        <br>
+        <span class="meta-detail">({{type}})</span>
+    </div>
+</div>
+{%- endmacro %}
+
+{% macro section_header(name) -%}
+    <p class="mb-0 mt-2"><strong>{{name}}</strong></p>
+    <hr class="mt-0">
+{%- endmacro %}
+
+{% macro defined(name, url) -%}
+<small>Defined in module <code><a href="{{url}}">&lt;{{name}}&gt;</a></code></small>
+{%- endmacro %}
+
+{% macro template_parameters(params) -%}
+<div class="container">
+    <h3>Template parameters</h3>
+    <div class="container">
+        <small>
+        {% for param in params -%}
+            <div class="row">
+                <div class="col-auto"><strong>{{param[0]}}</strong></div>
+                <div class="col-auto"><strong>-</strong></div>
+                <div class="col-auto">{{param[1]}}</div>
+            </div>
+        {%- endfor %}
+        </small>
+    </div>
+</div>
+{%- endmacro %}
+
+{% macro member_objects(params) -%}
+<div class="container">
+    <div class="w-50">
+        <h3>Member Objects</h3>
+        <hr class="my-0">
+        <small>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Member name</th>
+                        <th scope="col">Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for param in params -%}
+                    <tr>
+                        <td>{{param[0]}}</td>
+                        <td>{{param[1]}}</td>
+                    </tr>
+                {%- endfor %}
+                </tbody>
+            </table>
+        </small>
+    </div>
+</div>
+{%- endmacro %}
+
+{% macro member_types(params) -%}
+<div class="container">
+    <div class="w-50">
+        <h3>Member Types</h3>
+        <hr class="my-0">
+        <small>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Member type</th>
+                        <th scope="col">Definition</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for param in params -%}
+                    <tr>
+                        <td>{{param[0]}}</td>
+                        <td>{{param[1]}}</td>
+                    </tr>
+                {%- endfor %}
+                </tbody>
+            </table>
+        </small>
+    </div>
+</div>
+{%- endmacro %}
+
+{% macro code_block(code, extra_classes = []) -%}
+<pre class="mb-0">
+<code class="language-cpp rounded py-0 pe-0 {% for class in extra_classes -%} {{class}}{% endfor -%}">
+{{code|e}}
+</code>
+</pre>
+{%- endmacro %}
+
+{% macro example_code(code) -%}
+<div class="container">
+    <h3>Example</h3>
+    {{code_block(code)}}
+</div>
+{%- endmacro %}
+
+{% macro overload_set(params) -%}
+    <hr class="my-0">
+    {% for param in params -%}
+        <div class="d-flex flex-row justify-content-between">
+            <div>
+                <small>{{code_block(param, ["bg-transparent"])}}</small>
+            </div>
+            <div class="d-flex align-items-center me-4">
+                <small><tt>({{loop.index}})</tt></small>
+            </div>
+        </div>
+        {% if not loop.last -%}
+            <hr class="mt-0 opacity-50">
+        {%- endif %}
+    {%- endfor %}
+    <hr class="my-0">
+{%- endmacro %}
+
+{% macro function_stats(parameters, return_value, exceptions, complexity) -%}
+<div class="container">
+    <h3>Parameters</h3>
+    {% if parameters|length == 0 -%}
+        <p>(none)</p>
+    {%- else %}
+        {% for param in parameters -%}
+            <div class="row">
+                <div class="col-auto"><strong>{{param[0]}}</strong></div>
+                <div class="col-auto"><strong>-</strong></div>
+                <div class="col-auto">{{param[1]}}</div>
+            </div>
+        {%- endfor %}
+    {%- endif %}
+    <h3>Return value</h3>
+    {% if return_value|length != 0 -%}
+        <p>{{return_value}}</p>
+    {%- else %}
+        <p>(none)</p>
+    {%- endif %}
+    {% if exceptions|length != 0 -%}
+    <h3>Exceptions</h3>
+    <p>{{exceptions}} </p>
+    {%- endif %}
+    <h3>Complexity</h3>
+    <p>{{complexity}}</p>
+</div>
+{%- endmacro %}

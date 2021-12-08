@@ -1,5 +1,16 @@
-{% extends "templates/base.html" %}
-{% set breadcrumbs=[("Home", "index.html"), ("Meta", "")] %}
-{% block title %}Home{% endblock %}
+{% extends "templates/library.html" %}
+{% set page_name = "Metaprogramming" %}
+{% block title %}meta{% endblock %}
 {% block content %}
+{{ super() }}
+<p class="mb-0">
+    The Metaprogramming library is a collection of classes and functions that assist in meta programming. This often involves dealing with types and compile-time values.
+</p>
+<br>
+{{macros.defined("cmoon.meta", github_url_src + "/meta/meta.ixx")}}
+{{macros.section_header("Conditional Compiling")}}
+    {{macros.module_item("choice_t", "Utility for choosing different compile-time strategies", "class template")}}
+{{macros.section_header("Typing Manipulation")}}
+    {{macros.module_item("type_list", "Class for storing a list of types, similar to <code>std::tuple</code>, but with more functionality", "class template")}}
+{{macros.section_header("Value Manipulation")}}
 {% endblock %}

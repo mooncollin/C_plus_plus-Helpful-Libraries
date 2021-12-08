@@ -1,0 +1,43 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "type_list" %}
+{% set end_name = "contains" %}
+{% set templates = "<Types...>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+template<typename T>
+[[nodiscard]] static constexpr bool contains() noexcept;
+"
+])}}
+<br>
+<p>
+    Returns true if <code>T</code> is a type within this <code>type_list</code>, returns false otherwise.
+</p>
+{{macros.function_stats(
+    [],
+    "True if <code>T</code> is a type within this <code>type_list</code>, false otherwise.",
+    "This function never throws exceptions",
+    "Constant."
+)}}
+{{macros.example_code(
+"
+import cmoon.meta;
+
+int main()
+{
+    using tl = cmoon::meta::type_list<int, float, char, int>;
+
+    if constexpr (tl::contains<int>())
+    {
+        return tl::index<int>();
+    }
+    else
+    {
+        return -1;
+    }
+}
+"
+)}}
+{% endblock %}

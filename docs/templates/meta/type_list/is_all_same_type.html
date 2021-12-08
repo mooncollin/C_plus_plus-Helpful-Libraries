@@ -1,0 +1,37 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "type_list" %}
+{% set end_name = "is_all_same_type" %}
+{% set templates = "<Types...>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+[[nodiscard]] static constexpr bool is_all_same_type() noexcept;
+"
+])}}
+<br>
+<p>
+    Returns <code>true</code> if all <code>Types...</code> are the same type, returns <code>false</code> otherwise.
+</p>
+{{macros.function_stats(
+    [],
+    "<code>true</code> if all <code>Types...</code> are the same type, <code>false</code> otherwise.",
+    "This function never throws exceptions",
+    "Constant."
+)}}
+{{macros.example_code(
+"
+import cmoon.meta;
+
+int main()
+{
+    using tl = cmoon::meta::type_list<int, float, char, int>;
+    using tl2 = cmoon::meta::type_list<int, int, int>;
+
+    static_assert(!tl::is_all_same_type());
+    static_assert(tl2::is_all_same_type());
+}
+"
+)}}
+{% endblock %}

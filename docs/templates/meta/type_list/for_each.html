@@ -1,0 +1,53 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "type_list" %}
+{% set end_name = "for_each" %}
+{% set templates = "<Types...>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+template<template<typename> class Function>
+[[nodiscard]] static constexpr void for_each() noexcept(/* see below */);
+"
+])}}
+<br>
+<p>
+    Runs the given function for each type as such:
+    {{macros.code_block(
+    "
+    std::invoke(Function<T>{})
+    "
+    , ["bg-transparent"])}}
+    for each <code>T</code> in <code>Types...</code>.
+</p>
+{{macros.function_stats(
+    [],
+    "",
+    "<small><tt>1)</tt></small> noexcept specification:<hr class='m-0'>" + macros.code_block('noexcept((std::is_nothrow_invocable_v<Function<Types>>) && ...)', ["bg-transparent"]) + "<hr class='m-0'>",
+    "Constant."
+)}}
+{{macros.example_code(
+"
+import <type_traits>;
+import <iostream>;
+
+import cmoon.meta;
+
+template<class T>
+struct print_type
+{
+    void operator()() const
+    {
+        std::cout << typeid(T).name() << ' ';
+    }
+};
+
+int main()
+{
+    using tl = cmoon::meta::type_list<float, double, long double>;
+    tl::for_each<print_type>();
+}
+"
+)}}
+{% endblock %}

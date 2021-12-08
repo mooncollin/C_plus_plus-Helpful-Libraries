@@ -1,0 +1,37 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "type_list" %}
+{% set end_name = "is_unique" %}
+{% set templates = "<Types...>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+[[nodiscard]] static constexpr bool is_unique() noexcept;
+"
+])}}
+<br>
+<p>
+    Returns <code>true</code> if all of <code>Types...</code> are not the same, returns <code>false</code> otherwise. Always true if <code>sizeof...(Types)</code> is 0.
+</p>
+{{macros.function_stats(
+    [],
+    "<code>true</code> if all of <code>Types...</code> are not the same, <code>false</code> otherwise.",
+    "This function never throws exceptions",
+    "Constant."
+)}}
+{{macros.example_code(
+"
+import cmoon.meta;
+
+int main()
+{
+    using tl = cmoon::meta::type_list<int, float, char, int>;
+    using tl2 = cmoon::meta::type_list<float, double>;
+
+    static_assert(!tl::is_unique());
+    static_assert(tl2::is_unique());
+}
+"
+)}}
+{% endblock %}
