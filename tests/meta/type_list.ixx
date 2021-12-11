@@ -103,7 +103,7 @@ namespace cmoon::tests::meta
 			{
 				using t = std::tuple<int, double, float>;
 
-				using l = cmoon::meta::type_list_from_tuple<t>;
+				using l = cmoon::meta::extract_types_into_type_list<t>;
 
 				cmoon::test::assert_equal(l::size(), 3);
 
