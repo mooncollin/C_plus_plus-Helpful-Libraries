@@ -1,0 +1,35 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "value_list" %}
+{% set end_name = "size" %}
+{% set templates = "<Values...>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+[[nodiscard]] static constexpr index_type size() noexcept;
+"
+])}}
+<br>
+<p>
+    Returns the number of values in the list.
+</p>
+{{macros.function_stats(
+    [],
+    "The number of values in the list.",
+    "This function never throws exceptions",
+    "Constant."
+)}}
+{{macros.example_code(
+"
+import cmoon.meta;
+
+int main()
+{
+    using tl = cmoon::meta::value_list<1, 2, 3, 4>;
+
+    static_assert(tl::size() == 4);
+}
+"
+)}}
+{% endblock %}

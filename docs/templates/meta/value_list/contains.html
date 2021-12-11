@@ -1,0 +1,43 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "value_list" %}
+{% set end_name = "contains" %}
+{% set templates = "<Values...>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+template<class T>
+[[nodiscard]] static constexpr bool contains(const T& item) noexcept;
+"
+])}}
+<br>
+<p>
+    Returns <code>true</code> if <code>item</code> is a value within this <code>value_list</code>, returns <code>false</code> otherwise.
+</p>
+{{macros.function_stats(
+    ["item", "The value to find"],
+    "<code>true</code> if <code>item</code> is a value within this <code>value_list</code>, <code>false</code> otherwise.",
+    "This function never throws exceptions",
+    "Linear (<code>sizeof...(Values)</code>)"
+)}}
+{{macros.example_code(
+"
+import cmoon.meta;
+
+int main()
+{
+    using vl = cmoon::meta::value_list<1, 3, 5, 7>;
+
+    if constexpr (tl::contains(5))
+    {
+        // It has a 5!
+    }
+    else
+    {
+        // It does not have a 5 :(
+    }
+}
+"
+)}}
+{% endblock %}

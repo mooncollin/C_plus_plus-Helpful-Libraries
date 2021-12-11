@@ -1,0 +1,14 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "filter_values" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.meta", github_url_src + "/meta/meta.ixx")}}
+{{macros.overload_set([
+"
+template<template<auto> class Predicate, auto... Values>
+using filter_values = typename value_list<Values...>::template filter<Predicate>;
+"
+])}}
+{% endblock %}

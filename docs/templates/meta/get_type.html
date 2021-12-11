@@ -1,0 +1,32 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "get_type" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.meta", github_url_src + "/meta/meta.ixx")}}
+{{macros.overload_set([
+"
+template<std::size_t Index, typename... Ts>
+using get_type = /* see below */;
+"
+])}}
+<br>
+<p>
+    Gets the type located at <code>Index</code> from the parameter pack <code>Ts...</code>. This alias is ill-formed if <code>Index &lt;= sizeof...(Ts)</code>.
+</p>
+{{macros.example_code(
+"
+import <concepts>;
+
+import cmoon.meta;
+
+int main()
+{
+    using t = cmoon::meta::get_type<2, int, int, float, double>;
+
+    static_assert(std::same_as<t, float>);
+}
+"
+)}}
+{% endblock %}

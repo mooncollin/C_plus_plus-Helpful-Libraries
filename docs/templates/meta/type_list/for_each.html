@@ -24,7 +24,7 @@ template<template<typename> class Function>
 {{macros.function_stats(
     [],
     "",
-    "<small><tt>1)</tt></small> noexcept specification:<hr class='m-0'>" + macros.code_block('noexcept((std::is_nothrow_invocable_v<Function<Types>>) && ...)', ["bg-transparent"]) + "<hr class='m-0'>",
+    "<small><tt>1)</tt></small> noexcept specification:<hr class='m-0'>" + macros.code_block('noexcept(std::conjunction_v<std::is_nothrow_invocable<Function<Types>>...>)', ["bg-transparent"]) + "<hr class='m-0'>",
     "Constant."
 )}}
 {{macros.example_code(

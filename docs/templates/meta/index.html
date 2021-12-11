@@ -12,5 +12,15 @@
     {{macros.module_item("choice_t", "Utility for choosing different compile-time strategies", "class template")}}
 {{macros.section_header("Typing Manipulation")}}
     {{macros.module_item("type_list", "Class for storing a list of types, similar to <code>std::tuple</code>, but with more functionality", "class template")}}
+    {{macros.module_item("get_type", "Type alias for getting a type with an index into a parameter pack", "alias template", "get_type.html")}}
+    {{macros.module_item("extract_types_into_type_list", "Type alias for a <code>type_list</code> consisting of the template types that complete <code>T</code>", "alias template", "extract_types_into_type_list.html")}}
+    {{macros.module_item("transform_types", "Type alias for a <code>type_list&lt;Ts...&gt;</code> where each <code>T</code> in <code>Ts...</code> is <code>typename Function&lt;T&gt;::type</code>", "alias template", "transform_types.html")}}
+    {{macros.module_item("filter_types", "Type alias for a <code>type_list&lt;Ts2...&gt;</code> where <code>Predicate&lt;T&gt;::value</code> is <code>true</code> for each value in <code>Ts...</code>", "alias template", "filter_types.html")}}
+    {{macros.module_item("concatenate_types", "Type alias for a <code>type_list&lt;Ts1..., Ts2..., /* ... */, Ts<var>N</var>...&gt;</code> where <code>Ts<var>i</var>...</code> comes from the templates types that would complete <code>TypeLists<var>i</var></code>", "alias template", "concatenate_types.html")}}
+    {{macros.module_item("unique_types", "Type alias for a <code>type_list&lt;Ts2...&gt;</code> where <code>Ts2...</code> is a set of unique types from <code>Ts...</code>", "alias template", "unique_types.html")}}
 {{macros.section_header("Value Manipulation")}}
+    {{macros.module_item("value_list", "Class for storing a list of compile-time values as template arguments", "class template")}}
+    {{macros.module_item("transform_values", "Type alias for <code>typename value_list&lt;Values...&gt;::template transform&lt;Function&gt;;</code>", "alias template", "transform_values.html")}}
+    {{macros.module_item("filter_values", "Type alias for <code>typename value_list&lt;Values...&gt;::template filter&lt;Predicate&gt;</code>", "alias template", "filter_values.html")}}
+    {{macros.module_item("concatenate_values", "Type alias for a <code>value_list&lt;&gt;::template concatenate&lt;ValueLists...&gt;</code>", "alias template", "concatenate_values.html")}}
 {% endblock %}

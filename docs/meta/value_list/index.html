@@ -7,7 +7,7 @@
         <link rel="stylesheet" href="../../css/bootstrap.min.css">
         <link rel="stylesheet" href="../../css/main.css">
         <link rel="stylesheet" href="../../css/default.min.css">
-        <title>cmoon::meta::type_list | Docs</title>
+        <title>cmoon::meta::value_list | Docs</title>
     </head>
     <body class="lh-sm">
         <div id="header">
@@ -37,10 +37,10 @@
                 <ol class="breadcrumb mb-1">
                                 <li class="breadcrumb-item action"><a href="../../index.html">Home</a></li>
                                 <li class="breadcrumb-item action"><a href="../index.html">Metaprogramming</a></li>
-                                <li class="breadcrumb-item active" aria-current="page">cmoon::meta::type_list</li>
+                                <li class="breadcrumb-item active" aria-current="page">cmoon::meta::value_list</li>
                 </ol>
             </nav>
-<h1>cmoon::meta::type_list</h1>
+<h1>cmoon::meta::value_list</h1>
 <hr>
 <div class="mx-5">
     
@@ -51,8 +51,8 @@
                 <small><pre class="mb-0">
 <code class="language-cpp rounded py-0 pe-0 bg-transparent">
 
-template&lt;typename... Types&gt;
-struct type_list;
+template&lt;auto... Values&gt;
+struct value_list;
 
 </code>
 </pre></small>
@@ -64,20 +64,19 @@ struct type_list;
         
     <hr class="my-0">
 <p>
-    A <code>type_list</code> is used to store or manipulate a list of types. Similiar to a <code>std::tuple</code>, it has functionality to get a type at a given index,
-    get its overall size, and extra functionality that <code>std::tuple</code> does not have.
+    A <code>value_list</code> is used to store or manipulate a list of compile-time values.
 </p>
 <p>
-    A <code>type_list</code> is not meant to be instantiated, but used as a type only.
+    A <code>value_list</code> is not meant to be instantiated, but used as a type only.
 </p>
 <div class="container">
     <h3>Template parameters</h3>
     <div class="container">
         <small>
         <div class="row">
-                <div class="col-auto"><strong>Types...</strong></div>
+                <div class="col-auto"><strong>Values...</strong></div>
                 <div class="col-auto"><strong>-</strong></div>
-                <div class="col-auto">Types that are part of this list</div>
+                <div class="col-auto">Values that are part of this list</div>
             </div>
         </small>
     </div>
@@ -100,32 +99,29 @@ struct type_list;
                         <td>index_type</td>
                         <td><code>std::size_t</code></td>
                     </tr><tr>
+                        <td>types</td>
+                        <td><code>type_list&lt;decltype(Values)...&gt;</code></td>
+                    </tr><tr>
                         <td>type</td>
-                        <td>Templated typedef indiciating the <var>N</var>th type of this <code>type_list</code></td>
+                        <td>Templated typedef indiciating the <var>N</var>th type of this <code>value_list</code></td>
                     </tr><tr>
                         <td>append</td>
-                        <td>Templated typedef that is the result of appending the given types to this <code>type_list</code></td>
+                        <td>Templated typedef that is the result of appending the given values to this <code>value_list</code></td>
                     </tr><tr>
                         <td>concatenate</td>
-                        <td>Templated typedef that is the result of concatenating the given <code>type_list</code>s' types to the end of this <code>type_list</code></td>
+                        <td>Templated typedef that is the result of concatenating the given <code>value_list</code>s' values to the end of this <code>value_list</code></td>
                     </tr><tr>
                         <td>filter</td>
-                        <td>Templated typedef that is a <code>type_list</code> containing the types from <code>Types...</code> that pass the given predicate</td>
+                        <td>Templated typedef that is a <code>value_list</code> containing the values from <code>Values...</code> that pass the given predicate</td>
                     </tr><tr>
                         <td>transform</td>
-                        <td>Templated typedef that is the result of transforming <code>Types...</code> with the given function</td>
+                        <td>Templated typedef that is the result of transforming <code>Values...</code> with the given function</td>
+                    </tr><tr>
+                        <td>transform_to_types</td>
+                        <td>Templated typedef just like transform, but converts <code>Values...</code> to types instead of values</td>
                     </tr><tr>
                         <td>sub_list</td>
-                        <td>Templated typedef that is a sub-list of this <code>type_list</code></td>
-                    </tr><tr>
-                        <td>unique</td>
-                        <td>Templated typedef that is this <code>type_list</code> with duplicate types removed</td>
-                    </tr><tr>
-                        <td>find</td>
-                        <td>Templated typedef of a type from this <code>type_list</code> that first matches the given predicate</td>
-                    </tr><tr>
-                        <td>complete_type</td>
-                        <td>Templated typedef of a templated type whose templates are filled in by <code>Types...</code> and optional extra types</td>
+                        <td>Templated typedef that is a sub-list of this <code>value_list</code></td>
                     </tr>
                 </tbody>
             </table>
@@ -137,20 +133,20 @@ struct type_list;
 <pre class="mb-0">
 <code class="language-cpp rounded py-0 pe-0 ">
 
-template&lt;typename... Types&gt;
+template&lt;auto... Values&gt;
 template&lt;index_type N&gt;
-using type_list&lt;Types...&gt;::type&lt;N&gt; = /* see below */;
+using value_list&lt;Values...&gt;::type&lt;N&gt; = /* see below */;
 
 </code>
 </pre>
-<p>The <code>type</code> alias denotes a type that is the <var>N</var>th type from the <code>type_list</code>'s <code>Types...</code> parameter pack, starting at <code>0</code>.</p>
+<p>The <code>type</code> alias denotes a type that is the <var>N</var>th type from the <code>value_list</code>'s <code>Values...</code> parameter pack, starting at <code>0</code>.</p>
 <h4><code>append</code></h4>
 <pre class="mb-0">
 <code class="language-cpp rounded py-0 pe-0 ">
 
-template&lt;typename... Types&gt;
-template&lt;typename... Types2&gt;
-using type_list&lt;Types...&gt;::append&lt;Types2...&gt; = type_list&lt;Types..., Types2...&gt;;
+template&lt;auto... Values&gt;
+template&lt;auto... Values2&gt;
+using value_list&lt;Values...&gt;::append&lt;Values2...&gt; = value_list&lt;Values..., Values2...&gt;;
 
 </code>
 </pre>
@@ -158,36 +154,46 @@ using type_list&lt;Types...&gt;::append&lt;Types2...&gt; = type_list&lt;Types...
 <pre class="mb-0">
 <code class="language-cpp rounded py-0 pe-0 ">
 
-template&lt;typename... Types&gt;
-template&lt;typename... TypeLists&gt;
-using type_list&lt;Types...&gt;::concatenate&lt;TypesLists...&gt; = /* see below */;
+template&lt;auto... Values&gt;
+template&lt;auto... ValueLists&gt;
+using value_list&lt;Values...&gt;::concatenate&lt;ValueLists...&gt; = /* see below */;
 
 </code>
 </pre>
 <p>
-    The <code>concatenate</code> alias denotes a <code>type_list</code> that contains all the types of this <code>type_list</code> and all types from each <code>TypeLists...</code>.
-    These types are in the order in which they appear in the pack. Empty <code>type_list</code>s (<code>type_list&lt;&gt;</code>) do not add any types.
+    The <code>concatenate</code> alias denotes a <code>value_list</code> that contains all the value of this <code>value_list</code> and all values from each <code>ValueLists...</code>.
+    These values are in the order in which they appear in the pack. Empty <code>value_list</code>s (<code>value_list&lt;&gt;</code>) do not add any values.
 </p>
 <h4><code>filter</code></h4>
 <pre class="mb-0">
 <code class="language-cpp rounded py-0 pe-0 ">
 
-template&lt;typename... Types&gt;
-template&lt;template&lt;typename&gt; class Predicate&gt;
-using type_list&lt;Types...&gt;::filter&lt;Predicate&gt; = /* see below */;
+template&lt;auto... Values&gt;
+template&lt;template&lt;auto&gt; class Predicate&gt;
+using value_list&lt;Types...&gt;::filter&lt;Predicate&gt; = /* see below */;
 
 </code>
 </pre>
 <p>
-    The <code>filter</code> alias denotes a <code>type_list</code> containing types from <code>Types...</code> in which <code>Predicate&lt;Types&gt;::value</code> is true.
+    The <code>filter</code> alias denotes a <code>value_list</code> containing values from <code>Values...</code> in which <code>Predicate&lt;Values&gt;::value</code> is true.
 </p>
 <h4><code>transform</code></h4>
 <pre class="mb-0">
 <code class="language-cpp rounded py-0 pe-0 ">
 
-template&lt;typename... Types&gt;
-template&lt;template&lt;typename&gt; class Function&gt;
-using type_list&lt;Types...&gt;::transform&lt;Function&gt; = type_list&lt;typename Function&lt;Types&gt;::type...&gt;;
+template&lt;auto... Values&gt;
+template&lt;template&lt;auto&gt; class Function&gt;
+using value_list&lt;Values...&gt;::transform&lt;Function&gt; = value_list&lt;Function&lt;Values&gt;::value...&gt;;
+
+</code>
+</pre>
+<h4><code>transform_to_types</code></h4>
+<pre class="mb-0">
+<code class="language-cpp rounded py-0 pe-0 ">
+
+template&lt;auto... Values&gt;
+template&lt;template&lt;auto&gt; class Function&gt;
+using value_list&lt;Values...&gt;::transform_to_types&lt;Function&gt; = type_list&lt;typename Function&lt;Values&gt;::type...&gt;;
 
 </code>
 </pre>
@@ -195,69 +201,33 @@ using type_list&lt;Types...&gt;::transform&lt;Function&gt; = type_list&lt;typena
 <pre class="mb-0">
 <code class="language-cpp rounded py-0 pe-0 ">
 
-template&lt;typename... Types&gt;
+template&lt;auto... Values&gt;
 template&lt;index_type Offset, index_type Count = -1&gt;
-using type_list&lt;Types...&gt;::sub_list&lt;Offset, Count&gt; = /* see below */;
+using value_list&lt;Values...&gt;::sub_list&lt;Offset, Count&gt; = /* see below */;
 
 </code>
 </pre>
 <p>
-    The <code>sub_list</code> alias denotes a <code>type_list</code> containing <code>Count</code> types from <code>Types...</code> that start at the given <code>Offset</code> in the parameter pack.
+    The <code>sub_list</code> alias denotes a <code>value_list</code> containing <code>Count</code> values from <code>Values...</code> that start at the given <code>Offset</code> in the parameter pack.
 </p>
 <p>
-    Calling <code>sub_list</code> with an <code>Offset</code> that is larger than or equal to <code>sizeof...(Types)</code> is ill-formed.
+    Calling <code>sub_list</code> with an <code>Offset</code> that is larger than or equal to <code>sizeof...(Values)</code> is ill-formed.
 </p>
-<h4><code>unique</code></h4>
-<pre class="mb-0">
-<code class="language-cpp rounded py-0 pe-0 ">
-
-template&lt;typename... Types&gt;
-using type_list&lt;Types...&gt;::unique = /* see below */;
-
-</code>
-</pre>
-<p>
-    The <code>unique</code> alias denotes a <code>type_list</code> containing only one of each type from its original <code>type_list</code>.
-</p>
-<h4 id="find_header"><code>find</code></h4>
-<pre class="mb-0">
-<code class="language-cpp rounded py-0 pe-0 ">
-
-template&lt;typename... Types&gt;
-template&lt;template&lt;typename&gt; class Predicate&gt;
-using type_list&lt;Types...&gt;::find&lt;Predicate&gt; = /* see below */;
-
-</code>
-</pre>
-<p>
-    The <code>find</code> alias denotes a type from this <code>type_list</code> in which <code>Predicate&lt;Types&gt;::value</code> is <code>true</code> first.
-    If there is no type in which <code>Predicate&lt;Types&gt;::value</code> is <code>true</code>, then the program is ill-formed.
-</p>
-<h4><code>complete_type</code></h4>
-<pre class="mb-0">
-<code class="language-cpp rounded py-0 pe-0 ">
-
-template&lt;typename... Types&gt;
-template&lt;template&lt;typename...&gt; typename T, typename... ExtraArgs&gt;
-using type_list&lt;Types...&gt;::complete_type&lt;T, ExtraArgs...&gt; = T&lt;Types..., ExtraArgs...&gt;;
-
-</code>
-</pre>
 <h3>Member functions</h3>
 <hr>
 <div class="row fw-light">
     <div class="col-3"><code><a href="size.html">size</a></code></div>
     <div class="col">
-        Returns the number of types
+        Returns the number of values
         <br>
         <span class="meta-detail">(public static member function)</span>
     </div>
 </div>
 <hr>
 <div class="row fw-light">
-    <div class="col-3"><code><a href="index_f.html">index</a></code></div>
+    <div class="col-3"><code><a href="get.html">get</a></code></div>
     <div class="col">
-        Returns the index of a given type
+        Returns the value at index <code>N</code>
         <br>
         <span class="meta-detail">(public static member function)</span>
     </div>
@@ -266,25 +236,16 @@ using type_list&lt;Types...&gt;::complete_type&lt;T, ExtraArgs...&gt; = T&lt;Typ
 <div class="row fw-light">
     <div class="col-3"><code><a href="contains.html">contains</a></code></div>
     <div class="col">
-        Checks if a given type is present
+        Checks if a given value is present
         <br>
         <span class="meta-detail">(public static member function)</span>
     </div>
 </div>
 <hr>
 <div class="row fw-light">
-    <div class="col-3"><code><a href="is_unique.html">is_unique</a></code></div>
+    <div class="col-3"><code><a href="to_tuple.html">to_tuple</a></code></div>
     <div class="col">
-        Checks if all types are unique
-        <br>
-        <span class="meta-detail">(public static member function)</span>
-    </div>
-</div>
-<hr>
-<div class="row fw-light">
-    <div class="col-3"><code><a href="is_all_same_type.html">is_all_same_type</a></code></div>
-    <div class="col">
-        Checks if all types are the same
+        Creates a <code>std::tuple</code> from <code>Values...</code>
         <br>
         <span class="meta-detail">(public static member function)</span>
     </div>
@@ -293,7 +254,7 @@ using type_list&lt;Types...&gt;::complete_type&lt;T, ExtraArgs...&gt; = T&lt;Typ
 <div class="row fw-light">
     <div class="col-3"><code><a href="all_of.html">all_of</a></code></div>
     <div class="col">
-        Checks if all types return true from the given predicate
+        Checks if all values return true from the given predicate
         <br>
         <span class="meta-detail">(public static member function)</span>
     </div>
@@ -302,7 +263,7 @@ using type_list&lt;Types...&gt;::complete_type&lt;T, ExtraArgs...&gt; = T&lt;Typ
 <div class="row fw-light">
     <div class="col-3"><code><a href="any_of.html">any_of</a></code></div>
     <div class="col">
-        Checks if any types return true from the given predicate
+        Checks if any values return true from the given predicate
         <br>
         <span class="meta-detail">(public static member function)</span>
     </div>
@@ -311,7 +272,7 @@ using type_list&lt;Types...&gt;::complete_type&lt;T, ExtraArgs...&gt; = T&lt;Typ
 <div class="row fw-light">
     <div class="col-3"><code><a href="none_of.html">none_of</a></code></div>
     <div class="col">
-        Checks if no types return true from the given predicate
+        Checks if no values return true from the given predicate
         <br>
         <span class="meta-detail">(public static member function)</span>
     </div>
@@ -320,16 +281,7 @@ using type_list&lt;Types...&gt;::complete_type&lt;T, ExtraArgs...&gt; = T&lt;Typ
 <div class="row fw-light">
     <div class="col-3"><code><a href="for_each.html">for_each</a></code></div>
     <div class="col">
-        Calls the given function with each type
-        <br>
-        <span class="meta-detail">(public static member function)</span>
-    </div>
-</div>
-<hr>
-<div class="row fw-light">
-    <div class="col-3"><code><a href="can_find.html">can_find</a></code></div>
-    <div class="col">
-        Checks if it is well-formed to call <code><a href='#find_header'>find</a></code> with the given predicate
+        Calls the given function with each value
         <br>
         <span class="meta-detail">(public static member function)</span>
     </div>

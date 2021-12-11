@@ -1,0 +1,22 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "extract_types_into_type_list" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.meta", github_url_src + "/meta/meta.ixx")}}
+{{macros.overload_set([
+"
+template<class T>
+using extract_types_into_type_list = /* see below */;
+"
+])}}
+<br>
+<p>
+    Type alias for a <code>type_list</code> consisting of the template types that complete <code>T</code>.
+</p>
+<p>
+    For example, <code>extract_types_into_type_list&lt;std::tuple&lt;int, double, char&gt;&gt;</code> will be the same type as <code>type_list&lt;int, double, char&gt;</code>.
+    This will extract any amount of template types that exist on the given full type.
+</p>
+{% endblock %}

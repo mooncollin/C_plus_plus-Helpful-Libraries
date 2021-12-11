@@ -1,0 +1,39 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "type_list" %}
+{% set end_name = "can_find" %}
+{% set templates = "<Types...>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+template<template<typename> class Predicate>
+[[nodiscard]] static constexpr bool can_find() noexcept;
+"
+])}}
+<br>
+<p>
+    Checks if it is well-formed to call <code><a href="index.html#find_header">find</a></code> with the given predicate.
+</p>
+{{macros.function_stats(
+    [],
+    "<code>true</code> if it is well-formed to call <code>find</code> on this <code>type_list</code> with the given <code>Predicate</code>, <code>false</code> otherwise.",
+    "This function never throws exceptions",
+    "Constant."
+)}}
+{{macros.example_code(
+"
+import <type_traits>;
+
+import cmoon.meta;
+
+int main()
+{
+    using tl = cmoon::meta::type_list<int, long, char>;
+
+    static_assert(tl::can_find<std::is_integral>());
+    static_assert(!tl::can_find<std::is_floating_point>());
+}
+"
+)}}
+{% endblock %}

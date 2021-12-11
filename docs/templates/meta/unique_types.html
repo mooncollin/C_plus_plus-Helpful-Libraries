@@ -1,0 +1,32 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "unique_types" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.meta", github_url_src + "/meta/meta.ixx")}}
+{{macros.overload_set([
+"
+template<typename... Ts>
+using unique_types = /* see below */;
+"
+])}}
+<br>
+<p>
+    Type alias for a <code>type_list&lt;Ts2...&gt;</code> where <code>Ts2...</code> is a set of unique types.
+</p>
+{{macros.example_code(
+"
+import <concepts>;
+
+import cmoon.meta;
+
+int main()
+{
+    using tl = cmoon::meta::unique_types<float, int, double, int, double, char>;
+
+    static_assert(std::same_as<tl, cmoon::meta::type_list<float, int, double, char>>);
+}
+"
+)}}
+{% endblock %}

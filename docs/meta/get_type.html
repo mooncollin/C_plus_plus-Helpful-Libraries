@@ -4,16 +4,16 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" href="../../css/bootstrap.min.css">
-        <link rel="stylesheet" href="../../css/main.css">
-        <link rel="stylesheet" href="../../css/default.min.css">
-        <title>cmoon::meta::type_list::&lt;Types...&gt;index | Docs</title>
+        <link rel="stylesheet" href="../css/bootstrap.min.css">
+        <link rel="stylesheet" href="../css/main.css">
+        <link rel="stylesheet" href="../css/default.min.css">
+        <title>cmoon::meta::get_type | Docs</title>
     </head>
     <body class="lh-sm">
         <div id="header">
             <nav class="navbar navbar-expand-lg navbar-light bg-light">
                 <div class="container-fluid">
-                    <a class="navbar-brand" href="../../index.html">C++ Docs</a>
+                    <a class="navbar-brand" href="../index.html">C++ Docs</a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
                     </button>
@@ -36,22 +36,23 @@
             <nav class="my-3 pe-2 ps-2 bg-light border rounded d-inline-flex" style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1">
                                 <li class="breadcrumb-item action"><a href="../../index.html">Home</a></li>
-                                <li class="breadcrumb-item action"><a href="../index.html">Metaprogramming</a></li>
-                                <li class="breadcrumb-item action"><a href="index.html">cmoon::meta::type_list</a></li>
+                                <li class="breadcrumb-item action"><a href="index.html">Metaprogramming</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">cmoon::meta::get_type</li>
                 </ol>
             </nav>
-<h1><small>cmoon::meta::type_list::&lt;Types...&gt;::</small>index</h1>
+<h1>cmoon::meta::get_type</h1>
 <hr>
 <div class="mx-5">
     
+<small>Defined in module <code><a href="https://github.com/mooncollin/C_plus_plus-Helpful-Libraries/tree/master/src/cmoon/meta/meta.ixx">&lt;cmoon.meta&gt;</a></code></small>
 <hr class="my-0">
     <div class="d-flex flex-row justify-content-between">
             <div>
                 <small><pre class="mb-0">
 <code class="language-cpp rounded py-0 pe-0 bg-transparent">
 
-template&lt;typename T&gt;
-[[nodiscard]] static constexpr index_type index() noexcept;    
+template&lt;std::size_t Index, typename... Ts&gt;
+using get_type = /* see below */;
 
 </code>
 </pre></small>
@@ -64,30 +65,22 @@ template&lt;typename T&gt;
     <hr class="my-0">
 <br>
 <p>
-    Returns the index of type <code>T</code>. Any program calling <code>index()</code> with a type <code>T</code> that is not in the <code>type_list</code> is ill-formed.
+    Gets the type located at <code>Index</code> from the parameter pack <code>Ts...</code>. This alias is ill-formed if <code>Index &lt;= sizeof...(Ts)</code>.
 </p>
-<div class="container">
-    <h3>Parameters</h3>
-    <p>(none)</p>
-    <h3>Return value</h3>
-    <p>The index of type <code>T</code> from the <code>type_list</code>.</p>
-    <h3>Exceptions</h3>
-    <p>This function never throws exceptions </p>
-    <h3>Complexity</h3>
-    <p>Constant.</p>
-</div>
 <div class="container">
     <h3>Example</h3>
     <pre class="mb-0">
 <code class="language-cpp rounded py-0 pe-0 ">
 
+import &lt;concepts&gt;;
+
 import cmoon.meta;
 
 int main()
 {
-    using tl = cmoon::meta::type_list&lt;int, float, char, int&gt;;
+    using t = cmoon::meta::get_type&lt;2, int, int, float, double&gt;;
 
-    static_assert(tl::index&lt;char&gt;() == 2);
+    static_assert(std::same_as&lt;t, float&gt;);
 }
 
 </code>
@@ -108,12 +101,12 @@ int main()
                 </a>
             </div>
         </div>
-        <script src="../../js/bootstrap.bundle.min.js"></script>
+        <script src="../js/bootstrap.bundle.min.js"></script>
         <script>
             let search_sites = document.getElementById("search_sites");
             search_sites.value = window.location.host;
         </script>
-        <script src="../../js/highlight.min.js"></script>
+        <script src="../js/highlight.min.js"></script>
         <script>hljs.highlightAll();</script>
     </body>
 </html>

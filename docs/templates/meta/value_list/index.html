@@ -1,0 +1,113 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "value_list" %}
+{% block content2 %}
+{{macros.defined("cmoon.meta", github_url_src + "/meta/meta.ixx")}}
+{{macros.overload_set([
+"
+template<auto... Values>
+struct value_list;
+"
+]
+)}}
+<p>
+    A <code>value_list</code> is used to store or manipulate a list of compile-time values.
+</p>
+<p>
+    A <code>value_list</code> is not meant to be instantiated, but used as a type only.
+</p>
+{{macros.template_parameters([["Values...", "Values that are part of this list"]])}}
+<br>
+{{macros.member_types([
+    ["index_type", "<code>std::size_t</code>"],
+    ["types", "<code>type_list&lt;decltype(Values)...&gt;</code>"],
+    ["type", "Templated typedef indiciating the <var>N</var>th type of this <code>value_list</code>"],
+    ["append", "Templated typedef that is the result of appending the given values to this <code>value_list</code>"],
+    ["concatenate", "Templated typedef that is the result of concatenating the given <code>value_list</code>s' values to the end of this <code>value_list</code>"],
+    ["filter", "Templated typedef that is a <code>value_list</code> containing the values from <code>Values...</code> that pass the given predicate"],
+    ["transform", "Templated typedef that is the result of transforming <code>Values...</code> with the given function"],
+    ["transform_to_types", "Templated typedef just like transform, but converts <code>Values...</code> to types instead of values"],
+    ["sub_list", "Templated typedef that is a sub-list of this <code>value_list</code>"]
+])}}
+<h3>Member type definitions</h3>
+<h4><code>type</code></h4>
+{{macros.code_block(
+"
+template<auto... Values>
+template<index_type N>
+using value_list<Values...>::type<N> = /* see below */;
+"
+)}}
+<p>The <code>type</code> alias denotes a type that is the <var>N</var>th type from the <code>value_list</code>'s <code>Values...</code> parameter pack, starting at <code>0</code>.</p>
+<h4><code>append</code></h4>
+{{macros.code_block(
+"
+template<auto... Values>
+template<auto... Values2>
+using value_list<Values...>::append<Values2...> = value_list<Values..., Values2...>;
+"
+)}}
+<h4><code>concatenate</code></h4>
+{{macros.code_block(
+"
+template<auto... Values>
+template<auto... ValueLists>
+using value_list<Values...>::concatenate<ValueLists...> = /* see below */;
+"
+)}}
+<p>
+    The <code>concatenate</code> alias denotes a <code>value_list</code> that contains all the value of this <code>value_list</code> and all values from each <code>ValueLists...</code>.
+    These values are in the order in which they appear in the pack. Empty <code>value_list</code>s (<code>value_list&lt;&gt;</code>) do not add any values.
+</p>
+<h4><code>filter</code></h4>
+{{macros.code_block(
+"
+template<auto... Values>
+template<template<auto> class Predicate>
+using value_list<Types...>::filter<Predicate> = /* see below */;
+"
+)}}
+<p>
+    The <code>filter</code> alias denotes a <code>value_list</code> containing values from <code>Values...</code> in which <code>Predicate&lt;Values&gt;::value</code> is true.
+</p>
+<h4><code>transform</code></h4>
+{{macros.code_block(
+"
+template<auto... Values>
+template<template<auto> class Function>
+using value_list<Values...>::transform<Function> = value_list<Function<Values>::value...>;
+"
+)}}
+<h4><code>transform_to_types</code></h4>
+{{macros.code_block(
+"
+template<auto... Values>
+template<template<auto> class Function>
+using value_list<Values...>::transform_to_types<Function> = type_list<typename Function<Values>::type...>;
+"
+)}}
+<h4><code>sub_list</code></h4>
+{{macros.code_block(
+"
+template<auto... Values>
+template<index_type Offset, index_type Count = -1>
+using value_list<Values...>::sub_list<Offset, Count> = /* see below */;
+"
+)}}
+<p>
+    The <code>sub_list</code> alias denotes a <code>value_list</code> containing <code>Count</code> values from <code>Values...</code> that start at the given <code>Offset</code> in the parameter pack.
+</p>
+<p>
+    Calling <code>sub_list</code> with an <code>Offset</code> that is larger than or equal to <code>sizeof...(Values)</code> is ill-formed.
+</p>
+<h3>Member functions</h3>
+{{macros.member_item("size", "Returns the number of values", "public static member function")}}
+{{macros.member_item("get", "Returns the value at index <code>N</code>", "public static member function")}}
+{{macros.member_item("contains", "Checks if a given value is present", "public static member function")}}
+{{macros.member_item("to_tuple", "Creates a <code>std::tuple</code> from <code>Values...</code>", "public static member function")}}
+{{macros.member_item("all_of", "Checks if all values return true from the given predicate", "public static member function")}}
+{{macros.member_item("any_of", "Checks if any values return true from the given predicate", "public static member function")}}
+{{macros.member_item("none_of", "Checks if no values return true from the given predicate", "public static member function")}}
+{{macros.member_item("for_each", "Calls the given function with each value", "public static member function")}}
+{% endblock %}

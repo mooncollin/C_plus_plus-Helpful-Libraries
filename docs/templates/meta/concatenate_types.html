@@ -1,0 +1,37 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "concatenate_types" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.meta", github_url_src + "/meta/meta.ixx")}}
+{{macros.overload_set([
+"
+template<class... TypeLists>
+using concatenate_types = /* see below */;
+"
+])}}
+<br>
+<p>
+    Type alias for a <code>type_list&lt;Ts1..., Ts2..., /* ... */, Ts<var>N</var>...&gt;</code> where <code>Ts<var>i</var>...</code> comes from the templates types that would complete <code>TypeLists<var>i</var></code>.
+</p>
+<p>
+    Any type in <code>TypeLists...</code> may be used, as long as it has template parameters.
+</p>
+{{macros.example_code(
+"
+import <concepts>;
+import <type_traits>;
+import <tuple>;
+
+import cmoon.meta;
+
+int main()
+{
+    using tl = cmoon::meta::concatenate_types<std::tuple<int, float>, cmoon::meta::type_list<double, double>>;
+
+    static_assert(std::same_as<tl, cmoon::meta::type_list<int, float, double, double>>);
+}
+"
+)}}
+{% endblock %}

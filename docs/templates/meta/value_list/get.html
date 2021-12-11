@@ -1,0 +1,39 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "value_list" %}
+{% set end_name = "size" %}
+{% set templates = "<Values...>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+template<index_type N>
+[[nodiscard]] static constexpr auto get() noexcept;
+"
+])}}
+<br>
+<p>
+    Returns the value at index <code>N</code>. This function is ill-formed if <code>N &lt; size()</code>.
+</p>
+{{macros.function_stats(
+    [],
+    "The value at index <code>N</code>",
+    "This function never throws exceptions",
+    "Constant."
+)}}
+{{macros.example_code(
+"
+import cmoon.meta;
+
+int main()
+{
+    using tl = cmoon::meta::value_list<1, 2, 3, 4>;
+
+    static_assert(tl::get<0>() == 1);
+    static_assert(tl::get<1>() == 2);
+    static_assert(tl::get<2>() == 3);
+    static_assert(tl::get<3>() == 4);
+}
+"
+)}}
+{% endblock %}

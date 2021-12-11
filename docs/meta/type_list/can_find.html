@@ -7,7 +7,7 @@
         <link rel="stylesheet" href="../../css/bootstrap.min.css">
         <link rel="stylesheet" href="../../css/main.css">
         <link rel="stylesheet" href="../../css/default.min.css">
-        <title>cmoon::meta::type_list::&lt;Types...&gt;index | Docs</title>
+        <title>cmoon::meta::type_list::&lt;Types...&gt;can_find | Docs</title>
     </head>
     <body class="lh-sm">
         <div id="header">
@@ -40,7 +40,7 @@
                                 <li class="breadcrumb-item action"><a href="index.html">cmoon::meta::type_list</a></li>
                 </ol>
             </nav>
-<h1><small>cmoon::meta::type_list::&lt;Types...&gt;::</small>index</h1>
+<h1><small>cmoon::meta::type_list::&lt;Types...&gt;::</small>can_find</h1>
 <hr>
 <div class="mx-5">
     
@@ -50,8 +50,8 @@
                 <small><pre class="mb-0">
 <code class="language-cpp rounded py-0 pe-0 bg-transparent">
 
-template&lt;typename T&gt;
-[[nodiscard]] static constexpr index_type index() noexcept;    
+template&lt;template&lt;typename&gt; class Predicate&gt;
+[[nodiscard]] static constexpr bool can_find() noexcept;
 
 </code>
 </pre></small>
@@ -64,13 +64,13 @@ template&lt;typename T&gt;
     <hr class="my-0">
 <br>
 <p>
-    Returns the index of type <code>T</code>. Any program calling <code>index()</code> with a type <code>T</code> that is not in the <code>type_list</code> is ill-formed.
+    Checks if it is well-formed to call <code><a href="index.html#find_header">find</a></code> with the given predicate.
 </p>
 <div class="container">
     <h3>Parameters</h3>
     <p>(none)</p>
     <h3>Return value</h3>
-    <p>The index of type <code>T</code> from the <code>type_list</code>.</p>
+    <p><code>true</code> if it is well-formed to call <code>find</code> on this <code>type_list</code> with the given <code>Predicate</code>, <code>false</code> otherwise.</p>
     <h3>Exceptions</h3>
     <p>This function never throws exceptions </p>
     <h3>Complexity</h3>
@@ -81,13 +81,16 @@ template&lt;typename T&gt;
     <pre class="mb-0">
 <code class="language-cpp rounded py-0 pe-0 ">
 
+import &lt;type_traits&gt;;
+
 import cmoon.meta;
 
 int main()
 {
-    using tl = cmoon::meta::type_list&lt;int, float, char, int&gt;;
+    using tl = cmoon::meta::type_list&lt;int, long, char&gt;;
 
-    static_assert(tl::index&lt;char&gt;() == 2);
+    static_assert(tl::can_find&lt;std::is_integral&gt;());
+    static_assert(!tl::can_find&lt;std::is_floating_point&gt;());
 }
 
 </code>

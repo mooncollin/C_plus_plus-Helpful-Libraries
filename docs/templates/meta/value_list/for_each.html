@@ -1,0 +1,49 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "value_list" %}
+{% set end_name = "for_each" %}
+{% set templates = "<Values...>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+template<class F>
+[[nodiscard]] static constexpr void for_each(F&& func) noexcept(/* see below */);
+"
+])}}
+<br>
+<p>
+    Invokes <code>func</code> for every value in <code>Values...</code>.
+</p>
+{{macros.function_stats(
+    [["func", "The function"]],
+    "",
+    "<small><tt>1)</tt></small> noexcept specification:<hr class='m-0'>" + macros.code_block('noexcept(std::conjunction_v<std::is_nothrow_invocable<F, decltype(Values)>...>)', ["bg-transparent"]) + "<hr class='m-0'>",
+    ""
+)}}
+{{macros.example_code(
+"
+import <iostream>
+
+import cmoon.meta;
+
+struct print_out
+{
+    std::ostream& os;
+
+    template<class T>
+    void operator()(T t)
+    {
+        os << t << '\\n';
+    }
+};
+
+int main()
+{
+    using vl = cmoon::meta::value_list<1, 5, 3, 'f', 203>;
+
+    static_assert(vl::for_each(print_out{std::cout}));
+}
+"
+)}}
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "concatenate_values" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.meta", github_url_src + "/meta/meta.ixx")}}
+{{macros.overload_set([
+"
+template<typename... TypeLists>
+using concatenate_values = typename value_list<>::template concatenate<ValueLists...>;
+"
+])}}
+{% endblock %}

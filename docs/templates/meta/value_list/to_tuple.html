@@ -1,0 +1,26 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "value_list" %}
+{% set end_name = "to_tuple" %}
+{% set templates = "<Values...>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+[[nodiscard]] static constexpr auto to_tuple() noexcept(/* see below */)
+{
+    return std::make_tuple(Values...);
+}
+"
+])}}
+<br>
+<p>
+    Returns a <code>std::tuple</code> from <code>Values...</code>.
+</p>
+{{macros.function_stats(
+    [],
+    "A <code>std::tuple</code> from <code>Values...</code>",
+    "<small><tt>1)</tt></small> noexcept specification:<hr class='m-0'>" + macros.code_block('noexcept(std::conjunction_v<std::is_nothrow_copy_constructible<decltype(Values)>...>)', ["bg-transparent"]) + "<hr class='m-0'>",
+    ""
+)}}
+{% endblock %}

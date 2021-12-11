@@ -5,3 +5,5 @@ This repo contains several libraries (mostly implemented in C++20 modules) that 
 With new releases of C++, some of these libraries will become obsolete.
 
 Think of these files as like mods to a video game. Vanilla is sometimes just so old fashioned and boring. Mods make it exciting (and sometimes just plain easier).
+
+Link to documentation: [https://mooncollin.github.io/C_plus_plus-Helpful-Libraries/](https://mooncollin.github.io/C_plus_plus-Helpful-Libraries/)

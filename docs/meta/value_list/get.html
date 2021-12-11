@@ -7,7 +7,7 @@
         <link rel="stylesheet" href="../../css/bootstrap.min.css">
         <link rel="stylesheet" href="../../css/main.css">
         <link rel="stylesheet" href="../../css/default.min.css">
-        <title>cmoon::meta::type_list::&lt;Types...&gt;index | Docs</title>
+        <title>cmoon::meta::value_list::&lt;Values...&gt;size | Docs</title>
     </head>
     <body class="lh-sm">
         <div id="header">
@@ -37,10 +37,10 @@
                 <ol class="breadcrumb mb-1">
                                 <li class="breadcrumb-item action"><a href="../../index.html">Home</a></li>
                                 <li class="breadcrumb-item action"><a href="../index.html">Metaprogramming</a></li>
-                                <li class="breadcrumb-item action"><a href="index.html">cmoon::meta::type_list</a></li>
+                                <li class="breadcrumb-item action"><a href="index.html">cmoon::meta::value_list</a></li>
                 </ol>
             </nav>
-<h1><small>cmoon::meta::type_list::&lt;Types...&gt;::</small>index</h1>
+<h1><small>cmoon::meta::value_list::&lt;Values...&gt;::</small>size</h1>
 <hr>
 <div class="mx-5">
     
@@ -50,8 +50,8 @@
                 <small><pre class="mb-0">
 <code class="language-cpp rounded py-0 pe-0 bg-transparent">
 
-template&lt;typename T&gt;
-[[nodiscard]] static constexpr index_type index() noexcept;    
+template&lt;index_type N&gt;
+[[nodiscard]] static constexpr auto get() noexcept;
 
 </code>
 </pre></small>
@@ -64,13 +64,13 @@ template&lt;typename T&gt;
     <hr class="my-0">
 <br>
 <p>
-    Returns the index of type <code>T</code>. Any program calling <code>index()</code> with a type <code>T</code> that is not in the <code>type_list</code> is ill-formed.
+    Returns the value at index <code>N</code>. This function is ill-formed if <code>N &lt; size()</code>.
 </p>
 <div class="container">
     <h3>Parameters</h3>
     <p>(none)</p>
     <h3>Return value</h3>
-    <p>The index of type <code>T</code> from the <code>type_list</code>.</p>
+    <p>The value at index <code>N</code></p>
     <h3>Exceptions</h3>
     <p>This function never throws exceptions </p>
     <h3>Complexity</h3>
@@ -85,9 +85,12 @@ import cmoon.meta;
 
 int main()
 {
-    using tl = cmoon::meta::type_list&lt;int, float, char, int&gt;;
+    using tl = cmoon::meta::value_list&lt;1, 2, 3, 4&gt;;
 
-    static_assert(tl::index&lt;char&gt;() == 2);
+    static_assert(tl::get&lt;0&gt;() == 1);
+    static_assert(tl::get&lt;1&gt;() == 2);
+    static_assert(tl::get&lt;2&gt;() == 3);
+    static_assert(tl::get&lt;3&gt;() == 4);
 }
 
 </code>

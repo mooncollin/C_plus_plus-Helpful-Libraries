@@ -1,0 +1,34 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::meta" %}
+{% set library_name = "Metaprogramming" %}
+{% set item_name = "filter_types" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.meta", github_url_src + "/meta/meta.ixx")}}
+{{macros.overload_set([
+"
+template<template<class> class Predicate, typename... Ts>
+using filter_types = /* see below */;
+"
+])}}
+<br>
+<p>
+    Type alias for a <code>type_list&lt;Ts2...&gt;</code> where <code>Predicate&lt;T&gt;::value</code> is <code>true</code> for each value in <code>Ts...</code>
+</p>
+{{macros.example_code(
+"
+import <cstdint>;
+import <concepts>;
+import <type_traits>;
+
+import cmoon.meta;
+
+int main()
+{
+    using tl = cmoon::meta::filter_types<std::is_unsigned, std::int8_t, std::uint16_t, std::int32_t, std::uint64_t>;
+
+    static_assert(std::same_as<tl, cmoon::meta::type_list<std::uint16_t, std::uint32_t>>);
+}
+"
+)}}
+{% endblock %}

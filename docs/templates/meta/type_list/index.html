@@ -3,7 +3,7 @@
 {% set library_name = "Metaprogramming" %}
 {% set item_name = "type_list" %}
 {% block content2 %}
-{{macros.defined("cmoon.meta.type_list", github_url_src + "/meta/type_list.ixx")}}
+{{macros.defined("cmoon.meta", github_url_src + "/meta/meta.ixx")}}
 {{macros.overload_set([
 "
 template<typename... Types>
@@ -18,10 +18,10 @@ struct type_list;
 <p>
     A <code>type_list</code> is not meant to be instantiated, but used as a type only.
 </p>
-{{macros.template_parameters([["Types...", "Type types that are part of this list"]])}}
+{{macros.template_parameters([["Types...", "Types that are part of this list"]])}}
 <br>
 {{macros.member_types([
-    ["index_type", "std::size_t"],
+    ["index_type", "<code>std::size_t</code>"],
     ["type", "Templated typedef indiciating the <var>N</var>th type of this <code>type_list</code>"],
     ["append", "Templated typedef that is the result of appending the given types to this <code>type_list</code>"],
     ["concatenate", "Templated typedef that is the result of concatenating the given <code>type_list</code>s' types to the end of this <code>type_list</code>"],
@@ -41,7 +41,7 @@ template<index_type N>
 using type_list<Types...>::type<N> = /* see below */;
 "
 )}}
-<p>The <code>type</code> alias denotes a type that is the <var>N</var>th type from the <code>type_list</code>c's <code>Types...</code> parameter pack, starting at <code>0</code>.</p>
+<p>The <code>type</code> alias denotes a type that is the <var>N</var>th type from the <code>type_list</code>'s <code>Types...</code> parameter pack, starting at <code>0</code>.</p>
 <h4><code>append</code></h4>
 {{macros.code_block(
 "
@@ -59,7 +59,7 @@ using type_list<Types...>::concatenate<TypesLists...> = /* see below */;
 "
 )}}
 <p>
-    The <code>concatenate</code> alias denotes a <code>type_list</code> that contains all the types of this type_list and all types from each <code>TypeLists...</code> pack.
+    The <code>concatenate</code> alias denotes a <code>type_list</code> that contains all the types of this <code>type_list</code> and all types from each <code>TypeLists...</code>.
     These types are in the order in which they appear in the pack. Empty <code>type_list</code>s (<code>type_list&lt;&gt;</code>) do not add any types.
 </p>
 <h4><code>filter</code></h4>
@@ -105,7 +105,7 @@ using type_list<Types...>::unique = /* see below */;
 <p>
     The <code>unique</code> alias denotes a <code>type_list</code> containing only one of each type from its original <code>type_list</code>.
 </p>
-<h4><code>find</code></h4>
+<h4 id="find_header"><code>find</code></h4>
 {{macros.code_block(
 "
 template<typename... Types>
@@ -126,13 +126,14 @@ using type_list<Types...>::complete_type<T, ExtraArgs...> = T<Types..., ExtraArg
 "
 )}}
 <h3>Member functions</h3>
-{{macros.member_item("size", "Returns the number of types", "public member function")}}
-{{macros.member_item("index", "Returns the index of a given type", "public member function", "index_f.html")}}
-{{macros.member_item("contains", "Checks if a given type is present", "public member function")}}
-{{macros.member_item("is_unique", "Checks if all types are unique", "public member function")}}
-{{macros.member_item("is_all_same_type", "Checks if all types are the same", "public member function")}}
-{{macros.member_item("all_of", "Checks if all types return true from the given predicate", "public member function")}}
-{{macros.member_item("any_of", "Checks if any types return true from the given predicate", "public member function")}}
-{{macros.member_item("none_of", "Checks if no types return true from the given predicate", "public member function")}}
-{{macros.member_item("for_each", "Calls the given function with each type", "public member function")}}
+{{macros.member_item("size", "Returns the number of types", "public static member function")}}
+{{macros.member_item("index", "Returns the index of a given type", "public static member function", "index_f.html")}}
+{{macros.member_item("contains", "Checks if a given type is present", "public static member function")}}
+{{macros.member_item("is_unique", "Checks if all types are unique", "public static member function")}}
+{{macros.member_item("is_all_same_type", "Checks if all types are the same", "public static member function")}}
+{{macros.member_item("all_of", "Checks if all types return true from the given predicate", "public static member function")}}
+{{macros.member_item("any_of", "Checks if any types return true from the given predicate", "public static member function")}}
+{{macros.member_item("none_of", "Checks if no types return true from the given predicate", "public static member function")}}
+{{macros.member_item("for_each", "Calls the given function with each type", "public static member function")}}
+{{macros.member_item("can_find", "Checks if it is well-formed to call <code><a href='#find_header'>find</a></code> with the given predicate", "public static member function")}}
 {% endblock %}
