@@ -119,7 +119,6 @@ namespace cmoon::tests::executors
 							cmoon::execution::then([]{ return 5; }) |
 							cmoon::execution::on(p2.get_scheduler()) |
 							cmoon::execution::then([](int arg) { return 5 + arg; }) |
-							cmoon::execution::on(p.get_scheduler()) |
 							cmoon::execution::then([&value](int arg) { value = arg; value.notify_one(); });
 
 				cmoon::execution::start_detached(std::move(work));

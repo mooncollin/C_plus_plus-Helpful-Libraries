@@ -18,6 +18,7 @@ import cmoon.execution.receiver;
 import cmoon.execution.schedule;
 import cmoon.execution.on;
 import cmoon.execution.just;
+import cmoon.execution.sender;
 
 namespace cmoon::execution
 {
@@ -33,39 +34,55 @@ namespace cmoon::execution
 			}
 	};
 
-	template<class R>
-	struct async_receiver
+	template<sender S, class R>
+	struct async_impl
 	{
-		public:
-			async_receiver(std::promise<R>&& p) noexcept
-				: promise_{std::move(p)} {}
+		template<class R>
+		struct wrap_r
+		{
+			public:
+				wrap_r(async_impl* impl, std::promise<R>&& p) noexcept
+					: impl{impl}, promise_{std::move(p)} {}
 
-			template<class T>
-			friend void tag_invoke(set_value_t, async_receiver&& r, T&& v) noexcept
-			{
-				try
+				template<class T>
+				friend void tag_invoke(set_value_t, wrap_r&& r, T&& v) noexcept
 				{
-					r.promise_.set_value(std::forward<T>(v));
+					try
+					{
+						r.promise_.set_value(std::forward<T>(v));
+					}
+					catch (...)
+					{
+						r.promise_.set_exception(std::current_exception());
+					}
+
+					delete r.impl;
 				}
-				catch (...)
+
+				template<class E>
+				friend void tag_invoke(set_error_t, wrap_r&& r, E&& e) noexcept
 				{
-					r.promise_.set_exception(std::current_exception());
+					r.promise_.set_exception(std::make_exception_ptr(std::forward<E>(e)));
+					delete r.impl;
 				}
-			}
 
-			template<class E>
-			friend void tag_invoke(set_error_t, async_receiver&& r, E&& e) noexcept
-			{
-				r.promise_.set_exception(std::make_exception_ptr(std::forward<E>(e)));
-			}
+				friend void tag_invoke(set_done_t, wrap_r&& r) noexcept
+				{
+					r.promise_.set_exception(std::make_exception_ptr(future_done_exception{}));
+					delete r.impl;
+				}
+			private:
+				async_impl* impl;
+				std::promise<R> promise_;
+		};
+		connect_result_t<S, wrap_r<R>> state;
 
-			friend void tag_invoke(set_done_t, async_receiver&&) noexcept
-			{
-				std::terminate();
-			}
-		private:
-			std::promise<R> promise_;
+		async_impl(S&& s, std::promise<R>&& p)
+			: state{execution::connect(std::forward<S>(s), wrap_r{this, std::move(p)})} {}
 	};
+
+	template<sender S, class R>
+	async_impl(S&&, std::promise<R>&&) -> async_impl<S, R>;
 
 	export
 	template<scheduler Sch, class F, class...Args>
@@ -73,18 +90,13 @@ namespace cmoon::execution
 	{
 		auto work = execution::just(std::forward<Args>(args)...) |
 					execution::then(std::forward<F>(f)) |
-					execution::done_as_error(future_done_exception{}) |
 					execution::on(std::forward<Sch>(sch));
 
 		std::promise<std::invoke_result_t<F, Args...>> p;
 		auto future = p.get_future();
 
-		execution::start(
-			execution::connect(
-				std::move(work),
-				async_receiver{std::move(p)}
-			)
-		);
+		auto impl {new async_impl{std::move(work), std::move(p)}};
+		execution::start(impl->state);
 
 		return future;
 	}

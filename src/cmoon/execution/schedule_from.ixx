@@ -3,6 +3,9 @@ export module cmoon.execution.schedule_from;
 import <utility>;
 import <concepts>;
 import <exception>;
+import <optional>;
+import <tuple>;
+import <variant>;
 
 import cmoon.functional;
 import cmoon.meta;
@@ -16,82 +19,138 @@ import cmoon.execution.schedule;
 import cmoon.execution.scheduler;
 import cmoon.execution.sender;
 import cmoon.execution.receiver;
+import cmoon.execution.typed_sender;
+import cmoon.execution.sender_traits;
+import cmoon.execution.receiver;
 import cmoon.execution.sender_base;
 
 namespace cmoon::execution
 {
-	template<class Sch, class R>
-	struct schedule_from_receiver
+	template<class P>
+	void deleter(void* p)
+	{
+		delete static_cast<P*>(p);
+	}
+
+	template<class CPO, receiver R, class... Args>
+	struct schedule_from_receiver2
 	{
 		public:
-			struct schedule_from_receiver2
+			constexpr schedule_from_receiver2(R&& r, Args&&... args)
+				: out_r{std::forward<R>(r)}, args{std::forward<Args>(args)...} {}
+
+			constexpr friend void tag_invoke(set_value_t, schedule_from_receiver2&& r)
+			{
+				std::apply(
+					[&r](auto&&... args) {
+						std::invoke(CPO{}, std::forward<decltype(args)>(args)...);
+					},
+				std::move(r.args));
+			}
+
+			template<class E>
+			constexpr friend void tag_invoke(set_error_t, schedule_from_receiver2&& r, E&& e) noexcept
+			{
+				execution::set_error(std::move(r.out_r), std::forward<E>(e));
+			}
+
+			constexpr friend void tag_invoke(set_done_t, schedule_from_receiver2&& r) noexcept
+			{
+				execution::set_done(std::move(r.out_r));
+			}
+		private:
+			R out_r;
+			std::tuple<Args...> args;
+	};
+
+	template<scheduler Sch, typed_sender S, receiver R>
+	struct operation
+	{
+		public:
+			struct schedule_from_receiver
 			{
 				public:
-					constexpr schedule_from_receiver2(R&& r)
-						: out_r{std::forward<R>(r)} {}
+					constexpr schedule_from_receiver(operation* op, Sch&& sch, R&& r)
+						: op_{op}, sch_{std::forward<Sch>(sch)}, out_r{std::forward<R>(r)} {}
 
-					template<class... Args>
-					constexpr friend void tag_invoke(set_value_t, schedule_from_receiver2&& r, Args&&... args)
+					template<class CPO, class... Args>
+						requires(std::same_as<std::remove_cvref_t<CPO>, set_value_t> ||
+								 std::same_as<std::remove_cvref_t<CPO>, set_error_t> ||
+								 std::same_as<std::remove_cvref_t<CPO>, set_done_t>)
+					constexpr friend void tag_invoke(CPO, schedule_from_receiver&& r, Args&&... args) noexcept
 					{
-						execution::set_value(std::move(r.out_r), std::forward<Args>(args)...);
-					}
-
-					template<class E>
-					constexpr friend void tag_invoke(set_error_t, schedule_from_receiver2&& r, E&& e) noexcept
-					{
-						execution::set_error(std::move(r.out_r), std::forward<E>(e));
-					}
-
-					constexpr friend void tag_invoke(set_done_t, schedule_from_receiver2&& r) noexcept
-					{
-						execution::set_done(std::move(r.out_r));
+						r.tag_invoke_helper<CPO>(std::forward<Args>(args)...);
 					}
 				private:
+					operation* op_;
+					Sch sch_;
 					R out_r;
 
-					friend struct schedule_from_receiver;
+					template<class CPO, class... Args>
+					constexpr void tag_invoke_helper(Args&&... args) noexcept
+					{
+						using c_t = connect_result_t<schedule_result_t<Sch>, schedule_from_receiver2<CPO, R, Args...>>;
+						c_t* op;
+						try
+						{
+							op = new c_t{execution::connect(execution::schedule(sch_),
+										 schedule_from_receiver2<CPO>{std::move(out_r), std::forward<Args>(args)...})};
+						}
+						catch (...)
+						{
+							execution::set_error(std::move(out_r), std::current_exception());
+							return;
+						}
+
+						op_->op_state3 = op;
+						op_->op_state3_deleter = deleter<c_t>;
+						execution::start(*op);
+					}
 			};
 
-			constexpr schedule_from_receiver(Sch&& sch, R&& r)
-				: sch_{std::forward<Sch>(sch)}, out_r{std::forward<R>(r)} {}
+			friend struct schedule_from_receiver;
 
-			template<class CPO, class... Args>
-				requires(std::same_as<std::remove_cvref_t<CPO>, set_value_t> ||
-						 std::same_as<std::remove_cvref_t<CPO>, set_error_t> ||
-						 std::same_as<std::remove_cvref_t<CPO>, set_done_t>)
-			constexpr friend void tag_invoke(CPO, schedule_from_receiver&& r, Args&&... args) noexcept
+			constexpr operation(Sch&& sch, S&& s, R&& out_r)
+				: op_state2{execution::connect(std::forward<S>(s), schedule_from_receiver{this, std::forward<Sch>(sch), std::forward<R>(out_r)})} {}
+
+			constexpr friend void tag_invoke(start_t, operation& o) noexcept
 			{
-				try
+				execution::start(o.op_state2);
+			}
+
+			~operation() noexcept
+			{
+				if (op_state3_deleter)
 				{
-					execution::start(
-						execution::connect(
-							execution::schedule(std::move(r.sch_)),
-							schedule_from_receiver2{std::move(r.out_r)}
-						)
-					);
-				}
-				catch (...)
-				{
-					execution::set_error(std::move(r.out_r), std::current_exception());
+					op_state3_deleter(op_state3);
 				}
 			}
 		private:
-			Sch sch_;
-			R out_r;
+			connect_result_t<S, schedule_from_receiver> op_state2;
+			void* op_state3 {nullptr};
+			void(*op_state3_deleter)(void*) {nullptr};
+
 	};
 
-	template<class Sch, class S>
-	struct schedule_from_sender : public sender_base
+	template<scheduler Sch, typed_sender S>
+	struct schedule_from_sender
 	{
 		public:
+			template<template<class...> class Tuple, template<class...> class Variant>
+			using value_types = value_types_of_t<S, Tuple, Variant>;
+
+			template<template<class...> class Variant>
+			using error_types = error_types_of_t<S, Variant>;
+
+			static constexpr bool sends_done {sender_traits<S>::sends_done};
+
 			constexpr schedule_from_sender(Sch&& sch, S&& s)
 				: sch_{std::forward<Sch>(sch)}, s_{std::forward<S>(s)} {}
 
 			template<receiver R>
 			constexpr friend auto tag_invoke(connect_t, schedule_from_sender&& s, R&& out_r)
 			{
-				return execution::connect(std::move(s.s_),
-										  schedule_from_receiver<Sch, R>{std::move(s.sch_), std::forward<R>(out_r)});
+				return operation<Sch, S, R>{std::move(s.sch_), std::move(s.s_), std::forward<R>(out_r)};
 			}
 		private:
 			Sch sch_;
@@ -119,7 +178,7 @@ namespace cmoon::execution
 				}
 			}
 		public:
-			template<scheduler Sch, sender S>
+			template<scheduler Sch, typed_sender S>
 			constexpr decltype(auto) operator()(Sch&& sch, S&& s) const noexcept(choose<Sch, S>().no_throw)
 			{
 				constexpr auto choice {choose<Sch, S>()};

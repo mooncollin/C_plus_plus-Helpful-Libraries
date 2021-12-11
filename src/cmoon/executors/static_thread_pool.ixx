@@ -9,6 +9,7 @@ import <thread>;
 import <mutex>;
 import <concepts>;
 import <condition_variable>;
+import <latch>;
 
 import cmoon.execution;
 import cmoon.functional;
@@ -19,82 +20,13 @@ namespace cmoon::executors
 	template<cmoon::execution::receiver R>
 	struct operation;
 
+	template<cmoon::execution::receiver R, std::integral Shape, class F>
+	struct bulk_operation;
+
 	struct task_base
 	{
 		task_base* next;
 		void (*execute)(task_base*) noexcept;
-	};
-
-	class thread_state
-	{
-		public:
-			task_base* try_pop()
-			{
-				std::unique_lock l{mut_, std::try_to_lock};
-				if (!l || queue_.empty())
-				{
-					return nullptr;
-				}
-
-				return queue_.pop_front();
-			}
-
-			task_base* pop()
-			{
-				std::unique_lock l{mut_};
-				while (queue_.empty())
-				{
-					if (stop_requested_)
-					{
-						return nullptr;
-					}
-
-					cv_.wait(l);
-				}
-
-				return queue_.pop_front();
-			}
-
-			bool try_push(task_base* task)
-			{
-				std::unique_lock l{mut_, std::try_to_lock};
-				if (!l)
-				{
-					return false;
-				}
-
-				const auto was_empty {queue_.empty()};
-				queue_.push_back(task);
-				if (was_empty)
-				{
-					cv_.notify_one();
-				}
-
-				return true;
-			}
-
-			void push(task_base* task)
-			{
-				std::lock_guard l{mut_};
-				const auto was_empty {queue_.empty()};
-				queue_.push_back(task);
-				if (was_empty)
-				{
-					cv_.notify_one();
-				}
-			}
-
-			void request_stop()
-			{
-				std::lock_guard l{mut_};
-				stop_requested_ = true;
-				cv_.notify_one();
-			}
-		private:
-			std::mutex mut_;
-			std::condition_variable cv_;
-			cmoon::intrusive_queue<&task_base::next> queue_;
-			bool stop_requested_{false};
 	};
 
 	export
@@ -103,9 +35,40 @@ namespace cmoon::executors
 		template<cmoon::execution::receiver R>
 		friend struct operation;
 
+		template<cmoon::execution::receiver R, std::integral Shape, class F>
+		friend struct bulk_operation;
+
 		public:
 			struct scheduler_t
 			{
+				template<std::integral Shape, class F>
+				struct bulk_sender_t
+				{
+					static_thread_pool& pool_;
+					Shape shape_;
+					F f_;
+
+					template<template<class...> class Tuple, template<class...> class Variant>
+					using value_types = Variant<Tuple<>>;
+
+					template<template<class...> class Variant>
+					using error_types = Variant<std::exception_ptr>;
+
+					static constexpr bool sends_done {true};
+
+					template<cmoon::execution::receiver R>
+					friend bulk_operation<std::decay_t<R>, Shape, std::decay_t<F>> tag_invoke(cmoon::execution::connect_t, static_thread_pool::scheduler_t::bulk_sender_t<Shape, F>&& s, R&& r)
+					{
+						return {s.pool_, std::forward<R>(r), s.shape_, std::move(s.f_)};
+					}
+
+					template<class CPO>
+					friend static_thread_pool::scheduler_t tag_invoke(cmoon::execution::get_completion_scheduler_t<CPO>, static_thread_pool::scheduler_t::bulk_sender_t<Shape, F>& s) noexcept
+					{
+						return {std::addressof(s.pool_)};
+					}
+				};
+
 				struct sender_t
 				{
 					static_thread_pool& pool_;
@@ -122,6 +85,12 @@ namespace cmoon::executors
 					friend operation<std::decay_t<R>> tag_invoke(cmoon::execution::connect_t, static_thread_pool::scheduler_t::sender_t s, R&& r) noexcept(std::is_nothrow_constructible_v<std::remove_cvref_t<R>, R>)
 					{
 						return {s.pool_, std::forward<R>(r)};
+					}
+
+					template<std::integral Shape, class F>
+					friend static_thread_pool::scheduler_t::bulk_sender_t<Shape, std::decay_t<F>> tag_invoke(cmoon::execution::bulk_t, static_thread_pool::scheduler_t::sender_t s, Shape shape, F&& f) noexcept(std::is_nothrow_constructible_v<std::decay_t<F>, F>)
+					{
+						return {s.pool_, shape, std::forward<F>(f)};
 					}
 
 					template<class CPO>
@@ -148,9 +117,6 @@ namespace cmoon::executors
 			};
 
 			static_thread_pool(std::size_t num_threads)
-				: num_threads{num_threads},
-				  thread_states{num_threads},
-				  next_thread{0}
 			{
 				threads.reserve(num_threads);
 
@@ -158,7 +124,7 @@ namespace cmoon::executors
 				{
 					for (std::size_t i {0}; i < num_threads; ++i)
 					{
-						threads.emplace_back(&static_thread_pool::thread_loop, this, i);
+						threads.emplace_back(&static_thread_pool::thread_loop, this);
 					}
 				}
 				catch (...)
@@ -183,10 +149,9 @@ namespace cmoon::executors
 
 			void request_stop() noexcept
 			{
-				for (auto& state : thread_states)
-				{
-					state.request_stop();
-				}
+				std::lock_guard l{jobs_mut_};
+				stop_requested_ = true;
+				jobs_cv_.notify_all();
 			}
 
 			void join() noexcept
@@ -204,56 +169,41 @@ namespace cmoon::executors
 				return {this};
 			}
 		private:
-			std::size_t num_threads;
 			std::vector<std::thread> threads;
-			std::vector<thread_state> thread_states;
-			std::atomic<std::size_t> next_thread;
-
-			template<cmoon::execution::receiver R>
-			friend struct operation;
+			std::mutex jobs_mut_;
+			std::condition_variable jobs_cv_;
+			cmoon::intrusive_queue<&task_base::next> jobs_queue_;
+			bool stop_requested_{false};
 
 			void enqueue(task_base* task) noexcept
 			{
-				const std::size_t start_index {next_thread.fetch_add(1, std::memory_order_relaxed) % num_threads};
-				for (std::size_t i {0}; i < num_threads; ++i)
+				std::lock_guard l {jobs_mut_};
+				const auto was_empty {jobs_queue_.empty()};
+				jobs_queue_.push_back(task);
+				if (was_empty)
 				{
-					const auto index {start_index + i < num_threads
-										? (start_index + i)
-										: (start_index + i - num_threads)};
-					if (thread_states[index].try_push(task))
-					{
-						return;
-					}
+					jobs_cv_.notify_one();
 				}
-
-				thread_states[start_index].push(task);
 			}
 
-			void thread_loop(std::size_t index)
+			void thread_loop()
 			{
 				while (true)
 				{
-					task_base* task {nullptr};
-					for (std::size_t i {0}; i < num_threads; ++i)
+					task_base* task;
 					{
-						auto queue_index = (index + i) < num_threads
-											? (index + i)
-											: (index + i - num_threads);
-						auto& state = thread_states[queue_index];
-						task = state.try_pop();
-						if (task != nullptr)
+						std::unique_lock l{jobs_mut_};
+						while (jobs_queue_.empty())
 						{
-							break;
-						}
-					}
+							if (stop_requested_)
+							{
+								return;
+							}
 
-					if (task == nullptr)
-					{
-						task = thread_states[index].pop();
-						if (task == nullptr)
-						{
-							return;
+							jobs_cv_.wait(l);
 						}
+
+						task = jobs_queue_.pop_front();
 					}
 
 					task->execute(task);
@@ -293,6 +243,92 @@ namespace cmoon::executors
 			void start_helper(task_base* task) noexcept
 			{
 				pool_.enqueue(task);
+			}
+	};
+
+	template<cmoon::execution::receiver R, std::integral Shape, class F>
+	struct bulk_operation : public task_base
+	{
+		public:
+			struct bulk_operation_helper : public task_base
+			{
+				public:
+					bulk_operation_helper(bulk_operation* owner, Shape shape)
+						: owner_{owner}, shape_{shape}
+					{
+						this->execute = [](task_base* t) noexcept
+						{
+							auto& op = *static_cast<bulk_operation_helper*>(t);
+							if (!cmoon::execution::get_stop_token(op.owner_->r_).stop_requested())
+							{
+								std::invoke(std::move(op.owner_->f_), op.shape_);
+								op.owner_->l.count_down();
+							}
+						};
+					}
+
+					friend void tag_invoke(cmoon::execution::start_t, bulk_operation_helper& o) noexcept
+					{
+						o.start_helper(std::addressof(o));
+					}
+				private:
+					bulk_operation* owner_;
+					Shape shape_;
+
+					void start_helper(task_base* task) noexcept
+					{
+						owner_->pool_.enqueue(task);
+					}
+			};
+
+			friend struct bulk_operation_helper;
+
+			bulk_operation(static_thread_pool& pool, R&& r, Shape shape, F&& f)
+				: pool_{pool}, r_{std::forward<R>(r)}, f_{std::forward<F>(f)}, shape_{shape}, l{shape_}
+			{
+				this->execute = [](task_base* t) noexcept
+				{
+					auto& op = *static_cast<bulk_operation*>(t);
+					if (cmoon::execution::get_stop_token(op.r_).stop_requested())
+					{
+						cmoon::execution::set_done(std::move(op.r_));
+					}
+					else
+					{
+						std::invoke(op.f_, op.shape_ - 1);
+						op.l.arrive_and_wait();
+						cmoon::execution::set_value(std::move(op.r_));
+					}
+				};
+
+				for (Shape i {0}; i < shape - 1; ++i)
+				{
+					helpers.emplace_back(this, i);
+				}
+			}
+
+			friend void tag_invoke(cmoon::execution::start_t, bulk_operation& o) noexcept
+			{
+				if (o.shape_ != 0)
+				{
+					o.start_helper(std::addressof(o));
+				}
+			}
+		private:
+			static_thread_pool& pool_;
+			R r_;
+			F f_;
+			Shape shape_;
+			std::latch l;
+			std::vector<bulk_operation_helper> helpers;
+
+			void start_helper(task_base* task) noexcept
+			{
+				pool_.enqueue(task);
+				for (auto& op : helpers)
+				{
+					cmoon::execution::start(op);
+				}
 			}
 	};
 }

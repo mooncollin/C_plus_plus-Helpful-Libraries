@@ -15,13 +15,15 @@ namespace cmoon::executors
 		[[no_unique_address]] R r;
 
 		constexpr friend void tag_invoke(cmoon::execution::start_t, inline_op& o) noexcept
-		try
 		{
-			cmoon::execution::set_value(std::move(o.r));
-		}
-		catch (...)
-		{
-			cmoon::execution::set_error(std::move(o.r), std::current_exception());
+			try
+			{
+				cmoon::execution::set_value(std::move(o.r));
+			}
+			catch (...)
+			{
+				cmoon::execution::set_error(std::move(o.r), std::current_exception());
+			}
 		}
 	};
 
@@ -36,7 +38,7 @@ namespace cmoon::executors
 		static constexpr bool sends_done {false};
 
 		template<cmoon::execution::receiver_of R>
-		constexpr friend inline_op<R> tag_invoke(cmoon::execution::connect_t, inline_sender, R&& r) noexcept(std::is_nothrow_constructible_v<inline_op<R>, R>)
+		constexpr friend inline_op<std::decay_t<R>> tag_invoke(cmoon::execution::connect_t, inline_sender, R&& r) noexcept(std::is_nothrow_constructible_v<std::decay_t<R>, R>)
 		{
 			return {std::forward<R>(r)};
 		}

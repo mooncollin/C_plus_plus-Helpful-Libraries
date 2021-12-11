@@ -19,6 +19,7 @@ import cmoon.execution.typed_sender;
 import cmoon.execution.receiver;
 import cmoon.execution.connect;
 import cmoon.execution.start;
+import cmoon.execution.sender_adapter;
 
 namespace cmoon::execution
 {
@@ -80,7 +81,7 @@ namespace cmoon::execution
 		{
 			public:
 				op(R&& r,
-				   std::shared_ptr<state<S>> s)
+				   std::unique_ptr<state<S>> s)
 					: out_r{std::forward<R>(r)},
 					  s{std::move(s)} {}
 
@@ -112,12 +113,12 @@ namespace cmoon::execution
 				}
 			private:
 				R out_r;
-				std::shared_ptr<state<S>> s;
+				std::unique_ptr<state<S>> s;
 		};
 
 		public:
 			ensure_started_sender(S&& s)
-				: s{std::make_shared<state<S>>(std::forward<S>(s))} {}
+				: s{std::make_unique<state<S>>(std::forward<S>(s))} {}
 
 			template<template<class...> class Tuple, template<class...> class Variant>
 			using value_types = value_types_of_t<S, Tuple, Variant>;
@@ -133,16 +134,7 @@ namespace cmoon::execution
 				return op<R>{std::forward<R>(out_r), std::move(s.s)};
 			}
 		private:
-			std::shared_ptr<state<S>> s;
-	};
-
-	struct ensure_started_adapter
-	{
-		template<typed_sender S>
-		constexpr friend auto operator|(S&& s, ensure_started_adapter&&)
-		{
-			return ensure_started(std::forward<S>(s));
-		}
+			std::unique_ptr<state<S>> s;
 	};
 
 	export
@@ -173,7 +165,7 @@ namespace cmoon::execution
 				}
 			}
 		public:
-			template<sender S>
+			template<typed_sender S>
 			constexpr decltype(auto) operator()(S&& s) const noexcept(choose<S>().no_throw)
 			{
 				constexpr auto choice {choose<S>()};
@@ -194,7 +186,7 @@ namespace cmoon::execution
 
 			constexpr auto operator()() const noexcept
 			{
-				return ensure_started_adapter{};
+				return sender_adapter<ensure_started_t>{};
 			}
 	};
 

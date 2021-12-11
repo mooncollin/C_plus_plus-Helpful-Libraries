@@ -6,6 +6,7 @@ import <exception>;
 import <concepts>;
 
 import cmoon.meta;
+import cmoon.concepts;
 import cmoon.functional;
 
 import cmoon.execution.get_completion_scheduler;
@@ -17,6 +18,7 @@ import cmoon.execution.receiver;
 import cmoon.execution.connect;
 import cmoon.execution.start;
 import cmoon.execution.sender_base;
+import cmoon.execution.sender_adapter;
 
 namespace cmoon::execution
 {
@@ -80,9 +82,6 @@ namespace cmoon::execution
 			F f_;
 	};
 
-	template<class F, std::integral Shape>
-	struct bulk_adapter;
-
 	export
 	struct bulk_t
 	{
@@ -133,27 +132,10 @@ namespace cmoon::execution
 			template<class F, std::integral Shape>
 			constexpr auto operator()(F&& f, Shape shape) const
 			{
-				return bulk_adapter<F, Shape>{std::forward<F>(f), shape};
+				return sender_adapter<bulk_t, Shape, F>{std::move(shape), std::forward<F>(f)};
 			}
 	};
 
 	export
 	inline constexpr bulk_t bulk{};
-
-	template<class F, std::integral Shape>
-	struct bulk_adapter
-	{
-		public:
-			constexpr bulk_adapter(F&& f, Shape shape)
-				: f_{std::forward<F>(f)}, shape{shape} {}
-
-			template<sender S>
-			constexpr friend auto operator|(S&& s, bulk_adapter&& a)
-			{
-				return bulk(std::forward<S>(s), a.shape, std::move(a.f_));
-			}
-		private:
-			F f_;
-			Shape shape;
-	};
 }

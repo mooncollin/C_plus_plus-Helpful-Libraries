@@ -72,7 +72,7 @@ namespace cmoon::execution
 		void start() noexcept
 		{
 			std::call_once(start_once_flag, [this] {
-				execution::start(std::move(op_state2));
+				execution::start(op_state2);
 			});
 		}
 	};

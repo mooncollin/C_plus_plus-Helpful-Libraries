@@ -35,8 +35,4 @@ namespace cmoon::execution
 		private:
 			std::tuple<Args...> args_;
 	};
-
-	export
-	template<class D, class... Args>
-	sender_adapter(Args&&...) -> sender_adapter<D, Args...>;
 }

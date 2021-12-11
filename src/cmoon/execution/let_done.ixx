@@ -3,6 +3,7 @@ export module cmoon.execution.let_done;
 import <utility>;
 import <functional>;
 import <exception>;
+import <optional>;
 
 import cmoon.meta;
 import cmoon.functional;
@@ -17,15 +18,16 @@ import cmoon.execution.connect;
 import cmoon.execution.start;
 import cmoon.execution.sender_base;
 import cmoon.execution.sender_adapter;
+import cmoon.execution.operation_state;
 
 namespace cmoon::execution
 {
-	template<class F, receiver R>
+	template<operation_state O, class F, receiver R>
 	struct let_done_receiver
 	{
 		public:
-			constexpr let_done_receiver(F&& f, R&& r)
-				: f_{std::forward<F>(f)}, out_r{std::forward<R>(r)} {}
+			constexpr let_done_receiver(O* o, F&& f, R&& r)
+				: o_{o}, f_{std::forward<F>(f)}, out_r{std::forward<R>(r)} {}
 
 			template<class... Args>
 			constexpr friend void tag_invoke(set_value_t, let_done_receiver&& r, Args&&... args)
@@ -43,12 +45,8 @@ namespace cmoon::execution
 			{
 				try
 				{
-					execution::start(
-						execution::connect(
-							std::invoke(std::move(r.f_)),
-							std::move(r.out_r)
-						)
-					);
+					o_->emplace(execution::connect(std::invoke(std::move(r.f_)), std::move(r.out_r)));
+					execution::start(o_->value());
 				}
 				catch (...)
 				{
@@ -56,8 +54,20 @@ namespace cmoon::execution
 				}
 			}
 		private:
+			O* o_;
 			F f_;
 			R out_r;
+	};
+
+	template<sender S, class F, receiver R>
+	struct operation
+	{
+		public:
+			constexpr operation(S&& s, F&& f, R&& out_r)
+				: op_state2{execution::connect(std::forward<S>(s), let_done_receiver<F, R>{std::addressof(op_state3), std::forward<F>(f), std::forward<R>(out_r)})} {}
+		private:
+			std::optional<connect_result_t<std::invoke_result_t<F>, R>> op_state3;
+			connect_result_t<S, let_done_receiver<decltype(op_state3), F, R>> op_state2;
 	};
 
 	template<sender S, class F>
@@ -70,16 +80,12 @@ namespace cmoon::execution
 			template<receiver R>
 			constexpr friend auto tag_invoke(connect_t, let_done_sender&& s, R&& out_r)
 			{
-				return execution::connect(std::move(s.s_),
-										  let_done_receiver<F, R>{std::move(s.f_), std::forward<R>(out_r)});
+				return operation<std::decay_t<S>, std::decay_t<F>, R>{std::move(s.s_), std::move(s.f_), std::forward<R>(out_r)};
 			}
 		private:
 			S s_;
 			F f_;
 	};
-
-	template<class F>
-	struct let_done_adapter;
 
 	export
 	struct let_done_t

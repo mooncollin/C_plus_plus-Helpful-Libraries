@@ -3,6 +3,7 @@ export module cmoon.execution.let_value;
 import <utility>;
 import <functional>;
 import <exception>;
+import <any>;
 
 import cmoon.meta;
 import cmoon.functional;
@@ -20,44 +21,79 @@ import cmoon.execution.sender_adapter;
 
 namespace cmoon::execution
 {
-	template<class F, class R>
+	template<class P>
+	void deleter(void* p)
+	{
+		delete static_cast<P*>(p);
+	}
+
+	template<class F, receiver R>
 	struct let_value_receiver
 	{
 		public:
-			constexpr let_value_receiver(F&& f, R&& r)
-				: f_{std::forward<F>(f)}, out_r{std::forward<R>(r)} {}
+			constexpr let_value_receiver(void** o, void(**op_state3_deleter)(void*), F&& f, R&& r)
+				: o_{o}, op_state3_deleter{op_state3_deleter}, f_{std::forward<F>(f)}, out_r{std::forward<R>(r)} {}
 
 			template<class... Args>
-			constexpr friend void tag_invoke(set_value_t, let_value_receiver&& r, Args&&... args) noexcept
+			friend void tag_invoke(set_value_t, let_value_receiver&& r, Args&&... args) noexcept
 			{
+				using c_t = connect_result_t<std::invoke_result_t<F, Args...>, R>;
+				c_t* op;
 				try
 				{
-					execution::start(
-						execution::connect(
-							std::invoke(std::move(r.f_), std::forward<Args>(args)...),
-							std::move(r.out_r)
-						)
-					);
+					op = new c_t{execution::connect(std::invoke(std::move(r.f_), std::forward<Args>(args)...), std::move(r.out_r))};
 				}
 				catch (...)
 				{
 					execution::set_error(std::move(r.out_r), std::current_exception());
+					return;
 				}
+
+				*r.o_ = op;
+				*r.op_state3_deleter = deleter<c_t>;
+				execution::start(*op);
 			}
 
 			template<class E>
-			constexpr friend void tag_invoke(set_error_t, let_value_receiver&& r, E&& e) noexcept
+			friend void tag_invoke(set_error_t, let_value_receiver&& r, E&& e) noexcept
 			{
 				execution::set_error(std::move(r.out_r), std::forward<E>(e));
 			}
 
-			constexpr friend void tag_invoke(set_done_t, let_value_receiver&& r) noexcept
+			friend void tag_invoke(set_done_t, let_value_receiver&& r) noexcept
 			{
 				execution::set_done(std::move(r.out_r));
 			}
 		private:
+			void** o_;
+			void(**op_state3_deleter)(void*);
 			F f_;
 			R out_r;
+	};
+
+	template<sender S, class F, receiver R>
+	struct operation
+	{
+		public:
+			operation(S&& s, F&& f, R&& out_r)
+				: op_state2{execution::connect(std::forward<S>(s), let_value_receiver<F, R>{std::addressof(op_state3), std::addressof(op_state3_deleter), std::forward<F>(f), std::forward<R>(out_r)})} {}
+
+			friend void tag_invoke(start_t, operation& o) noexcept
+			{
+				execution::start(o.op_state2);
+			}
+
+			~operation() noexcept
+			{
+				if (op_state3_deleter)
+				{
+					op_state3_deleter(op_state3);
+				}
+			}
+		private:
+			void* op_state3 {nullptr};
+			void(*op_state3_deleter)(void*) {nullptr};
+			connect_result_t<S, let_value_receiver<F, R>> op_state2;
 	};
 
 	template<class S, class F>
@@ -68,10 +104,9 @@ namespace cmoon::execution
 				: s_{std::forward<S>(s)}, f_{std::forward<F>(f)} {}
 
 			template<receiver R>
-			constexpr friend auto tag_invoke(connect_t, let_value_sender&& s, R&& out_r)
+			friend auto tag_invoke(connect_t, let_value_sender&& s, R&& out_r)
 			{
-				return execution::connect(std::move(s.s_),
-										  let_value_receiver<F, R>{std::move(s.f_), std::forward<R>(out_r)});
+				return operation<std::decay_t<S>, std::decay_t<F>, R>{std::move(s.s_), std::move(s.f_), std::forward<R>(out_r)};
 			}
 		private:
 			S s_;

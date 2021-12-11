@@ -1,4 +1,4 @@
-export module cmoon.tests.executors.static_thread_pool;
+export module cmoon.tests.executors.single_thread_context;
 
 import <array>;
 import <atomic>;
@@ -11,11 +11,11 @@ import cmoon.test;
 namespace cmoon::tests::executors
 {
 	export
-	class static_thread_pool_execute_test : public cmoon::test::test_case
+	class single_thread_context_execute_test : public cmoon::test::test_case
 	{
 		public:
-			static_thread_pool_execute_test()
-				: cmoon::test::test_case{"static_thread_pool_execute_test"} {}
+			single_thread_context_execute_test()
+				: cmoon::test::test_case{"single_thread_context_execute_test"} {}
 
 			void operator()() override
 			{
@@ -27,7 +27,7 @@ namespace cmoon::tests::executors
 				int value2 {0};
 				int value3 {0};
 
-				cmoon::executors::static_thread_pool p {2};
+				cmoon::executors::single_thread_context p;
 
 				auto s = p.get_scheduler();
 
@@ -45,18 +45,18 @@ namespace cmoon::tests::executors
 	};
 
 	export
-	class static_thread_pool_bulk_execute_test : public cmoon::test::test_case
+	class single_thread_context_bulk_execute_test : public cmoon::test::test_case
 	{
 		public:
-			static_thread_pool_bulk_execute_test()
-				: cmoon::test::test_case{"static_thread_pool_bulk_execute_test"} {}
+			single_thread_context_bulk_execute_test()
+				: cmoon::test::test_case{"single_thread_context_bulk_execute_test"} {}
 
 			void operator()() override
 			{
 				constexpr int expected {5};
 
 				std::array values {0, 0, 0};
-				cmoon::executors::static_thread_pool p {2};
+				cmoon::executors::single_thread_context p;
 
 				auto s = cmoon::execution::bulk(cmoon::execution::schedule(p.get_scheduler()), std::size(values),
 												[&values, expected](std::size_t i) {
@@ -75,17 +75,17 @@ namespace cmoon::tests::executors
 	};
 
 	export
-	class static_thread_pool_schedule_test : public cmoon::test::test_case
+	class single_thread_context_schedule_test : public cmoon::test::test_case
 	{
 		public:
-			static_thread_pool_schedule_test()
-				: cmoon::test::test_case{"static_thread_pool_schedule_test"} {}
+			single_thread_context_schedule_test()
+				: cmoon::test::test_case{"single_thread_context_schedule_test"} {}
 
 			void operator()() override
 			{
 				constexpr int expected {10};
 				int value {0};
-				cmoon::executors::static_thread_pool p {2};
+				cmoon::executors::single_thread_context p;
 
 				auto work = cmoon::execution::schedule(p.get_scheduler()) |
 							cmoon::execution::then([] {}) |
@@ -102,18 +102,18 @@ namespace cmoon::tests::executors
 	};
 
 	export
-	class static_thread_pool_schedule_on_test : public cmoon::test::test_case
+	class single_thread_context_schedule_on_test : public cmoon::test::test_case
 	{
 		public:
-			static_thread_pool_schedule_on_test()
-				: cmoon::test::test_case{"static_thread_pool_schedule_on_test"} {}
+			single_thread_context_schedule_on_test()
+				: cmoon::test::test_case{"single_thread_context_schedule_on_test"} {}
 
 			void operator()() override
 			{
 				constexpr int expected {10};
 				std::atomic<int> value {0};
-				cmoon::executors::static_thread_pool p {2};
-				cmoon::executors::static_thread_pool p2 {1};
+				cmoon::executors::single_thread_context p;
+				cmoon::executors::single_thread_context p2;
 
 				auto work = cmoon::execution::schedule(p.get_scheduler()) |
 							cmoon::execution::then([] {}) |

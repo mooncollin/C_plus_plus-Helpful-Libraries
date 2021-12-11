@@ -10,6 +10,7 @@ import <mutex>;
 import <concepts>;
 
 import cmoon.meta;
+import cmoon.concepts;
 import cmoon.thread;
 import cmoon.functional;
 import cmoon.type_traits;
@@ -350,9 +351,9 @@ namespace cmoon::execution
 							execution::set_done(std::move(o.output_receiver));
 						}
 
-						std::apply([](auto&&... ops) {
-							(execution::start(std::forward<decltype(ops)>(ops)), ...);
-						}, std::move(o.child_op));
+						std::apply([](auto&... ops) {
+							(execution::start(ops), ...);
+						}, o.child_op);
 					}
 
 				private:
