@@ -93,7 +93,7 @@ namespace cmoon::meta
 			}
 
 			template<template<typename> typename Function>
-			static constexpr void for_each() noexcept((std::is_nothrow_invocable_v<Function<Types>>) && ...)
+			static constexpr void for_each() noexcept(std::conjunction_v<std::is_nothrow_invocable<Function<Types>>...>)
 			{
 				(std::invoke(Function<Types>{}), ...);
 			}
@@ -109,7 +109,7 @@ namespace cmoon::meta
 				typename type_list::template append<Types2...>::concatenate_helper<TypeListN...>::type
 			> {};
 		public:
-			template<cmoon::specialization_of<cmoon::meta::type_list>... TypeLists>
+			template<class... TypeLists>
 			using concatenate = typename concatenate_helper<TypeLists...>::type;
 		private:
 			template<template<typename> class Predicate, typename...>
@@ -195,20 +195,18 @@ namespace cmoon::meta
 
 	export
 	template<std::size_t Index, typename... Ts>
-		requires(Index < sizeof...(Ts))
+		requires(Index <= sizeof...(Ts))
 	using get_type = typename type_list<Ts...>::template type<Index>;
 
 	template<typename>
-	struct type_list_from_tuple_impl;
+	struct extract_types_into_type_list_impl : std::type_identity<type_list<>> {};
 
-	template<typename... Types, template<typename...> typename Tuple>
-	struct type_list_from_tuple_impl<Tuple<Types...>> : std::type_identity<
-		type_list<Types...>
-	> {};
+	template<template<typename...> typename Tuple, typename... Types>
+	struct extract_types_into_type_list_impl<Tuple<Types...>> : std::type_identity<type_list<Types...>> {};
 
 	export
-	template<cmoon::specialization_of<std::tuple> Tuple>
-	using type_list_from_tuple = typename type_list_from_tuple_impl<Tuple>::type;
+	template<class T>
+	using extract_types_into_type_list = typename extract_types_into_type_list_impl<T>::type;
 
 	export
 	template<template<class> class Function, typename... Ts>
@@ -219,20 +217,10 @@ namespace cmoon::meta
 	using filter_types = typename type_list<Ts...>::template filter<Predicate>;
 
 	export
-	template<cmoon::specialization_of<type_list>... TypeList>
-	using concatenate_types = typename type_list<>::template concatenate<TypeList...>;
+	template<class... TypeLists>
+	using concatenate_types = typename type_list<>::template concatenate<TypeLists...>;
 
 	export
-	template<typename... Types>
-	using unique_types = typename type_list<Types...>::unique;
-}
-
-namespace std
-{
-	export
-	template<class... Types>
-	[[nodiscard]] constexpr typename cmoon::meta::type_list<Types...>::index_type size(const cmoon::meta::type_list<Types...>) noexcept
-	{
-		return cmoon::meta::type_list<Types...>::size();
-	}
+	template<typename... Ts>
+	using unique_types = typename type_list<Ts...>::unique;
 }

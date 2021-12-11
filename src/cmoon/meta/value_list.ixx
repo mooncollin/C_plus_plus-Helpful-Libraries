@@ -22,7 +22,7 @@ namespace cmoon::meta
 
 		public:
 			using index_type = std::size_t;
-			using types = type_list<std::remove_cvref_t<decltype(Values)>...>;
+			using types = type_list<decltype(Values)...>;
 
 			template<index_type N>
 			using type = typename types::template type<N>;
@@ -85,33 +85,33 @@ namespace cmoon::meta
 				return contains_helper<Values...>(item);
 			}
 
-			[[nodiscard]] static constexpr auto to_tuple() noexcept
+			[[nodiscard]] static constexpr auto to_tuple() noexcept(std::conjunction_v<std::is_nothrow_copy_constructible<decltype(Values)>...>)
 			{
 				return std::make_tuple(Values...);
 			}
 
 			template<class F>
-			[[nodiscard]] static constexpr bool all_of(F&& func) noexcept
+			[[nodiscard]] static constexpr bool all_of(F&& func) noexcept(std::conjunction_v<std::is_nothrow_invocable<F, decltype(Values)>...>)
 			{
-				return (func(Values) && ...);
+				return (std::invoke(func, Values) && ...);
 			}
 
 			template<class F>
-			[[nodiscard]] static constexpr bool any_of(F&& func) noexcept
+			[[nodiscard]] static constexpr bool any_of(F&& func) noexcept(std::conjunction_v<std::is_nothrow_invocable<F, decltype(Values)>...>)
 			{
-				return (func(Values) || ...);
+				return (std::invoke(func, Values) || ...);
 			}
 
 			template<class F>
-			[[nodiscard]] static constexpr bool none_of(F&& func) noexcept
+			[[nodiscard]] static constexpr bool none_of(F&& func) noexcept(std::conjunction_v<std::is_nothrow_invocable<F, decltype(Values)>...>)
 			{
-				return (!func(Values) && ...);
+				return (!std::invoke(func, Values) && ...);
 			}
 
 			template<class F>
-			static constexpr void for_each(F&& func) noexcept
+			static constexpr void for_each(F&& func) noexcept(std::conjunction_v<std::is_nothrow_invocable<F, decltype(Values)>...>)
 			{
-				(func(Values), ...);
+				(std::invoke(func, Values), ...);
 			}
 
 			template<auto... Values2>
@@ -182,8 +182,8 @@ namespace cmoon::meta
 	using filter_values = typename value_list<Values...>::template filter<Predicate>;
 
 	export
-	template<typename... ValueList>
-	using concatenate_values = typename value_list<>::template concatenate<ValueList...>;
+	template<typename... ValueLists>
+	using concatenate_values = typename value_list<>::template concatenate<ValueLists...>;
 
 	template<auto CurrentValue, auto Finish, class Operation>
 	struct iota_impl : std::type_identity<
@@ -217,21 +217,4 @@ namespace cmoon::meta
 	export
 	template<class... T>
 	using index_sequence_for = make_index_sequence<sizeof...(T)>;
-}
-
-namespace std
-{
-	export
-	template<auto... Values>
-	[[nodiscard]] constexpr typename cmoon::meta::value_list<Values...>::index_type size(const cmoon::meta::value_list<Values...>) noexcept
-	{
-		return cmoon::meta::value_list<Values...>::size();
-	}
-
-	export
-	template<typename cmoon::meta::value_list<>::index_type I, auto... Values>
-	[[nodiscard]] constexpr auto get(const cmoon::meta::value_list<Values...>) noexcept
-	{
-		return cmoon::meta::value_list<Values...>::template get<I>();
-	}
 }
