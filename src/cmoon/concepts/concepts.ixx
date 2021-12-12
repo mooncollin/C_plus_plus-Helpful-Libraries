@@ -132,7 +132,7 @@ namespace cmoon
 
 	export
 	template<class T>
-	concept moveable_value = std::move_constructible<std::remove_cvref_t<T>> &&
+	concept movable_value = std::move_constructible<std::remove_cvref_t<T>> &&
 							 std::constructible_from<std::remove_cvref_t<T>, T>;
 
 	export

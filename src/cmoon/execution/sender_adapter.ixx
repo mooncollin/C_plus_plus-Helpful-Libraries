@@ -11,7 +11,7 @@ import cmoon.execution.sender;
 namespace cmoon::execution
 {
 	export
-	template<cmoon::class_type D, cmoon::moveable_value... Args>
+	template<cmoon::class_type D, cmoon::movable_value... Args>
 	struct sender_adapter
 	{
 		public:

@@ -62,7 +62,7 @@ namespace cmoon::execution
 	};
 
 	export
-	template<cmoon::moveable_value T>
+	template<cmoon::movable_value T>
 	constexpr just_error_sender<std::decay_t<T>> just_error(T&& t) noexcept(std::is_nothrow_constructible_v<std::decay_t<T>, T>)
 	{
 		return {std::forward<T>(t)};
