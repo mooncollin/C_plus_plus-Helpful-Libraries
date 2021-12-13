@@ -1,0 +1,17 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Concepts" %}
+{% set item_name = "array" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.concepts", github_url_src + "/concepts/concepts.ixx")}}
+{{macros.overload_set([
+"
+template<class T>
+concept array = std::is_array_v<T>;
+"
+])}}
+<p>
+    The concept <code>object&lt;T&gt;</code> is satisfied if and only if <code>T</code> is an array.
+</p>
+{% endblock %}

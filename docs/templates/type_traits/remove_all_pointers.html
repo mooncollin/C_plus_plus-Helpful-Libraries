@@ -1,0 +1,23 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Type Traits" %}
+{% set item_name = "remove_all_pointers" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.type_traits", github_url_src + "/type_traits/type_traits.ixx")}}
+{{macros.overload_set([
+"
+template<class T>
+struct remove_all_pointers;
+"
+])}}
+<p>
+    Removes all pointers from type <code>T</code>.
+</p>
+{{macros.helper_variable_template(
+"
+template<class T>
+using remove_all_pointers_t = typename remove_all_pointers<T>::type;
+"
+)}}
+{% endblock %}

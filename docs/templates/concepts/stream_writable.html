@@ -1,0 +1,21 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Concepts" %}
+{% set item_name = "stream_writable" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.concepts", github_url_src + "/concepts/concepts.ixx")}}
+{{macros.overload_set([
+"
+template<class T, class S>
+concept stream_writable =
+    requires(const T& t, S& s)
+{
+    { s << t };
+};
+"
+])}}
+<p>
+    The concept <code>stream_writable&lt;T, S&gt;</code> is satisfied if and only if there is a stream output operator (<code>operator&lt;&lt;</code>) overloaded for stream <code>S</code> and value <code>T</code>.
+</p>
+{% endblock %}

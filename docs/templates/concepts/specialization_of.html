@@ -1,0 +1,20 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Concepts" %}
+{% set item_name = "specialization_of" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.concepts", github_url_src + "/concepts/concepts.ixx")}}
+{{macros.overload_set([
+"
+template<class Type, template<typename...> class Template>
+concept specialization_of = cmoon::is_specialization_v<Type, Template>;
+"
+])}}
+<p>
+    The concept <code>specialization_of&lt;T, Template&gt;</code> is satisfied if and only if the complete type <code>T</code> is a template specialization of the incomplete type <code>Template</code>.
+</p>
+<p>
+    For example, <code>std::string</code> is a specialization of <code><a href="https://en.cppreference.com/w/cpp/string/basic_string">std::basic_string</a></code>.
+</p>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Type Traits" %}
+{% set item_name = "copy_cv" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.type_traits", github_url_src + "/type_traits/type_traits.ixx")}}
+{{macros.overload_set([
+"
+template<class From, class To>
+struct copy_cv;
+"
+])}}
+<p>
+    Copies the <code>const</code> and <code>volatile</code> type attributes from type <code>From</code> to type <code>To</code>.
+</p>
+{{macros.helper_variable_template(
+"
+template<class From, class To>
+using copy_cv_t = typename copy_cv<From, To>::type;
+"
+)}}
+{% endblock %}

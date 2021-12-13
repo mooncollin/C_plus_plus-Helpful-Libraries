@@ -1,0 +1,17 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Concepts" %}
+{% set item_name = "string_literal" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.concepts", github_url_src + "/concepts/concepts.ixx")}}
+{{macros.overload_set([
+"
+template<class T>
+concept string_literal = cmoon::is_string_literal_v<T>;
+"
+])}}
+<p>
+    The concept <code>string_literal&lt;T&gt;</code> is satisfied if and only if <code>T</code> is a string literal.
+</p>
+{% endblock %}

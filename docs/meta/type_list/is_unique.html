@@ -45,39 +45,51 @@
 <div class="mx-5">
     
 <hr class="my-0">
-    <div class="d-flex flex-row justify-content-between">
-            <div>
-                <small><pre class="mb-0">
+<table class="table">
+    <tbody>
+        <tr>
+                <td class="p-0"><small><pre class="mb-0">
 <code class="language-cpp rounded py-0 pe-0 bg-transparent">
 
 [[nodiscard]] static constexpr bool is_unique() noexcept;
 
 </code>
-</pre></small>
-            </div>
-            <div class="d-flex align-items-center me-4">
-                <small><tt>(1)</tt></small>
-            </div>
-        </div>
-        
-    <hr class="my-0">
-<br>
+</pre></small></td>
+                <td class="p-0 align-middle"><small><tt>(1)</tt></small></td>
+            </tr>
+    </tbody>
+</table>
 <p>
     Returns <code>true</code> if all of <code>Types...</code> are not the same, returns <code>false</code> otherwise. Always true if <code>sizeof...(Types)</code> is 0.
 </p>
 <div class="container">
     <h3>Parameters</h3>
-    <p>(none)</p>
+    
+        <p>(none)</p>
+    
+</div>
+    <div class="container">
     <h3>Return value</h3>
-    <p><code>true</code> if all of <code>Types...</code> are not the same, <code>false</code> otherwise.</p>
+    
+        <p><code>true</code> if all of <code>Types...</code> are not the same, <code>false</code> otherwise.</p>
+    
+</div>
+    <div class="container">
     <h3>Exceptions</h3>
-    <p>This function never throws exceptions </p>
+    
+            <p>This function never throws exceptions</p>
+        
+</div>
+    <div class="container">
     <h3>Complexity</h3>
-    <p>Constant.</p>
+    
+            <p>Constant.</p>
+        
 </div>
 <div class="container">
     <h3>Example</h3>
-    <pre class="mb-0">
+    
+        <pre class="mb-0">
 <code class="language-cpp rounded py-0 pe-0 ">
 
 import cmoon.meta;
@@ -93,6 +105,7 @@ int main()
 
 </code>
 </pre>
+    
 </div>
 
 </div>

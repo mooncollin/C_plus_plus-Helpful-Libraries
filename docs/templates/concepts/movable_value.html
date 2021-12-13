@@ -1,0 +1,18 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Concepts" %}
+{% set item_name = "movable_value" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.concepts", github_url_src + "/concepts/concepts.ixx")}}
+{{macros.overload_set([
+"
+template<class T>
+concept movable_value = std::move_constructible<std::decay_t<T>> &&
+                        std::constructible_from<std::decay_t<T>, T>;
+"
+])}}
+<p>
+    The concept <code>movable_value&lt;T&gt;</code> is satisfied if and only if <code>T</code> is moveable, but does not need to be swappable.
+</p>
+{% endblock %}

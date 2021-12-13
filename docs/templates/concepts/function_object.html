@@ -1,0 +1,17 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Concepts" %}
+{% set item_name = "function_object" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.concepts", github_url_src + "/concepts/concepts.ixx")}}
+{{macros.overload_set([
+"
+template<class F, class... Args>
+concept function_object = object<F> && std::invocable<F, Args...>;
+"
+])}}
+<p>
+    The concept <code>function_object&lt;F, Args...&gt;</code> is satisfied if and only if <code>F</code> is an object and is invocable given <code>Args...</code>.
+</p>
+{% endblock %}

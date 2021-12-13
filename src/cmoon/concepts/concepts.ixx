@@ -21,14 +21,13 @@ namespace cmoon
 	concept array = std::is_array_v<T>;
 
 	export
-	template<class F, class Result, class... Args>
-	concept supplier = std::invocable<F, Args...> &&
-					   std::same_as<std::invoke_result_t<F, Args...>, Result>;
+	template<class F, class Result>
+	concept supplier = !std::is_void_v<Result> &&
+						std::is_invocable_r_v<Result, F>;
 	
 	export
 	template<class F, class Result>
-	concept unary_operator = std::invocable<F, Result> &&
-							 std::same_as<std::remove_reference_t<std::invoke_result_t<F, Result>>, Result>;
+	concept unary_operator = std::is_invocable_r_v<Result, F, Result>;
 
 	export
 	template<class F, class... Args>
@@ -84,39 +83,12 @@ namespace cmoon
 	};
 
 	export
-	template<class A>
-	concept allocator = std::copyable<A> &&
-		requires
-	{
-		typename std::allocator_traits<A>;
-		typename A::value_type;
-	} &&
-		requires(A a, typename std::allocator_traits<A>::size_type n, typename std::allocator_traits<A>::pointer p)
-	{
-		{ a.allocate(n) } -> std::same_as<typename std::allocator_traits<A>::pointer>;
-		{ a.deallocate(p, n) };
-		{ a == a } -> std::convertible_to<bool>;
-		{ a != a } -> std::convertible_to<bool>;
-	};
-
-	export
 	template<class T>
 	concept string_literal = cmoon::is_string_literal_v<T>;
 
 	export
 	template<class T>
-	concept char_literal = cmoon::is_char_literal_v<T>;
-
-	export
-	template<typename T, typename R>
-	concept nothrow_comparable_with = std::equality_comparable_with<T, R> &&
-		requires(T t, R r)
-	{
-		{ t == r } noexcept;
-		{ r == t } noexcept;
-		{ t != r } noexcept;
-		{ r != t } noexcept;
-	};
+	concept character = cmoon::is_character_v<T>;
 
 	export
 	template<class T, class CharT = char, class Out = std::back_insert_iterator<std::basic_string<CharT>>>
@@ -128,12 +100,12 @@ namespace cmoon
 
 	export
 	template<class Type, template<typename...> class Template>
-	concept specialization_of = is_specialization_v<Type, Template>;
+	concept specialization_of = cmoon::is_specialization_v<Type, Template>;
 
 	export
 	template<class T>
-	concept movable_value = std::move_constructible<std::remove_cvref_t<T>> &&
-							 std::constructible_from<std::remove_cvref_t<T>, T>;
+	concept movable_value =  std::move_constructible<std::decay_t<T>> &&
+							 std::constructible_from<std::decay_t<T>, T>;
 
 	export
 	template<class From, class To>

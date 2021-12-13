@@ -1,0 +1,17 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Concepts" %}
+{% set item_name = "decays_to" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.concepts", github_url_src + "/concepts/concepts.ixx")}}
+{{macros.overload_set([
+"
+template<class From, class To>
+concept decays_to = std::same_as<std::decay_t<From>, To>;
+"
+])}}
+<p>
+    The concept <code>decays_to&lt;From, To&gt;</code> is satisfied if and only if the decayed type of <code>From</code> is the same as the type <code>To</code>.
+</p>
+{% endblock %}

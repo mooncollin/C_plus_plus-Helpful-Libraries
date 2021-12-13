@@ -19,9 +19,9 @@ struct choice_t
     Used in meta programming to instantiate different <code>choice_t</code> based on compile-time choices about a given path.
     The <code>no_throw</code> member can be queried to check if the choice is not throwing (such as a choice for a given function call).
 </p>
-{{macros.template_parameters([["T", "Custom strategy type"]])}}
+{{macros.template_parameters(["T", "Custom strategy type"])}}
 <br>
-{{macros.member_objects([["strategy", "T"], ["no_throw", "bool"]])}}
+{{macros.member_objects(["strategy", "T"], ["no_throw", "bool"])}}
 {{macros.example_code(
 "
 #include <concepts>

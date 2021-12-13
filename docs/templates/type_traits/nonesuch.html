@@ -1,0 +1,25 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Type Traits" %}
+{% set item_name = "nonesuch" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.type_traits", github_url_src + "/type_traits/type_traits.ixx")}}
+{{macros.overload_set([
+"
+struct nonesuch
+{
+    ~nonesuch() = delete;
+    nonesuch(const nonesuch&) = delete;
+    nonesuch& operator=(const nonesuch&) = delete;
+};
+"
+])}}
+<p>
+    <code>cmoon::nonesuch</code> is a class type used by <a href="detected.html">cmoon::detected_t</a> to indicate detection failure.
+</p>
+<h3>Notes</h3>
+<p>
+    nonesuch cannot be constructed, destroyed, or copied. 
+</p>
+{% endblock %}

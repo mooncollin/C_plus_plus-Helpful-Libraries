@@ -1,0 +1,27 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Type Traits" %}
+{% set item_name = "copy_volatile" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.type_traits", github_url_src + "/type_traits/type_traits.ixx")}}
+{{macros.overload_set([
+"
+template<class From, class To>
+struct copy_volatile;
+"
+])}}
+<p>
+    Copies the <code>volatile</code> type attribute from type <code>From</code> to type <code>To</code>.
+</p>
+<p>
+    If <code>std::is_volatile_v&lt;From&gt;</code> is <code>true</code>, then member typedef <code>type</code> is <code>std::add_volatile_t&lt;To&gt;</code>, otherwise the
+    member typedef <code>type</code> is <code>std::remove_volatile_t&lt;To&gt;</code>.
+</p>
+{{macros.helper_variable_template(
+"
+template<class From, class To>
+using copy_volatile_t = typename copy_volatile<From, To>::type;
+"
+)}}
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Concepts" %}
+{% set item_name = "signed_arithmetic" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.concepts", github_url_src + "/concepts/concepts.ixx")}}
+{{macros.overload_set([
+"
+template<class T>
+concept signed_arithmetic = std::is_signed_v<T>;
+"
+])}}
+<p>
+    The concept <code>signed_arithmetic&lt;T&gt;</code> is satisfied if and only if <code>T</code> is a <a href="https://en.cppreference.com/w/cpp/types/is_signed">signed arithmetic</a> type.
+</p>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "templates/library.html" %}
+{% set page_name = "Concepts" %}
+{% block title %}concepts{% endblock %}
+{% block content %}
+{{ super() }}
+<p class="mb-0">
+    The Concepts library is an extension onto the standard <a href="https://en.cppreference.com/w/cpp/concepts">Concepts Library</a>, as well as new useful ones.
+</p>
+<br>
+{{macros.defined("cmoon.concepts", github_url_src + "/concepts/concepts.ixx")}}
+{{macros.section_header("Core Concepts")}}
+{{macros.module_item("arithmetic", "specifies that a type is arithmetic", "concept")}}
+{{macros.module_item("signed_arithmetic", "specifies that a type is signed arithmetic", "concept")}}
+{{macros.module_item("unsigned_arithmetic", "specifies that a type is unsigned arithmetic", "concept")}}
+{{macros.module_item("complete_type", "specifies that a type has a known size", "concept")}}
+{{macros.module_item("has_size", "specifies that a type where <code>std::size(t)</code> for some type <code>T</code> is valid", "concept")}}
+{{macros.module_item("has_type", "specifies that a type where <code>typename T::type</code> is valid", "concept")}}
+{{macros.module_item("stream_writable", "specifies that a type can be used in the stream output operator (<code>operator&lt;&lt;</code>)", "concept")}}
+{{macros.module_item("character", "specifies that a type is a character", "concept")}}
+{{macros.module_item("string_literal", "specifies that a type is a string literal", "concept")}}
+{{macros.module_item("formattable", "specifies that a type where <code>std::format(t)</code> is valid", "concept")}}
+{{macros.module_item("specialization_of", "specifies that a complete type is a template specialization of an incomplete type", "concept")}}
+{{macros.module_item("decays_to", "specifies that a type decays from one type to another", "concept")}}
+{{macros.module_item("class_type", "specifies that a type decays to itself and is a class", "concept")}}
+{{macros.module_item("array", "specifies that a type is an array", "concept")}}
+{{macros.module_item("movable_value", "specifies that a type is at minimum movable, but may not be swappable", "concept")}}
+{{macros.section_header("Object Concepts")}}
+{{macros.module_item("object", "specifies that a type is an object", "concept")}}
+{{macros.module_item("function_object", "specifies that a type is an object and invocable", "concept")}}
+{{macros.section_header("Invocable Concepts")}}
+{{macros.module_item("supplier", "specifies that a type is an invocable that takes zero parameters and returns a non-void value", "concept")}}
+{{macros.module_item("unary_operator", "specifies that a type is an invocable that takes and returns a non-void value of the same type", "concept")}}
+{{macros.module_item("consumer", "specifies that a type is an invocable that takes arguments and returns void", "concept")}}
+{% endblock %}

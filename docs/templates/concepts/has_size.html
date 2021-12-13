@@ -1,0 +1,21 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Concepts" %}
+{% set item_name = "has_size" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.concepts", github_url_src + "/concepts/concepts.ixx")}}
+{{macros.overload_set([
+"
+template<class T>
+concept has_size = 
+    requires(T t)
+{
+    std::size(t);
+};
+"
+])}}
+<p>
+    The concept <code>has_size&lt;T&gt;</code> is satisfied if and only if <code>std::size(<var>t</var>)</code> is valid, with <code><var>t</var></code> being of type <code>T</code>.
+</p>
+{% endblock %}

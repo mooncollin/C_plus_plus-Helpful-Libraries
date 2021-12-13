@@ -1,0 +1,17 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Concepts" %}
+{% set item_name = "arithmetic" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.concepts", github_url_src + "/concepts/concepts.ixx")}}
+{{macros.overload_set([
+"
+template<class T>
+concept arithmetic = std::is_arithmetic_v<T>;
+"
+])}}
+<p>
+    The concept <code>arithmetic&lt;T&gt;</code> is satisfied if and only if <code>T</code> is an <a href="https://en.cppreference.com/w/cpp/types/is_arithmetic">arithmetic</a> type.
+</p>
+{% endblock %}

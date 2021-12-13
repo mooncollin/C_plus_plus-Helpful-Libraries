@@ -1,0 +1,22 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Concepts" %}
+{% set item_name = "formattable" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.concepts", github_url_src + "/concepts/concepts.ixx")}}
+{{macros.overload_set([
+"
+template<class T, class CharT = char, class Out = std::back_insert_iterator<std::basic_string<CharT>>>
+concept formattable = 
+    requires(const T& t, std::basic_format_context<Out, CharT>& ctx, std::formatter<T, CharT> f)
+{
+    f.format(t, ctx);
+};
+"
+])}}
+<p>
+    The concept <code>formattable&lt;T, CharT&gt;</code> is satisfied if and only if a value <code>t</code> of type <code>T</code> can be
+    formatted using the <a href="https://en.cppreference.com/w/cpp/utility/format">Standard Formatting Library</a> with character type <code>CharT</code> and output type <code>Out</code>.
+</p>
+{% endblock %}

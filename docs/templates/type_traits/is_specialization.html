@@ -1,0 +1,27 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Type Traits" %}
+{% set item_name = "is_specialization" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.type_traits", github_url_src + "/type_traits/type_traits.ixx")}}
+{{macros.overload_set([
+"
+template<class Type, template<typename...> class Template>
+struct is_specialization;
+"
+])}}
+<p>
+    If the complete type <code>Type</code> is a template specialization of the incomplete type <oode>Template</oode>, its member constant <code>value</code> is <code>true</code>. Otherwise,
+    its member constant <code>value</code> is <code>false</code>.
+</p>
+<p>
+    For example, <code>std::string</code> is a specialization of <code><a href="https://en.cppreference.com/w/cpp/string/basic_string">std::basic_string</a></code>.
+</p>
+{{macros.helper_variable_template(
+"
+template<class Type, template<typename...> class Template>
+inline constexpr bool is_specialization_v = is_specialization<Type, Template>::value;
+"
+)}}
+{% endblock %}

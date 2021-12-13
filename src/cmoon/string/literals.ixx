@@ -17,8 +17,8 @@ namespace cmoon
     }
 
     export
-    template<class T, cmoon::char_literal... Args>
-    constexpr auto choose_char_literal(Args&&... args) noexcept
+    template<class T, cmoon::character... Args>
+    constexpr auto choose_char_literal(const Args... args) noexcept
     {
         return choose_on_type<T>(std::forward<Args>(args)...);
     }

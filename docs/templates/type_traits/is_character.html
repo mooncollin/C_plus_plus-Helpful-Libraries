@@ -1,0 +1,24 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Type Traits" %}
+{% set item_name = "is_character" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.type_traits", github_url_src + "/type_traits/type_traits.ixx")}}
+{{macros.overload_set([
+"
+template<class T>
+struct is_character;
+"
+])}}
+<p>
+    If <code>T</code> represents a <a href="https://en.cppreference.com/w/cpp/language/character_literal">character</a>, its member constant <code>value</code> is <code>true</code>. Otherwise,
+    its member constant <code>value</code> is <code>false</code>.
+</p>
+{{macros.helper_variable_template(
+"
+template<class T>
+constexpr bool is_character_v = is_character<T>::value;
+"
+)}}
+{% endblock %}

@@ -2,3 +2,24 @@
 {
     color: #008000;
 }
+
+a
+{
+    text-decoration: none;
+}
+
+.paren_list
+{
+    counter-reset: list;
+}
+
+.paren_list > li
+{
+    list-style: none;
+}
+
+.paren_list > li::before
+{
+    content: counter(list) ") ";
+    counter-increment: list;
+}

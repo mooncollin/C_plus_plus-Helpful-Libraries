@@ -510,20 +510,6 @@ namespace cmoon::tests::concepts
 	};
 
 	export
-	class allocator_test : public cmoon::test::test_case
-	{
-		public:
-			allocator_test()
-				: cmoon::test::test_case{"allocator_test"} {}
-			
-			void operator()() override
-			{
-				cmoon::test::assert_true(cmoon::allocator<std::allocator<int>>);
-				cmoon::test::assert_false(cmoon::allocator<int>);
-			}
-	};
-
-	export
 	class string_literal_test : public cmoon::test::test_case
 	{
 		public:
@@ -541,61 +527,35 @@ namespace cmoon::tests::concepts
 	};
 
 	export
-	class char_literal_test : public cmoon::test::test_case
+	class character_test : public cmoon::test::test_case
 	{
 		public:
-			char_literal_test()
-				: cmoon::test::test_case{"char_literal_test"} {}
+			character_test()
+				: cmoon::test::test_case{"character_test"} {}
 
 			void operator()() override
 			{
-				cmoon::test::assert_true(cmoon::char_literal<char>);
-				cmoon::test::assert_true(cmoon::char_literal<unsigned char>);
-				cmoon::test::assert_true(cmoon::char_literal<const char>);
-				cmoon::test::assert_true(cmoon::char_literal<const unsigned char>);
-				cmoon::test::assert_true(cmoon::char_literal<signed char>);
-				cmoon::test::assert_true(cmoon::char_literal<const signed char>);
-				cmoon::test::assert_true(cmoon::char_literal<wchar_t>);
-				cmoon::test::assert_true(cmoon::char_literal<const wchar_t>);
-				cmoon::test::assert_true(cmoon::char_literal<char16_t>);
-				cmoon::test::assert_true(cmoon::char_literal<const char16_t>);
-				cmoon::test::assert_true(cmoon::char_literal<char32_t>);
-				cmoon::test::assert_true(cmoon::char_literal<const char32_t>);
-				cmoon::test::assert_true(cmoon::char_literal<char8_t>);
-				cmoon::test::assert_true(cmoon::char_literal<const char8_t>);
-				
-				cmoon::test::assert_false(cmoon::char_literal<char&>);
-				cmoon::test::assert_false(cmoon::char_literal<const char&>);
-				cmoon::test::assert_false(cmoon::char_literal<unsigned char&>);
-				cmoon::test::assert_false(cmoon::char_literal<const unsigned char&>);
-				cmoon::test::assert_false(cmoon::char_literal<wchar_t&>);
-				cmoon::test::assert_false(cmoon::char_literal<const wchar_t&>);
-				cmoon::test::assert_false(cmoon::char_literal<char16_t&>);
-				cmoon::test::assert_false(cmoon::char_literal<const char16_t&>);
-				cmoon::test::assert_false(cmoon::char_literal<char32_t&>);
-				cmoon::test::assert_false(cmoon::char_literal<const char32_t&>);
-				cmoon::test::assert_false(cmoon::char_literal<char8_t&>);
-				cmoon::test::assert_false(cmoon::char_literal<const char8_t&>);
+				cmoon::test::assert_true(cmoon::character<char>);
+				cmoon::test::assert_true(cmoon::character<unsigned char>);
+				cmoon::test::assert_true(cmoon::character<const char>);
+				cmoon::test::assert_true(cmoon::character<const unsigned char>);
+				cmoon::test::assert_true(cmoon::character<signed char>);
+				cmoon::test::assert_true(cmoon::character<const signed char>);
+				cmoon::test::assert_true(cmoon::character<wchar_t>);
+				cmoon::test::assert_true(cmoon::character<const wchar_t>);
+				cmoon::test::assert_true(cmoon::character<char16_t>);
+				cmoon::test::assert_true(cmoon::character<const char16_t>);
+				cmoon::test::assert_true(cmoon::character<char32_t>);
+				cmoon::test::assert_true(cmoon::character<const char32_t>);
+				cmoon::test::assert_true(cmoon::character<char8_t>);
+				cmoon::test::assert_true(cmoon::character<const char8_t>);
+				cmoon::test::assert_true(cmoon::character<int>);
+				cmoon::test::assert_true(cmoon::character<const int>);
 
-				cmoon::test::assert_false(cmoon::char_literal<bool>);
-				cmoon::test::assert_false(cmoon::char_literal<short>);
-				cmoon::test::assert_false(cmoon::char_literal<int>);
-				cmoon::test::assert_false(cmoon::char_literal<long>);
-				cmoon::test::assert_false(cmoon::char_literal<double>);
-			}
-	};
-
-	export
-	class nothrow_comparable_with_test : public cmoon::test::test_case
-	{
-		public:
-			nothrow_comparable_with_test()
-				: cmoon::test::test_case{"nothrow_comparable_with_test"} {}
-
-			void operator()() override
-			{
-				cmoon::test::assert_true(cmoon::nothrow_comparable_with<int, int>);
-				cmoon::test::assert_false(cmoon::nothrow_comparable_with<std::list<int>, std::list<int>>);
+				cmoon::test::assert_false(cmoon::character<bool>);
+				cmoon::test::assert_false(cmoon::character<short>);
+				cmoon::test::assert_false(cmoon::character<long>);
+				cmoon::test::assert_false(cmoon::character<double>);
 			}
 	};
 
@@ -658,10 +618,8 @@ namespace cmoon::tests
 		suite.add_test_case<concepts::had_size_test>();
 		suite.add_test_case<concepts::has_type_test>();
 		suite.add_test_case<concepts::stream_writable_test>();
-		suite.add_test_case<concepts::allocator_test>();
 		suite.add_test_case<concepts::string_literal_test>();
-		suite.add_test_case<concepts::char_literal_test>();
-		suite.add_test_case<concepts::nothrow_comparable_with_test>();
+		suite.add_test_case<concepts::character_test>();
 		suite.add_test_case<concepts::formattable_test>();
 		suite.add_test_case<concepts::specialization_of_test>();
 

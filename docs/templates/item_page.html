@@ -1,7 +1,7 @@
 {% import "templates/macros.html" as macros %}
 {% extends "templates/base.html" %}
 {% block nested %}../../{% endblock %}
-{% set breadcrumbs=[("Home", "../../index.html"), (library_name, ("../" if self.nested() == "../../" else "") + "index.html"), ((namespaces if namespaces else "") + "::" + (item_name if item_name else ""), "")] %}
+{% set breadcrumbs=[("Home", self.nested() + "index.html"), (library_name, ''.join(self.nested().split('../', 1)) + "index.html"), ((namespaces if namespaces else "") + "::" + (item_name if item_name else ""), "")] %}
 {% block title %}{{namespaces}}::{{item_name}}{% endblock %}
 {% block content %}
 <h1>{{namespaces}}::{{item_name}}</h1>

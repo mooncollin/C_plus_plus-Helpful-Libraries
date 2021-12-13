@@ -1,0 +1,21 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Concepts" %}
+{% set item_name = "complete_type" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.concepts", github_url_src + "/concepts/concepts.ixx")}}
+{{macros.overload_set([
+"
+template<class T>
+concept complete_type = 
+    requires
+{
+    sizeof(T);
+};
+"
+])}}
+<p>
+    The concept <code>complete_type&lt;T&gt;</code> is satisfied if and only if <code>T</code> has a known size (or not <a href="https://en.cppreference.com/w/cpp/language/type#Incomplete_type">incomplete</a>).
+</p>
+{% endblock %}

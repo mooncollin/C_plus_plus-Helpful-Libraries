@@ -18,9 +18,9 @@ struct type_list;
 <p>
     A <code>type_list</code> is not meant to be instantiated, but used as a type only.
 </p>
-{{macros.template_parameters([["Types...", "Types that are part of this list"]])}}
+{{macros.template_parameters(["Types...", "Types that are part of this list"])}}
 <br>
-{{macros.member_types([
+{{macros.member_types(
     ["index_type", "<code>std::size_t</code>"],
     ["type", "Templated typedef indiciating the <var>N</var>th type of this <code>type_list</code>"],
     ["append", "Templated typedef that is the result of appending the given types to this <code>type_list</code>"],
@@ -31,7 +31,7 @@ struct type_list;
     ["unique", "Templated typedef that is this <code>type_list</code> with duplicate types removed"],
     ["find", "Templated typedef of a type from this <code>type_list</code> that first matches the given predicate"],
     ["complete_type", "Templated typedef of a templated type whose templates are filled in by <code>Types...</code> and optional extra types"]
-])}}
+)}}
 <h3>Member type definitions</h3>
 <h4><code>type</code></h4>
 {{macros.code_block(

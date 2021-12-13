@@ -1,0 +1,18 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Concepts" %}
+{% set item_name = "consumer" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.concepts", github_url_src + "/concepts/concepts.ixx")}}
+{{macros.overload_set([
+"
+template<class F, class... Args>
+concept consumer = std::invocable<F, Args...> &&
+                   std::is_void_v<std::invoke_result_t<F, Args...>>;
+"
+])}}
+<p>
+    The concept <code>consumer&lt;F, Args...&gt;</code> is satisfied if and only if <code>F</code> is invocable given the types <code>Args...</code> and returning <code>void</code>.
+</p>
+{% endblock %}

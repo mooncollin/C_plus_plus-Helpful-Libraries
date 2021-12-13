@@ -1,0 +1,24 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Type Traits" %}
+{% set item_name = "is_all_of" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.type_traits", github_url_src + "/type_traits/type_traits.ixx")}}
+{{macros.overload_set([
+"
+template<typename T, typename... Ts>
+struct is_any_of : public std::conjunction<std::is_same<T, Ts>...> {};
+"
+])}}
+<p>
+    If <code>T</code> is the same as all of the types in <code>Ts...</code>, its member constant <code>value</code> is <code>true</code>. Otherwise,
+    its member constant <code>value</code> is <code>false</code>.
+</p>
+{{macros.helper_variable_template(
+"
+template<typename T, typename... Ts>
+constexpr bool is_all_of_v = is_all_of<T, Ts...>::value;
+"
+)}}
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Concepts" %}
+{% set item_name = "has_type" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.concepts", github_url_src + "/concepts/concepts.ixx")}}
+{{macros.overload_set([
+"
+template<class T>
+concept has_type = 
+    requires
+{
+    typename T::type;
+};
+"
+])}}
+<p>
+    The concept <code>has_type&lt;T&gt;</code> is satisfied if and only if <code>typename T::type</code> is valid.
+</p>
+{% endblock %}

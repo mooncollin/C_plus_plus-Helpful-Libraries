@@ -46,87 +46,89 @@
     
 <small>Defined in module <code><a href="https://github.com/mooncollin/C_plus_plus-Helpful-Libraries/tree/master/src/cmoon/meta/meta.ixx">&lt;cmoon.meta&gt;</a></code></small>
 <hr class="my-0">
-    <div class="d-flex flex-row justify-content-between">
-            <div>
-                <small><pre class="mb-0">
+<table class="table">
+    <tbody>
+        <tr>
+                <td class="p-0"><small><pre class="mb-0">
 <code class="language-cpp rounded py-0 pe-0 bg-transparent">
 
 template&lt;auto... Values&gt;
 struct value_list;
 
 </code>
-</pre></small>
-            </div>
-            <div class="d-flex align-items-center me-4">
-                <small><tt>(1)</tt></small>
-            </div>
-        </div>
-        
-    <hr class="my-0">
+</pre></small></td>
+                <td class="p-0 align-middle"><small><tt>(1)</tt></small></td>
+            </tr>
+    </tbody>
+</table>
 <p>
     A <code>value_list</code> is used to store or manipulate a list of compile-time values.
 </p>
 <p>
     A <code>value_list</code> is not meant to be instantiated, but used as a type only.
 </p>
+
 <div class="container">
     <h3>Template parameters</h3>
-    <div class="container">
-        <small>
-        <div class="row">
-                <div class="col-auto"><strong>Values...</strong></div>
-                <div class="col-auto"><strong>-</strong></div>
-                <div class="col-auto">Values that are part of this list</div>
-            </div>
-        </small>
-    </div>
+    
+<small>
+    <div class="row">
+            <div class="col-auto"><strong>Values...</strong></div>
+            <div class="col-auto"><strong>-</strong></div>
+            <div class="col-auto">Values that are part of this list</div>
+        </div>
+</small>
+
 </div>
 <br>
+
 <div class="container">
-    <div class="w-50">
-        <h3>Member Types</h3>
-        <hr class="my-0">
-        <small>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th scope="col">Member type</th>
-                        <th scope="col">Definition</th>
-                    </tr>
-                </thead>
-                <tbody>
+    <h3>Member Types</h3>
+    
+<div class="w-50">
+    <hr class="my-0">
+    <small>
+        <table class="table">
+            <thead>
                 <tr>
-                        <td>index_type</td>
-                        <td><code>std::size_t</code></td>
-                    </tr><tr>
-                        <td>types</td>
-                        <td><code>type_list&lt;decltype(Values)...&gt;</code></td>
-                    </tr><tr>
-                        <td>type</td>
-                        <td>Templated typedef indiciating the <var>N</var>th type of this <code>value_list</code></td>
-                    </tr><tr>
-                        <td>append</td>
-                        <td>Templated typedef that is the result of appending the given values to this <code>value_list</code></td>
-                    </tr><tr>
-                        <td>concatenate</td>
-                        <td>Templated typedef that is the result of concatenating the given <code>value_list</code>s' values to the end of this <code>value_list</code></td>
-                    </tr><tr>
-                        <td>filter</td>
-                        <td>Templated typedef that is a <code>value_list</code> containing the values from <code>Values...</code> that pass the given predicate</td>
-                    </tr><tr>
-                        <td>transform</td>
-                        <td>Templated typedef that is the result of transforming <code>Values...</code> with the given function</td>
-                    </tr><tr>
-                        <td>transform_to_types</td>
-                        <td>Templated typedef just like transform, but converts <code>Values...</code> to types instead of values</td>
-                    </tr><tr>
-                        <td>sub_list</td>
-                        <td>Templated typedef that is a sub-list of this <code>value_list</code></td>
-                    </tr>
-                </tbody>
-            </table>
-        </small>
-    </div>
+                    <th scope="col">Member type</th>
+                    <th scope="col">Definition</th>
+                </tr>
+            </thead>
+            <tbody>
+            <tr>
+                    <td>index_type</td>
+                    <td><code>std::size_t</code></td>
+                </tr><tr>
+                    <td>types</td>
+                    <td><code>type_list&lt;decltype(Values)...&gt;</code></td>
+                </tr><tr>
+                    <td>type</td>
+                    <td>Templated typedef indiciating the <var>N</var>th type of this <code>value_list</code></td>
+                </tr><tr>
+                    <td>append</td>
+                    <td>Templated typedef that is the result of appending the given values to this <code>value_list</code></td>
+                </tr><tr>
+                    <td>concatenate</td>
+                    <td>Templated typedef that is the result of concatenating the given <code>value_list</code>s' values to the end of this <code>value_list</code></td>
+                </tr><tr>
+                    <td>filter</td>
+                    <td>Templated typedef that is a <code>value_list</code> containing the values from <code>Values...</code> that pass the given predicate</td>
+                </tr><tr>
+                    <td>transform</td>
+                    <td>Templated typedef that is the result of transforming <code>Values...</code> with the given function</td>
+                </tr><tr>
+                    <td>transform_to_types</td>
+                    <td>Templated typedef just like transform, but converts <code>Values...</code> to types instead of values</td>
+                </tr><tr>
+                    <td>sub_list</td>
+                    <td>Templated typedef that is a sub-list of this <code>value_list</code></td>
+                </tr>
+            </tbody>
+        </table>
+    </small>
+</div>
+
 </div>
 <h3>Member type definitions</h3>
 <h4><code>type</code></h4>

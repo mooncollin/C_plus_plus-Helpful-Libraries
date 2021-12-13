@@ -62,47 +62,52 @@ struct choice_t
     Used in meta programming to instantiate different <code>choice_t</code> based on compile-time choices about a given path.
     The <code>no_throw</code> member can be queried to check if the choice is not throwing (such as a choice for a given function call).
 </p>
+
 <div class="container">
     <h3>Template parameters</h3>
-    <div class="container">
-        <small>
-        <div class="row">
-                <div class="col-auto"><strong>T</strong></div>
-                <div class="col-auto"><strong>-</strong></div>
-                <div class="col-auto">Custom strategy type</div>
-            </div>
-        </small>
-    </div>
+    
+<small>
+    <div class="row">
+            <div class="col-auto"><strong>T</strong></div>
+            <div class="col-auto"><strong>-</strong></div>
+            <div class="col-auto">Custom strategy type</div>
+        </div>
+</small>
+
 </div>
 <br>
+
 <div class="container">
-    <div class="w-50">
-        <h3>Member Objects</h3>
-        <hr class="my-0">
-        <small>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th scope="col">Member name</th>
-                        <th scope="col">Type</th>
-                    </tr>
-                </thead>
-                <tbody>
+    <h3>Member Objects</h3>
+    
+<div class="w-50">
+    <hr class="my-0">
+    <small>
+        <table class="table">
+            <thead>
                 <tr>
-                        <td>strategy</td>
-                        <td>T</td>
-                    </tr><tr>
-                        <td>no_throw</td>
-                        <td>bool</td>
-                    </tr>
-                </tbody>
-            </table>
-        </small>
-    </div>
+                    <th scope="col">Member name</th>
+                    <th scope="col">Type</th>
+                </tr>
+            </thead>
+            <tbody>
+            <tr>
+                    <td>strategy</td>
+                    <td>T</td>
+                </tr><tr>
+                    <td>no_throw</td>
+                    <td>bool</td>
+                </tr>
+            </tbody>
+        </table>
+    </small>
+</div>
+
 </div>
 <div class="container">
     <h3>Example</h3>
-    <pre class="mb-0">
+    
+        <pre class="mb-0">
 <code class="language-cpp rounded py-0 pe-0 ">
 
 #include &lt;concepts&gt;
@@ -168,6 +173,7 @@ int main()
 
 </code>
 </pre>
+    
 </div>
 
 </div>

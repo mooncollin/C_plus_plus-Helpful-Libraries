@@ -1,0 +1,32 @@
+{% extends "templates/library.html" %}
+{% set page_name = "Type Traits" %}
+{% block title %}type traits{% endblock %}
+{% block content %}
+{{ super() }}
+<p class="mb-0">
+    The Type Traits library contains traits for various types/behavior.
+</p>
+<br>
+{{macros.defined("cmoon.type_traits", github_url_src + "/type_traits/type_traits.ixx")}}
+{{macros.section_header("Copy traits")}}
+{{macros.module_item("copy_const", "Copies the <code>const</code> type attribute", "class template")}}
+{{macros.module_item("copy_volatile", "Copies the <code>volatile</code> type attribute", "class template")}}
+{{macros.module_item("copy_cv", "Copies the <code>const</code> and <code>volatile</code> type attributes", "class template")}}
+{{macros.module_item("copy_reference", "Copies the reference type attribute", "class template")}}
+{{macros.module_item("copy_extent", "Copies the array extent", "class template")}}
+{{macros.module_item("copy_all_extents", "Recursively copies the array extents", "class template")}}
+{{macros.module_item("remove_all_pointers", "Removes all pointers from type", "class template")}}
+{{macros.module_item("copy_pointer", "Copies the pointer type attribute", "class template")}}
+{{macros.module_item("copy_all_pointers", "Recursively copies the pointer type attribute", "class template")}}
+{{macros.module_item("copy_cvref", "Copies the <code>const</code>, <code>volatile</code>, and reference type attributes", "class template")}}
+{{macros.section_header("Miscellaneous Queries")}}
+{{macros.module_item("is_any_of", "Checks if the given type is equal to any of the other given types", "class template")}}
+{{macros.module_item("is_all_of", "Checks if the given type is equal to all of the other given types", "class template")}}
+{{macros.module_item("is_unique", "Checks if a sequence of types is unique", "class template")}}
+{{macros.module_item("is_character", "Checks if a type represents a character", "class template")}}
+{{macros.module_item("is_string_literal", "Checks if a type represents a string literal", "class template")}}
+{{macros.section_header("Type relationships")}}
+{{macros.module_item("is_specialization", "Checks if the given type is equal to any of the other given types", "class template")}}
+{{macros.section_header("Type transformations")}}
+{{macros.module_item("detected", "A collection of alias templates for detecting behavior/functionality of types", "alias templates")}}
+{% endblock %}

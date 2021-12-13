@@ -17,9 +17,9 @@ struct value_list;
 <p>
     A <code>value_list</code> is not meant to be instantiated, but used as a type only.
 </p>
-{{macros.template_parameters([["Values...", "Values that are part of this list"]])}}
+{{macros.template_parameters(["Values...", "Values that are part of this list"])}}
 <br>
-{{macros.member_types([
+{{macros.member_types(
     ["index_type", "<code>std::size_t</code>"],
     ["types", "<code>type_list&lt;decltype(Values)...&gt;</code>"],
     ["type", "Templated typedef indiciating the <var>N</var>th type of this <code>value_list</code>"],
@@ -29,7 +29,7 @@ struct value_list;
     ["transform", "Templated typedef that is the result of transforming <code>Values...</code> with the given function"],
     ["transform_to_types", "Templated typedef just like transform, but converts <code>Values...</code> to types instead of values"],
     ["sub_list", "Templated typedef that is a sub-list of this <code>value_list</code>"]
-])}}
+)}}
 <h3>Member type definitions</h3>
 <h4><code>type</code></h4>
 {{macros.code_block(

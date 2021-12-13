@@ -1,0 +1,17 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Concepts" %}
+{% set item_name = "unsigned_arithmetic" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.concepts", github_url_src + "/concepts/concepts.ixx")}}
+{{macros.overload_set([
+"
+template<class T>
+concept unsigned_arithmetic = std::is_unsigned_v<T>;
+"
+])}}
+<p>
+    The concept <code>unsigned_arithmetic&lt;T&gt;</code> is satisfied if and only if <code>T</code> is an <a href="https://en.cppreference.com/w/cpp/types/is_unsigned">unsigned arithmetic</a> type.
+</p>
+{% endblock %}

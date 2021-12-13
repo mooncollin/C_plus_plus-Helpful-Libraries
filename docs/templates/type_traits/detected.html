@@ -1,0 +1,64 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Type Traits" %}
+{% set item_name = "detected" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.type_traits", github_url_src + "/type_traits/type_traits.ixx")}}
+{{macros.overload_set([
+"
+template<template<class...> class Op, class... Args>
+using is_detected = /* see below */;
+",
+"
+template<template<class...> class Op, class... Args>
+using detected_t = /* see below */;
+",
+"
+template<class Default, template<class...> class Op, class... Args>
+using detected_or = /* see below */;
+"
+])}}
+<p>
+    <ol class="paren_list">
+        <li class="mb-2">
+            An <code><a href="https://en.cppreference.com/w/cpp/types/integral_constant">std::integral_constant</a></code> whose member constant <code>value</code> is <code>true</code>
+            if <code>Op&lt;Args...&gt;</code> is valid, else its member constant <code>value</code> is <code>false</code>.
+        </li>
+        <li class="mb-2">
+            The type that is a result of <code>Op&lt;Args...&gt;</code> if <code>Op&lt;Args...&gt;</code> is valid. If it is not valid, then the type is <a href="nonesuch.html">cmoon::nonesuch</a>.
+        </li>
+        <li>
+            The type that is a result of <code>Op&lt;Args...&gt;</code> if <code>Op&lt;Args...&gt;</code> is valid. If it is not valid, then the type is <code>Default</code>.
+        </li>
+    </ol>
+</p>
+<h3>Additional utilities</h3>
+{{macros.overload_set(
+[
+"
+template<template<class...> class Op, class... Args>
+constexpr inline auto is_detected_v = is_detected<Op, Args...>::value;
+",
+"
+template<class Default, template<class...> class Op, class... Args>
+using detected_or_t = typename detected_or<Default, Op, Args...>::type;
+",
+"
+template<class Expected, template<class...> class Op, class... Args>
+using is_detected_exact = std::is_same<Expected, detected_t<Op, Args...>>;
+",
+"
+template<class Expected, template<class...> class Op, class... Args>
+constexpr inline auto is_detected_exact_v = is_detected_exact<Expected, Op, Args...>::value;
+",
+"
+template<class To, template<class...> class Op, class... Args>
+using is_detected_convertible = std::is_convertible<detected_t<Op, Args...>, To>;
+",
+"
+template<class To, template<class...> class Op, class... Args>
+constexpr inline auto is_detected_convertible_v = is_detected_convertible<To, Op, Args...>::value;
+"
+], False)}}
+{% endblock %}

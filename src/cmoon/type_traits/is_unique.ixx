@@ -19,5 +19,5 @@ namespace cmoon
 
 	export
 	template<typename... T>
-	constexpr auto is_unique_v = is_unique<T...>::value;
+	constexpr bool is_unique_v = is_unique<T...>::value;
 }

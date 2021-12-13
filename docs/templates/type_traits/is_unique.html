@@ -1,0 +1,24 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Type Traits" %}
+{% set item_name = "is_unique" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.type_traits", github_url_src + "/type_traits/type_traits.ixx")}}
+{{macros.overload_set([
+"
+template<typename... Types>
+struct is_unique;
+"
+])}}
+<p>
+    If <code>Types...</code> is a unique set of types, its member constant <code>value</code> is <code>true</code>. Otherwise,
+    its member constant <code>value</code> is <code>false</code>.
+</p>
+{{macros.helper_variable_template(
+"
+template<typename... T>
+constexpr bool is_unique_v = is_unique<T...>::value;
+"
+)}}
+{% endblock %}

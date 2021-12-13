@@ -6,15 +6,11 @@ namespace cmoon
 {
 	export
 	template<class From, class To>
-	struct copy_const : std::type_identity<
-		std::conditional_t<std::is_const_v<To>, std::add_const_t<To>, To>
-	> {};
+	struct copy_const : std::conditional<std::is_const_v<From>, std::add_const_t<To>, std::remove_const_t<To>> {};
 
 	export
 	template<class From, class To>
-	struct copy_volatile : std::type_identity<
-		std::conditional_t<std::is_volatile_v<From>, std::add_volatile_t<To>, To>
-	> {};
+	struct copy_volatile : std::conditional<std::is_volatile_v<From>, std::add_volatile_t<To>, std::remove_volatile_t<To>>{};
 
 	export
 	template<class From, class To>
@@ -26,9 +22,7 @@ namespace cmoon
 
 	export
 	template<class From, class To>
-	struct copy_cv : std::type_identity<
-		copy_const_t<From, copy_volatile_t<From, To>>
-	> {};
+	struct copy_cv : copy_const<From, copy_volatile_t<From, To>> {};
 
 	export
 	template<class From, class To>
@@ -36,17 +30,16 @@ namespace cmoon
 
 	export
 	template<class From, class To>
-	struct copy_reference : std::type_identity<
-		std::conditional_t<
+	struct copy_reference :
+		std::conditional<
 			std::is_rvalue_reference_v<From>,
 			std::add_rvalue_reference_t<To>,
 			std::conditional_t<
 				std::is_lvalue_reference_v<From>,
 				std::add_lvalue_reference_t<To>,
-				To
+				std::remove_reference_t<To>
 			>
-		>
-	> {};
+		> {};
 
 	export
 	template<class From, class To>
@@ -79,10 +72,8 @@ namespace cmoon
 	export
 	template<class From, class To>
 		requires(std::rank_v<From> > 0)
-	struct copy_all_extents<From, To> : std::type_identity<
-		copy_extent_t<From,
-					  typename copy_all_extents<std::remove_extent_t<From>, To>::type>
-	> {};
+	struct copy_all_extents<From, To> : copy_extent<From,
+													typename copy_all_extents<std::remove_extent_t<From>, To>::type> {};
 
 	export
 	template<class From, class To>
@@ -95,18 +86,15 @@ namespace cmoon
 	export
 	template<class T>
 		requires(std::is_pointer_v<T>)
-	struct remove_all_pointers<T> : std::type_identity<
-		typename remove_all_pointers<std::remove_pointer_t<T>>::type
-	> {};
+	struct remove_all_pointers<T> : remove_all_pointers<std::remove_pointer_t<T>> {};
 
 	template<class From, class To>
-	struct copy_pointer : std::type_identity<
-		std::conditional_t<
+	struct copy_pointer :
+		std::conditional<
 			std::is_pointer_v<From>,
 			copy_cv_t<From, std::add_pointer_t<To>>,
-			To
-		>
-	> {};
+			std::remove_pointer_t<To>
+		> {};
 
 	export
 	template<class T>
@@ -121,14 +109,13 @@ namespace cmoon
 
 	template<class From, class To>
 		requires(std::is_pointer_v<From>)
-	struct copy_all_pointers<From, To> : std::type_identity<
-		copy_pointer_t<From,
+	struct copy_all_pointers<From, To> :
+		copy_pointer<From,
 			typename copy_all_pointers<
 				std::remove_pointer_t<From>,
 				To
 			>::type
-		>
-	> {};
+		> {};
 
 	export
 	template<class From, class To>
@@ -136,10 +123,8 @@ namespace cmoon
 
 	export
 	template<class From, class To>
-	struct copy_cvref : std::type_identity<
-		copy_reference_t<From,
-						 copy_cv_t<std::remove_reference_t<From>, To>>
-	> {};
+	struct copy_cvref : copy_reference<From,
+									   copy_cv_t<std::remove_reference_t<From>, To>> {};
 
 	export
 	template<class From, class To>

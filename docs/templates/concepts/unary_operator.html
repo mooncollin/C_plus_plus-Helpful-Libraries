@@ -1,0 +1,17 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon" %}
+{% set library_name = "Concepts" %}
+{% set item_name = "unary_operator" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.concepts", github_url_src + "/concepts/concepts.ixx")}}
+{{macros.overload_set([
+"
+template<class F, Result>
+concept unary_operator = std::is_invocable_r<Result, F, Result>;
+"
+])}}
+<p>
+    The concept <code>unary_operator&lt;F, Result&gt;</code> is satisfied if and only if <code>F</code> is invocable given the type <code>Result</code> and returning the type <code>Result</code>.
+</p>
+{% endblock %}

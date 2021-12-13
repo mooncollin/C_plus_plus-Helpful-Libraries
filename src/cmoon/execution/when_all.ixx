@@ -13,7 +13,6 @@ import cmoon.meta;
 import cmoon.concepts;
 import cmoon.thread;
 import cmoon.functional;
-import cmoon.type_traits;
 
 import cmoon.execution.receiver;
 import cmoon.execution.connect;
@@ -114,7 +113,7 @@ namespace cmoon::execution
 					template<class T>
 					[[nodiscard]] static constexpr auto unwrap_type(T&& t)
 					{
-						if constexpr (cmoon::is_optional_v<T>)
+						if constexpr (cmoon::specialization_of<T, std::optional>)
 						{
 							return std::forward<T>(t).value();
 						}
