@@ -1,0 +1,35 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_suite" %}
+{% block content2 %}
+{{macros.defined("cmoon.test", github_url_src + "/test/test.ixx")}}
+{{macros.overload_set([
+"
+template<class Allocator = std::allocator<test_case>>
+class test_suite;
+"
+]
+)}}
+<p>
+    A <code>test_suite</code> stores test cases to be ran later.
+</p>
+{{macros.template_parameters(["Allocator", "An allocator that is used to acquire/release memory and to construct/destroy the elements in that memory."])}}
+<br>
+{{macros.member_types(
+    ["allocator_type", "Allocator"]
+)}}
+<h3>Member functions</h3>
+{{macros.member_item("(constructor)", "Constructs the <code>test_suite</code>", "public member function", "constructor.html")}}
+{{macros.member_item("(destructor)", "Destructs the <code>test_suite</code>", "public member function", "destructor.html")}}
+{{macros.member_item("operator=", "Assignment operator", "public member function")}}
+{{macros.member_item("add_test_case", "Adds a <code><a href='../test_case/index.html'>test_case</a></code> to this <code>test_suite</code>", "public member function")}}
+{{macros.member_item("add_test_suite", "Moves a <code>test_suite</code>'s tests to this <code>test_suite</code>", "public member function")}}
+{{macros.member_item("name", "Get/Set suite name", "public member function")}}
+{{macros.member_item("run_all", "Runs all test cases", "public member function")}}
+{{macros.member_item("begin", "An iterator to the beginning of the test cases", "public member function")}}
+{{macros.member_item("end", "An iterator to the end of the test cases", "public member function")}}
+{{macros.member_item("clear", "Removes all test cases", "public member function")}}
+{{macros.member_item("size", "Returns the number of test cases", "public member function")}}
+{{macros.member_item("get_allocator", "Returns this <code>test_suite</code>'s allocator", "public member function")}}
+{% endblock %}

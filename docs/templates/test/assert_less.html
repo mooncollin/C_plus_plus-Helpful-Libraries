@@ -1,0 +1,46 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "assert_less" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.test", github_url_src + "/test/test.ixx")}}
+{{macros.overload_set([
+'
+template<class T, class F>
+void assert_less(const T& first, const F& second, std::string_view message = "", const std::source_location& location = std::source_location::current());
+'
+])}}
+<p>
+    Throws an <code><a href="assert_exception/index.html">assert_exception</a></code> if the expression <code>first &lt; second</code> is <code>false</code>.
+</p>
+<p>
+    This function is ill-formed if the expression <code>first &lt; second</code> is ill-formed.
+</p>
+{{macros.function_stats(
+    [["first", "First object in the comparison"],
+     ["second", "Second object in the comparison"],
+     ["message", "Extra information to be added to the error message"],
+     ["location", "Information about where in the file this assertion was ran"]],
+    "",
+    "",
+    ""
+)}}
+{{macros.example_code(
+'
+import cmoon.test;
+
+class example_test : public cmoon::test::test_case
+{
+    public:
+        example_test()
+            : cmoon::test::test_case{"example test"} {}
+
+        void operator()() override
+        {
+            cmoon::test::assert_less(4, 5);
+        }
+};
+'
+)}}
+{% endblock %}

@@ -40,7 +40,7 @@
                                 <li class="breadcrumb-item action"><a href="index.html">cmoon::meta::type_list</a></li>
                 </ol>
             </nav>
-<h1><small>cmoon::meta::type_list::&lt;Types...&gt;::</small>none_of</h1>
+<h1><small>cmoon::meta::type_list&lt;Types...&gt;::</small>none_of</h1>
 <hr>
 <div class="mx-5">
     
@@ -63,31 +63,33 @@ template&lt;template&lt;typename&gt; class Predicate&gt;
 <p>
     Checks every type against the given predicate as such: <code>Predicate&lt;Types&gt;::value</code>.
 </p>
-<div class="container">
+<div class="container ">
     <h3>Parameters</h3>
     
         <p>(none)</p>
     
 </div>
-    <div class="container">
+    
+        <div class="container  mt-2">
     <h3>Return value</h3>
     
-        <p><code>true</code> if <code>Predicate&lt;Types&gt;::value</code> is false for every type in <code>Types...</code>, <code>false</code> otherwise.</p>
-    
+            <p><code>true</code> if <code>Predicate&lt;Types&gt;::value</code> is false for every type in <code>Types...</code>, <code>false</code> otherwise.</p>
+        
 </div>
-    <div class="container">
+    
+    <div class="container  mt-2">
     <h3>Exceptions</h3>
     
             <p>This function never throws exceptions</p>
         
 </div>
-    <div class="container">
+    <div class="container  mt-2">
     <h3>Complexity</h3>
     
             <p>Constant.</p>
         
 </div>
-<div class="container">
+<div class="container ">
     <h3>Example</h3>
     
         <pre class="mb-0">

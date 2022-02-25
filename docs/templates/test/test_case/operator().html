@@ -1,0 +1,38 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_case" %}
+{% set end_name = "operator()" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+virtual void operator()() = 0;
+"
+])}}
+<p>
+    This method must be overwritten by the user, and will contain the main part of the testing for this <code>test_case</code>.
+</p>
+{{macros.function_stats(
+    [],
+    "",
+    "",
+    ""
+)}}
+{{macros.example_code(
+    '
+    import cmoon.test;
+    
+    class example_test : public cmoon::test::test_case
+    {
+        public:
+            example_test()
+                : cmoon::test::test_case{"example test"} {}
+    
+            void operator()() override
+            {
+                // Put testing code here!!
+            }
+    };
+    '
+    )}}
+{% endblock %}

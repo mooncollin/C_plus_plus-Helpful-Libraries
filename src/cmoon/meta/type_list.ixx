@@ -29,6 +29,7 @@ namespace cmoon::meta
 			}
 
 			template<index_type N>
+				requires(N < size())
 			using type = std::tuple_element_t<N, tuple_t>;
 		private:
 			template<typename T, index_type I>

@@ -1,0 +1,49 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "assert_true" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.test", github_url_src + "/test/test.ixx")}}
+{{macros.overload_set([
+'
+template<class T>
+void assert_true(const T& obj, std::string_view message = "", const std::source_location& location = std::source_location::current());
+'
+])}}
+<p>
+    Throws an <code><a href="assert_exception/index.html">assert_exception</a></code> if <code>obj</code> is <code>false</code>.
+</p>
+<p>
+    This function is ill-formed if <code>obj</code> is not convertible to <code>bool</code>.
+</p>
+{{macros.function_stats(
+    [["obj", "The boolean to be tested"],
+     ["message", "Extra information to be added to the error message"],
+     ["location", "Information about where in the file this assertion was ran"]],
+    "",
+    "",
+    ""
+)}}
+{{macros.example_code(
+'
+import cmoon.test;
+
+bool super_complicated_function();
+
+class example_test : public cmoon::test::test_case
+{
+    public:
+        example_test()
+            : cmoon::test::test_case{"example test"} {}
+
+        void operator()() override
+        {
+            const bool value {super_complicated_function()};
+
+            cmoon::test::assert_true(value);
+        }
+};
+'
+)}}
+{% endblock %}

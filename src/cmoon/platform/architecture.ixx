@@ -7,6 +7,7 @@ namespace cmoon
 	{
 		alpha,
 		amd64,
+		amd32,
 		arm,
 		arm_thumb,
 		i386,
@@ -21,6 +22,8 @@ namespace cmoon
 	architecture_type::alpha
 	#elif defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || defined(_M_AMD64)
 	architecture_type::amd64
+	#elif defined(_WIN32)
+	architecture_type::amd32
 	#elif defined(__arm__) || defined(_ARM) || defined(__arm) || defined(_M_ARM)
 		#if defined(__thumb__) || defined(_M_ARMT)
 			architecture_type::arm_thumb

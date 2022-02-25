@@ -1,0 +1,22 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_suite" %}
+{% set end_name = "get_allocator" %}
+{% set templates = "<Allocator>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+allocator_type get_allocator() const noexcept;
+"
+])}}
+<p>
+    Returns the allocator of this <code>test_suite</code>.
+</p>
+{{macros.function_stats(
+    [],
+    "an allocator",
+    "",
+    ""
+)}}
+{% endblock %}

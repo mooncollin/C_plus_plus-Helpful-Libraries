@@ -52,6 +52,10 @@ namespace cmoon::tests
 	};
 
 	export
-	template<library Lib>
-	cmoon::test::test_suite get_test_suite();
+	template<library>
+	struct library_test
+	{
+		template<class Allocator>
+		cmoon::test::test_suite<Allocator> test_suite(const Allocator&);
+	};
 }

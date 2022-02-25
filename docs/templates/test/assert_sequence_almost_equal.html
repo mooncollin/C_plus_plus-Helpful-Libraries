@@ -1,0 +1,68 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "assert_sequence_almost_equal" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.test", github_url_src + "/test/test.ixx")}}
+{{macros.overload_set([
+'
+template<std::input_iterator InputIterator1, std::input_iterator InputIterator2, class D>
+    requires std::indirectly_comparable<InputIterator1, InputIterator2, std::equal_to<>>
+void assert_sequence_almost_equal(InputIterator1 begin1, InputIterator1 end1, InputIterator2 begin2, const D& delta, std::string_view message = "", const std::source_location& location = std::source_location::current());
+',
+'
+template<std::ranges::input_range Range1, std::ranges::input_range Range2, class D,
+            class Pred = std::ranges::equal_to,
+            class Proj1 = std::identity, class Proj2 = std::identity>
+    requires std::indirectly_comparable<std::ranges::iterator_t<Range1>, 
+                                        std::ranges::iterator_t<Range2>, 
+                                        Pred,
+                                        Proj1,
+                                        Proj2>
+void assert_sequence_almost_equal(Range1&& r1, Range2&& r2, const D& delta, std::string_view message = "", Pred pred = {}, Proj1 proj1 = {}, Proj2 proj2 = {}, const std::source_location& location = std::source_location::current());
+'
+])}}
+<p>
+    Throws an <code><a href="assert_exception/index.html">assert_exception</a></code> if the two seqences are not almost equal.
+</p>
+{{macros.function_stats(
+    [["begin1", "Iterator to the beginning of the first sequence"],
+     ["end1", "Iterator to end of the first sequence"],
+     ["begin2", "Iterator to the beginning of the second sequence"],
+     ["delta", "Minimum difference to test between two objects"],
+     ["r1", "First sequence"],
+     ["r2", "Second sequence"],
+     ["pred", "Function called for comparison"],
+     ["proj1", "Function to change an element of <code>r1</code> before comparing"],
+     ["proj2", "Function to change an element of <code>r2</code> before comparing"],
+     ["message", "Extra information to be added to the error message"],
+     ["location", "Information about where in the file this assertion was ran"]],
+    "",
+    "",
+    ""
+)}}
+{{macros.example_code(
+'
+import <vector>;
+
+import cmoon.test;
+
+class example_test : public cmoon::test::test_case
+{
+    public:
+        example_test()
+            : cmoon::test::test_case{"example test"} {}
+
+        void operator()() override
+        {
+            const std::vector<double> expected {1.0, 2.0, 3.0};
+            std::vector<double> values {1.0, 2.0, 3.0};
+
+            cmoon::test::assert_sequence_almost_equal(std::begin(values), std::end(values), std::begin(expected), 0.001);
+            cmoon::test::assert_sequence_almost_equal(values, expected, 0.001);
+        }
+};
+'
+)}}
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_suite" %}
+{% set end_name = "begin" %}
+{% set templates = "<Allocator>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+[[nodiscard]] auto begin() const noexcept;
+"
+])}}
+<p>
+    Returns an iterator to the beginning of the test cases.
+</p>
+{{macros.function_stats(
+    [],
+    "Iterator to beginning of test cases",
+    "",
+    ""
+)}}
+{% endblock %}

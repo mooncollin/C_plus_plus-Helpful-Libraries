@@ -40,7 +40,7 @@
                                 <li class="breadcrumb-item action"><a href="index.html">cmoon::meta::value_list</a></li>
                 </ol>
             </nav>
-<h1><small>cmoon::meta::value_list::&lt;Values...&gt;::</small>for_each</h1>
+<h1><small>cmoon::meta::value_list&lt;Values...&gt;::</small>for_each</h1>
 <hr>
 <div class="mx-5">
     
@@ -63,25 +63,31 @@ template&lt;class F&gt;
 <p>
     Invokes <code>func</code> for every value in <code>Values...</code>.
 </p>
-<div class="container">
+<div class="container ">
     <h3>Parameters</h3>
     
         
-            <div class="row">
-                    <div class="col-auto"><strong>func</strong></div>
-                    <div class="col-auto"><strong>-</strong></div>
-                    <div class="col-auto">The function</div>
-                </div>
+        <table class="table table-borderless w-50">
+            <tbody>
+            <tr>
+                    <td class="monospace"><strong>func</strong></td>
+                    <td><strong>-</strong></td>
+                    <td>The function</td>
+                </tr>
+            </tbody>
+        </table>
     
 </div>
-    <div class="container">
+    
+        <div class="container  mt-2">
     <h3>Return value</h3>
     
+            
+                <p>(none)</p>
         
-            <p>(none)</p>
-    
 </div>
-    <div class="container">
+    
+    <div class="container  mt-2">
     <h3>Exceptions</h3>
     
             <p><small><tt>1)</tt></small> noexcept specification:<hr class='m-0'><pre class="mb-0">
@@ -92,7 +98,7 @@ noexcept(std::conjunction_v&lt;std::is_nothrow_invocable&lt;F, decltype(Values)&
         
 </div>
     
-<div class="container">
+<div class="container ">
     <h3>Example</h3>
     
         <pre class="mb-0">

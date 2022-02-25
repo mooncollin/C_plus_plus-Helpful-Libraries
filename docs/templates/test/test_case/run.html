@@ -1,0 +1,27 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_case" %}
+{% set end_name = "run" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+test_result run();
+"
+])}}
+<p>
+    Runs this test case by first invoking <code><a href="set_up.html">set_up()</a></code>, then invoking <code><a href="operator().html">operator()</a></code>, and finally
+    invoking <code><a href="tear_down.html">tear_down()</a></code>.
+</p>
+<p>
+    Any <code><a href="../assert_exception/index.html">assert_exception</a></code> thrown via any of the three methods will be
+    added as a failure, and any other exception thrown via any of the three methods will be added as an error to the resulting
+    <code><a href="../test_result/index.html">test_result</a></code>.
+</p>
+{{macros.function_stats(
+    [],
+    "a <code><a href='../test_result/index.html'>test_result</a></code> containing any failures/errors of running this test",
+    "",
+    ""
+)}}
+{% endblock %}

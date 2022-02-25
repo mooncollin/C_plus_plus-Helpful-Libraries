@@ -15,19 +15,19 @@ import cmoon.concepts;
 namespace cmoon
 {
 	export
-	inline constexpr auto bits_in_byte = CHAR_BIT;
+	inline constexpr std::size_t bits_in_byte {CHAR_BIT};
 
 	export
 	template<typename T>
-	inline constexpr auto bits_in_type = sizeof(T) * bits_in_byte;
+	inline constexpr std::size_t bits_in_type {sizeof(T) * bits_in_byte};
 
 	export
 	template<std::size_t Bits>
-	concept int_trivial_type = Bits > 0 && Bits <= sizeof(std::intmax_t) * bits_in_byte;
+	concept int_trivial_type = Bits > 0 && Bits <= bits_in_type<std::intmax_t>;
 
 	export
 	template<std::size_t Bits>
-	concept uint_trivial_type = Bits > 0 && Bits <= sizeof(std::uintmax_t) * bits_in_byte;
+	concept uint_trivial_type = Bits > 0 && Bits <= bits_in_type<std::uintmax_t>;
 
 	export
 	template<std::size_t Bits>
@@ -84,7 +84,7 @@ namespace cmoon
 										std::uintmax_t
 									>>>>;
 
-	export;
+	export
 	template<std::intmax_t LeastValue>
 	using least_value_int = std::conditional_t<(LeastValue >= std::numeric_limits<std::int_least8_t>::min() && LeastValue <= std::numeric_limits<std::int_least8_t>::max()), 
 								std::int_least8_t,

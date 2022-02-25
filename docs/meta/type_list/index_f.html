@@ -40,7 +40,7 @@
                                 <li class="breadcrumb-item action"><a href="index.html">cmoon::meta::type_list</a></li>
                 </ol>
             </nav>
-<h1><small>cmoon::meta::type_list::&lt;Types...&gt;::</small>index</h1>
+<h1><small>cmoon::meta::type_list&lt;Types...&gt;::</small>index</h1>
 <hr>
 <div class="mx-5">
     
@@ -63,31 +63,33 @@ template&lt;typename T&gt;
 <p>
     Returns the index of type <code>T</code>. Any program calling <code>index()</code> with a type <code>T</code> that is not in the <code>type_list</code> is ill-formed.
 </p>
-<div class="container">
+<div class="container ">
     <h3>Parameters</h3>
     
         <p>(none)</p>
     
 </div>
-    <div class="container">
+    
+        <div class="container  mt-2">
     <h3>Return value</h3>
     
-        <p>The index of type <code>T</code> from the <code>type_list</code>.</p>
-    
+            <p>The index of type <code>T</code> from the <code>type_list</code>.</p>
+        
 </div>
-    <div class="container">
+    
+    <div class="container  mt-2">
     <h3>Exceptions</h3>
     
             <p>This function never throws exceptions</p>
         
 </div>
-    <div class="container">
+    <div class="container  mt-2">
     <h3>Complexity</h3>
     
             <p>Constant.</p>
         
 </div>
-<div class="container">
+<div class="container ">
     <h3>Example</h3>
     
         <pre class="mb-0">

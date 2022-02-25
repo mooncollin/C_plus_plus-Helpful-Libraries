@@ -7,8 +7,8 @@
 {{macros.defined("cmoon.concepts", github_url_src + "/concepts/concepts.ixx")}}
 {{macros.overload_set([
 "
-template<class Type, template<typename...> class Template>
-concept specialization_of = cmoon::is_specialization_v<Type, Template>;
+template<class T, template<typename...> class Template>
+concept specialization_of = cmoon::is_specialization_v<T, Template>;
 "
 ])}}
 <p>

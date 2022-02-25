@@ -1,0 +1,50 @@
+{% extends "templates/library.html" %}
+{% set page_name = "Testing" %}
+{% block title %}testing{% endblock %}
+{% block content %}
+{{ super() }}
+<p class="mb-0">
+    The Testing Library contains many different run-time assertions and a framework for creating,
+    running, and displaying testing results.
+</p>
+<br>
+{{macros.defined("cmoon.test", github_url_src + "/test/test.ixx")}}
+{{macros.module_section_start("Core")}}
+    {{macros.module_item("test_result", "The result of running a test", "class", "test_result/index.html")}}
+    {{macros.module_item("test_case", "Abstract class of an invocable test", "class", "test_case/index.html")}}
+    {{macros.module_item("test_suite", "Class to store multiple test cases", "class template", "test_suite/index.html")}}
+{{macros.module_section_end()}}
+{{macros.module_section_start("Runners")}}
+{{macros.module_item("text_test_runner", "Runs tests with text output to a stream", "class", "text_test_runner/index.html")}}
+{{macros.module_section_end()}}
+{{macros.module_section_start("Assertions")}}
+    {{macros.module_item("assert_exception", "Exception used in a failed assertion", "class", "assert_exception/index.html")}}
+    {{macros.module_item("fail", "Immediately throws an <code><a href='assert_exception/index.html'>assert_exception</a></code> with a message", "function")}}
+    {{macros.module_item("error", "Immediately throws a <code><a href='https://en.cppreference.com/w/cpp/error/runtime_error'>std::runtime_error</a></code> with a message", "function")}}
+    {{macros.module_item("assert_equal", "Asserts that the first argument is equal to the second argument", "function template")}}
+    {{macros.module_item("assert_not_equal", "Asserts that the first argument is not equal to the second argument", "function template")}}
+    {{macros.module_item("assert_true", "Asserts that the first argument is equivalent to <code>true</code>", "function template")}}
+    {{macros.module_item("assert_false", "Asserts that the first argument is equivalent to <code>false</code>", "function template")}}
+    {{macros.module_item("assert_is", "Asserts that the first argument is the same object as the second argument", "function template")}}
+    {{macros.module_item("assert_is_not", "Asserts that the first argument is not the same object as the second argument", "function template")}}
+    {{macros.module_item("assert_is_type", "Asserts that the first templated type is the same as the second templated type", "function template")}}
+    {{macros.module_item("assert_is_not_type", "Asserts that the first templated type is not the same as the second templated type", "function template")}}
+    {{macros.module_item("assert_is_specialization_of", "Asserts that the first templated type is a specialization of the second incomplete type", "function template")}}
+    {{macros.module_item("assert_is_not_specialization_of", "Asserts that the first templated type is not a specialization of the second incomplete type", "function template")}}
+    {{macros.module_item("assert_is_instance", "Asserts that the given object can be casted as the given templated type", "function template")}}
+    {{macros.module_item("assert_is_not_instance", "Asserts that the given object cannot be casted as the given templated type", "function template")}}
+    {{macros.module_item("assert_in", "Asserts that the given object can be found in the given range", "function template")}}
+    {{macros.module_item("assert_not_in", "Asserts that the given object cannot be found in the given range", "function template")}}
+    {{macros.module_item("assert_throws", "Asserts that the given callable object throws the given type as an exception", "function template")}}
+    {{macros.module_item("assert_almost_equal", "Asserts that the difference between the first two arguments are less than the given delta", "function template")}}
+    {{macros.module_item("assert_not_almost_equal", "Asserts that the difference between the first two arguments are greater than or equal to the given delta", "function template")}}
+    {{macros.module_item("assert_greater", "Asserts that the first argument is greater than the second argument", "function template")}}
+    {{macros.module_item("assert_greater_equal", "Asserts that the first argument is greater than or equal to the second argument", "function template")}}
+    {{macros.module_item("assert_less", "Asserts that the first argument is lesser than the second argument", "function template")}}
+    {{macros.module_item("assert_less_equal", "Asserts that the first argument is less than or equal to the second argument", "function template")}}
+    {{macros.module_item("assert_sequence_equal", "Asserts that the first sequence is equal to the second sequence", "function template")}}
+    {{macros.module_item("assert_sequence_not_equal", "Asserts that the two sequences are not equal", "function template")}}
+    {{macros.module_item("assert_sequence_almost_equal", "Asserts that the difference between corresponding elements in each sequence is not greater than the given delta", "function template")}}
+    {{macros.module_item("assert_sequence_not_almost_equal", "Asserts that the difference between an element in each sequence is greater than the given delta", "function template")}}
+{{macros.module_section_end()}}
+{% endblock %}

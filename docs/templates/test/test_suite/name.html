@@ -1,0 +1,28 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_suite" %}
+{% set end_name = "name" %}
+{% set templates = "<Allocator>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+void name(std::string n) noexcept;
+",
+"
+const std::string& name() const noexcept;
+"
+])}}
+<p>
+    1) Sets the name of this <code>test_suite</code> with the given name.
+</p>
+<p>
+    2) Returns the name of this <code>test_suite</code>.
+</p>
+{{macros.function_stats(
+    [["n", "new name"]],
+    None,
+    "",
+    ""
+)}}
+{% endblock %}

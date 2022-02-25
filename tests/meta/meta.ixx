@@ -3,41 +3,45 @@ export import cmoon.tests.meta.type_list;
 export import cmoon.tests.meta.value_list;
 
 import <utility>;
+import <memory>;
 
 import cmoon.test;
+import cmoon.library;
 
-import cmoon.tests;
-
-namespace cmoon::tests
+namespace cmoon
 {
 	export
 	template<>
-	cmoon::test::test_suite get_test_suite<library::meta>()
+	struct library_traits<library::meta>
 	{
-		cmoon::test::test_suite suite{"meta library tests"};
-		suite.add_test_case<meta::type_list_no_type_test>();
-		suite.add_test_case<meta::type_list_multiple_types_test>();
-		suite.add_test_case<meta::type_list_concatenate_test>();
-		suite.add_test_case<meta::type_list_tuple_test>();
-		suite.add_test_case<meta::type_list_filter_test>();
-		suite.add_test_case<meta::type_list_transform_test>();
-		suite.add_test_case<meta::type_list_sub_list_test>();
-		suite.add_test_case<meta::type_list_unique_test>();
-		suite.add_test_case<meta::value_list_empty_test>();
-		suite.add_test_case<meta::value_list_test>();
-		suite.add_test_case<meta::value_list_all_of_test>();
-		suite.add_test_case<meta::value_list_any_of_test>();
-		suite.add_test_case<meta::value_list_none_of_test>();
-		suite.add_test_case<meta::value_list_append_test>();
-		suite.add_test_case<meta::value_list_concatenate_test>();
-		suite.add_test_case<meta::value_list_filter_test>();
-		suite.add_test_case<meta::value_list_transform_test>();
-		suite.add_test_case<meta::value_list_sub_list_test>();
-		suite.add_test_case<meta::iota_test>();
-		suite.add_test_case<meta::make_integer_sequence_test>();
-		suite.add_test_case<meta::make_index_sequence_test>();
-		suite.add_test_case<meta::index_sequence_for_test>();
+		template<class Allocator = std::allocator<cmoon::test::test_case>>
+		static cmoon::test::test_suite<Allocator> tests(const Allocator& alloc = {})
+		{
+			cmoon::test::test_suite<Allocator> suite{"meta library tests", alloc};
+			suite.add_test_case<cmoon::tests::meta::type_list_no_type_test>();
+			suite.add_test_case<cmoon::tests::meta::type_list_multiple_types_test>();
+			suite.add_test_case<cmoon::tests::meta::type_list_concatenate_test>();
+			suite.add_test_case<cmoon::tests::meta::type_list_tuple_test>();
+			suite.add_test_case<cmoon::tests::meta::type_list_filter_test>();
+			suite.add_test_case<cmoon::tests::meta::type_list_transform_test>();
+			suite.add_test_case<cmoon::tests::meta::type_list_sub_list_test>();
+			suite.add_test_case<cmoon::tests::meta::type_list_unique_test>();
+			suite.add_test_case<cmoon::tests::meta::value_list_empty_test>();
+			suite.add_test_case<cmoon::tests::meta::value_list_test>();
+			suite.add_test_case<cmoon::tests::meta::value_list_all_of_test>();
+			suite.add_test_case<cmoon::tests::meta::value_list_any_of_test>();
+			suite.add_test_case<cmoon::tests::meta::value_list_none_of_test>();
+			suite.add_test_case<cmoon::tests::meta::value_list_append_test>();
+			suite.add_test_case<cmoon::tests::meta::value_list_concatenate_test>();
+			suite.add_test_case<cmoon::tests::meta::value_list_filter_test>();
+			suite.add_test_case<cmoon::tests::meta::value_list_transform_test>();
+			suite.add_test_case<cmoon::tests::meta::value_list_sub_list_test>();
+			suite.add_test_case<cmoon::tests::meta::iota_test>();
+			suite.add_test_case<cmoon::tests::meta::make_integer_sequence_test>();
+			suite.add_test_case<cmoon::tests::meta::make_index_sequence_test>();
+			suite.add_test_case<cmoon::tests::meta::index_sequence_for_test>();
 
-		return std::move(suite);
-	}
+			return std::move(suite);
+		}
+	};
 }

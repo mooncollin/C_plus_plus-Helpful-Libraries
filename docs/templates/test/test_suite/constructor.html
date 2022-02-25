@@ -1,0 +1,52 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_suite" %}
+{% set end_name = "test_suite" %}
+{% set templates = "<Allocator>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+test_suite() noexcept(noexcept(Allocator()));
+",
+"
+test_suite(std::string name) noexcept(noexcept(Allocator()));
+",
+"
+test_suite(const Allocator& alloc);
+",
+"
+test_suite(std::string name, const Allocator& alloc);
+",
+"
+test_suite(const test_suite&) = delete;
+",
+"
+test_suite(test_suite&& other) noexcept;
+"
+])}}
+<p>
+    1) Constructs an empty test suite with no name.
+</p>
+<p>
+    2) Constructs an empty test suite with the given name.
+</p>
+<p>
+    3) Constructs an empty test suite with no name with the given allocator.
+</p>
+<p>
+    4) Constructs an empty test suite with the given name and given allocator.
+</p>
+<p>
+    5) Copy constructor is deleted.
+</p>
+<p>
+    6) Move constructor.
+</p>
+{{macros.function_stats(
+    [["other", "another test suite object to move"]],
+    None,
+    "",
+    ""
+)}}
+{% endblock %}

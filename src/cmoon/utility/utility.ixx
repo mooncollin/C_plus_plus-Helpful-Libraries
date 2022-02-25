@@ -1,6 +1,5 @@
 export module cmoon.utility;
 export import cmoon.utility.owner;
-export import cmoon.utility.not_null;
 export import cmoon.utility.throw_on_error;
 export import cmoon.utility.extent_type;
 export import cmoon.utility.expected;
@@ -17,66 +16,6 @@ import <ranges>;
 
 namespace cmoon
 {
-	export
-	template<std::ranges::range R>
-	constexpr decltype(auto) last_of(R&& r, std::ranges::range_size_t<R> n = 1)
-	{
-		auto end = std::ranges::end(r);
-		std::advance(end, -n);
-		return *end;
-	}
-
-	export
-	template<std::ranges::range R>
-	constexpr decltype(auto) first_of(R&& r, std::ranges::range_size_t<R> n = 0)
-	{
-		auto begin = std::begin(r);
-		std::advance(begin, n);
-		return *begin;
-	}
-
-	export
-	template<class Container, class... Args>
-		requires(requires { typename Container::value_type; })
-	constexpr auto construct_value(Args&&... args) noexcept(std::is_nothrow_constructible_v<typename Container::value_type, Args...>)
-	{
-		return typename Container::value_type {std::forward<Args...>(args)...};
-	}
-
-	export
-	template<class Container, class... Args>
-		requires(requires { typename Container::value_type; })
-	constexpr auto construct_value(const Container&, Args&&... args) noexcept(noexcept(construct_value<Container>(args...)))
-	{
-		return construct_value<Container>(args...);
-	}
-
-	//template<class Array, std::size_t... I>
-	//constexpr auto a2t_impl(const Array& a, std::index_sequence<I...>) noexcept(noexcept(std::make_tuple(a[I]...)))
-	//{
-	//	return std::make_tuple(a[I]...);
-	//}
-
-	//export
-	//template<typename T, std::size_t N>
-	//constexpr auto array_to_tuple(const std::array<T, N>& a) noexcept(noexcept(a2t_impl(a, Indices{})))
-	//{
-	//	return a2t_impl(a, std::make_index_sequence<N>{});
-	//}
-
-	//template<std::size_t... I>
-	//constexpr auto index_array_helper(std::index_sequence<I...>) noexcept(noexcept(std::array<std::size_t, sizeof...(I)>{I...}))
-	//{
-	//	return std::array<std::size_t, sizeof...(I)>{I...};
-	//}
-
-	//export
-	//template<std::size_t N>
-	//constexpr auto index_array() noexcept(noexcept(index_array_helper(std::make_index_sequence<N>{})))
-	//{
-	//	return index_array_helper(std::make_index_sequence<N>{});
-	//}
-
 	template<class T, std::size_t... I>
 	constexpr std::array<T, sizeof...(I)> initializer_list_to_array_helper(std::initializer_list<T> values, std::index_sequence<I...>) noexcept(noexcept(std::array<T, sizeof...(I)>{{*(std::begin(values) + I)...}}))
 	{
@@ -141,12 +80,6 @@ namespace cmoon
 	constexpr std::decay_t<T> decay_copy(T&& v) noexcept(noexcept(static_cast<std::decay_t<T>>(std::forward<T>(v))))
 	{
 		return static_cast<std::decay_t<T>>(std::forward<T>(v));
-	}
-
-	template<class T>
-	constexpr auto choose_on_type_helper() noexcept
-	{
-		static_assert(false, "No argument matching the given type could be found");
 	}
 
 	template<class T, class First, class... Args>

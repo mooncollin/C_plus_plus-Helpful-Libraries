@@ -1,0 +1,22 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_case" %}
+{% set end_name = "tear_down" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+virtual void tear_down();
+"
+])}}
+<p>
+    Method to be invoked after <code><a href="run.html">run()</a></code> is invoked. This method is <code>virtual</code>, and therefore can be overwritten. The default implementation
+    does nothing.
+</p>
+{{macros.function_stats(
+    [],
+    "",
+    "",
+    ""
+)}}
+{% endblock %}

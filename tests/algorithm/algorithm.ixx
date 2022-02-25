@@ -5,28 +5,32 @@ export import cmoon.tests.algorithm.max;
 export import cmoon.tests.algorithm.fold;
 
 import <utility>;
+import <memory>;
 
 import cmoon.test;
+import cmoon.library;
 
-import cmoon.tests;
-
-namespace cmoon::tests
+namespace cmoon
 {
 	export
 	template<>
-	cmoon::test::test_suite get_test_suite<library::algorithm>()
+	struct library_traits<library::algorithm>
 	{
-		cmoon::test::test_suite suite;
-		suite.add_test_case<algorithm::repeat_none_test>();
-		suite.add_test_case<algorithm::repeat_test>();
-		suite.add_test_case<algorithm::min_single_test>();
-		suite.add_test_case<algorithm::min_test>();
-		suite.add_test_case<algorithm::max_single_test>();
-		suite.add_test_case<algorithm::max_test>();
-		suite.add_test_case<algorithm::foldl_test>();
-		suite.add_test_case<algorithm::foldr_test>();
-		suite.add_test_case<algorithm::foldl_while_test>();
+		template<class Allocator = std::allocator<cmoon::test::test_case>>
+		static cmoon::test::test_suite<Allocator> tests(const Allocator& alloc = {})
+		{
+			cmoon::test::test_suite<Allocator> suite{alloc};
+			suite.add_test_case<cmoon::tests::algorithm::repeat_none_test>();
+			suite.add_test_case<cmoon::tests::algorithm::repeat_test>();
+			suite.add_test_case<cmoon::tests::algorithm::min_test>();
+			suite.add_test_case<cmoon::tests::algorithm::min_custom_test>();
+			suite.add_test_case<cmoon::tests::algorithm::max_test>();
+			suite.add_test_case<cmoon::tests::algorithm::max_custom_test>();
+			suite.add_test_case<cmoon::tests::algorithm::foldl_test>();
+			suite.add_test_case<cmoon::tests::algorithm::foldr_test>();
+			suite.add_test_case<cmoon::tests::algorithm::foldl_while_test>();
 
-		return std::move(suite);
-	}
+			return std::move(suite);
+		}
+	};
 }

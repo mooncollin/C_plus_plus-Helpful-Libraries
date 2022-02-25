@@ -1,0 +1,47 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "assert_almost_equal" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.test", github_url_src + "/test/test.ixx")}}
+{{macros.overload_set([
+'
+template<cmoon::arithmetic T, cmoon::arithmetic F>
+void assert_almost_equal(const T& first, const F& second, const std::common_type_t<T, F>& delta, std::string_view message = "", const std::source_location& location = std::source_location::current());
+'
+])}}
+<p>
+    Throws an <code><a href="assert_exception/index.html">assert_exception</a></code> if the difference between <code>first</code> and <code>second</code> are greater than <code>delta</code>.
+</p>
+{{macros.function_stats(
+    [["first", "First object in the comparison"],
+     ["second", "Second object in the comparison"],
+     ["delta", "Minimum difference to test between two objects"],
+     ["message", "Extra information to be added to the error message"],
+     ["location", "Information about where in the file this assertion was ran"]],
+    "",
+    "",
+    ""
+)}}
+{{macros.example_code(
+'
+import cmoon.test;
+
+class example_test : public cmoon::test::test_case
+{
+    public:
+        example_test()
+            : cmoon::test::test_case{"example test"} {}
+
+        void operator()() override
+        {
+            constexpr double expected {5.0};
+            constexpr double value {5.0};
+
+            cmoon::test::assert_almost_equal(value, expected, 0.0001);
+        }
+};
+'
+)}}
+{% endblock %}

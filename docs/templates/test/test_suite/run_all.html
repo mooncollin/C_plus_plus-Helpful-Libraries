@@ -1,0 +1,24 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_suite" %}
+{% set end_name = "run_all" %}
+{% set templates = "<Allocator>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+template<std::output_iterator<test_result> Out>
+void run_all(Out out);
+"
+])}}
+<p>
+    For each test case <code>test</code> in this <code>test_suite</code>, calls <code>test.run()</code>, and inserts the resulting <code>test_result</code>
+    into the given output iterator.
+</p>
+{{macros.function_stats(
+    [["out", "output iterator to receive <code>test_result</code>s"]],
+    None,
+    "",
+    "Linear in number of test cases"
+)}}
+{% endblock %}

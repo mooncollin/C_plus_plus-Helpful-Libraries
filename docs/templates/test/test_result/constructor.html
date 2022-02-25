@@ -1,0 +1,39 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_result" %}
+{% set end_name = "test_result" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+test_result() noexcept(noexcept(allocator_type()));
+",
+"
+test_result(const Allocator& alloc);
+",
+"
+test_result(const test_result& other);
+",
+"
+test_result(test_result&& other) noexcept;
+"
+])}}
+<p>
+    1) Constructs an empty test result with no errors and no failures.
+</p>
+<p>
+    2) Constructs an empty test result with the given allocator.
+</p>
+<p>
+    3) Copy constructor.
+</p>
+<p>
+    4) Move constructor.
+</p>
+{{macros.function_stats(
+    [["other", "another test result object to copy/move"]],
+    None,
+    "2) May throw <code><a href='https://en.cppreference.com/w/cpp/memory/new/bad_alloc'></a>std::bad_alloc</code>",
+    ""
+)}}
+{% endblock %}

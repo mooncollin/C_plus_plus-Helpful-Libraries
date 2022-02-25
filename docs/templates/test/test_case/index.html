@@ -1,0 +1,25 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_case" %}
+{% block content2 %}
+{{macros.defined("cmoon.test", github_url_src + "/test/test.ixx")}}
+{{macros.overload_set([
+"
+class test_case;
+"
+]
+)}}
+<p>
+    Abstract class for an invocable test. Overriding the <code>operator()</code> method creates a concrete test.
+</p>
+<br>
+<h3>Member functions</h3>
+{{macros.member_item("(constructor)", "Constructs the <code>test_case</code>", "public member function", "constructor.html")}}
+{{macros.member_item("(destructor)", "Destructs the <code>test_case</code>", "virtual public member function", "")}}
+{{macros.member_item("set_up", "Method to be invoked before <code><a>operator()</a></code> is invoked", "virtual public member function", "set_up.html")}}
+{{macros.member_item("tear_down", "Method to be invoked after <code><a>operator()</a></code> is invoked", "virtual public member function", "tear_down.html")}}
+{{macros.member_item("run", "Runs this <code>test_case</code>", "public member function", "run.html")}}
+{{macros.member_item("operator()", "User-defined method to run main part of this <code>test_case</code>", "pure virtual public member function", "operator().html")}}
+{{macros.member_item("name", "Obtain or change the name of this <code>test_case</code>", "public member function", "name.html")}}
+{% endblock %}

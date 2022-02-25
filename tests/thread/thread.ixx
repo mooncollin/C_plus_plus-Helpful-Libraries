@@ -1,19 +1,23 @@
 export module cmoon.tests.thread;
 
 import <utility>;
+import <memory>;
 
 import cmoon.test;
+import cmoon.library;
 
-import cmoon.tests;
-
-namespace cmoon::tests
+namespace cmoon
 {
 	export
 	template<>
-	cmoon::test::test_suite get_test_suite<library::thread>()
+	struct library_traits<library::thread>
 	{
-		cmoon::test::test_suite suite{"thread library tests"};
+		template<class Allocator = std::allocator<cmoon::test::test_case>>
+		static cmoon::test::test_suite<Allocator> tests(const Allocator& alloc = {})
+		{
+			cmoon::test::test_suite<Allocator> suite{"thread library tests", alloc};
 
-		return std::move(suite);
-	}
+			return std::move(suite);
+		}
+	};
 }

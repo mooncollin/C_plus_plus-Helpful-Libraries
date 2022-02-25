@@ -1,26 +1,61 @@
 export module cmoon.algorithm.min;
 
 import <type_traits>;
-import <utility>;
+import <functional>;
+import <concepts>;
 
 namespace cmoon
 {
 	export
-	template<typename T>
-	T min(T&& t)
+	template<typename T0, typename T1, typename... Ts>
+	[[nodiscard]] constexpr std::add_const_t<std::common_reference_t<T0, T1, Ts...>> min(const T0& v0, const T1& v1, const Ts&... rest)
 	{
-		return std::forward<T>(t);
+		if (v0 < v1)
+		{
+			if constexpr (sizeof...(Ts) == 0)
+			{
+				return v0;
+			}
+			else
+			{
+				return min(v0, rest...);
+			}
+		}
+
+		if constexpr (sizeof...(Ts) == 0)
+		{
+			return v1;
+		}
+		else
+		{
+			return min(v1, rest...);
+		}
 	}
 
 	export
-	template<typename T0, typename T1, typename... Ts>
-	typename std::common_type_t<T0, T1, Ts...> min(T0&& v0, T1&& v1, Ts&&... rest)
+	template<class Compare, typename T0, typename T1, typename... Ts>
+		requires(std::invocable<Compare, T0, T1>)
+	[[nodiscard]] constexpr std::add_const_t<std::common_reference_t<T0, T1, Ts...>> min(Compare comp, const T0& v0, const T1& v1, const Ts&... rest)
 	{
-		if (v1 < v0)
+		if (std::invoke(comp, v0, v1))
 		{
-			return min(std::forward<T1>(v1), std::forward<Ts>(rest)...);
+			if constexpr (sizeof...(Ts) == 0)
+			{
+				return v0;
+			}
+			else
+			{
+				return min(v0, rest...);
+			}
 		}
 
-		return min(std::forward<T0>(v0), std::forward<Ts>(rest)...);
+		if constexpr (sizeof...(Ts) == 0)
+		{
+			return v1;
+		}
+		else
+		{
+			return min(v1, rest...);
+		}
 	}
 }

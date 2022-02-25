@@ -1,29 +1,40 @@
+{% macro section_header(name) -%}
+<p class="mb-0 mt-2"><strong>{{name}}</strong></p>
+{%- endmacro %}
+
+{% macro module_section_start(name) -%}
+    {{section_header(name)}}
+    <hr>
+    <table class="table module-section">
+        <tbody>
+{%- endmacro %}
+
+{% macro module_section_end() -%}
+        </tbody>
+    </table>
+{%- endmacro %}
+
 {% macro module_item(name, description, type, url = None) -%}
-<hr>
-<div class="row fw-light">
-    <div class="col-2"><code><a href="{{url if url != None else name + '.html'}}">{{name}}</a></code></div>
-    <div class="col">
+<tr class="fw-light">
+    <td><code><a href="{{url if url != None else name + '.html'}}">{{name}}</a></code></td>
+    <td>
         {{description}}
         <br>
         <span class="meta-detail">({{type}})</span>
-    </div>
-</div>
+    </td>
+</tr>
 {%- endmacro %}
 
 {% macro member_item(name, description, type, url = None) -%}
 <hr>
 <div class="row fw-light">
-    <div class="col-3"><code><a href="{{url if url != None else name + '.html'}}">{{name}}</a></code></div>
+    <div class="col-3"><code>{% if url == None or url|length != 0 %}<a href="{{url if url != None else name + '.html'}}">{{name}}</a>{% else %}{{name}}{% endif %}</code></div>
     <div class="col">
         {{description}}
         <br>
         <span class="meta-detail">({{type}})</span>
     </div>
 </div>
-{%- endmacro %}
-
-{% macro section_header(name) -%}
-<p class="mb-0 mt-2"><strong>{{name}}</strong></p>
 {%- endmacro %}
 
 {% macro defined(name, url) -%}
@@ -31,7 +42,7 @@
 {%- endmacro %}
 
 {% macro description(header) -%}
-<div class="container">
+<div class="container {% for var in varargs %} {{var}}{% endfor %}">
     <h3>{{header}}</h3>
     {{caller()}}
 </div>
@@ -141,29 +152,35 @@
         {% if parameters|length == 0 -%}
         <p>(none)</p>
         {%- else %}
+        <table class="table table-borderless w-50">
+            <tbody>
             {% for param in parameters -%}
-                <div class="row">
-                    <div class="col-auto"><strong>{{param[0]}}</strong></div>
-                    <div class="col-auto"><strong>-</strong></div>
-                    <div class="col-auto">{{param[1]}}</div>
-                </div>
+                <tr>
+                    <td class="monospace"><strong>{{param[0]}}</strong></td>
+                    <td><strong>-</strong></td>
+                    <td>{{param[1]}}</td>
+                </tr>
             {%- endfor %}
+            </tbody>
+        </table>
         {%- endif %}
     {% endcall %}
-    {% call description("Return value") %}
-        {% if return_value|length != 0 -%}
-            <p>{{return_value}}</p>
-        {%- else %}
-            <p>(none)</p>
-        {%- endif %}
-    {% endcall %}
+    {% if return_value != None %}
+        {% call description("Return value", "mt-2") %}
+            {% if return_value|length != 0 -%}
+                <p>{{return_value}}</p>
+            {%- else %}
+                <p>(none)</p>
+            {%- endif %}
+        {% endcall %}
+    {% endif %}
     {% if exceptions|length != 0 -%}
-        {% call description("Exceptions") %}
+        {% call description("Exceptions", "mt-2") %}
             <p>{{exceptions}}</p>
         {% endcall %}
     {%- endif %}
     {% if complexity|length != 0 -%}
-        {% call description("Complexity") %}
+        {% call description("Complexity", "mt-2") %}
             <p>{{complexity}}</p>
         {% endcall %}
     {%- endif %}
@@ -178,11 +195,34 @@
 {%- endmacro %}
 
 {% macro helper_variable_template(code) -%}
-{% call description("Helper variable template") %}
+{% call description("Helper variable template") -%}
     <hr class="m-0">
     <small>
     {{code_block(code, ["bg-transparent"])}}
     </small>
     <hr class="m-0">
-{% endcall %}
+{%- endcall %}
+{%- endmacro %}
+
+{% macro inheritance_diagram(img) -%}
+{% set random_tag = range(10000000) | random %}
+<div class="text-center border p-2" style="width: min-content;">
+    <map name="inheritance_diagram_{{random_tag}}">
+        {{caller()}}
+    </map>
+    <img src="{{img}}" usemap="#inheritance_diagram_{{random_tag}}">
+    <p class="monospace mb-0 mt-1">
+        <small>Inheritance diagram</small>
+    </p>
+</div>
+{%- endmacro %}
+
+{% macro inherited_from(name, url) -%}
+<div class="border p-3" style="background-color: #f3f3fc;">
+    <h4>Inherited from <a href="{{url}}">{{name}}</a></h3>
+    <hr class="mt-0">
+    <div class="w-50 ms-3">
+        {{caller()}}
+    </div>
+</div>
 {%- endmacro %}

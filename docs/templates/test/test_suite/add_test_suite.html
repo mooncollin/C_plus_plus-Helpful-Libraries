@@ -1,0 +1,22 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_suite" %}
+{% set end_name = "add_test_suite" %}
+{% set templates = "<Allocator>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+void add_test_suite(test_suite&& suite);
+"
+])}}
+<p>
+    Moves the test cases from <code>suite</code>.
+</p>
+{{macros.function_stats(
+    [["suite", "test suite to transfer test cases"]],
+    "",
+    "",
+    "Linear in number of test cases"
+)}}
+{% endblock %}

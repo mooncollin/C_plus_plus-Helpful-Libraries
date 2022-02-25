@@ -1,0 +1,22 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_suite" %}
+{% set end_name = "test_suite" %}
+{% set templates = "<Allocator>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+~test_suite() noexcept;
+"
+])}}
+<p>
+    Destroys and deallocates all test cases using the provided allocator.
+</p>
+{{macros.function_stats(
+    [],
+    None,
+    "",
+    "Linear in the amount of test cases"
+)}}
+{% endblock %}

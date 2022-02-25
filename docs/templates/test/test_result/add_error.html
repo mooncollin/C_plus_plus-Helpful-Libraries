@@ -1,0 +1,23 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_result" %}
+{% set end_name = "add_error" %}
+{% set templates = "<Allocator>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+void add_error(std::exception e);
+"
+])}}
+<p>
+    Adds the given <code><a href="https://en.cppreference.com/w/cpp/error/exception">std::exception</a></code> to this test result as an error.
+    An error is usually an unexpected exception.
+</p>
+{{macros.function_stats(
+    [["e", "The exception describing the error"]],
+    "",
+    "",
+    ""
+)}}
+{% endblock %}

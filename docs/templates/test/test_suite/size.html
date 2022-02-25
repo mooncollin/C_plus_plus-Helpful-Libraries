@@ -1,0 +1,22 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_suite" %}
+{% set end_name = "size" %}
+{% set templates = "<Allocator>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+[[nodiscard]] std::size_t size() const noexcept;
+"
+])}}
+<p>
+    Returns the amount of test cases.
+</p>
+{{macros.function_stats(
+    [],
+    "Amount of test cases",
+    "",
+    ""
+)}}
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_suite" %}
+{% set end_name = "clear" %}
+{% set templates = "<Allocator>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+void clear() noexcept;
+"
+])}}
+<p>
+    Removes all test cases.
+</p>
+{{macros.function_stats(
+    [],
+    "",
+    "",
+    ""
+)}}
+{% endblock %}

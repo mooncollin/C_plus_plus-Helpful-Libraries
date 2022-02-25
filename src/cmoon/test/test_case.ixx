@@ -1,9 +1,11 @@
-module;
-#include <string_view>
-#include <string>
-#include <stdexcept>
-
 export module cmoon.test.test_case;
+
+import <string>;
+import <stdexcept>;
+import <exception>;
+import <utility>;
+import <memory>;
+
 import cmoon.test.assert_exception;
 import cmoon.test.test_result;
 
@@ -13,22 +15,19 @@ namespace cmoon::test
 	class test_case
 	{
 		public:
-			test_case(std::string_view str = "")
-				: name_{str} {}
+			test_case() noexcept = default;
 
-			test_case(const test_case&) = default;
-			test_case(test_case&&) = default;
-
-			test_case& operator=(const test_case&) = default;
-			test_case& operator=(test_case&&) = default;
+			test_case(std::string str) noexcept
+				: name_{std::move(str)} {}
 
 			virtual void set_up() {}
 			virtual void tear_down() {}
-			virtual ~test_case() {}
+			virtual ~test_case() noexcept = default;
 
-			test_result run() noexcept
+			template<class Allocator = std::allocator<std::exception>>
+			test_result<Allocator> run(const Allocator& alloc = {})
 			{
-				test_result result;
+				test_result<Allocator> result{alloc};
 
 				try
 				{
@@ -36,13 +35,17 @@ namespace cmoon::test
 					operator()();
 					tear_down();
 				}
-				catch (const assert_exception& e)
+				catch (assert_exception& e)
 				{
-					result.add_failure(e);
+					result.add_failure(std::move(e));
 				}
-				catch (const std::exception& e)
+				catch (std::exception& e)
 				{
-					result.add_error(e);
+					result.add_error(std::move(e));
+				}
+				catch (...)
+				{
+					result.add_error(std::runtime_error{"Unknown Exception"});
 				}
 
 				return result;
@@ -50,9 +53,9 @@ namespace cmoon::test
 
 			virtual void operator()() = 0;
 
-			[[nodiscard]] std::string& name() noexcept
+			void name(std::string n) noexcept
 			{
-				return name_;
+				name_ = std::move(n);
 			}
 
 			[[nodiscard]] const std::string& name() const noexcept
@@ -60,6 +63,6 @@ namespace cmoon::test
 				return name_;
 			}
 		private:
-			std::string name_ {};
+			std::string name_;
 	};
 }

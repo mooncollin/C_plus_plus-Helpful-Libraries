@@ -1,0 +1,48 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "error" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.test", github_url_src + "/test/test.ixx")}}
+{{macros.overload_set([
+'
+void error(std::string_view message = "", const std::source_location& location = std::source_location::current());
+'
+])}}
+<p>
+    Throws a <code><a href="https://en.cppreference.com/w/cpp/error/runtime_error">std::runtime_error</a></code> immediately.
+</p>
+<p>
+    Can be used when there is current issues with compiling the test case with the original code, or where
+    conditional compiling may make a test case unrunnable on a given platform.
+</p>
+{{macros.function_stats(
+    [["message", "Extra information to be added to the error message"],
+     ["location", "Information about where in the file this assertion was ran"]],
+    "",
+    "",
+    ""
+)}}
+{{macros.example_code(
+'
+import cmoon.test;
+
+class example_test : public cmoon::test::test_case
+{
+    public:
+        example_test()
+            : cmoon::test::test_case{"example test"} {}
+
+        void operator()() override
+        {
+            #if defined _WIN32
+            // Write test code for Windows
+            #else
+            cmoon::test::error("This test can only be ran on Windows");
+            #endif
+        }
+};
+'
+)}}
+{% endblock %}

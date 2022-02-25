@@ -40,7 +40,7 @@
                                 <li class="breadcrumb-item action"><a href="index.html">cmoon::meta::value_list</a></li>
                 </ol>
             </nav>
-<h1><small>cmoon::meta::value_list::&lt;Values...&gt;::</small>contains</h1>
+<h1><small>cmoon::meta::value_list&lt;Values...&gt;::</small>contains</h1>
 <hr>
 <div class="mx-5">
     
@@ -63,40 +63,42 @@ template&lt;class T&gt;
 <p>
     Returns <code>true</code> if <code>item</code> is a value within this <code>value_list</code>, returns <code>false</code> otherwise.
 </p>
-<div class="container">
+<div class="container ">
     <h3>Parameters</h3>
     
         
-            <div class="row">
-                    <div class="col-auto"><strong>i</strong></div>
-                    <div class="col-auto"><strong>-</strong></div>
-                    <div class="col-auto">t</div>
-                </div><div class="row">
-                    <div class="col-auto"><strong>T</strong></div>
-                    <div class="col-auto"><strong>-</strong></div>
-                    <div class="col-auto">h</div>
-                </div>
+        <table class="table table-borderless w-50">
+            <tbody>
+            <tr>
+                    <td class="monospace"><strong>item</strong></td>
+                    <td><strong>-</strong></td>
+                    <td>The value to find</td>
+                </tr>
+            </tbody>
+        </table>
     
 </div>
-    <div class="container">
+    
+        <div class="container  mt-2">
     <h3>Return value</h3>
     
-        <p><code>true</code> if <code>item</code> is a value within this <code>value_list</code>, <code>false</code> otherwise.</p>
-    
+            <p><code>true</code> if <code>item</code> is a value within this <code>value_list</code>, <code>false</code> otherwise.</p>
+        
 </div>
-    <div class="container">
+    
+    <div class="container  mt-2">
     <h3>Exceptions</h3>
     
             <p>This function never throws exceptions</p>
         
 </div>
-    <div class="container">
+    <div class="container  mt-2">
     <h3>Complexity</h3>
     
             <p>Linear (<code>sizeof...(Values)</code>)</p>
         
 </div>
-<div class="container">
+<div class="container ">
     <h3>Example</h3>
     
         <pre class="mb-0">

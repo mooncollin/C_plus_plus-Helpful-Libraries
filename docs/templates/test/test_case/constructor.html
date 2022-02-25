@@ -1,0 +1,40 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_case" %}
+{% set end_name = "test_case" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+test_case() noexcept;
+",
+"
+test_case(std::string name) noexcept;
+",
+"
+test_case(const test_case& other);
+",
+"
+test_case(test_case&& other) noexcept;
+"
+])}}
+<p>
+    1) Constructs a test case with a blank name.
+</p>
+<p>
+    2) Constructs a test case with the given name.
+</p>
+<p>
+    3) Copy constructor.
+</p>
+<p>
+    4) Move constructor.
+</p>
+{{macros.function_stats(
+    [["name", "name for the test case"],
+     ["other", "another test case object to copy/move"]],
+    None,
+    "3) May throw <code><a href='https://en.cppreference.com/w/cpp/memory/new/bad_alloc'></a>std::bad_alloc</code> from copying the name",
+    ""
+)}}
+{% endblock %}

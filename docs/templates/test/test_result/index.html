@@ -1,0 +1,30 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_result" %}
+{% block content2 %}
+{{macros.defined("cmoon.test", github_url_src + "/test/test.ixx")}}
+{{macros.overload_set([
+"
+template<class Allocator = std::allocator<std::exception>>
+class test_result;
+"
+]
+)}}
+<p>
+    A <code>test_result</code> stores errors (from thrown exceptions) and failures (from assertions) from a test run.
+</p>
+{{macros.template_parameters(["Allocator", "An allocator that is used to acquire/release memory and to construct/destroy the elements in that memory."])}}
+<br>
+{{macros.member_types(
+    ["allocator_type", "<code>typename std::allocator_traits&lt;Allocator&gt;::template rebind_alloc&lt;std::exception&gt;</code>"]
+)}}
+<h3>Member functions</h3>
+{{macros.member_item("(constructor)", "Constructs the <code>test_result</code>", "public member function", "constructor.html")}}
+{{macros.member_item("(destructor)", "Destructs the <code>test_result</code>", "public member function", "")}}
+{{macros.member_item("add_error", "Adds a <code><a href='https://en.cppreference.com/w/cpp/error/exception'>std::exception</a></code> as an error to this test result", "public member function")}}
+{{macros.member_item("add_failure", "Adds a <code><a href='https://en.cppreference.com/w/cpp/error/exception'>std::exception</a></code> as a failure to this test result", "public member function")}}
+{{macros.member_item("errors", "Returns the current errors of this <code>test_result</code>", "public member function")}}
+{{macros.member_item("failures", "Returns the current failures of this <code>test_result</code>", "public member function")}}
+{{macros.member_item("passed", "Checks whether this <code>test_result</code> has passed", "public member function")}}
+{% endblock %}

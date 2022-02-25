@@ -1,0 +1,22 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_result" %}
+{% set end_name = "passed" %}
+{% set templates = "<Allocator>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+[[nodiscard]] bool passed() const noexcept;
+"
+])}}
+<p>
+    Returns <code>true</code> if this <code>test_result</code> has no errors and no failures, <code>false</code> otherwise.
+</p>
+{{macros.function_stats(
+    [],
+    "<code>true</code> if this <code>test_result</code> has no errors and no failures, <code>false</code> otherwise",
+    "This function never throws exceptions",
+    ""
+)}}
+{% endblock %}

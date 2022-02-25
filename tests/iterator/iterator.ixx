@@ -2,23 +2,27 @@ export module cmoon.tests.iterator;
 export import cmoon.tests.iterator.istream_iterator_sep;
 
 import <utility>;
+import <memory>;
 
 import cmoon.test;
+import cmoon.library;
 
-import cmoon.tests;
-
-namespace cmoon::tests
+namespace cmoon
 {
 	export
 	template<>
-	cmoon::test::test_suite get_test_suite<library::iterator>()
+	struct library_traits<library::iterator>
 	{
-		cmoon::test::test_suite suite{"iterator library tests"};
-		suite.add_test_case<iterator::istream_iterator_sep_string_single_test>();
-		suite.add_test_case<iterator::istream_iterator_sep_string_test>();
-		suite.add_test_case<iterator::istream_iterator_sep_integer_single_test>();
-		suite.add_test_case<iterator::istream_iterator_sep_integer_test>();
+		template<class Allocator = std::allocator<cmoon::test::test_case>>
+		static cmoon::test::test_suite<Allocator> tests(const Allocator& alloc = {})
+		{
+			cmoon::test::test_suite<Allocator> suite{"iterator library tests", alloc};
+			suite.add_test_case<cmoon::tests::iterator::istream_iterator_sep_string_single_test>();
+			suite.add_test_case<cmoon::tests::iterator::istream_iterator_sep_string_test>();
+			suite.add_test_case<cmoon::tests::iterator::istream_iterator_sep_integer_single_test>();
+			suite.add_test_case<cmoon::tests::iterator::istream_iterator_sep_integer_test>();
 
-		return std::move(suite);
-	}
+			return std::move(suite);
+		}
+	};
 }

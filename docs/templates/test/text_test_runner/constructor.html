@@ -1,0 +1,33 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "text_test_runner" %}
+{% set end_name = "text_test_runner" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+text_test_runner(std::ostream& out) noexcept;
+",
+"
+text_test_runner(const text_test_runner& other) noexcept;
+",
+"
+text_test_runner(text_test_runner&& other) noexcept;
+"
+])}}
+<p>
+    1) Constructs this runner with the given stream.
+</p>
+<p>
+    2) Copy constructor.
+</p>
+<p>
+    3) Move constructor.
+</p>
+{{macros.function_stats(
+    [["other", "another runner object to copy/move"]],
+    None,
+    "",
+    ""
+)}}
+{% endblock %}

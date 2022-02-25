@@ -1,6 +1,6 @@
 export module cmoon.test.text_test_runner;
 
-import <iostream>;
+import <ostream>;
 import <chrono>;
 import <iomanip>;
 import <type_traits>;
@@ -10,206 +10,211 @@ import <string_view>;
 import <iterator>;
 
 import cmoon.utility;
-import cmoon.io;
+import cmoon.scope;
+import cmoon.concepts;
+import cmoon.ranges;
 
 import cmoon.test.test_case;
 import cmoon.test.test_suite;
 import cmoon.test.test_result;
-import cmoon.test.runner;
 
 namespace cmoon::test
 {
 	export
-	template<class Stream>
-		requires(requires(Stream s) { cmoon::fprint(s, ""); })
-	class text_test_runner : public test_runner
+	class text_test_runner
 	{
 		public:
-			text_test_runner(Stream& out)
-				requires (!std::is_pointer_v<Stream>)
-				: out_{out} {}
+			text_test_runner(std::ostream& out) noexcept
+				: output_{out} {}
 
-			text_test_runner(Stream out)
-				requires (std::is_pointer_v<Stream>)
-				: out_{out} {}
-
-			bool run(test_case& t_case) override
+			test_result<> run(test_case& t_case)
 			{
 				if (!t_case.name().empty())
 				{
-					cmoon::fprint(get_stream(), "\nRunning test case: {}\n", t_case.name());
+					output_ << "\nRunning test case: ";
+					output_ << t_case.name();
+					output_ << '\n';
 				}
 				print_header();
-				cmoon::fprint(get_stream(), "\n\n");
-
-				const auto result = t_case.run();
+				stopwatch.reset();
+				const auto result {t_case.run()};
+				const auto duration {stopwatch.get_elapsed_time()};
 				print_test_result(result);
 
-				cmoon::fprint(get_stream(), "=======================================\n");
-				print_footer();
+				output_ << "=======================================\n";
+				print_footer(duration);
 
 				if (result.passed())
 				{
-					cmoon::fprint(get_stream(), "\nOK! 1 passed.\n");
+					output_ << "\nOK! 1 passed.\n\n";
 				}
 				else
 				{
-					cmoon::fprint(get_stream(), "\nFAILED! 1 ");
+					output_ << "\nFAILED! 1 ";
 					if (!result.errors().empty())
 					{
-						cmoon::fprint(get_stream(), "error.\n");
+						output_ << "error.\n\n";
 					}
 					else
 					{
-						cmoon::fprint(get_stream(), "failure.\n");
+						output_ << "failure.\n\n";
 					}
 				}
 
-				cmoon::fprint(get_stream(), '\n');
-				return result.passed();
+				return result;
 			}
 
-			bool run(test_suite& t_suite) override
+			template<class Allocator>
+			std::vector<test_result<Allocator>, typename std::allocator_traits<Allocator>::template rebind_alloc<test_result<Allocator>>>
+			run(test_suite<Allocator>& t_suite)
 			{
-				std::vector<std::pair<test_result, std::string_view>> results;
+				std::vector<test_result<Allocator>, typename std::allocator_traits<Allocator>::template rebind_alloc<test_result<Allocator>>> results;
 				std::size_t num_passed {0};
 				std::size_t num_errored {0};
 				std::size_t num_failed {0};
 
 				if (!t_suite.name().empty())
 				{
-					cmoon::fprint(get_stream(), "Running test suite: {}\n", t_suite.name());
+					output_ << "Running test suite: ";
+					output_ << t_suite.name();
+					output_ << '\n';
 				}
 				print_header();
-				cmoon::fprint(get_stream(), "\n\n");
-
-				for (auto& t_case : t_suite)
+				stopwatch.reset();
+				for (auto t_case : t_suite)
 				{
-					const auto result = t_case->run();
-					if (!result.errors().empty())
+					results.push_back(t_case->run(t_suite.get_allocator()));
+					if (!results.back().errors().empty())
 					{
 						num_errored++;
-						cmoon::fprint(get_stream(), 'E');
-						results.emplace_back(result, t_case->name());
+						output_ << 'E';
 					}
-					else if (!result.failures().empty())
+					else if (!results.back().failures().empty())
 					{
 						num_failed++;
-						cmoon::fprint(get_stream(), 'F');
-						results.emplace_back(result, t_case->name());
+						output_ << 'F';
 					}
 					else
 					{
 						num_passed++;
-						cmoon::fprint(get_stream(), '.');
+						output_ << '.';
+					}
+				}
+				const auto duration {stopwatch.get_elapsed_time()};
+
+				output_ << "\n\n=======================================\n";
+
+				for (const auto& [result, test_case] : cmoon::ranges::views::zip(results, t_suite))
+				{
+					if (!result.passed())
+					{
+						output_ << '\n';
+						output_ << test_case->name();
+						output_ << '\n';
+						print_test_result(result);
 					}
 				}
 
-				cmoon::fprint(get_stream(), "\n\n=======================================\n");
+				output_ << "=======================================\n";
+				print_footer(duration);
 
-				for (const auto& [result, name] : results)
+				if (num_passed == std::size(results))
 				{
-					cmoon::fprint(get_stream(), "\n{}:\n", name);
-					print_test_result(result);
-				}
-
-				cmoon::fprint(get_stream(), "=======================================\n");
-				print_footer();
-
-				if (results.empty())
-				{
-					cmoon::fprint(get_stream(), "\nOK!");
+					output_ << "\nOK!";
 				}
 				else
 				{
-					cmoon::fprint(get_stream(), "\nFAILED!");
+					output_ << "\nFAILED!";
 				}
 
 				if (num_passed != 0)
 				{
-					cmoon::fprint(get_stream(), " {} passed.", num_passed);
+					output_ << ' ';
+					output_ << num_passed;
+					output_ << " passed";
 				}
 				if (num_errored != 0)
 				{
-					cmoon::fprint(get_stream(), " {} errored.", num_errored);
+					output_ << ' ';
+					output_ << num_errored;
+					output_ << " errored";
 				}
 				if (num_failed != 0)
 				{
-					cmoon::fprint(get_stream(), " {} failed.", num_failed);
+					output_ << ' ';
+					output_ << num_failed;
+					output_ << " failed";
 				}
-				cmoon::fprintln(get_stream());
+				output_ << '\n';
 
-				return results.empty();
+				return results;
 			}
 		private:
 			void print_header()
 			{
-				stopwatch.reset();
-				cmoon::fprint(get_stream(), "Starting testing at {:%F %T}", stopwatch.get_start_time());
+				output_ << "Starting testing at ";
+				output_ << std::format("{:%F %T}", cmoon::stopwatch::clock_t::now());
+				output_ << "\n\n";
 			}
 
-			void print_footer()
+			template<class Duration>
+			void print_footer(const Duration& duration)
 			{
-				const auto duration = stopwatch.get_elapsed_time();
-				cmoon::fprint(get_stream(), "Ending testing at {:%F %T} : ", stopwatch.get_start_time() + duration);
+				output_ << "Ending testing at ";
+				output_ << std::format("{:%F %T}", stopwatch.get_start_time() + duration);
+				output_ << " : ";
+
+				const auto before_fmt {output_.flags()};
+				cmoon::scope_exit reset_fmt {[this, &before_fmt] {
+					output_.setf(before_fmt);
+				}};
+				output_.setf(std::ios::fixed);
+				output_.precision(3);
 
 				if (const auto seconds = std::chrono::duration_cast<std::chrono::duration<double>>(duration); 
 					seconds.count() > 1)
 				{
-					cmoon::fprint(get_stream(), "{:.3f}s", seconds.count());
+					output_ << seconds;
 				}
 				else if (const auto milliseconds = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(duration);
 						 milliseconds.count() > 1)
 				{
-					cmoon::fprint(get_stream(), "{:.3f}ms", milliseconds.count());
+					output_ << milliseconds;
 				}
 				else
 				{
 					const auto nanoseconds = std::chrono::duration_cast<std::chrono::duration<double, std::nano>>(duration);
-					cmoon::fprint(get_stream(), "{:.3f}ns", nanoseconds.count());
+					output_ << nanoseconds;
 				}
 			}
 
-			void print_test_result(const test_result& result)
+			template<class Allocator>
+			void print_test_result(const test_result<Allocator>& result)
 			{
 				if (!result.errors().empty())
 				{
-					cmoon::fprint(get_stream(), "Errors:\n");
+					output_ << "Errors:\n";
 
 					for (const auto& error : result.errors())
 					{
-						cmoon::fprint(get_stream(), error.what());
-						cmoon::fprintln(get_stream());
+						output_ << error.what()
+								<< '\n';
 					}
 				}
 
 				if (!result.failures().empty())
 				{
-					cmoon::fprint(get_stream(), "Failures:\n");
+					output_ << "Failures:\n";
 
 					for (const auto& failure : result.failures())
 					{
-						cmoon::fprint(get_stream(), failure.what());
-						cmoon::fprint(get_stream(), '\n');
+						output_ << failure.what()
+								<< '\n';
 					}
 				}
 			}
 
-			[[nodiscard]] inline decltype(auto) get_stream() noexcept
-			{
-				if constexpr (std::is_pointer_v<Stream>)
-				{
-					return out_;
-				}
-				else
-				{
-					return out_.get();
-				}
-			}
-
-			std::conditional_t<std::is_pointer_v<Stream>,
-							   Stream,
-							   std::reference_wrapper<Stream>> out_;
+			std::ostream& output_;
 			cmoon::stopwatch stopwatch;
 	};
 }

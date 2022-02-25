@@ -4,7 +4,7 @@
 {% block title %}{{namespaces}}::{{item_name}}::{{templates|e}}{{end_name}}{% endblock %}
 {% block nested %}../../{% endblock %}
 {% block content %}
-<h1><small>{{namespaces}}::{{item_name}}::{{templates|e}}::</small>{{end_name}}</h1>
+<h1><small>{{namespaces}}::{{item_name}}{{templates|e}}::</small>{{end_name}}</h1>
 <hr>
 <div class="mx-5">
     {% block content2 %}

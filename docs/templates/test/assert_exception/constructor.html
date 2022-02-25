@@ -1,0 +1,31 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "assert_exception" %}
+{% set end_name = "assert_exception" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+assert_exception(const std::string& what_arg);
+",
+"
+assert_exception(const char* what_arg);
+",
+"
+assert_exception(const assert_exception& other) noexcept;
+"
+])}}
+<p>
+    1-2) Constructs an <code>assert_exception</code> with the given message.
+</p>
+<p>
+    3) Copy constructor. 
+</p>
+{{macros.function_stats(
+    [["what_arg", "message to be displayed on what() call"],
+     ["other", "another exception object to copy"]],
+    None,
+    "1-2) May throw <code><a href='https://en.cppreference.com/w/cpp/memory/new/bad_alloc'>std::bad_alloc</a></code>",
+    ""
+)}}
+{% endblock %}

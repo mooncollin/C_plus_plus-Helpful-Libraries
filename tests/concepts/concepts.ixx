@@ -10,8 +10,7 @@ import <list>;
 
 import cmoon.test;
 import cmoon.concepts;
-
-import cmoon.tests;
+import cmoon.library;
 
 namespace cmoon::tests::concepts
 {
@@ -598,31 +597,35 @@ namespace cmoon::tests::concepts
 	};
 }
 
-namespace cmoon::tests
+namespace cmoon
 {
 	export
 	template<>
-	cmoon::test::test_suite get_test_suite<library::concepts>()
+	struct library_traits<library::concepts>
 	{
-		cmoon::test::test_suite suite{"Concepts library tests"};
-		suite.add_test_case<concepts::object_test>();
-		suite.add_test_case<concepts::array_test>();
-		suite.add_test_case<concepts::supplier_test>();
-		suite.add_test_case<concepts::unary_operator_test>();
-		suite.add_test_case<concepts::consumer_test>();
-		suite.add_test_case<concepts::function_object_test>();
-		suite.add_test_case<concepts::arithmetic_test>();
-		suite.add_test_case<concepts::signed_arithmetic_test>();
-		suite.add_test_case<concepts::unsigned_arithmetic_test>();
-		suite.add_test_case<concepts::complete_type_test>();
-		suite.add_test_case<concepts::had_size_test>();
-		suite.add_test_case<concepts::has_type_test>();
-		suite.add_test_case<concepts::stream_writable_test>();
-		suite.add_test_case<concepts::string_literal_test>();
-		suite.add_test_case<concepts::character_test>();
-		suite.add_test_case<concepts::formattable_test>();
-		suite.add_test_case<concepts::specialization_of_test>();
+		template<class Allocator = std::allocator<cmoon::test::test_case>>
+		static cmoon::test::test_suite<Allocator> tests(const Allocator& alloc = {})
+		{
+			cmoon::test::test_suite<Allocator> suite{"Concepts library tests", alloc};
+			suite.add_test_case<cmoon::tests::concepts::object_test>();
+			suite.add_test_case<cmoon::tests::concepts::array_test>();
+			suite.add_test_case<cmoon::tests::concepts::supplier_test>();
+			suite.add_test_case<cmoon::tests::concepts::unary_operator_test>();
+			suite.add_test_case<cmoon::tests::concepts::consumer_test>();
+			suite.add_test_case<cmoon::tests::concepts::function_object_test>();
+			suite.add_test_case<cmoon::tests::concepts::arithmetic_test>();
+			suite.add_test_case<cmoon::tests::concepts::signed_arithmetic_test>();
+			suite.add_test_case<cmoon::tests::concepts::unsigned_arithmetic_test>();
+			suite.add_test_case<cmoon::tests::concepts::complete_type_test>();
+			suite.add_test_case<cmoon::tests::concepts::had_size_test>();
+			suite.add_test_case<cmoon::tests::concepts::has_type_test>();
+			suite.add_test_case<cmoon::tests::concepts::stream_writable_test>();
+			suite.add_test_case<cmoon::tests::concepts::string_literal_test>();
+			suite.add_test_case<cmoon::tests::concepts::character_test>();
+			suite.add_test_case<cmoon::tests::concepts::formattable_test>();
+			suite.add_test_case<cmoon::tests::concepts::specialization_of_test>();
 
-		return std::move(suite);
-	}
+			return std::move(suite);
+		}
+	};
 }

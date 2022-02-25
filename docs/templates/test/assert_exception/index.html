@@ -1,0 +1,28 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "assert_exception" %}
+{% block content2 %}
+{{macros.defined("cmoon.test", github_url_src + "/test/test.ixx")}}
+{{macros.overload_set([
+"
+class assert_exception;
+"
+]
+)}}
+<p>
+    Exception used in various assertion functions thrown to indicate an assertion failed.
+</p>
+{% call macros.inheritance_diagram(self.nested() + "img/assert_exception_inheritance.svg") -%}
+<area href="https://en.cppreference.com/w/cpp/error/runtime_error" coords="1,1,150,100" shape="rect">
+{%- endcall %}
+<br>
+<h3>Member functions</h3>
+{{macros.member_item("(constructor)", "Constructs the <code>assert_exception</code>", "public member function", "constructor.html")}}
+<div class="mt-5"></div>
+{% call macros.inherited_from("std::runtime_error", "https://en.cppreference.com/w/cpp/error/runtime_error") -%}
+<h5><strong>Member functions</strong></h5>
+{{macros.member_item("(destructor)", "Destroys the exception object", "virtual public member function of std::runtime_error", "https://en.cppreference.com/w/cpp/error/runtime_error")}}
+{{macros.member_item("what", "returns an explanatory string", "virtual public member function of std::runtime_error", "https://en.cppreference.com/w/cpp/error/runtime_error")}}
+{%- endcall %}
+{% endblock %}

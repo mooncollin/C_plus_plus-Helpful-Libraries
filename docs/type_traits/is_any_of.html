@@ -65,9 +65,8 @@ struct is_any_of : public std::disjunction&lt;std::is_same&lt;T, Ts&gt;...&gt; {
     If <code>T</code> is the same as any of the types in <code>Ts...</code>, its member constant <code>value</code> is <code>true</code>. Otherwise,
     its member constant <code>value</code> is <code>false</code>.
 </p>
-<div class="container">
+<div class="container ">
     <h3>Helper variable template</h3>
-    
     <hr class="m-0">
     <small>
     <pre class="mb-0">
@@ -80,7 +79,6 @@ constexpr bool is_any_of_v = is_any_of&lt;T, Ts...&gt;::value;
 </pre>
     </small>
     <hr class="m-0">
-
 </div>
 
 </div>

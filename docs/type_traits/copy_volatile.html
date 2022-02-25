@@ -68,9 +68,8 @@ struct copy_volatile;
     If <code>std::is_volatile_v&lt;From&gt;</code> is <code>true</code>, then member typedef <code>type</code> is <code>std::add_volatile_t&lt;To&gt;</code>, otherwise the
     member typedef <code>type</code> is <code>std::remove_volatile_t&lt;To&gt;</code>.
 </p>
-<div class="container">
+<div class="container ">
     <h3>Helper variable template</h3>
-    
     <hr class="m-0">
     <small>
     <pre class="mb-0">
@@ -83,7 +82,6 @@ using copy_volatile_t = typename copy_volatile&lt;From, To&gt;::type;
 </pre>
     </small>
     <hr class="m-0">
-
 </div>
 
 </div>

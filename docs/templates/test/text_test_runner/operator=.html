@@ -1,0 +1,27 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "text_test_runner" %}
+{% set end_name = "operator=" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+text_test_runner& operator=(const text_test_runner&);
+",
+"
+text_test_runner& operator=(text_test_runner&& other) noexcept;
+"
+])}}
+<p>
+    1) Copy assignment.
+</p>
+<p>
+    2) Move assignment.
+</p>
+{{macros.function_stats(
+    [["other", "another runner object to copy/move"]],
+    None,
+    "",
+    ""
+)}}
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_suite" %}
+{% set end_name = "operator=" %}
+{% set templates = "<Allocator>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+test_suite& operator=(const test_suite&) = delete;
+",
+"
+test_suite& operator=(test_suite&& other) noexcept;
+"
+])}}
+<p>
+    1) Copy assignment is deleted.
+</p>
+<p>
+    2) Move assignment.
+</p>
+{{macros.function_stats(
+    [["other", "another test suite object to move"]],
+    None,
+    "",
+    ""
+)}}
+{% endblock %}

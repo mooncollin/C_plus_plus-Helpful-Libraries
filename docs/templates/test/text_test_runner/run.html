@@ -1,0 +1,36 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "text_test_runner" %}
+{% set end_name = "run" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+test_result<> run(test_case& t_case);
+",
+"
+template<class Allocator>
+std::vector<test_result<Allocator>,
+typename std::allocator_traits<Allocator>::template rebind_alloc<test_result<Allocator>>>
+run(test_suite&<Allocator>& t_suite);
+"
+])}}
+<p>
+    1) Runs and outputs the test result from a single test case.
+</p>
+<p>
+    2) Runs and outputs the test results from the test suite.
+</p>
+{{macros.function_stats(
+    [["t_case", "test case to run"],
+     ["t_suite", "test suite to run"]],
+    "<p>
+        1) Test result from the test case.
+    </p>
+    <p>
+        2) A collection of test results from the test suite.
+    </p>",
+    "",
+    ""
+)}}
+{% endblock %}

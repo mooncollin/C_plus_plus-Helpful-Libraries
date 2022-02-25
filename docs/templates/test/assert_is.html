@@ -1,0 +1,46 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "assert_is" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.test", github_url_src + "/test/test.ixx")}}
+{{macros.overload_set([
+'
+template<class T>
+void assert_is(const T& first, const T& second, std::string_view message = "", const std::source_location& location = std::source_location::current());
+'
+])}}
+<p>
+    Throws an <code><a href="assert_exception/index.html">assert_exception</a></code> if first and second are not the same object (located at the same memory address).
+</p>
+{{macros.function_stats(
+    [["first", "First object in the comparison"],
+     ["second", "Second object in the comparison"],
+     ["message", "Extra information to be added to the error message"],
+     ["location", "Information about where in the file this assertion was ran"]],
+    "",
+    "",
+    ""
+)}}
+{{macros.example_code(
+'
+import cmoon.test;
+
+class example_test : public cmoon::test::test_case
+{
+    public:
+        example_test()
+            : cmoon::test::test_case{"example test"} {}
+
+        void operator()() override
+        {
+            int value {3};
+            int& value_ref {value};
+
+            cmoon::test::assert_is(value, value_ref);
+        }
+};
+'
+)}}
+{% endblock %}

@@ -40,7 +40,7 @@
                                 <li class="breadcrumb-item action"><a href="index.html">cmoon::meta::type_list</a></li>
                 </ol>
             </nav>
-<h1><small>cmoon::meta::type_list::&lt;Types...&gt;::</small>for_each</h1>
+<h1><small>cmoon::meta::type_list&lt;Types...&gt;::</small>for_each</h1>
 <hr>
 <div class="mx-5">
     
@@ -71,20 +71,22 @@ template&lt;template&lt;typename&gt; class Function&gt;
 </pre>
     for each <code>T</code> in <code>Types...</code>.
 </p>
-<div class="container">
+<div class="container ">
     <h3>Parameters</h3>
     
         <p>(none)</p>
     
 </div>
-    <div class="container">
+    
+        <div class="container  mt-2">
     <h3>Return value</h3>
     
+            
+                <p>(none)</p>
         
-            <p>(none)</p>
-    
 </div>
-    <div class="container">
+    
+    <div class="container  mt-2">
     <h3>Exceptions</h3>
     
             <p><small><tt>1)</tt></small> noexcept specification:<hr class='m-0'><pre class="mb-0">
@@ -94,13 +96,13 @@ noexcept(std::conjunction_v&lt;std::is_nothrow_invocable&lt;Function&lt;Types&gt
 </pre><hr class='m-0'></p>
         
 </div>
-    <div class="container">
+    <div class="container  mt-2">
     <h3>Complexity</h3>
     
             <p>Constant.</p>
         
 </div>
-<div class="container">
+<div class="container ">
     <h3>Example</h3>
     
         <pre class="mb-0">

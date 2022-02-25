@@ -1,15 +1,16 @@
 import <iostream>;
+import <algorithm>;
 
 import cmoon.test;
-import cmoon.tests;
+import cmoon.library;
 
 import cmoon.tests.files;
 
 int main()
 {
-	auto suite = cmoon::tests::get_test_suite<cmoon::tests::library::files>();
+	auto suite = cmoon::library_traits<cmoon::library::files>::tests();
 
 	cmoon::test::text_test_runner runner{std::cout};
 
-	return !runner.run(suite);
+	return std::ranges::any_of(runner.run(suite), [](const auto& r) { return !r.passed(); });
 }

@@ -17,7 +17,7 @@ import cmoon.test.assert_exception;
 namespace cmoon::test
 {
 	template<class T, class F>
-	[[nodiscard]] inline std::string output_if_possible(const T& actual, const F& expected)
+	[[nodiscard]] inline auto output_if_possible(const T& actual, const F& expected)
 	{
 		if constexpr (cmoon::formattable<std::decay_t<T>> &&
 				      cmoon::formattable<std::decay_t<F>>)
@@ -43,7 +43,7 @@ namespace cmoon::test
 	}
 
 	export
-	void fail(std::string_view message="", const std::source_location& location = std::source_location::current())
+	void fail(std::string_view message = "", const std::source_location& location = std::source_location::current())
 	{
 		throw assert_exception{std::format("failure at line {} ({}): {}", location.line(), location.file_name(), message)};
 	}
@@ -59,7 +59,7 @@ namespace cmoon::test
 		requires(requires(const T& t, const F& f) {
 			{ t == f } -> std::convertible_to<bool>;
 		})
-	void assert_equal(const T& actual, const F& expected, std::string_view message="", const std::source_location& location = std::source_location::current())
+	void assert_equal(const T& actual, const F& expected, std::string_view message = "", const std::source_location& location = std::source_location::current())
 	{
 		if(!(actual == expected))
 		{
@@ -101,9 +101,8 @@ namespace cmoon::test
 	}
 
 	export
-	template<class T, class F>
-		requires(std::equality_comparable_with<T*, F*>)
-	void assert_is(const T& actual, const F& expected, std::string_view message = "", const std::source_location& location = std::source_location::current())
+	template<class T>
+	void assert_is(const T& actual, const T& expected, std::string_view message = "", const std::source_location& location = std::source_location::current())
 	{
 		if (std::addressof(actual) != std::addressof(expected))
 		{
@@ -166,7 +165,7 @@ namespace cmoon::test
 	template<class Expected, class Actual>
 	void assert_is_instance(const Actual& actual, std::string_view message = "", const std::source_location& location = std::source_location::current())
 	{
-		const auto casted = dynamic_cast<const Expected*>(std::addressof(actual));
+		const auto casted {dynamic_cast<const Expected*>(std::addressof(actual))};
 		if (casted == nullptr)
 		{
 			throw assert_exception{std::format("assert_is_instance failed at line {} ({}): {}\n{}", location.line(), location.file_name(), message, output_if_possible(typeid(Actual).name(), typeid(Expected).name()))};
@@ -185,8 +184,8 @@ namespace cmoon::test
 	}
 
 	export
-	template<std::ranges::input_range Range, class T>
-	void assert_in(const T& member, const Range& r, std::string_view message = "", const std::source_location& location = std::source_location::current())
+	template<class T, std::ranges::input_range R>
+	void assert_in(const T& member, R&& r, std::string_view message = "", const std::source_location& location = std::source_location::current())
 	{
 		if (std::ranges::find(r, member) == std::ranges::end(r))
 		{
@@ -195,10 +194,10 @@ namespace cmoon::test
 	}
 
 	export
-	template<class T, class Container>
-	void assert_not_in(const T& member, const Container& container, std::string_view message = "", const std::source_location& location = std::source_location::current())
+	template<class T, std::ranges::forward_range R>
+	void assert_not_in(const T& member, R&& r, std::string_view message = "", const std::source_location& location = std::source_location::current())
 	{
-		if (std::ranges::find(container, member) != std::end(container))
+		if (std::ranges::find(r, member) != std::end(r))
 		{
 			throw assert_exception{std::format("assert_not_in failed at line {} ({}): {}\n", location.line(), location.file_name(), message)};
 		}
@@ -212,21 +211,15 @@ namespace cmoon::test
 		try
 		{
 			std::forward<F>(callable)(std::forward<Args>(args)...);
-			throw assert_exception{std::format("assert_throws failed at line {} ({}): {}\nExpected {} to be thrown, but didn't", location.line(), location.file_name(), message, typeid(T).name())};
+			return;
 		}
-		catch (assert_exception e)
-		{
-			throw e;
-		}
-		catch (std::decay_t<T>)
+		catch (std::decay_t<T>&)
 		{
 			// Do nothing, it passed.
+			return;
 		}
-		catch (...)
-		{
-			// Not the exception we were expecting
-			throw assert_exception{std::format("assert_throws failed at line {} ({}): {}\nExpected {} to be thrown, but another was thrown instead", location.line(), location.file_name(), message, typeid(T).name())};
-		}
+
+		throw assert_exception{std::format("assert_throws failed at line {} ({}): {}\nExpected {} to be thrown, but didn't", location.line(), location.file_name(), message, typeid(T).name())};
 	}
 
 	export
@@ -241,15 +234,17 @@ namespace cmoon::test
 	template<cmoon::arithmetic T, cmoon::arithmetic F>
 	void assert_almost_equal(const T& actual, const F& expected, const std::common_type_t<T, F>& delta, std::string_view message = "", const std::source_location& location = std::source_location::current())
 	{
-		const auto difference = std::abs(actual - expected);
+		const auto difference {std::abs(actual - expected)};
 		if (difference > delta)
 		{
-			auto full_message = std::format("assert_almost_equal failed at line {} ({}): {}\n{}", location.line(), location.file_name(), message, output_if_possible(actual, expected));
 			if constexpr (cmoon::formattable<decltype(difference)>)
 			{
-				full_message += std::format("Difference: {}\n", difference);
+				throw assert_exception{std::format("assert_almost_equal failed at line {} ({}): {}\n{}Difference: {}\n", location.line(), location.file_name(), message, output_if_possible(actual, expected), difference)};
 			}
-			throw assert_exception{full_message};
+			else
+			{
+				throw assert_exception{std::format("assert_almost_equal failed at line {} ({}): {}\n{}", location.line(), location.file_name(), message, output_if_possible(actual, expected))};
+			}
 		}
 	}
 
@@ -260,12 +255,14 @@ namespace cmoon::test
 		const auto difference = std::abs(actual - expected);
 		if (difference <= delta)
 		{
-			auto full_message = std::format("assert_almost_not_equal failed at line {} ({}): {}\n{}", location.line(), location.file_name(), message, output_if_possible(actual, expected));
 			if constexpr (cmoon::formattable<decltype(difference)>)
 			{
-				full_message += std::format("Difference: {}\n", difference);
+				throw assert_exception{std::format("assert_not_almost_equal failed at line {} ({}): {}\n{}Difference: {}\n", location.line(), location.file_name(), message, output_if_possible(actual, expected), difference)};
 			}
-			throw assert_exception{full_message};
+			else
+			{
+				throw assert_exception{std::format("assert_not_almost_equal failed at line {} ({}): {}\n{}", location.line(), location.file_name(), message, output_if_possible(actual, expected))};
+			}
 		}
 	}
 
@@ -344,84 +341,6 @@ namespace cmoon::test
 	export
 	template<std::input_iterator InputIterator1, std::input_iterator InputIterator2>
 		requires(std::indirectly_comparable<InputIterator1, InputIterator2, std::equal_to<>>)
-	void assert_sequence_almost_equal(InputIterator1 actual1, InputIterator1 end1, InputIterator2 actual2, 
-		decltype(std::abs(std::declval<std::iter_value_t<InputIterator1>>() - std::declval<std::iter_value_t<InputIterator2>>())) delta,
-		std::string_view message = "", const std::source_location& location = std::source_location::current())
-	{
-		for(; actual1 != end1; ++actual1, ++actual2)
-		{
-			const auto actual = *actual1;
-			const auto expected = *actual2;
-			const auto difference = std::abs(actual - expected);
-			if (difference > delta)
-			{
-				throw assert_exception{std::format("assert_sequence_almost_equal failed at line {} ({}): {}\n{}", location.line(), location.file_name(), message, output_if_possible(actual, expected))};
-			}
-		}
-	}
-
-	export
-	template<std::ranges::input_range Range1, std::ranges::input_range Range2,
-				class Proj1 = std::identity, class Proj2 = std::identity>
-		requires(std::indirectly_comparable<std::ranges::iterator_t<Range1>, 
-											std::ranges::iterator_t<Range2>, 
-											std::equal_to<>,
-											Proj1,
-											Proj2>)
-	void assert_sequence_almost_equal(Range1&& r1, Range2&& r2, 
-		decltype(std::abs(std::declval<std::ranges::range_value_t<Range1>>() - std::declval<std::ranges::range_value_t<Range2>>())) delta,
-		std::string_view message = "", Proj1 proj1 = {}, Proj2 proj2 = {}, const std::source_location& location = std::source_location::current())
-	{
-		if (std::ranges::equal(r1, r2, [delta](const auto& actual, const auto& expected) { 
-			const auto difference = std::abs(actual - expected);
-			return difference <= delta;
-		}, proj1, proj2))
-		{
-			throw assert_exception{std::format("assert_sequence_almost_equal failed at line {} ({}): {}\n", location.line(), location.file_name(), message)};
-		}
-	}
-
-	export
-	template<std::input_iterator InputIterator1, std::input_iterator InputIterator2>
-		requires(std::indirectly_comparable<InputIterator1, InputIterator2, std::equal_to<>>)
-	void assert_sequence_not_almost_equal(InputIterator1 actual1, InputIterator1 end1, InputIterator2 actual2, decltype(std::abs(*std::declval<InputIterator1>() - *std::declval<InputIterator2>())) delta, std::string_view message = "", const std::source_location& location = std::source_location::current())
-	{
-		for(; actual1 != end1; ++actual1, ++actual2)
-		{
-			const auto actual = *actual1;
-			const auto expected = *actual2;
-			const auto difference = std::abs(actual - expected);
-			if (difference <= delta)
-			{
-				throw assert_exception{std::format("assert_sequence_not_almost_equal failed at line {} ({}): {}\n{}", location.line(), location.file_name(), message, output_if_possible(actual, expected))};
-			}
-		}
-	}
-
-	export
-	template<std::ranges::input_range Range1, std::ranges::input_range Range2,
-				class Proj1 = std::identity, class Proj2 = std::identity>
-		requires(std::indirectly_comparable<std::ranges::iterator_t<Range1>, 
-											std::ranges::iterator_t<Range2>, 
-											std::equal_to<>,
-											Proj1,
-											Proj2>)
-	void assert_sequence_not_almost_equal(Range1&& r1, Range2&& r2, 
-		decltype(std::abs(std::declval<std::ranges::range_value_t<Range1>>() - std::declval<std::ranges::range_value_t<Range2>>())) delta,
-		std::string_view message = "", Proj1 proj1 = {}, Proj2 proj2 = {}, const std::source_location& location = std::source_location::current())
-	{
-		if (std::ranges::equal(r1, r2, [delta](const auto& actual, const auto& expected) { 
-			const auto difference = std::abs(actual - expected);
-			return difference > delta;
-		}, proj1, proj2))
-		{
-			throw assert_exception{std::format("assert_sequence_not_almost_equal failed at line {} ({}): {}\n", location.line(), location.file_name(), message)};
-		}
-	}
-
-	export
-	template<std::input_iterator InputIterator1, std::input_iterator InputIterator2>
-		requires(std::indirectly_comparable<InputIterator1, InputIterator2, std::equal_to<>>)
 	void assert_sequence_not_equal(InputIterator1 actual1, InputIterator1 end1, InputIterator2 actual2, std::string_view message = "", const std::source_location& location = std::source_location::current())
 	{
 		if (std::equal(actual1, end1, actual2))
@@ -444,6 +363,84 @@ namespace cmoon::test
 		if (std::ranges::equal(r1, r2, pred, proj1, proj2))
 		{
 			throw assert_exception{std::format("assert_sequence_not_equal failed at line {} ({}): {}\n", location.line(), location.file_name(), message)};
+		}
+	}
+
+	export
+	template<std::input_iterator InputIterator1, std::input_iterator InputIterator2, class D>
+		requires(std::indirectly_comparable<InputIterator1, InputIterator2, std::equal_to<>>)
+	void assert_sequence_almost_equal(InputIterator1 actual1, InputIterator1 end1, InputIterator2 actual2, 
+		const D& delta,
+		std::string_view message = "", const std::source_location& location = std::source_location::current())
+	{
+		for(; actual1 != end1; ++actual1, ++actual2)
+		{
+			const decltype(auto) actual {*actual1};
+			const decltype(auto) expected {*actual2};
+			const auto difference {std::abs(actual - expected)};
+			if (difference > delta)
+			{
+				throw assert_exception{std::format("assert_sequence_almost_equal failed at line {} ({}): {}\n{}", location.line(), location.file_name(), message, output_if_possible(actual, expected))};
+			}
+		}
+	}
+
+	export
+	template<std::ranges::input_range Range1, std::ranges::input_range Range2, class D,
+				class Proj1 = std::identity, class Proj2 = std::identity>
+		requires(std::indirectly_comparable<std::ranges::iterator_t<Range1>, 
+											std::ranges::iterator_t<Range2>, 
+											std::equal_to<>,
+											Proj1,
+											Proj2>)
+	void assert_sequence_almost_equal(Range1&& r1, Range2&& r2, 
+		const D& delta,
+		std::string_view message = "", Proj1 proj1 = {}, Proj2 proj2 = {}, const std::source_location& location = std::source_location::current())
+	{
+		if (!std::ranges::equal(r1, r2, [&delta](const auto& actual, const auto& expected) { 
+			const auto difference {std::abs(actual - expected)};
+			return difference <= delta;
+		}, proj1, proj2))
+		{
+			throw assert_exception{std::format("assert_sequence_almost_equal failed at line {} ({}): {}\n", location.line(), location.file_name(), message)};
+		}
+	}
+
+	export
+	template<std::input_iterator InputIterator1, std::input_iterator InputIterator2, class D>
+		requires(std::indirectly_comparable<InputIterator1, InputIterator2, std::equal_to<>>)
+	void assert_sequence_not_almost_equal(InputIterator1 actual1, InputIterator1 end1, InputIterator2 actual2, const D& delta, std::string_view message = "", const std::source_location& location = std::source_location::current())
+	{
+		for(; actual1 != end1; ++actual1, ++actual2)
+		{
+			const auto actual {*actual1};
+			const auto expected {*actual2};
+			const auto difference {std::abs(actual - expected)};
+			if (difference <= delta)
+			{
+				throw assert_exception{std::format("assert_sequence_not_almost_equal failed at line {} ({}): {}\n{}", location.line(), location.file_name(), message, output_if_possible(actual, expected))};
+			}
+		}
+	}
+
+	export
+	template<std::ranges::input_range Range1, std::ranges::input_range Range2, class D,
+				class Proj1 = std::identity, class Proj2 = std::identity>
+		requires(std::indirectly_comparable<std::ranges::iterator_t<Range1>, 
+											std::ranges::iterator_t<Range2>, 
+											std::equal_to<>,
+											Proj1,
+											Proj2>)
+	void assert_sequence_not_almost_equal(Range1&& r1, Range2&& r2, 
+		const D& delta,
+		std::string_view message = "", Proj1 proj1 = {}, Proj2 proj2 = {}, const std::source_location& location = std::source_location::current())
+	{
+		if (std::ranges::equal(r1, r2, [&delta](const auto& actual, const auto& expected) { 
+			const auto difference {std::abs(actual - expected)};
+			return difference > delta;
+		}, proj1, proj2))
+		{
+			throw assert_exception{std::format("assert_sequence_not_almost_equal failed at line {} ({}): {}\n", location.line(), location.file_name(), message)};
 		}
 	}
 }

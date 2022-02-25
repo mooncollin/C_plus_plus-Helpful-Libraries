@@ -68,9 +68,8 @@ struct copy_const;
     If <code>std::is_const_v&lt;From&gt;</code> is <code>true</code>, then member typedef <code>type</code> is <code>std::add_const_t&lt;To&gt;</code>, otherwise the
     member typedef <code>type</code> is <code>std::remove_const_t&lt;To&gt;</code>.
 </p>
-<div class="container">
+<div class="container ">
     <h3>Helper variable template</h3>
-    
     <hr class="m-0">
     <small>
     <pre class="mb-0">
@@ -83,7 +82,6 @@ using copy_const_t = typename copy_const&lt;From, To&gt;::type;
 </pre>
     </small>
     <hr class="m-0">
-
 </div>
 
 </div>

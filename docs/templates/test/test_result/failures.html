@@ -1,0 +1,22 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_result" %}
+{% set end_name = "failures" %}
+{% set templates = "<Allocator>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+const std::vector<std::exception, allocator_type>& failures() const noexcept;
+"
+])}}
+<p>
+    Returns the failures in this <code>test_result</code>.
+</p>
+{{macros.function_stats(
+    [],
+    "A <code><a href='https://en.cppreference.com/w/cpp/container/vector'>std::vector</a></code> of the failures of this <code>test_result</code>",
+    "This function never throws exceptions",
+    ""
+)}}
+{% endblock %}

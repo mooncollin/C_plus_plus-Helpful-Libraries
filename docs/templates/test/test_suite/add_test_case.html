@@ -1,0 +1,45 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_suite" %}
+{% set end_name = "add_test_case" %}
+{% set templates = "<Allocator>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+template<std::derived_from<test_case> T, class... Args>
+void add_test_case(Args&&... args);
+"
+])}}
+<p>
+    Constructs the given test case derived type with the given arguments.
+</p>
+{{macros.function_stats(
+    [["args...", "arguments used to construct T"]],
+    "",
+    "",
+    ""
+)}}
+{{macros.example_code(
+'
+import cmoon.test;
+
+class example_test : public cmoon::test::test_case
+{
+    public:
+        example_test(int arg1)
+            : cmoon::test::test_case{"example test"} {}
+
+        void operator()() override
+        {
+        }
+};
+
+int main()
+{
+    cmoon::test::test_suite suite;
+    suite.add_test_case<example_test>(int{});
+}
+'
+)}}
+{% endblock %}

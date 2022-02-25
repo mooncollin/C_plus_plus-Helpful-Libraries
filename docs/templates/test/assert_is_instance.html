@@ -1,0 +1,47 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "assert_is_instance" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.test", github_url_src + "/test/test.ixx")}}
+{{macros.overload_set([
+'
+template<class Type, class F>
+void assert_is_instance(const F& obj, std::string_view message = "", const std::source_location& location = std::source_location::current());
+'
+])}}
+<p>
+    Throws an <code><a href="assert_exception/index.html">assert_exception</a></code> if the expression <code>dynamic_cast&lt;const Type*&gt;(std::addressof(obj))</code> is <code>nullptr</code>.
+</p>
+{{macros.function_stats(
+    [["obj", "Object to be casted to <code>Type</code>"],
+     ["message", "Extra information to be added to the error message"],
+     ["location", "Information about where in the file this assertion was ran"]],
+    "",
+    "",
+    ""
+)}}
+{{macros.example_code(
+'
+import <sstream>;
+import <iostream>;
+
+import cmoon.test;
+
+class example_test : public cmoon::test::test_case
+{
+    public:
+        example_test()
+            : cmoon::test::test_case{"example test"} {}
+
+        void operator()() override
+        {
+            std::stringstream stream;
+
+            cmoon::test::assert_is_instance<std::iostream>(stream);
+        }
+};
+'
+)}}
+{% endblock %}

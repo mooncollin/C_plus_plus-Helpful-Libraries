@@ -1,0 +1,23 @@
+{% extends "templates/end_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "test_result" %}
+{% set end_name = "add_failure" %}
+{% set templates = "<Allocator>" %}
+{% block content2 %}
+{{macros.overload_set([
+"
+void add_failure(cmoon::test::assert_exception e);
+"
+])}}
+<p>
+    Adds the given <code><a>cmoon::test::assert_exception</a></code> to this test result as a failure.
+    A failure is usually an exception thrown from an assertion.
+</p>
+{{macros.function_stats(
+    [["e", "The exception describing the assertion"]],
+    "",
+    "",
+    ""
+)}}
+{% endblock %}

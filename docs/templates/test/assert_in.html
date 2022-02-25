@@ -1,0 +1,51 @@
+{% extends "templates/item_page.html" %}
+{% set namespaces = "cmoon::test" %}
+{% set library_name = "Testing" %}
+{% set item_name = "assert_in" %}
+{% block nested %}../{% endblock %}
+{% block content2 %}
+{{macros.defined("cmoon.test", github_url_src + "/test/test.ixx")}}
+{{macros.overload_set([
+'
+template<class T, std::ranges::input_range R>
+void assert_in(const T& member, R&& r, std::string_view message = "", const std::source_location& location = std::source_location::current());
+'
+])}}
+<p>
+    Throws an <code><a href="assert_exception/index.html">assert_exception</a></code> if the <code>member</code> is not in <code>r</code>.
+</p>
+<p>
+    This function is ill-formed if the expression <code>first == second</code> is ill-formed.
+</p>
+{{macros.function_stats(
+    [["member", "Object to find in <code>range</code>"],
+     ["r", "Range to search for <code>member</code>"],
+     ["message", "Extra information to be added to the error message"],
+     ["location", "Information about where in the file this assertion was ran"]],
+    "",
+    "",
+    ""
+)}}
+{{macros.example_code(
+'
+import <vector>;
+
+import cmoon.test;
+
+class example_test : public cmoon::test::test_case
+{
+    public:
+        example_test()
+            : cmoon::test::test_case{"example test"} {}
+
+        void operator()() override
+        {
+            const int value {5};
+            std::vector<int> values {1, 2, 3, 4, 5};
+
+            cmoon::test::assert_in(value, values);
+        }
+};
+'
+)}}
+{% endblock %}

@@ -50,115 +50,118 @@
 <small>Defined in module <code><a href="https://github.com/mooncollin/C_plus_plus-Helpful-Libraries/tree/master/src/cmoon/meta/meta.ixx">&lt;cmoon.meta&gt;</a></code></small>
 <p class="mb-0 mt-2"><strong>Conditional Compiling</strong></p>
     <hr>
-<div class="row fw-light">
-    <div class="col-2"><code><a href="choice_t/index.html">choice_t</a></code></div>
-    <div class="col">
+    <table class="table module-section">
+        <tbody>
+    <tr class="fw-light">
+    <td><code><a href="choice_t/index.html">choice_t</a></code></td>
+    <td>
         Utility for choosing different compile-time strategies
         <br>
         <span class="meta-detail">(class template)</span>
-    </div>
-</div>
+    </td>
+</tr>
+</tbody>
+    </table>
 <p class="mb-0 mt-2"><strong>Typing Manipulation</strong></p>
     <hr>
-<div class="row fw-light">
-    <div class="col-2"><code><a href="type_list/index.html">type_list</a></code></div>
-    <div class="col">
+    <table class="table module-section">
+        <tbody>
+    <tr class="fw-light">
+    <td><code><a href="type_list/index.html">type_list</a></code></td>
+    <td>
         Class for storing a list of types, similar to <code>std::tuple</code>, but with more functionality
         <br>
         <span class="meta-detail">(class template)</span>
-    </div>
-</div>
-    <hr>
-<div class="row fw-light">
-    <div class="col-2"><code><a href="get_type.html">get_type</a></code></div>
-    <div class="col">
+    </td>
+</tr>
+    <tr class="fw-light">
+    <td><code><a href="get_type.html">get_type</a></code></td>
+    <td>
         Type alias for getting a type with an index into a parameter pack
         <br>
         <span class="meta-detail">(alias template)</span>
-    </div>
-</div>
-    <hr>
-<div class="row fw-light">
-    <div class="col-2"><code><a href="extract_types_into_type_list.html">extract_types_into_type_list</a></code></div>
-    <div class="col">
+    </td>
+</tr>
+    <tr class="fw-light">
+    <td><code><a href="extract_types_into_type_list.html">extract_types_into_type_list</a></code></td>
+    <td>
         Type alias for a <code>type_list</code> consisting of the template types that complete <code>T</code>
         <br>
         <span class="meta-detail">(alias template)</span>
-    </div>
-</div>
-    <hr>
-<div class="row fw-light">
-    <div class="col-2"><code><a href="transform_types.html">transform_types</a></code></div>
-    <div class="col">
+    </td>
+</tr>
+    <tr class="fw-light">
+    <td><code><a href="transform_types.html">transform_types</a></code></td>
+    <td>
         Type alias for a <code>type_list&lt;Ts...&gt;</code> where each <code>T</code> in <code>Ts...</code> is <code>typename Function&lt;T&gt;::type</code>
         <br>
         <span class="meta-detail">(alias template)</span>
-    </div>
-</div>
-    <hr>
-<div class="row fw-light">
-    <div class="col-2"><code><a href="filter_types.html">filter_types</a></code></div>
-    <div class="col">
+    </td>
+</tr>
+    <tr class="fw-light">
+    <td><code><a href="filter_types.html">filter_types</a></code></td>
+    <td>
         Type alias for a <code>type_list&lt;Ts2...&gt;</code> where <code>Predicate&lt;T&gt;::value</code> is <code>true</code> for each value in <code>Ts...</code>
         <br>
         <span class="meta-detail">(alias template)</span>
-    </div>
-</div>
-    <hr>
-<div class="row fw-light">
-    <div class="col-2"><code><a href="concatenate_types.html">concatenate_types</a></code></div>
-    <div class="col">
+    </td>
+</tr>
+    <tr class="fw-light">
+    <td><code><a href="concatenate_types.html">concatenate_types</a></code></td>
+    <td>
         Type alias for a <code>type_list&lt;Ts1..., Ts2..., /* ... */, Ts<var>N</var>...&gt;</code> where <code>Ts<var>i</var>...</code> comes from the templates types that would complete <code>TypeLists<var>i</var></code>
         <br>
         <span class="meta-detail">(alias template)</span>
-    </div>
-</div>
-    <hr>
-<div class="row fw-light">
-    <div class="col-2"><code><a href="unique_types.html">unique_types</a></code></div>
-    <div class="col">
+    </td>
+</tr>
+    <tr class="fw-light">
+    <td><code><a href="unique_types.html">unique_types</a></code></td>
+    <td>
         Type alias for a <code>type_list&lt;Ts2...&gt;</code> where <code>Ts2...</code> is a set of unique types from <code>Ts...</code>
         <br>
         <span class="meta-detail">(alias template)</span>
-    </div>
-</div>
+    </td>
+</tr>
+</tbody>
+    </table>
 <p class="mb-0 mt-2"><strong>Value Manipulation</strong></p>
     <hr>
-<div class="row fw-light">
-    <div class="col-2"><code><a href="value_list/index.html">value_list</a></code></div>
-    <div class="col">
+    <table class="table module-section">
+        <tbody>
+    <tr class="fw-light">
+    <td><code><a href="value_list/index.html">value_list</a></code></td>
+    <td>
         Class for storing a list of compile-time values as template arguments
         <br>
         <span class="meta-detail">(class template)</span>
-    </div>
-</div>
-    <hr>
-<div class="row fw-light">
-    <div class="col-2"><code><a href="transform_values.html">transform_values</a></code></div>
-    <div class="col">
+    </td>
+</tr>
+    <tr class="fw-light">
+    <td><code><a href="transform_values.html">transform_values</a></code></td>
+    <td>
         Type alias for <code>typename value_list&lt;Values...&gt;::template transform&lt;Function&gt;;</code>
         <br>
         <span class="meta-detail">(alias template)</span>
-    </div>
-</div>
-    <hr>
-<div class="row fw-light">
-    <div class="col-2"><code><a href="filter_values.html">filter_values</a></code></div>
-    <div class="col">
+    </td>
+</tr>
+    <tr class="fw-light">
+    <td><code><a href="filter_values.html">filter_values</a></code></td>
+    <td>
         Type alias for <code>typename value_list&lt;Values...&gt;::template filter&lt;Predicate&gt;</code>
         <br>
         <span class="meta-detail">(alias template)</span>
-    </div>
-</div>
-    <hr>
-<div class="row fw-light">
-    <div class="col-2"><code><a href="concatenate_values.html">concatenate_values</a></code></div>
-    <div class="col">
+    </td>
+</tr>
+    <tr class="fw-light">
+    <td><code><a href="concatenate_values.html">concatenate_values</a></code></td>
+    <td>
         Type alias for a <code>value_list&lt;&gt;::template concatenate&lt;ValueLists...&gt;</code>
         <br>
         <span class="meta-detail">(alias template)</span>
-    </div>
-</div>
+    </td>
+</tr>
+</tbody>
+    </table>
 
         </div>
         <div id="footer" class="mb-3">
