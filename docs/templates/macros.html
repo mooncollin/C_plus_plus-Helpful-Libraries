@@ -52,13 +52,17 @@
 {% set args = varargs %}
 {% call description("Template parameters") %}
 <small>
-    {% for var in args -%}
-        <div class="row">
-            <div class="col-auto"><strong>{{var[0]}}</strong></div>
-            <div class="col-auto"><strong>-</strong></div>
-            <div class="col-auto">{{var[1]}}</div>
-        </div>
-    {%- endfor %}
+    <table class="table table-borderless">
+        <tbody>
+        {% for var in args -%}
+        <tr class>
+            <td class="monospace"><strong>{{var[0]}}</strong></td>
+            <td><strong>-</strong></td>
+            <td>{{var[1]}}</td>
+        </tr>
+        {%- endfor %}
+        </tbody>
+    </table>
 </small>
 {% endcall %}
 {%- endmacro %}

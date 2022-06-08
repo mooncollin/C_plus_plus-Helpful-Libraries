@@ -17,7 +17,7 @@ namespace cmoon
 	};
 
 	export
-	inline constexpr compiler_type compiler =
+	inline constexpr compiler_type compiler {
 	#if defined(__clang__)
 	compiler_type::clang
 	#elif defined(__como__)
@@ -37,5 +37,22 @@ namespace cmoon
 	#else
 	compiler_type::not_available
 	#endif
-	;
+	};
+
+	export
+	inline constexpr bool debugging {
+	compiler == compiler_type::msvc ? (
+	#if defined(_DEBUG)
+		true
+	#else
+		false
+	#endif
+									):(
+	#if defined NDEBUG
+	false
+	#else
+	true
+	#endif
+	)
+	};
 }

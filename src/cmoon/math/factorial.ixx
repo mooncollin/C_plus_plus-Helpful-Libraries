@@ -13,7 +13,7 @@ namespace cmoon
 	};
 
 	export
-	[[nodiscard]] constexpr std::uintmax_t factorial(std::size_t n) noexcept
+	[[nodiscard]] constexpr std::uintmax_t factorial(const std::size_t n) noexcept
 	{
 		if (n < precomputed_factorials.size())
 		{

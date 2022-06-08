@@ -6,11 +6,11 @@ module;
 #include <CommCtrl.h>
 #include <d2d1.h>
 
-export module cmoon.windows.message_params;
+#include <cstdint>
+#include <type_traits>
+#include <utility>
 
-import <cstdint>;
-import <type_traits>;
-import <utility>;
+export module cmoon.windows.message_params;
 
 import cmoon.windows.window_handle;
 import cmoon.windows.global_lock;

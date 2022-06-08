@@ -1,29 +1,19 @@
 export module cmoon.math.is_odd_even;
 
 import <concepts>;
+import <functional>;
 
 import cmoon.concepts;
 
 namespace cmoon
 {
 	export
-	template<std::integral T>
-	[[nodiscard]] constexpr bool is_odd(const T& val) noexcept
-	{
-		return val & 1;
-	}
+	constexpr auto is_odd {
+		[]<std::integral T>(const T val) noexcept {
+			return static_cast<bool>(val & 1);
+		}
+	};
 
 	export
-	template<std::floating_point F>
-	[[nodiscard]] constexpr bool is_odd(const F& val) noexcept
-	{
-		return is_odd(static_cast<std::intmax_t>(val));
-	}
-
-	export
-	template<cmoon::arithmetic T>
-	[[nodiscard]] constexpr bool is_even(const T& val) noexcept
-	{
-		return !is_odd(val);
-	}
+	constexpr auto is_even {std::not_fn(is_odd)};
 }

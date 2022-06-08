@@ -5,15 +5,21 @@ import <sstream>;
 
 import cmoon.concepts;
 
+import cmoon.string.number_string;
+
 namespace cmoon
 {
 	export
 	template<class T>
-		requires(cmoon::formattable<T> ||
+		requires(cmoon::formattable<T, char> ||
 				 cmoon::stream_writable<T, std::stringstream>)
 	std::string to_string(const T& t)
 	{
-		if constexpr (cmoon::formattable<T>)
+		if constexpr (std::is_arithmetic_v<T>)
+		{
+			return number_string{t}.str();
+		}
+		else if constexpr (cmoon::formattable<T, char>)
 		{
 			return std::format("{}", t);
 		}

@@ -5,7 +5,6 @@ import <string>;
 import <functional>;
 import <iostream>;
 import <type_traits>;
-import <memory>;
 import <list>;
 
 import cmoon.test;
@@ -603,10 +602,9 @@ namespace cmoon
 	template<>
 	struct library_traits<library::concepts>
 	{
-		template<class Allocator = std::allocator<cmoon::test::test_case>>
-		static cmoon::test::test_suite<Allocator> tests(const Allocator& alloc = {})
+		static cmoon::test::test_suite tests()
 		{
-			cmoon::test::test_suite<Allocator> suite{"Concepts library tests", alloc};
+			cmoon::test::test_suite suite{"Concepts library tests"};
 			suite.add_test_case<cmoon::tests::concepts::object_test>();
 			suite.add_test_case<cmoon::tests::concepts::array_test>();
 			suite.add_test_case<cmoon::tests::concepts::supplier_test>();

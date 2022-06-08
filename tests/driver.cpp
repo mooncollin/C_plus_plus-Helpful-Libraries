@@ -5,12 +5,12 @@ import <algorithm>;
 import cmoon.test;
 import cmoon.library;
 
-import cmoon.tests.algorithm;
+import cmoon.tests.benchmarking;
 import cmoon.tests.concepts;
+import cmoon.tests.csv;
 import cmoon.tests.files;
 import cmoon.tests.functional;
 import cmoon.tests.io;
-import cmoon.tests.iterator;
 import cmoon.tests.math;
 import cmoon.tests.meta;
 import cmoon.tests.ranges;
@@ -20,12 +20,12 @@ import cmoon.tests.thread;
 int main()
 {
 	cmoon::test::test_suite suite;
-	suite.add_test_suite(cmoon::library_traits<cmoon::library::algorithm>::tests());
+	suite.add_test_suite(cmoon::library_traits<cmoon::library::benchmarking>::tests());
 	suite.add_test_suite(cmoon::library_traits<cmoon::library::concepts>::tests());
+	suite.add_test_suite(cmoon::library_traits<cmoon::library::csv>::tests());
 	suite.add_test_suite(cmoon::library_traits<cmoon::library::files>::tests());
 	suite.add_test_suite(cmoon::library_traits<cmoon::library::functional>::tests());
 	suite.add_test_suite(cmoon::library_traits<cmoon::library::io>::tests());
-	suite.add_test_suite(cmoon::library_traits<cmoon::library::iterator>::tests());
 	suite.add_test_suite(cmoon::library_traits<cmoon::library::math>::tests());
 	suite.add_test_suite(cmoon::library_traits<cmoon::library::meta>::tests());
 	suite.add_test_suite(cmoon::library_traits<cmoon::library::ranges>::tests());

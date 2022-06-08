@@ -1,47 +1,48 @@
 module;
 
+#pragma warning(push)
+#pragma warning(disable : 5105)
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <sysinfoapi.h>
 #include <lmcons.h>
+#pragma warning(pop)
 
 #ifdef max
 #undef max
 #endif
 
-export module cmoon.windows.system_info;
+#include <string>
+#include <cstdint>
+#include <utility>
+#include <optional>
+#include <vector>
+#include <algorithm>
+#include <type_traits>
+#include <memory>
+#include <ranges>
+#include <system_error>
+#include <iterator>
 
-import <string>;
-import <cstdint>;
-import <utility>;
-import <optional>;
-import <vector>;
-import <algorithm>;
-import <type_traits>;
+export module cmoon.windows.system_info;
 
 import cmoon.string;
 
+import cmoon.windows.system_string;
+import cmoon.windows.registry;
+
 namespace cmoon::windows
 {
-	using ansi_string = std::string;
-	using unicode_string = std::wstring;
+	export
+	inline constexpr auto max_computer_username_size = UNLEN;
 
 	export
-	using string_type = std::conditional_t<win_unicode, unicode_string, ansi_string>;
-
-	export
-	using string_view_type = std::conditional_t<win_unicode, std::wstring_view, std::string_view>;
-
-	export
-	constexpr auto max_computer_username_size = UNLEN;
-
-	export
-	constexpr auto max_path_size = MAX_PATH;
+	inline constexpr auto max_path_size = MAX_PATH;
 
 	export
 	[[nodiscard]] string_type get_computer_name(COMPUTER_NAME_FORMAT format)
 	{
-		::DWORD size {};
+		::DWORD size;
 		::GetComputerNameEx(format, nullptr, std::addressof(size));
 
 		string_type name;
@@ -55,7 +56,7 @@ namespace cmoon::windows
 	export
 	[[nodiscard]] ansi_string get_computer_name_ansi(COMPUTER_NAME_FORMAT format)
 	{
-		::DWORD size {};
+		::DWORD size;
 		::GetComputerNameExA(format, nullptr, std::addressof(size));
 
 		ansi_string name;
@@ -69,7 +70,7 @@ namespace cmoon::windows
 	export
 	[[nodiscard]] unicode_string get_computer_name_unicode(COMPUTER_NAME_FORMAT format)
 	{
-		::DWORD size {};
+		::DWORD size;
 		::GetComputerNameExW(format, nullptr, std::addressof(size));
 
 		unicode_string name;
@@ -133,7 +134,7 @@ namespace cmoon::windows
 		::MEMORYSTATUSEX mem {};
 		mem.dwLength = sizeof(mem);
 
-		if (const auto r = ::GlobalMemoryStatusEx(std::addressof(mem)); r == 0)
+		if (!::GlobalMemoryStatusEx(std::addressof(mem)))
 		{
 			return {};
 		}
@@ -141,178 +142,52 @@ namespace cmoon::windows
 		return mem;
 	}
 
-	export
-	[[nodiscard]] std::vector<string_type> get_drive_names()
+	template<class S, class F, std::output_iterator<S> Out>
+	[[nodiscard]] void get_drive_names_impl(F f, Out out)
 	{
-		string_type drive_names;
+		S drive_names;
 		drive_names.resize(max_path_size);
-		const auto r = ::GetLogicalDriveStrings(max_path_size, drive_names.data());
-		std::vector<string_type> names;
-
-		std::size_t last_index {0};
-		std::size_t index {drive_names.find('\0', last_index)};
-
-		while (index != string_type::npos && drive_names[last_index] != '\0')
+		const auto r {f(max_path_size, drive_names.data())};
+		if (r == 0)
 		{
-			names.emplace_back(drive_names.begin() + last_index, drive_names.begin() + index);
-			last_index = index + 1;
-			index = drive_names.find('\0', last_index);
+			throw std::system_error{static_cast<int>(::GetLastError()), std::system_category()};
 		}
+		drive_names.resize(r - 1);
 
-		return names;
+		for (const auto drive : std::views::split(drive_names, '\0'))
+		{
+			*out = S{std::ranges::begin(drive),
+					 std::ranges::end(drive)};
+		}
 	}
 
 	export
-	[[nodiscard]] std::vector<ansi_string> get_drive_names_ansi()
+	template<std::output_iterator<string_type> Out>
+	[[nodiscard]] void get_drive_names(Out out)
 	{
-		ansi_string drive_names;
-		drive_names.resize(max_path_size);
-		const auto r = ::GetLogicalDriveStringsA(max_path_size, drive_names.data());
-		std::vector<string_type> names;
-
-		std::size_t last_index{0};
-		std::size_t index{drive_names.find('\0', last_index)};
-
-		while (index != ansi_string::npos && drive_names[last_index] != '\0')
-		{
-			names.emplace_back(drive_names.begin() + last_index, drive_names.begin() + index);
-			last_index = index + 1;
-			index = drive_names.find('\0', last_index);
-		}
-
-		return names;
+		get_drive_names_impl<string_type>(::GetLogicalDriveStrings,
+										  out);
 	}
 
 	export
-	[[nodiscard]] std::vector<unicode_string> get_drive_names_unicode()
+	template<std::output_iterator<ansi_string> Out>
+	[[nodiscard]] void get_drive_names_ansi(Out out)
 	{
-		unicode_string drive_names;
-		drive_names.resize(max_path_size);
-		const auto r = ::GetLogicalDriveStringsW(max_path_size, drive_names.data());
-		std::vector<unicode_string> names;
-
-		std::size_t last_index{0};
-		std::size_t index{drive_names.find(L'\0', last_index)};
-
-		while (index != unicode_string::npos && drive_names[last_index] != L'\0')
-		{
-			names.emplace_back(drive_names.begin() + last_index, drive_names.begin() + index);
-			last_index = index + 1;
-			index = drive_names.find(L'\0', last_index);
-		}
-
-		return names;
+		get_drive_names_impl<ansi_string>(::GetLogicalDriveStringsA,
+										  out);
 	}
 
 	export
-	enum class registry_key_option : ::DWORD
+	template<std::output_iterator<unicode_string> Out>
+	[[nodiscard]] void get_drive_names_unicode(Out out)
 	{
-		none = 0,
-		open_link = REG_OPTION_OPEN_LINK
-	};
-
-	export
-	enum class registry_key_access : ::REGSAM
-	{
-		all_access = KEY_ALL_ACCESS,
-		create_link = KEY_CREATE_LINK,
-		create_sub_key = KEY_CREATE_SUB_KEY,
-		enumerate_sub_keys = KEY_ENUMERATE_SUB_KEYS,
-		execute = KEY_EXECUTE,
-		notify = KEY_NOTIFY,
-		query_value = KEY_QUERY_VALUE,
-		read = KEY_READ,
-		set_value = KEY_SET_VALUE,
-		wow64_32 = KEY_WOW64_32KEY,
-		wow64_64 = KEY_WOW64_64KEY,
-		write = KEY_WRITE
-	};
-
-	export
-	enum class registry_value_type : ::DWORD
-	{
-		binary = REG_BINARY,
-		dword = REG_DWORD,
-		dword_little_endian = REG_DWORD_LITTLE_ENDIAN,
-		dword_big_endian = REG_DWORD_BIG_ENDIAN,
-		expand_sz = REG_EXPAND_SZ,
-		link = REG_LINK,
-		multi_sz = REG_MULTI_SZ,
-		none = REG_NONE,
-		qword = REG_QWORD,
-		qword_little_endian = REG_QWORD_LITTLE_ENDIAN,
-		sz = REG_SZ
-	};
-
-	export
-	class registry_key
-	{
-		public:
-			registry_key() = default;
-			registry_key(const registry_key&) = delete;
-			registry_key& operator=(const registry_key&) = delete;
-
-			registry_key(registry_key&& other) noexcept
-				: key_{std::exchange(other.key_, nullptr)} {}
-
-			registry_key& operator=(registry_key&& other) noexcept
-			{
-				if (this != std::addressof(other))
-				{
-					key_ = std::exchange(other.key_, nullptr);
-				}
-
-				return *this;
-			}
-
-			::LSTATUS open(::HKEY root, string_view_type name, registry_key_option options, registry_key_access access)
-			{
-				const auto r = ::RegOpenKeyEx(root, name.data(), static_cast<::DWORD>(options), static_cast<::REGSAM>(access), std::addressof(key_));
-				if (r != ERROR_SUCCESS)
-				{
-					key_ = nullptr;
-				}
-
-				return r;
-			}
-
-			template<class T>
-			std::pair<::LSTATUS, registry_value_type> query(string_view_type name, T& buf, ::DWORD& size)
-			{
-				::DWORD type {};
-				const auto r = ::RegQueryValueEx(key_, name.data(), nullptr, std::addressof(type), reinterpret_cast<::LPBYTE>(std::addressof(buf)), std::addressof(size));
-				return {r, registry_value_type{type}};
-			}
-
-			~registry_key() noexcept
-			{
-				if (key_ != nullptr)
-				{
-					::RegCloseKey(key_);
-				}
-			}
-
-			::HKEY key() noexcept
-			{
-				return key_;
-			}
-
-			::LSTATUS close() noexcept
-			{
-				const auto r = ::RegCloseKey(key_);
-				key_ = nullptr;
-				return r;
-			}
-				
-		private:
-			::HKEY key_ {nullptr};
-	};
+		get_drive_names_impl<unicode_string>(::GetLogicalDriveStringsW,
+										     out);
+	}
 
 	export
 	[[nodiscard]] ::DWORD get_cpu_speed() noexcept
 	{
-		::DWORD mhz {};
-		::DWORD buf_size = sizeof(mhz);
 
 		constexpr auto key_name = []() {
 			if constexpr (win_unicode)
@@ -335,6 +210,9 @@ namespace cmoon::windows
 				return "~MHz";
 			}
 		}();
+
+		::DWORD mhz;
+		::DWORD buf_size {sizeof(mhz)};
 			
 		registry_key key;
 		key.open(HKEY_LOCAL_MACHINE, key_name, registry_key_option::none, registry_key_access::read);

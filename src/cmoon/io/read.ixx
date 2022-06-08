@@ -125,12 +125,12 @@ namespace cmoon
 
 		str.clear();
 
-		auto delim_matching = std::begin(delim);
+		auto delim_matching {std::begin(delim)};
 		typename Traits::int_type int_ch;
 
-		while (!Traits::eq_int_type(int_ch = buf->sbumpc(),  Traits::eof()))
+		while (!Traits::eq_int_type(int_ch = buf->sbumpc(), Traits::eof()))
 		{
-			const auto ch = Traits::to_char_type(int_ch);
+			const auto ch {Traits::to_char_type(int_ch)};
 			if (ch == *delim_matching)
 			{
 				if (++delim_matching == std::end(delim))

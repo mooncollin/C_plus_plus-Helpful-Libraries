@@ -1,4 +1,5 @@
 export module cmoon.windows;
+export import cmoon.windows.system_string;
 export import cmoon.windows.window_handle;
 export import cmoon.windows.comptr;
 export import cmoon.windows.global_lock;

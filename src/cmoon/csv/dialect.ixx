@@ -1,7 +1,3 @@
-module;
-
-#include "cmoon/string/literals.hpp"
-
 export module cmoon.csv.dialect;
 
 import <string_view>;
@@ -12,21 +8,22 @@ import cmoon.string;
 namespace cmoon::csv
 {
 	export
+	enum class quoting_option
+	{
+		QUOTE_ALL,
+		QUOTE_MINIMAL,
+		QUOTE_NONNUMERIC
+	};
+
+	export
 	template<class CharT, class Traits = std::char_traits<CharT>>
 	struct basic_dialect
 	{
 		public:
-			static constexpr std::basic_string_view<CharT, Traits> default_delimiter {cmoon::choose_str_literal<CharT>(STR_LITERALS(","))};
-			static constexpr std::basic_string_view<CharT, Traits> default_quote {cmoon::choose_str_literal<CharT>(STR_LITERALS("\""))};
-			static constexpr std::basic_string_view<CharT, Traits> default_escape {cmoon::choose_str_literal<CharT>(STR_LITERALS("\\"))};
-			static constexpr std::basic_string_view<CharT, Traits> default_line_terminator {cmoon::choose_str_literal<CharT>(STR_LITERALS("\n"))};
-
-			enum class quoting_option
-			{
-				QUOTE_ALL,
-				QUOTE_MINIMAL,
-				QUOTE_NONNUMERIC
-			};
+			static constexpr std::basic_string_view<CharT, Traits> default_delimiter {","};
+			static constexpr std::basic_string_view<CharT, Traits> default_quote {"\""};
+			static constexpr std::basic_string_view<CharT, Traits> default_escape {"\\"};
+			static constexpr std::basic_string_view<CharT, Traits> default_line_terminator {"\n"};
 
 			std::basic_string<CharT, Traits> delimiter {default_delimiter};
 			std::basic_string<CharT, Traits> quote {default_quote};

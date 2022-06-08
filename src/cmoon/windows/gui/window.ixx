@@ -4,12 +4,13 @@ module;
 #include <Windows.h>
 #include <d2d1.h>
 
-export module cmoon.windows.gui.window;
+#include <string_view>
 
-import <string_view>;
+export module cmoon.windows.gui.window;
 
 import cmoon.graphics;
 
+import cmoon.windows.system_string;
 import cmoon.windows.window_handle;
 import cmoon.windows.system_message;
 import cmoon.windows.system_info;

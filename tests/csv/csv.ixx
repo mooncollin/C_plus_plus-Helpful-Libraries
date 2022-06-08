@@ -5,21 +5,23 @@ export import cmoon.tests.csv.csv_writer;
 import <utility>;
 
 import cmoon.test;
+import cmoon.library;
 
-import cmoon.tests;
-
-namespace cmoon::tests
+namespace cmoon
 {
 	export
 	template<>
-	cmoon::test::test_suite get_test_suite<library::csv>()
+	struct library_traits<library::csv>
 	{
-		cmoon::test::test_suite suite{"Csv library tests"};
-		suite.add_test_case<csv::csv_reader_typed_test>();
-		suite.add_test_case<csv::csv_reader_any_test>();
-		suite.add_test_case<csv::csv_writer_test>();
-		suite.add_test_case<csv::csv_write_read_test>();
+		static cmoon::test::test_suite tests()
+		{
+			cmoon::test::test_suite suite{"csv library tests"};
+			//suite.add_test_case<cmoon::tests::csv::csv_reader_typed_test>();
+			suite.add_test_case<cmoon::tests::csv::csv_reader_any_test>();
+			suite.add_test_case<cmoon::tests::csv::csv_writer_test>();
+			//suite.add_test_case<cmoon::tests::csv::csv_write_read_test>();
 
-		return std::move(suite);
-	}
+			return std::move(suite);
+		}
+	};
 }

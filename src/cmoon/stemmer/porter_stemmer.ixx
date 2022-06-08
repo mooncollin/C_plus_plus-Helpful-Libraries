@@ -12,6 +12,7 @@ import <string_view>;
 import cmoon.string;
 import cmoon.algorithm;
 import cmoon.utility;
+import cmoon.ranges;
 import cmoon.language;
 import cmoon.language.english;
 
@@ -127,7 +128,7 @@ namespace cmoon
                     return false;
                 }
 
-                const auto last_char = last_of(word);
+                const auto last_char {cmoon::ranges::last_of(word)};
                 if (last_char == 'l' || last_char == 's' || last_char == 'z')
                 {
                     return false;
@@ -201,10 +202,10 @@ namespace cmoon
                     return true;
                 }
 
-                auto copy = word;
+                auto copy {word};
                 if (porter_stemmer::measure_ends(copy, "ion", "", 1))
                 {
-                    const auto last_char = last_of(copy);
+                    const auto last_char {cmoon::ranges::last_of(copy)};
                     if (last_char != 's' && last_char != 't')
                     {
                         word = std::move(copy);
@@ -246,7 +247,7 @@ namespace cmoon
             {
                 if (porter_stemmer::get_measure(word) > 1 &&
                     porter_stemmer::ends_with_double_consonant(word) &&
-                    last_of(word) == 'l')
+                    cmoon::ranges::last_of(word) == 'l')
                 {
                     word.erase(std::size(word) - 1, 1);
                     return true;
@@ -262,8 +263,8 @@ namespace cmoon
                     return false;
                 }
 
-                return cmoon::language::is_consonant<cmoon::language::english>(last_of(str)) &&
-                        cmoon::language::is_consonant<cmoon::language::english>(last_of(str, 2));
+                return cmoon::language::is_consonant<cmoon::language::english>(cmoon::ranges::last_of(str)) &&
+                        cmoon::language::is_consonant<cmoon::language::english>(cmoon::ranges::last_of(str, 2));
             }
 
             static bool ends_with_transform(std::string& str, std::string_view ends, std::string_view replace)
@@ -308,9 +309,9 @@ namespace cmoon
                     return false;
                 }
 
-                const auto first_char = last_of(str);
-                const auto second_char = last_of(str, 2);
-                const auto third_char = last_of(str, 3);
+                const auto first_char {cmoon::ranges::last_of(str)};
+                const auto second_char {cmoon::ranges::last_of(str, 2)};
+                const auto third_char {cmoon::ranges::last_of(str, 3)};
 
                 if (porter_stemmer::get_measure(str) == 1 &&
                     cmoon::language::is_consonant<cmoon::language::english>(first_char) &&
@@ -334,7 +335,7 @@ namespace cmoon
                 {
                     if(porter_stemmer::get_measure(str) > 1
                         && ends_with_double_consonant(str)
-                        && last_of(str) == 'l')
+                        && cmoon::ranges::last_of(str) == 'l')
                     {
                         str.erase(std::size(str) - 1, 1);
                         return true;

@@ -1,11 +1,9 @@
 export module cmoon.tests.files;
 
 import <utility>;
-import <memory>;
 
 import cmoon.test;
 import cmoon.library;
-
 
 namespace cmoon
 {
@@ -13,10 +11,9 @@ namespace cmoon
 	template<>
 	struct library_traits<library::files>
 	{
-		template<class Allocator = std::allocator<cmoon::test::test_case>>
-		static cmoon::test::test_suite<Allocator> tests(const Allocator& alloc = {})
+		static cmoon::test::test_suite tests()
 		{
-			cmoon::test::test_suite<Allocator> suite{"files library tests", alloc};
+			cmoon::test::test_suite suite{"files library tests"};
 
 			return std::move(suite);
 		}

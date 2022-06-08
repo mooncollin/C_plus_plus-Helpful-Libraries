@@ -8,13 +8,12 @@ namespace cmoon
 	class stopwatch
 	{
 		public:
-			using clock_t = std::chrono::system_clock;
-			using duration_t = typename clock_t::duration;
+			using clock_t = std::chrono::steady_clock;
 
 			stopwatch() noexcept
 				: start_time{clock_t::now()} {}
 
-			[[nodiscard]] duration_t get_elapsed_time() const noexcept
+			[[nodiscard]] auto get_elapsed_time() const noexcept
 			{
 				return clock_t::now() - start_time;
 			}

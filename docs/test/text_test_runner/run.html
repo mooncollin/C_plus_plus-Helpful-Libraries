@@ -7,7 +7,7 @@
         <link rel="stylesheet" href="../../css/bootstrap.min.css">
         <link rel="stylesheet" href="../../css/main.css">
         <link rel="stylesheet" href="../../css/default.min.css">
-        <title>cmoon::test::text_test_runner::run | Docs</title>
+        <title>cmoon::test::text_test_runner::&lt;class CharT, class Traits&gt;run | Docs</title>
     </head>
     <body class="lh-sm">
         <div id="header">
@@ -40,7 +40,7 @@
                                 <li class="breadcrumb-item action"><a href="index.html">cmoon::test::text_test_runner</a></li>
                 </ol>
             </nav>
-<h1><small>cmoon::test::text_test_runner::</small>run</h1>
+<h1><small>cmoon::test::text_test_runner&lt;class CharT, class Traits&gt;::</small>run</h1>
 <hr>
 <div class="mx-5">
     
@@ -51,7 +51,7 @@
                 <td class="p-0"><small><pre class="mb-0">
 <code class="language-cpp rounded py-0 pe-0 bg-transparent">
 
-test_result&lt;&gt; run(test_case&amp; t_case);
+test_result run(test_case&amp; t_case);
 
 </code>
 </pre></small></td>
@@ -60,10 +60,7 @@ test_result&lt;&gt; run(test_case&amp; t_case);
                 <td class="p-0"><small><pre class="mb-0">
 <code class="language-cpp rounded py-0 pe-0 bg-transparent">
 
-template&lt;class Allocator&gt;
-std::vector&lt;test_result&lt;Allocator&gt;,
-typename std::allocator_traits&lt;Allocator&gt;::template rebind_alloc&lt;test_result&lt;Allocator&gt;&gt;&gt;
-run(test_suite&amp;&lt;Allocator&gt;&amp; t_suite);
+std::vector&lt;test_result&gt; run(test_suite&amp; t_suite);
 
 </code>
 </pre></small></td>

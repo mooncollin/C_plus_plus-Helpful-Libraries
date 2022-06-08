@@ -8,11 +8,16 @@ import <iterator>;
 import <string>;
 import <string_view>;
 import <vector>;
-import <array>;
 import <tuple>;
+import <ranges>;
+import <functional>;
+import <optional>;
+import <concepts>;
+import <array>;
 
 import cmoon.io;
 import cmoon.string;
+import cmoon.tuple;
 
 import cmoon.csv.dialect;
 import cmoon.csv.csv_any;
@@ -21,115 +26,76 @@ import cmoon.csv.parse_line;
 
 namespace cmoon::csv
 {
-	export
-	template<class CharT, class Traits = std::char_traits<CharT>>
-	class base_csv_reader
-	{
-		public:
-			base_csv_reader() = default;
+	template<class CharT, class Traits>
+	class base_csv_reader;
 
-			base_csv_reader(std::basic_istream<CharT, Traits>& is, const basic_dialect<CharT, Traits>& dialect={})
-				: is{std::addressof(is)}, dialect_{dialect} {}
-
-			base_csv_reader(std::basic_istream<CharT, Traits>& is, basic_dialect<CharT, Traits>&& dialect)
-				: is{std::addressof(is)}, dialect_{std::move(dialect)} {}
-
-			bool operator==(const base_csv_reader& other) const
-			{
-				return is == other.is;
-			}
-
-			bool operator!=(const base_csv_reader& other) const
-			{
-				return !(*this == other);
-			}
-
-			basic_dialect<CharT, Traits>& get_dialect()
-			{
-				return dialect_;
-			}
-
-			const basic_dialect<CharT, Traits>& get_dialect() const
-			{
-				return dialect_;
-			}
-		protected:
-			static constexpr auto end_of_input {nullptr};
-
-			std::basic_istream<CharT, Traits>* is {end_of_input};
-			basic_dialect<CharT, Traits> dialect_;
-	};
-
-	export
 	template<class CharT, class Traits, class... Args>
-		requires((... && !std::is_void_v<Args>))
-	class basic_csv_reader : public base_csv_reader<CharT, Traits>
+		requires(sizeof...(Args) > 0 &&
+				 std::conjunction_v<std::is_object<Args>...>)
+	class basic_csv_reader;
+
+	template<class CharT, class Traits, class... Args>
+	class csv_row
 	{
-		using base = base_csv_reader<CharT, Traits>;
-
-		static constexpr std::size_t num_types{sizeof...(Args)};
-
 		public:
 			using difference_type = std::ptrdiff_t;
 			using value_type = std::tuple<Args...>;
-			using pointer = value_type*;
-			using reference = value_type&;
+			using pointer = const value_type*;
+			using reference = const value_type&;
 			using iterator_category = std::input_iterator_tag;
 
-			basic_csv_reader() = default;
-
-			basic_csv_reader(std::basic_istream<CharT, Traits>& is, const basic_dialect<CharT, Traits>& dialect = {})
-				: base{is, dialect} {}
-
-			basic_csv_reader(std::basic_istream<CharT, Traits>& is, basic_dialect<CharT, Traits>&& dialect)
-				: base{is, std::move(dialect)} {}
-
-			basic_csv_reader begin()
+			[[nodiscard]] reference operator*() const noexcept
 			{
-				operator++();
-				return *this;
+				return *current;
 			}
 
-			[[nodiscard]] basic_csv_reader end() const
+			pointer operator->() const noexcept
 			{
-				return {};
+				return current.operator->();
 			}
 
-			const value_type& operator*() const
+			csv_row& operator++()
 			{
-				return current;
-			}
+				std::string line;
 
-			basic_csv_reader& operator++()
-			{
-				if (cmoon::read_until(*(this->is), line, std::basic_string_view<CharT, Traits>{this->dialect_.line_terminator.data(), this->dialect_.line_terminator.size()}).eof())
+				if (cmoon::read_until(reader.get().is.get(), line, std::basic_string_view{reader.get().dialect().line_terminator}))
 				{
-					this->is = this->end_of_input;
-					return *this;
+					//std::array<std::basic_string_view<CharT, Traits>, sizeof...(Args)> tokens;
+					//parse_line(std::basic_string_view{line}, reader.get().dialect(), std::ranges::begin(tokens), std::ranges::size(tokens));
+					//current = parse_elements(tokens);
 				}
 
-				std::array<std::basic_string_view<CharT, Traits>, num_types> string_elements;
-				parse_line(std::basic_string_view<CharT, Traits>{line.data(), line.size()}, this->dialect_, std::begin(string_elements), std::size(string_elements));
-
-				current = parse_elements(string_elements);
-
 				return *this;
 			}
 
-			basic_csv_reader operator++(int)
+			void operator++(int)
 			{
-				auto v {*this};
-				operator++();
-				return v;
+				++*this;
+			}
+
+			[[nodiscard]] bool operator==(std::default_sentinel_t) const noexcept
+			{
+				return !static_cast<bool>(reader.get().is.get());
+			}
+
+			[[nodiscard]] bool operator!=(std::default_sentinel_t) const noexcept
+			{
+				return static_cast<bool>(reader.get().is.get());
 			}
 		private:
-			value_type current;
-			std::basic_string<CharT, Traits> line;
+			csv_row(basic_csv_reader<CharT, Traits, Args...>& reader)
+				: reader{reader}
+			{
+				++*this;
+			}
+
+			std::reference_wrapper<basic_csv_reader<CharT, Traits, Args...>> reader;
+			std::optional<value_type> current;
 
 			template<class T>
-			inline static constexpr auto before_from_string(std::basic_string_view<CharT, Traits> v)
+			[[nodiscard]] inline static constexpr auto before_from_string(std::basic_string_view<CharT, Traits> v) noexcept(std::same_as<T, csv_ignore_t>)
 			{
-				if constexpr (std::is_same_v<T, csv_ignore_t>)
+				if constexpr (std::same_as<T, csv_ignore_t>)
 				{
 					return csv_ignore;
 				}
@@ -139,78 +105,153 @@ namespace cmoon::csv
 				}
 			}
 
-			template<std::size_t... I>
-			static value_type parse_elements_helper(const std::array<std::basic_string_view<CharT, Traits>, num_types>& strings, std::index_sequence<I...>)
+			template<class TupleLike, std::size_t... I>
+			[[nodiscard]] static value_type parse_elements_helper(const TupleLike& strings, std::index_sequence<I...>)
 			{
-				return std::make_tuple((before_from_string<std::tuple_element_t<I, value_type>>(strings[I]))...);
+				return std::make_tuple((before_from_string<std::tuple_element_t<I, value_type>>(std::get<I>(strings)))...);
 			}
 
-			static value_type parse_elements(const std::array<std::basic_string_view<CharT, Traits>, num_types>& strings)
+			template<class TupleLike>
+			[[nodiscard]] static value_type parse_elements(const TupleLike& strings)
 			{
-				return parse_elements_helper(strings, std::make_index_sequence<num_types>{});
+				return parse_elements_helper(strings, std::make_index_sequence<sizeof...(Args)>{});
 			}
+
+			template<class CharT2, class Traits2, class... Args2>
+				requires(sizeof...(Args2) > 0 &&
+						 std::conjunction_v<std::is_object<Args2>...>)
+			friend class basic_csv_reader;
 	};
 
-	export
 	template<class CharT, class Traits>
-	class basic_csv_reader<CharT, Traits, csv_any> : public base_csv_reader<CharT, Traits>
+	class csv_row<CharT, Traits, csv_any>
 	{
-		using base = base_csv_reader<CharT, Traits>;
+		using container_type = std::vector<std::basic_string<CharT, Traits>>;
 
-		public:
-			using difference_type = std::ptrdiff_t;
-			using value_type = std::vector<std::basic_string_view<CharT, Traits>>;
-			using pointer = value_type*;
-			using reference = value_type&;
-			using iterator_category = std::input_iterator_tag;
+		// std::back_inserter will not convert std::string_view
+		// to std::string because it is a explicit constructor
+		class string_converting_back_insert_iterator
+		{
+			public:
+				using iterator_category = std::output_iterator_tag;
+				using value_type = void;
+				using difference_type = std::ptrdiff_t;
+				using pointer = void;
+				using reference = void;
 
-			basic_csv_reader() = default;
+				string_converting_back_insert_iterator(container_type& c) noexcept
+					: container{c} {}
 
-			basic_csv_reader(std::basic_istream<CharT, Traits>& is, const basic_dialect<CharT, Traits>& dialect={})
-				: base{is, dialect} {}
-
-			basic_csv_reader(std::basic_istream<CharT, Traits>& is, basic_dialect<CharT, Traits>&& dialect)
-				: base{is, std::move(dialect)} {}
-
-			basic_csv_reader begin()
-			{
-				operator++();
-				return *this;
-			}
-
-			[[nodiscard]] basic_csv_reader end() const
-			{
-				return {};
-			}
-
-			const value_type& operator*() const
-			{
-				return current;
-			}
-
-			basic_csv_reader& operator++()
-			{
-				if (cmoon::getline(*this->is, line, std::basic_string_view<CharT, Traits>{this->dialect_.line_terminator.data(), this->dialect_.line_terminator.size()}).eof())
+				string_converting_back_insert_iterator& operator=(std::basic_string_view<CharT, Traits> view)
 				{
-					this->is = this->end_of_input;
+					container.get().emplace_back(view);
 					return *this;
 				}
 
-				current.clear();
-				parse_line(std::basic_string_view<CharT, Traits>{line.data(), line.size()}, this->dialect_, std::back_inserter(current));
+				string_converting_back_insert_iterator& operator*() noexcept
+				{
+					return *this;
+				}
+
+				string_converting_back_insert_iterator& operator++() noexcept
+				{
+					return *this;
+				}
+
+				string_converting_back_insert_iterator operator++(int) noexcept
+				{
+					auto temp {*this};
+					++*this;
+					return temp;
+				}
+			private:
+				std::reference_wrapper<container_type> container;
+		};
+
+		public:
+			using difference_type = std::ptrdiff_t;
+			using value_type = std::views::all_t<const container_type&>;
+			using pointer = void;
+			using reference = value_type;
+			using iterator_category = std::input_iterator_tag;
+
+			value_type operator*() const noexcept
+			{
+				return std::views::all(std::as_const(current));
+			}
+
+			csv_row& operator++()
+			{
+				std::basic_string<CharT, Traits> line;
+				if (cmoon::read_until(reader.get().is.get(), line, std::basic_string_view{reader.get().dialect().line_terminator}))
+				{
+					container_type temp;
+					parse_line(std::basic_string_view{line}, reader.get().dialect(), string_converting_back_insert_iterator{temp});
+					current = std::move(temp);
+				}
 
 				return *this;
 			}
 
-			basic_csv_reader operator++(int)
+			void operator++(int)
 			{
-				auto v {*this};
-				operator++();
-				return v;
+				++*this;
+			}
+
+			[[nodiscard]] bool operator==(std::default_sentinel_t) const noexcept
+			{
+				return !static_cast<bool>(reader.get().is.get());
+			}
+
+			[[nodiscard]] bool operator!=(std::default_sentinel_t) const noexcept
+			{
+				return static_cast<bool>(reader.get().is.get());
 			}
 		private:
-			value_type current;
-			std::basic_string<CharT, Traits> line;
+			csv_row(basic_csv_reader<CharT, Traits, csv_any>& reader)
+				: reader{reader}
+			{
+				++*this;
+			}
+
+			std::reference_wrapper<basic_csv_reader<CharT, Traits, csv_any>> reader;
+			container_type current;
+
+			template<class CharT2, class Traits2, class... Args2>
+				requires(sizeof...(Args2) > 0 &&
+						 std::conjunction_v<std::is_object<Args2>...>)
+			friend class basic_csv_reader;
+	};
+
+	template<class CharT, class Traits, class... Args>
+		requires(sizeof...(Args) > 0 &&
+				 std::conjunction_v<std::is_object<Args>...>)
+	class basic_csv_reader
+	{
+		public:
+			basic_csv_reader(std::basic_istream<CharT, Traits>& is, basic_dialect<CharT, Traits> dialect={}) noexcept
+				: is{is}, dialect_{std::move(dialect)} {}
+
+			[[nodiscard]] auto begin() noexcept
+			{
+				return csv_row{*this};
+			}
+
+			[[nodiscard]] std::default_sentinel_t end() const noexcept
+			{
+				return std::default_sentinel;
+			}
+
+			const basic_dialect<CharT, Traits>& dialect() const noexcept
+			{
+				return dialect_;
+			}
+		protected:
+			std::reference_wrapper<std::basic_istream<CharT, Traits>> is;
+			basic_dialect<CharT, Traits> dialect_;
+
+			template<class CharT, class Traits, class... Args>
+			friend class csv_row;
 	};
 
 	export

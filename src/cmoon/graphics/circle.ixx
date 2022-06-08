@@ -5,10 +5,10 @@ module;
 	#include <d2d1.h>
 #endif
 
-export module cmoon.graphics.circle;
+#include <cstdint>
+#include <concepts>
 
-import <cstdint>;
-import <concepts>;
+export module cmoon.graphics.circle;
 
 import cmoon.graphics.point2D;
 import cmoon.graphics.ellipse;
@@ -30,7 +30,7 @@ namespace cmoon::graphics
 
 		#ifdef _WIN32
 		[[nodiscard]] constexpr operator ::D2D1_ELLIPSE() const noexcept
-			requires(std::is_convertible_v<T, FLOAT>)
+			requires(std::convertible_to<T, FLOAT>)
 		{
 			return {.point = point, .radiusX = radius, .radiusY = radius};
 		}

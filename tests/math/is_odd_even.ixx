@@ -1,5 +1,8 @@
 export module cmoon.tests.math.is_odd_even;
 
+import <array>;
+import <algorithm>;
+
 import cmoon.test;
 import cmoon.math;
 
@@ -27,6 +30,8 @@ namespace cmoon::tests::math
 				cmoon::test::assert_equal(cmoon::is_odd(-3), true);
 				cmoon::test::assert_equal(cmoon::is_odd(-2), false);
 				cmoon::test::assert_equal(cmoon::is_odd(0), false);
+
+				cmoon::test::assert_true(std::ranges::all_of(std::array{1, 3, 5, 7, 9}, cmoon::is_odd));
 
 				static_assert(cmoon::is_odd(1) == true);
 				static_assert(cmoon::is_odd(2) == false);
@@ -67,6 +72,8 @@ namespace cmoon::tests::math
 				cmoon::test::assert_equal(cmoon::is_even(-3), false);
 				cmoon::test::assert_equal(cmoon::is_even(-2), true);
 				cmoon::test::assert_equal(cmoon::is_even(0), true);
+
+				cmoon::test::assert_true(std::ranges::all_of(std::array{2, 4, 6, 8, 10}, cmoon::is_even));
 
 				static_assert(cmoon::is_even(1) == false);
 				static_assert(cmoon::is_even(2) == true);

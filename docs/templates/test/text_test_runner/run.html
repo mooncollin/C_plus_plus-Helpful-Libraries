@@ -3,16 +3,14 @@
 {% set library_name = "Testing" %}
 {% set item_name = "text_test_runner" %}
 {% set end_name = "run" %}
+{% set templates = "<class CharT, class Traits>" %}
 {% block content2 %}
 {{macros.overload_set([
 "
-test_result<> run(test_case& t_case);
+test_result run(test_case& t_case);
 ",
 "
-template<class Allocator>
-std::vector<test_result<Allocator>,
-typename std::allocator_traits<Allocator>::template rebind_alloc<test_result<Allocator>>>
-run(test_suite&<Allocator>& t_suite);
+std::vector<test_result> run(test_suite& t_suite);
 "
 ])}}
 <p>

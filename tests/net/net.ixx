@@ -1,21 +1,24 @@
 export module cmoon.tests.net;
-export import cmoon.tests.net.system_context;
+//export import cmoon.tests.net.system_context;
 
 import <utility>;
 
 import cmoon.test;
-
-import cmoon.tests;
+import cmoon.library;
 
 namespace cmoon::tests
 {
 	export
 	template<>
-	cmoon::test::test_suite get_test_suite<library::net>()
+	struct library_traits<library::net>
 	{
-		cmoon::test::test_suite suite{"net library tests"};
-		suite.add_test_case<net::system_context_test>();
+		static cmoon::test::test_suite tests()
+		{
+			cmoon::test::test_suite suite{"net library tests"};
+			suite.add_test_case<cmoon::tests::net::service_context_test>();
 
-		return std::move(suite);
-	}
+			return std::move(suite);
+		}
+	};
+	
 }

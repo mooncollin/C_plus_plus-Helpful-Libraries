@@ -26,7 +26,7 @@ namespace cmoon::tests::csv
 				using types = std::tuple<std::string, int, float, std::string>;
 
 				cmoon::csv::csv_reader<std::string, int, float, std::string> c{testing_stream};
-				auto current = std::begin(c);
+				auto current {std::ranges::begin(c)};
 
 				cmoon::test::assert_equal(*current, types{std::string{"Hello!"}, 394, 39.2f, std::string{"World!"}});
 				++current;
@@ -34,7 +34,7 @@ namespace cmoon::tests::csv
 				cmoon::test::assert_equal(*current, types{std::string{"quoted!"}, 93, 2222.222f, std::string{"        spaces!       "}});
 				++current;
 
-				cmoon::test::assert_equal(current, decltype(c){});
+				cmoon::test::assert_equal(current, std::ranges::end(c));
 			}
 	};
 
@@ -52,23 +52,20 @@ namespace cmoon::tests::csv
 				testing_stream << "Only one here, really?\n";
 				testing_stream << "repeat&repeat&repeat&repeat\n";
 
-				cmoon::csv::dialect d;
-				d.delimiter = "&";
+				cmoon::csv::csv_reader<cmoon::csv::csv_any> c{testing_stream, {.delimiter = "&"}};
 
-				cmoon::csv::csv_reader<cmoon::csv::csv_any> c{testing_stream, d};
+				auto row {c.begin()};
 
-				c.begin();
+				cmoon::test::assert_sequence_equal(*row, std::vector<std::string>{"We are going to change things up", "<-this is such a strange delimiter"});
+				++row;
 
-				cmoon::test::assert_equal(*c, std::vector<std::string_view>{"We are going to change things up", "<-this is such a strange delimiter"});
-				++c;
+				cmoon::test::assert_sequence_equal(*row, std::vector<std::string>{"Only one here, really?"});
+				++row;
 
-				cmoon::test::assert_equal(*c, std::vector<std::string_view>{"Only one here, really?"});
-				++c;
+				cmoon::test::assert_sequence_equal(*row, std::vector<std::string>{"repeat", "repeat", "repeat", "repeat"});
+				++row;
 
-				cmoon::test::assert_equal(*c, std::vector<std::string_view>{"repeat", "repeat", "repeat", "repeat"});
-				++c;
-
-				cmoon::test::assert_equal(c, decltype(c){});
+				cmoon::test::assert_equal(row, std::ranges::end(c));
 			}
 	};
 }

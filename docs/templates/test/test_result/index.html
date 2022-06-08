@@ -6,7 +6,6 @@
 {{macros.defined("cmoon.test", github_url_src + "/test/test.ixx")}}
 {{macros.overload_set([
 "
-template<class Allocator = std::allocator<std::exception>>
 class test_result;
 "
 ]
@@ -14,11 +13,6 @@ class test_result;
 <p>
     A <code>test_result</code> stores errors (from thrown exceptions) and failures (from assertions) from a test run.
 </p>
-{{macros.template_parameters(["Allocator", "An allocator that is used to acquire/release memory and to construct/destroy the elements in that memory."])}}
-<br>
-{{macros.member_types(
-    ["allocator_type", "<code>typename std::allocator_traits&lt;Allocator&gt;::template rebind_alloc&lt;std::exception&gt;</code>"]
-)}}
 <h3>Member functions</h3>
 {{macros.member_item("(constructor)", "Constructs the <code>test_result</code>", "public member function", "constructor.html")}}
 {{macros.member_item("(destructor)", "Destructs the <code>test_result</code>", "public member function", "")}}

@@ -52,7 +52,6 @@
                 <td class="p-0"><small><pre class="mb-0">
 <code class="language-cpp rounded py-0 pe-0 bg-transparent">
 
-template&lt;class Allocator = std::allocator&lt;std::exception&gt;&gt;
 class test_result;
 
 </code>
@@ -64,45 +63,6 @@ class test_result;
 <p>
     A <code>test_result</code> stores errors (from thrown exceptions) and failures (from assertions) from a test run.
 </p>
-
-<div class="container ">
-    <h3>Template parameters</h3>
-    
-<small>
-    <div class="row">
-            <div class="col-auto"><strong>Allocator</strong></div>
-            <div class="col-auto"><strong>-</strong></div>
-            <div class="col-auto">An allocator that is used to acquire/release memory and to construct/destroy the elements in that memory.</div>
-        </div>
-</small>
-
-</div>
-<br>
-
-<div class="container ">
-    <h3>Member Types</h3>
-    
-<div class="w-50">
-    <hr class="my-0">
-    <small>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th scope="col">Member type</th>
-                    <th scope="col">Definition</th>
-                </tr>
-            </thead>
-            <tbody>
-            <tr>
-                    <td>allocator_type</td>
-                    <td><code>typename std::allocator_traits&lt;Allocator&gt;::template rebind_alloc&lt;std::exception&gt;</code></td>
-                </tr>
-            </tbody>
-        </table>
-    </small>
-</div>
-
-</div>
 <h3>Member functions</h3>
 <hr>
 <div class="row fw-light">

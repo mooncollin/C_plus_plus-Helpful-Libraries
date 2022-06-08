@@ -3,12 +3,12 @@ module;
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-export module cmoon.windows.gui.message_box;
+#include <string_view>
+#include <cstdint>
+#include <concepts>
+#include <type_traits>
 
-import <string_view>;
-import <cstdint>;
-import <concepts>;
-import <type_traits>;
+export module cmoon.windows.gui.message_box;
 
 import cmoon.windows.window_handle;
 

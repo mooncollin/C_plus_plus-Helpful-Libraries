@@ -5,6 +5,7 @@ export import cmoon.utility.extent_type;
 export import cmoon.utility.expected;
 export import cmoon.utility.stopwatch;
 export import cmoon.utility.as_unsigned;
+export import cmoon.utility.copyable_box;
 
 import <iterator>;
 import <utility>;

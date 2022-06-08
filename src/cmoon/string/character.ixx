@@ -1,14 +1,8 @@
-module;
-
-#include "cmoon/string/literals.hpp"
-
 export module cmoon.string.character;
 
 import <cctype>;
 import <concepts>;
 import <array>;
-
-import cmoon.string.literals;
 
 namespace cmoon
 {
@@ -35,12 +29,5 @@ namespace cmoon
             const auto len = lengths[static_cast<unsigned char>(p) >> 3];
             return len + !len;
         }
-    }
-
-    export
-    template<std::integral CharT>
-    [[nodiscard]] constexpr bool is_digit(CharT c) noexcept
-    {
-        return choose_char_literal<CharT>(CHAR_LITERALS('0')) <= c && c <= choose_char_literal<CharT>(CHAR_LITERALS('9'));
     }
 }

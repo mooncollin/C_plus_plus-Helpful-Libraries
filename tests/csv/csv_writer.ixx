@@ -67,18 +67,18 @@ namespace cmoon::tests::csv
 				testing_stream.seekg(0);
 				cmoon::csv::csv_reader<int, double, std::string, int> reader{testing_stream};
 
-				reader.begin();
+				auto row {std::ranges::begin(reader)};
 
-				cmoon::test::assert_equal(*reader, input);
-				++reader;
+				cmoon::test::assert_equal(*row, input);
+				++row;
 
-				cmoon::test::assert_equal(*reader, input2);
-				++reader;
+				cmoon::test::assert_equal(*row, input2);
+				++row;
 
-				cmoon::test::assert_equal(*reader, input3);
-				++reader;
+				cmoon::test::assert_equal(*row, input3);
+				++row;
 
-				cmoon::test::assert_equal(reader, decltype(reader){});
+				cmoon::test::assert_equal(row, std::ranges::end(reader));
 			}
 	};
 }

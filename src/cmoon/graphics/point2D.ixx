@@ -5,9 +5,10 @@ module;
 	#include <d2d1.h>
 #endif
 
-export module cmoon.graphics.point2D;
+#include <cstdint>
+#include <type_traits>
 
-import <cstdint>;
+export module cmoon.graphics.point2D;
 
 namespace cmoon::graphics
 {
@@ -17,20 +18,26 @@ namespace cmoon::graphics
 	{
 		using type = T;
 
-		constexpr basic_point2D() = default;
-		constexpr basic_point2D(const T& t1, const T& t2)
+		constexpr basic_point2D() noexcept(std::is_nothrow_default_constructible_v<type>) = default;
+		constexpr basic_point2D(const type& t1, const type& t2) noexcept(std::is_nothrow_copy_constructible_v<type>)
 			: x{t1}, y{t2} {}
 
+		constexpr basic_point2D(const basic_point2D&) noexcept(std::is_nothrow_copy_constructible_v<type>) = default;
+		constexpr basic_point2D(basic_point2D&&) noexcept(std::is_nothrow_move_constructible_v<type>) = default;
+
+		constexpr basic_point2D& operator=(const basic_point2D&) noexcept(std::is_nothrow_copy_assignable_v<type>) = default;
+		constexpr basic_point2D& operator=(basic_point2D&&) noexcept(std::is_nothrow_move_assignable_v<type>) = default;
+
 		#ifdef _WIN32
-		constexpr basic_point2D(const typename D2D1::TypeTraits<T>::Point& p)
+		constexpr basic_point2D(const typename D2D1::TypeTraits<type>::Point& p) noexcept
 			requires(requires {
-				typename D2D1::TypeTraits<T>::Point;
+				typename D2D1::TypeTraits<type>::Point;
 			})
 			: x{p.x}, y{p.y} {}
 
-		constexpr basic_point2D& operator=(const typename D2D1::TypeTraits<T>::Point& p)
+		constexpr basic_point2D& operator=(const typename D2D1::TypeTraits<type>::Point& p) noexcept
 			requires(requires {
-				typename D2D1::TypeTraits<T>::Point;
+				typename D2D1::TypeTraits<type>::Point;
 			})
 		{
 			x = p.x;
@@ -39,17 +46,17 @@ namespace cmoon::graphics
 			return *this;
 		}
 			
-		[[nodiscard]] constexpr operator typename D2D1::TypeTraits<T>::Point() const noexcept
+		[[nodiscard]] constexpr operator typename D2D1::TypeTraits<type>::Point() const noexcept
 			requires(requires {
-				typename D2D1::TypeTraits<T>::Point;
+				typename D2D1::TypeTraits<type>::Point;
 			})
 		{
 			return {.x = x, .y = y};
 		}
 		#endif
 
-		T x {};
-		T y {};
+		type x {};
+		type y {};
 	};
 
 	export

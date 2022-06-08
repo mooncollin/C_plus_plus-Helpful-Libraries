@@ -5,10 +5,10 @@ module;
 	#include <d2d1.h>
 #endif
 
-export module cmoon.graphics.size2D;
+#include <cstdint>
+#include <type_traits>
 
-import <cstdint>;
-import <type_traits>;
+export module cmoon.graphics.size2D;
 
 namespace cmoon::graphics
 {
@@ -18,21 +18,25 @@ namespace cmoon::graphics
 	{
 		using type = T;
 
-		constexpr basic_size2D() noexcept(std::is_nothrow_default_constructible<T>) = default;
+		constexpr basic_size2D() noexcept(std::is_nothrow_default_constructible_v<type>) = default;
+		constexpr basic_size2D(const basic_size2D&) noexcept(std::is_nothrow_copy_constructible_v<type>) = default;
+		constexpr basic_size2D(basic_size2D&&) noexcept(std::is_nothrow_move_assignable_v<type>) = default;
+		constexpr basic_size2D& operator=(const basic_size2D&) noexcept(std::is_nothrow_copy_assignable_v<type>) = default;
+		constexpr basic_size2D& operator=(basic_size2D&&) noexcept(std::is_nothrow_move_assignable_v<type>) = default;
 
-		constexpr basic_size2D(const T& w, const T& h) noexcept(std::is_nothrow_copy_constructible_v<T>)
+		constexpr basic_size2D(const type& w, const type& h) noexcept(std::is_nothrow_copy_constructible_v<type>)
 			: width{w}, height{h} {}
 
 		#ifdef _WIN32
-		constexpr basic_size2D(const typename D2D1::TypeTraits<T>::Size& s) noexcept
+		constexpr basic_size2D(const typename D2D1::TypeTraits<type>::Size& s) noexcept
 			requires(requires {
-				typename D2D1::TypeTraits<T>::Size;
+				typename D2D1::TypeTraits<type>::Size;
 			})
 			: width{s.width}, height{s.height} {}
 
-		constexpr basic_size2D& operator=(const typename D2D1::TypeTraits<T>::Size& s) noexcept
+		constexpr basic_size2D& operator=(const typename D2D1::TypeTraits<type>::Size& s) noexcept
 			requires(requires {
-				typename D2D1::TypeTraits<T>::Size;
+				typename D2D1::TypeTraits<type>::Size;
 			})
 		{
 			width = s.width;
@@ -40,17 +44,17 @@ namespace cmoon::graphics
 			return *this;
 		}
 
-		[[nodiscard]] constexpr operator typename D2D1::TypeTraits<T>::Size() const noexcept
+		[[nodiscard]] constexpr operator typename D2D1::TypeTraits<type>::Size() const noexcept
 			requires(requires {
-				typename D2D1::TypeTraits<T>::Size;
+				typename D2D1::TypeTraits<type>::Size;
 			})
 		{
 			return {.width = width, .height = height};
 		}
 		#endif
 
-		T width {};
-		T height {};
+		type width {};
+		type height {};
 	};
 
 	export

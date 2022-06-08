@@ -6,6 +6,7 @@
 {{macros.defined("cmoon.test", github_url_src + "/test/test.ixx")}}
 {{macros.overload_set([
 "
+template<class CharT, class Traits>
 class text_test_runner;
 "
 ]
@@ -13,6 +14,8 @@ class text_test_runner;
 <p>
     A <code>text_test_runner</code> will run tests and output results to a stream.
 </p>
+{{macros.template_parameters(["CharT", "Character type of the stream"],
+                             ["Traits", "Character traits of the stream"])}}
 <h3>Member functions</h3>
 {{macros.member_item("(constructor)", "Constructs the <code>text_test_runner</code>", "public member function", "constructor.html")}}
 {{macros.member_item("(destructor)", "Destructs the <code>text_test_runner</code>", "public member function", "")}}

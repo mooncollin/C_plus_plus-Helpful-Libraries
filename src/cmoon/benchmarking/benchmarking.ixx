@@ -1,0 +1,10 @@
+export module cmoon.benchmarking;
+export import cmoon.benchmarking.do_not_optimize;
+export import cmoon.benchmarking.run_result;
+export import cmoon.benchmarking.benchmark_result;
+export import cmoon.benchmarking.benchmark;
+export import cmoon.benchmarking.benchmark_function;
+export import cmoon.benchmarking.noop_benchmark;
+export import cmoon.benchmarking.benchmark_suite;
+export import cmoon.benchmarking.text_benchmark_runner;
+export import cmoon.benchmarking.benchmark_compare;

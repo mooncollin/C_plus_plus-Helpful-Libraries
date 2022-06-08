@@ -1,10 +1,10 @@
 export module cmoon.tests.ranges;
 export import cmoon.tests.ranges.enumerate;
 export import cmoon.tests.ranges.zip;
+//export import cmoon.tests.ranges.zip_transform;
 export import cmoon.tests.ranges.to;
 
 import <utility>;
-import <memory>;
 
 import cmoon.test;
 import cmoon.library;
@@ -15,15 +15,14 @@ namespace cmoon
 	template<>
 	struct library_traits<library::ranges>
 	{
-		template<class Allocator = std::allocator<cmoon::test::test_case>>
-		static cmoon::test::test_suite<Allocator> tests(const Allocator& alloc = {})
+		static cmoon::test::test_suite tests()
 		{
-			cmoon::test::test_suite<Allocator> suite{"ranges library tests", alloc};
-			suite.add_test_case<cmoon::tests::ranges::enumerate_view_constructor_test>();
-			suite.add_test_case<cmoon::tests::ranges::enumerate_view_increment_test>();
-			suite.add_test_case<cmoon::tests::ranges::enumerate_view_empty_test>();
-			suite.add_test_case<cmoon::tests::ranges::enumerate_view_size_test>();
-			suite.add_test_case<cmoon::tests::ranges::enumerate_view_front_test>();
+			cmoon::test::test_suite suite{"ranges library tests"};
+			//suite.add_test_case<cmoon::tests::ranges::enumerate_view_constructor_test>();
+			//suite.add_test_case<cmoon::tests::ranges::enumerate_view_increment_test>();
+			//suite.add_test_case<cmoon::tests::ranges::enumerate_view_empty_test>();
+			//suite.add_test_case<cmoon::tests::ranges::enumerate_view_size_test>();
+			//suite.add_test_case<cmoon::tests::ranges::enumerate_view_front_test>();
 			suite.add_test_case<cmoon::tests::ranges::zip_view_constructor_test>();
 			suite.add_test_case<cmoon::tests::ranges::zip_view_empty_test>();
 			suite.add_test_case<cmoon::tests::ranges::zip_view_increment_test>();
@@ -33,6 +32,7 @@ namespace cmoon
 			suite.add_test_case<cmoon::tests::ranges::zip_view_relational_test>();
 			suite.add_test_case<cmoon::tests::ranges::zip_view_iteration_test>();
 			suite.add_test_case<cmoon::tests::ranges::zip_view_index_test>();
+			//suite.add_test_case<cmoon::tests::ranges::zip_transform_constructor_test>();
 			suite.add_test_case<cmoon::tests::ranges::to_vector_test>();
 
 			return std::move(suite);

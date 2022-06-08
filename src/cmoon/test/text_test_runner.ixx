@@ -21,13 +21,14 @@ import cmoon.test.test_result;
 namespace cmoon::test
 {
 	export
+	template<class CharT, class Traits>
 	class text_test_runner
 	{
 		public:
-			text_test_runner(std::ostream& out) noexcept
+			text_test_runner(std::basic_ostream<CharT, Traits>& out) noexcept
 				: output_{out} {}
 
-			test_result<> run(test_case& t_case)
+			test_result run(test_case& t_case)
 			{
 				if (!t_case.name().empty())
 				{
@@ -64,11 +65,9 @@ namespace cmoon::test
 				return result;
 			}
 
-			template<class Allocator>
-			std::vector<test_result<Allocator>, typename std::allocator_traits<Allocator>::template rebind_alloc<test_result<Allocator>>>
-			run(test_suite<Allocator>& t_suite)
+			std::vector<test_result> run(test_suite& t_suite)
 			{
-				std::vector<test_result<Allocator>, typename std::allocator_traits<Allocator>::template rebind_alloc<test_result<Allocator>>> results;
+				std::vector<test_result> results;
 				std::size_t num_passed {0};
 				std::size_t num_errored {0};
 				std::size_t num_failed {0};
@@ -83,7 +82,7 @@ namespace cmoon::test
 				stopwatch.reset();
 				for (auto t_case : t_suite)
 				{
-					results.push_back(t_case->run(t_suite.get_allocator()));
+					results.push_back(t_case->run());
 					if (!results.back().errors().empty())
 					{
 						num_errored++;
@@ -153,7 +152,8 @@ namespace cmoon::test
 			void print_header()
 			{
 				output_ << "Starting testing at ";
-				output_ << std::format("{:%F %T}", cmoon::stopwatch::clock_t::now());
+				output_ << std::format(output_.getloc(), "{:%F %T}",
+									   std::chrono::zoned_time{std::chrono::current_zone(), std::chrono::system_clock::now()});
 				output_ << "\n\n";
 			}
 
@@ -161,35 +161,36 @@ namespace cmoon::test
 			void print_footer(const Duration& duration)
 			{
 				output_ << "Ending testing at ";
-				output_ << std::format("{:%F %T}", stopwatch.get_start_time() + duration);
+				output_ << std::format(output_.getloc(), "{:%F %T}",
+									   std::chrono::zoned_time{std::chrono::current_zone(), std::chrono::system_clock::now()});
 				output_ << " : ";
 
-				const auto before_fmt {output_.flags()};
-				cmoon::scope_exit reset_fmt {[this, &before_fmt] {
+				cmoon::scope_exit reset_fmt {[this, before_fmt = output_.flags()] {
 					output_.setf(before_fmt);
 				}};
+				
 				output_.setf(std::ios::fixed);
-				output_.precision(3);
 
-				if (const auto seconds = std::chrono::duration_cast<std::chrono::duration<double>>(duration); 
+				if (const std::chrono::duration<double> seconds {duration};
 					seconds.count() > 1)
 				{
+					output_.precision(3);
 					output_ << seconds;
 				}
-				else if (const auto milliseconds = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(duration);
+				else if (const std::chrono::duration<double, std::milli> milliseconds {duration};
 						 milliseconds.count() > 1)
 				{
+					output_.precision(3);
 					output_ << milliseconds;
 				}
 				else
 				{
-					const auto nanoseconds = std::chrono::duration_cast<std::chrono::duration<double, std::nano>>(duration);
+					const std::chrono::nanoseconds nanoseconds {duration};
 					output_ << nanoseconds;
 				}
 			}
 
-			template<class Allocator>
-			void print_test_result(const test_result<Allocator>& result)
+			void print_test_result(const test_result& result)
 			{
 				if (!result.errors().empty())
 				{
@@ -214,7 +215,7 @@ namespace cmoon::test
 				}
 			}
 
-			std::ostream& output_;
+			std::basic_ostream<CharT, Traits>& output_;
 			cmoon::stopwatch stopwatch;
 	};
 }

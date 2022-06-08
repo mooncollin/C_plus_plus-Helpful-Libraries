@@ -9,7 +9,7 @@ import cmoon.ranges;
 
 namespace cmoon::tests::ranges
 {
-	export
+	/*export
 	class enumerate_view_constructor_test : public cmoon::test::test_case
 	{
 		public:
@@ -156,5 +156,5 @@ namespace cmoon::tests::ranges
 				cmoon::test::assert_equal(value, "Hello");
 				cmoon::test::assert_equal(num, 0);
 			}
-	};
+	};*/
 }

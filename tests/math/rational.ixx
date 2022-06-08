@@ -15,8 +15,8 @@ namespace cmoon::tests::math
 			void operator()() override
 			{
 				cmoon::test::assert_equal(cmoon::rational(1), 1);
-				cmoon::test::assert_equal(cmoon::rational(1, 2), 0.5);
-				cmoon::test::assert_equal(cmoon::rational(1, 4), 0.25);
+				cmoon::test::assert_equal(static_cast<double>(cmoon::rational(1, 2)), 0.5);
+				cmoon::test::assert_equal(static_cast<double>(cmoon::rational(1, 4)), 0.25);
 				cmoon::test::assert_equal(cmoon::rational(12, 3), 4);
 				cmoon::test::assert_equal(cmoon::rational(3, 1), 3);
 				cmoon::test::assert_equal(cmoon::rational(-3, 1), -3);
@@ -26,8 +26,6 @@ namespace cmoon::tests::math
 				static_assert(cmoon::rational(1, 3) < cmoon::rational(1, 2));
 				static_assert(cmoon::rational(1) > cmoon::rational(1, 5));
 				static_assert(cmoon::rational(2, 5) >= cmoon::rational(20, 50));
-				static_assert(cmoon::rational(1, 2) == 0.5);
-				static_assert(cmoon::rational(1, 4) == 0.25);
 				static_assert(cmoon::rational(12, 3) == 4);
 				static_assert(cmoon::rational(3, 1) == 3);
 				static_assert(cmoon::rational(-3, 1) == -3);

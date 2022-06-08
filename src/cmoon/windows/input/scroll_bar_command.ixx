@@ -3,9 +3,10 @@ module;
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
+#include <cstdint>
+
 export module cmoon.windows.input.scroll_bar_command;
 
-import <cstdint>;
 
 namespace cmoon::windows
 {

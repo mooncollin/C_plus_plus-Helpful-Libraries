@@ -2,11 +2,11 @@ module;
 
 #include <Unknwn.h>
 
-export module cmoon.windows.comptr;
+#include <type_traits>
+#include <memory>
+#include <concepts>
 
-import <type_traits>;
-import <memory>;
-import <concepts>;
+export module cmoon.windows.comptr;
 
 namespace cmoon::windows
 {

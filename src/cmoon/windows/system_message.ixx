@@ -1,14 +1,14 @@
 module;
 
+#include <cstdint>
+#include <functional>
+
 #include <Windows.h>
 #include <windowsx.h>
 #include <Dbt.h>
 #include <CommCtrl.h>
 
 export module cmoon.windows.system_message;
-
-import <cstdint>;
-import <functional>;
 
 namespace cmoon::windows
 {

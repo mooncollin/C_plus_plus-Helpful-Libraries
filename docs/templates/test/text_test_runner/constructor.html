@@ -3,10 +3,11 @@
 {% set library_name = "Testing" %}
 {% set item_name = "text_test_runner" %}
 {% set end_name = "text_test_runner" %}
+{% set templates = "<class CharT, class Traits>" %}
 {% block content2 %}
 {{macros.overload_set([
 "
-text_test_runner(std::ostream& out) noexcept;
+text_test_runner(std::basic_ostream<CharT, Traits>& out) noexcept;
 ",
 "
 text_test_runner(const text_test_runner& other) noexcept;

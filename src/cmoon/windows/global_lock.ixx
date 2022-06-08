@@ -1,5 +1,8 @@
 module;
 
+#pragma warning(disable : 4005)
+#pragma warning(disable : 5105)
+#pragma warning(disable : 5106)
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 

@@ -23,13 +23,7 @@ namespace cmoon
 			using reference = void;
 			using iterator_category = std::output_iterator_tag;
 
-			ostream_joiner() noexcept
-				: out_{nullptr}, first_element{true} {}
-
-			ostream_joiner(ostream_type& stream, const DelimT& delimiter)
-				: out_{std::addressof(stream)}, delim_{delimiter}, first_element{true} {}
-
-			ostream_joiner(ostream_type& stream, DelimT&& delimiter)
+			ostream_joiner(ostream_type& stream, DelimT delimiter) noexcept(std::is_nothrow_move_constructible_v<DelimT>)
 				: out_{std::addressof(stream)}, delim_{std::move(delimiter)}, first_element{true} {}
 
 			template<class T>

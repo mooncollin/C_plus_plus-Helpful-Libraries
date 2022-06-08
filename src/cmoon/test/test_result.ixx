@@ -1,26 +1,21 @@
 export module cmoon.test.test_result;
 
 import <exception>;
-import <vector>;
+import <deque>;
 import <utility>;
 import <memory>;
 import <type_traits>;
+import <ranges>;
 
 import cmoon.test.assert_exception;
 
 namespace cmoon::test
 {
 	export
-	template<class Allocator = std::allocator<std::exception>>
 	class test_result
 	{
 		public:
-			using allocator_type = typename std::allocator_traits<Allocator>::template rebind_alloc<std::exception>;
-
-			test_result() noexcept(std::is_nothrow_default_constructible_v<std::vector<std::exception, allocator_type>>) = default;
-
-			test_result(const Allocator& alloc)
-				: errors_{alloc}, failures_{alloc} {}
+			test_result() noexcept = default;
 
 			void add_error(std::exception e)
 			{
@@ -32,22 +27,27 @@ namespace cmoon::test
 				failures_.push_back(std::move(e));
 			}
 
-			const std::vector<std::exception, allocator_type>& errors() const noexcept
+			[[nodiscard]] auto errors() const noexcept
 			{
-				return errors_;
+				return std::views::all(errors_);
 			}
 
-			const std::vector<std::exception, allocator_type>& failures() const noexcept
+			[[nodiscard]] auto failures() const noexcept
 			{
-				return failures_;
+				return std::views::all(failures_);
 			}
 
 			[[nodiscard]] bool passed() const noexcept
 			{
-				return errors_.empty() && failures_.empty();
+				return std::ranges::empty(errors_) && std::ranges::empty(failures_);
+			}
+
+			[[nodiscard]] explicit operator bool() const noexcept
+			{
+				return passed();
 			}
 		private:
-			std::vector<std::exception, allocator_type> errors_;
-			std::vector<std::exception, allocator_type> failures_;
+			std::deque<std::exception> errors_;
+			std::deque<std::exception> failures_;
 	};
 }

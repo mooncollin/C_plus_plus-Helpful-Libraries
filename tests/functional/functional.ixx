@@ -1,7 +1,6 @@
 export module cmoon.tests.functional;
 
 import <utility>;
-import <memory>;
 
 import cmoon.test;
 import cmoon.library;
@@ -12,10 +11,9 @@ namespace cmoon
 	template<>
 	struct library_traits<library::functional>
 	{
-		template<class Allocator = std::allocator<cmoon::test::test_case>>
-		static cmoon::test::test_suite<Allocator> tests(const Allocator& alloc = {})
+		static cmoon::test::test_suite tests()
 		{
-			cmoon::test::test_suite<Allocator> suite{"functional library tests", alloc};
+			cmoon::test::test_suite suite{"functional library tests"};
 
 			return std::move(suite);
 		}

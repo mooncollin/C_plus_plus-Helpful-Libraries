@@ -31,7 +31,7 @@ namespace cmoon
     {
         if constexpr(from_chars_valid<T, CharT>)
         {
-            const auto result = std::from_chars(str.data(), str.data() + str.size(), value);
+            const auto result {std::from_chars(str.data(), str.data() + str.size(), value)};
             if (result.ec != std::errc{})
             {
                 throw bad_string_conversion{};
@@ -43,6 +43,7 @@ namespace cmoon
         }
         else if constexpr (std::same_as<T, std::basic_string_view<CharT>>)
         {
+            value = str;
         }
         else if constexpr (std::same_as<T, CharT>)
         {
@@ -65,7 +66,7 @@ namespace cmoon
         if constexpr(from_chars_valid<T, CharT>)
         {
             T value;
-            const auto result = std::from_chars(str.data(), str.data() + str.size(), value);
+            const auto result {std::from_chars(str.data(), str.data() + str.size(), value)};
             if (result.ec != std::errc{})
             {
                 throw bad_string_conversion{};

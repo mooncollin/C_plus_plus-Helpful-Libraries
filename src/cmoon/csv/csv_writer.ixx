@@ -14,51 +14,48 @@ import cmoon.csv.dialect;
 namespace cmoon::csv
 {
 	export
-	template<class CharT, class Traits = std::char_traits<CharT>>
+	template<class CharT, class Traits>
 	class basic_csv_writer
 	{
 		public:
-			basic_csv_writer(std::basic_ostream<CharT, Traits>& os, const basic_dialect<CharT, Traits>& dialect={})
-				: os{os}, dialect_{dialect} {}
-
-			basic_csv_writer(std::basic_ostream<CharT, Traits>& os, basic_dialect<CharT, Traits>&& dialect)
+			basic_csv_writer(std::basic_ostream<CharT, Traits>& os, basic_dialect<CharT, Traits> dialect={}) noexcept
 				: os{os}, dialect_{std::move(dialect)} {}
 
-			basic_dialect<CharT, Traits>& get_dialect()
+			[[nodiscard]] const basic_dialect<CharT, Traits>& dialect() const noexcept
 			{
 				return dialect_;
 			}
 
-			const basic_dialect<CharT, Traits>& get_dialect() const
+			template<std::ranges::input_range R>
+			void write_row(R&& r)
 			{
-				return dialect_;
+				write_row(std::ranges::begin(r), std::ranges::end(r));
 			}
 
-			template<std::ranges::input_range Range>
-			void write_row(Range&& r)
+			template<std::input_iterator I, std::sentinel_for<I> S>
+			void write_row(I begin, S end)
 			{
-				write_row(std::begin(r), std::end(r));
-			}
-
-			template<std::input_iterator InputIterator>
-			void write_row(InputIterator begin, InputIterator end)
-			{
+				const auto write_line_terminator {begin != end};
 				while (begin != end)
 				{
 					write_element(*begin);
-					begin++;
+					++begin;
 					if (begin != end)
 					{
 						os.get() << dialect_.delimiter;
 					}
 				}
-				os.get() << dialect_.line_terminator;
+
+				if (write_line_terminator)
+				{
+					os.get() << dialect_.line_terminator;
+				}
 			}
 
 			template<class... Args>
-			void write_row(Args&&... args)
+			void write_row(const Args&... args)
 			{
-				write_variadic_element(std::forward<Args>(args)...);
+				write_variadic_elements(args...);
 				os.get() << dialect_.line_terminator;
 			}
 		private:
@@ -66,17 +63,17 @@ namespace cmoon::csv
 			basic_dialect<CharT, Traits> dialect_;
 
 			template<class Arg>
-			void write_variadic_element(Arg&& arg)
+			void write_variadic_elements(const Arg& arg)
 			{
-				write_element(std::forward<Arg>(arg));
+				write_element(arg);
 			}
 
 			template<class Arg, class... Args>
-			void write_variadic_element(Arg&& arg, Args&&... args)
+			void write_variadic_elements(const Arg& arg, const Args&... args)
 			{
-				write_element(std::forward<Arg>(arg));
+				write_element(arg);
 				os.get() << dialect_.delimiter;
-				write_variadic_element(std::forward<Args>(args)...);
+				write_variadic_elements(args...);
 			}
 
 			template<class T>
@@ -84,10 +81,10 @@ namespace cmoon::csv
 			{
 				switch (dialect_.quoting)
 				{
-					case dialect::quoting_option::QUOTE_MINIMAL:
+					case quoting_option::QUOTE_MINIMAL:
 						{
-							const auto str = cmoon::to_string(element);
-							const auto needs_quotes = str.find(dialect_.delimiter) != std::string::npos;
+							const auto str {cmoon::to_string(element)};
+							const auto needs_quotes {str.contains(dialect_.delimiter)};
 							if (needs_quotes)
 							{
 								os.get() << dialect_.quote;
@@ -99,13 +96,13 @@ namespace cmoon::csv
 							}
 							break;
 						}
-					case dialect::quoting_option::QUOTE_NONNUMERIC:
+					case quoting_option::QUOTE_NONNUMERIC:
 						if constexpr (std::is_arithmetic_v<T>)
 						{
 							os.get() << element;
 							break;
 						}
-					case dialect::quoting_option::QUOTE_ALL:
+					case quoting_option::QUOTE_ALL:
 						os.get() << dialect_.quote;
 						os.get() << element;
 						os.get() << dialect_.quote;
@@ -114,8 +111,8 @@ namespace cmoon::csv
 	};
 
 	export
-	using csv_writer = basic_csv_writer<char>;
+	using csv_writer = basic_csv_writer<char, std::char_traits<char>>;
 
 	export
-	using wcsv_writer = basic_csv_writer<wchar_t>;
+	using wcsv_writer = basic_csv_writer<wchar_t, std::char_traits<wchar_t>>;
 }

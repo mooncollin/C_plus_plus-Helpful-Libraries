@@ -8,7 +8,7 @@ import cmoon.tests.files;
 
 int main()
 {
-	auto suite = cmoon::library_traits<cmoon::library::files>::tests();
+	auto suite {cmoon::library_traits<cmoon::library::files>::tests()};
 
 	cmoon::test::text_test_runner runner{std::cout};
 

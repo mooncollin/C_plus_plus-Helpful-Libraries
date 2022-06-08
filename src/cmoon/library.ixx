@@ -9,8 +9,7 @@ namespace cmoon
 	export
 	enum class library
 	{
-		algorithm,
-		benchmark,
+		benchmarking,
 		bio,
 		concepts,
 		csv,
@@ -26,7 +25,6 @@ namespace cmoon
 		graphics,
 		hash,
 		io,
-		iterator,
 		json,
 		language,
 		linear,
@@ -39,6 +37,7 @@ namespace cmoon
 		mutex,
 		net,
 		numbers,
+		parallel,
 		platform,
 		property,
 		ranges,

@@ -217,4 +217,19 @@ namespace cmoon::meta
 	export
 	template<class... T>
 	using index_sequence_for = make_index_sequence<sizeof...(T)>;
+
+	export
+	template<std::size_t N, auto V>
+	struct gen_value_list
+	{
+		using type = value_list<V>::template concatenate<gen_value_list<N - 1, V>::type>;
+	};
+
+	export
+	template<auto V>
+	struct gen_value_list<0, V> : std::type_identity<value_list<>> {};
+
+	export
+	template<std::size_t N, auto V>
+	using gen_value_list_t = typename gen_value_list<N, V>::type;
 }

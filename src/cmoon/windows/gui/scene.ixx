@@ -2,9 +2,9 @@ module;
 
 #include <d2d1.h>
 
-export module cmoon.windows.gui.scene;
+#include <memory>
 
-import <memory>;
+export module cmoon.windows.gui.scene;
 
 import cmoon.graphics;
 

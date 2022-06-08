@@ -10,7 +10,7 @@ namespace cmoon
 {
 	export
 	template<class R, class D>
-		requires(cmoon::object<std::remove_reference_t<R>> && 
+		requires(std::is_object_v<std::remove_reference_t<R>> && 
 				 std::move_constructible<std::remove_reference_t<R>> &&
 				 (std::copy_constructible<std::remove_reference_t<R>> || std::is_nothrow_move_constructible_v<std::remove_reference_t<R>>) &&
 				 std::destructible<D> &&

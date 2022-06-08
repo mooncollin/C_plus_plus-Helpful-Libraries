@@ -1,0 +1,17 @@
+export module cmoon.parallel;
+export import cmoon.simd.fixed_size;
+export import cmoon.simd.scalar;
+export import cmoon.simd.native;
+export import cmoon.simd.compatible;
+export import cmoon.simd.is_abi_tag;
+export import cmoon.simd.deduce;
+export import cmoon.simd.simd_size;
+export import cmoon.simd.max_fixed_size;
+export import cmoon.simd.tag;
+export import cmoon.simd.memory_alignment;
+export import cmoon.simd.simd;
+export import cmoon.simd.simd_cast;
+export import cmoon.simd.to_fixed_size;
+export import cmoon.simd.to_native;
+export import cmoon.simd.where_expression;
+export import cmoon.simd.algorithm;

@@ -34,7 +34,7 @@ namespace cmoon::test
 			   << expected
 			   << "\n";
 
-			return ss.str();
+			return std::move(ss).str();
 		}
 		else
 		{

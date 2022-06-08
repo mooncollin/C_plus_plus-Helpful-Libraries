@@ -1,40 +1,67 @@
 export module cmoon.test.test_suite;
 
-import <type_traits>;
-import <vector>;
+import <deque>;
 import <memory>;
 import <concepts>;
 import <string>;
 import <iterator>;
+import <algorithm>;
+import <ranges>;
 import <cstddef>;
-import <exception>;
 
 import cmoon.test.test_case;
 
 namespace cmoon::test
 {
+	class test_suite;
+
+	template<class It>
+	class test_suite_iterator
+	{
+		public:
+			using difference_type = std::iter_difference_t<It>;
+			using value_type = test_case*;
+			using iterator_category = std::forward_iterator_tag;
+
+			test_suite_iterator() noexcept = default;
+
+			value_type operator*() const noexcept
+			{
+				return ptr->get();
+			}
+
+			test_suite_iterator& operator++()
+			{
+				++ptr;
+				return *this;
+			}
+
+			test_suite_iterator operator++(int)
+			{
+				auto copy {*this};
+				++ptr;
+				return copy;
+			}
+
+			[[nodiscard]] friend bool operator==(const test_suite_iterator&, const test_suite_iterator&) noexcept = default;
+			[[nodiscard]] friend bool operator!=(const test_suite_iterator&, const test_suite_iterator&) noexcept = default;
+		private:
+			test_suite_iterator(It ptr) noexcept
+				: ptr{ptr} {}
+
+			It ptr;
+
+			friend class test_suite;
+	};
+
 	export
-	template<class Allocator = std::allocator<test_case>>
 	class test_suite
 	{
-		using container = std::vector<test_case*, typename std::allocator_traits<Allocator>::template rebind_alloc<test_case*>>;
-
-		template<class Allocator2>
-		friend class test_suite;
-
 		public:
-			using allocator_type = typename std::allocator_traits<Allocator>::template rebind_alloc<test_case>;
+			test_suite() noexcept = default;
 
-			test_suite() noexcept(std::is_nothrow_default_constructible_v<container>) = default;
-
-			test_suite(std::string name) noexcept(std::is_nothrow_default_constructible_v<container>)
+			test_suite(std::string name) noexcept
 				: name_{std::move(name)} {}
-
-			test_suite(const Allocator& alloc) noexcept(std::is_nothrow_constructible_v<container, Allocator>)
-				: cases{alloc} {}
-
-			test_suite(std::string name, const Allocator& alloc) noexcept(std::is_nothrow_constructible_v<container, Allocator>)
-				: name_{std::move(name)}, cases{alloc} {}
 
 			test_suite(const test_suite&) = delete;
 			test_suite& operator=(const test_suite&) = delete;
@@ -42,42 +69,10 @@ namespace cmoon::test
 			test_suite(test_suite&&) noexcept = default;
 			test_suite& operator=(test_suite&&) noexcept = default;
 
-			~test_suite() noexcept
-			{
-				deallocate_test_cases();
-			}
-
 			template<std::derived_from<test_case> T, class... Args>
 			void add_test_case(Args&&... args)
 			{
-				using traits = typename std::allocator_traits<allocator_type>::template rebind_traits<T>;
-				typename traits::allocator_type alloc {get_allocator()};
-				T* ptr {traits::allocate(alloc, 1)};
-				try
-				{
-					traits::construct(alloc, ptr, std::forward<Args>(args)...);
-				}
-				catch (...)
-				{
-					traits::deallocate(alloc, ptr, 1);
-					throw std::current_exception();
-				}
-
-				try
-				{
-					cases.push_back(ptr);
-				}
-				catch (...)
-				{
-					traits::destroy(alloc, ptr);
-					traits::deallocate(alloc, ptr, 1);
-					throw std::current_exception();
-				}
-			}
-
-			void name(std::string n) noexcept
-			{
-				name_ = std::move(n);
+				cases.push_back(std::make_unique<T>(std::forward<Args>(args)...));
 			}
 
 			const std::string& name() const noexcept
@@ -87,8 +82,8 @@ namespace cmoon::test
 
 			void add_test_suite(test_suite&& suite)
 			{
-				cases.insert(std::end(cases), std::begin(suite), std::end(suite));
-				suite.cases.clear();
+				std::ranges::move(suite.cases, std::back_inserter(cases));
+				suite.clear();
 			}
 
 			template<std::output_iterator<test_result> Out>
@@ -102,43 +97,35 @@ namespace cmoon::test
 
 			[[nodiscard]] auto begin() const noexcept
 			{
-				return std::begin(cases);
+				return test_suite_iterator{std::cbegin(cases)};
+			}
+
+			[[nodiscard]] auto begin() noexcept
+			{
+				return test_suite_iterator{std::begin(cases)};
+			}
+
+			[[nodiscard]] auto end() noexcept
+			{
+				return test_suite_iterator{std::end(cases)};
 			}
 
 			[[nodiscard]] auto end() const noexcept
 			{
-				return std::end(cases);
+				return test_suite_iterator{std::cend(cases)};
 			}
 
 			[[nodiscard]] std::size_t size() const noexcept
 			{
-				return std::size(cases);
+				return std::ranges::size(cases);
 			}
 
 			void clear() noexcept
 			{
-				deallocate_test_cases();
 				cases.clear();
-			}
-
-			allocator_type get_allocator() const noexcept
-			{
-				return cases.get_allocator();
 			}
 		private:
 			std::string name_;
-			container cases;
-
-			void deallocate_test_cases() noexcept
-			{
-				using traits = typename std::allocator_traits<allocator_type>;
-				allocator_type alloc {get_allocator()};
-
-				for (auto ptr : cases)
-				{
-					traits::destroy(alloc, ptr);
-					traits::deallocate(alloc, ptr, 1);
-				}
-			}
+			std::deque<std::unique_ptr<test_case>> cases;
 	};
 }

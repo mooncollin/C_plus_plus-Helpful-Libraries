@@ -12,16 +12,16 @@ namespace cmoon
 		str.clear();
 
 		typename std::basic_istream<CharT, Traits>::sentry se{is, true};
-		auto sb = is.rdbuf();
+		auto sb {is.rdbuf()};
 		while(true)
 		{
-			const auto c = sb->sbumpc();
+			const auto c {sb->sbumpc()};
 			switch (c)
 			{
-				case CharT('\n'):
+				case '\n':
 					return is;
-				case CharT('\r'):
-					if (sb->sgetc() == CharT('\n'))
+				case '\r':
+					if (sb->sgetc() == '\n')
 					{
 						sb->sbumpc();
 					}
@@ -33,7 +33,7 @@ namespace cmoon
 					}
 					return is;
 				default:
-					str += static_cast<CharT>(c);
+					str += c;
 			}
 		}
 	}

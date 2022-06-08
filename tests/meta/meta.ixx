@@ -3,7 +3,6 @@ export import cmoon.tests.meta.type_list;
 export import cmoon.tests.meta.value_list;
 
 import <utility>;
-import <memory>;
 
 import cmoon.test;
 import cmoon.library;
@@ -14,10 +13,9 @@ namespace cmoon
 	template<>
 	struct library_traits<library::meta>
 	{
-		template<class Allocator = std::allocator<cmoon::test::test_case>>
-		static cmoon::test::test_suite<Allocator> tests(const Allocator& alloc = {})
+		static cmoon::test::test_suite tests()
 		{
-			cmoon::test::test_suite<Allocator> suite{"meta library tests", alloc};
+			cmoon::test::test_suite suite{"meta library tests"};
 			suite.add_test_case<cmoon::tests::meta::type_list_no_type_test>();
 			suite.add_test_case<cmoon::tests::meta::type_list_multiple_types_test>();
 			suite.add_test_case<cmoon::tests::meta::type_list_concatenate_test>();

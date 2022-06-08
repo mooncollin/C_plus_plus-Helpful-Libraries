@@ -24,10 +24,9 @@ namespace cmoon::test
 			virtual void tear_down() {}
 			virtual ~test_case() noexcept = default;
 
-			template<class Allocator = std::allocator<std::exception>>
-			test_result<Allocator> run(const Allocator& alloc = {})
+			test_result run()
 			{
-				test_result<Allocator> result{alloc};
+				test_result result;
 
 				try
 				{
@@ -52,11 +51,6 @@ namespace cmoon::test
 			}
 
 			virtual void operator()() = 0;
-
-			void name(std::string n) noexcept
-			{
-				name_ = std::move(n);
-			}
 
 			[[nodiscard]] const std::string& name() const noexcept
 			{

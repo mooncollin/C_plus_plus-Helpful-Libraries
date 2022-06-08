@@ -5,13 +5,13 @@ module;
 	#include <d2d1.h>
 #endif
 
-export module cmoon.graphics.color;
+#include <cstdint>
+#include <string>
+#include <charconv>
+#include <iostream>
+#include <iomanip>
 
-import <cstdint>;
-import <string>;
-import <charconv>;
-import <iostream>;
-import <iomanip>;
+export module cmoon.graphics.color;
 
 namespace cmoon::graphics
 {
@@ -23,7 +23,13 @@ namespace cmoon::graphics
 			using rgb_int_t = std::int32_t;
 			using alpha_t = float;
 
-			constexpr color() = default;
+			constexpr color() noexcept = default;
+
+			constexpr color(const color&) noexcept = default;
+			constexpr color(color&&) noexcept = default;
+
+			constexpr color& operator=(const color&) noexcept = default;
+			constexpr color& operator=(color&&) noexcept = default;
 
 			constexpr color(rgb_int_t rgb, alpha_t a = 1.0) noexcept
 				: red_{static_cast<rgb_float_t>((rgb & red_mask) >> red_shift) / range},
@@ -116,7 +122,7 @@ namespace cmoon::graphics
 			}
 
 			#ifdef _WIN32
-			[[nodiscard]] constexpr operator ::D2D1_COLOR_F() const
+			[[nodiscard]] constexpr operator ::D2D1_COLOR_F() const noexcept
 			{
 				return {.r = red_, .g = green_, .b = blue_, .a = alpha_};
 			}
@@ -139,9 +145,10 @@ namespace cmoon::graphics
 	};
 
 	export
-	std::ostream& operator<<(std::ostream& os, const color& c)
+	template<class CharT, class Traits>
+	std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& os, const color& c)
 	{
-		const auto before_flags = os.flags();
+		const auto before_flags {os.flags()};
 
 		os << std::hex << c.to_int();
 
