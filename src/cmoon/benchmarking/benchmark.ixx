@@ -7,6 +7,7 @@ import <string>;
 import <utility>;
 
 import cmoon.benchmarking.benchmark_result;
+import cmoon.utility;
 
 namespace cmoon::benchmarking
 {
@@ -54,14 +55,11 @@ namespace cmoon::benchmarking
 				results.start_run();
 				for (std::size_t iteration{0}; iteration < bench.iterations_per_run(); ++iteration)
 				{
-					const auto start_baseline {std::chrono::high_resolution_clock::now()};
-					const auto end_baseline {std::chrono::high_resolution_clock::now() - start_baseline};
-					const auto start {std::chrono::high_resolution_clock::now()};
+					cmoon::stopwatch stopwatch;
 					bench();
-					const auto end {std::chrono::high_resolution_clock::now() - start};
-					const auto benchmark_time_elapsed {std::chrono::duration_cast<std::chrono::nanoseconds>(end - end_baseline)};
+					const auto benchmark_duration {stopwatch.get_elapsed_time()};
 
-					results.add_iteration(std::max(std::chrono::nanoseconds{0}, benchmark_time_elapsed));
+					results.add_iteration(benchmark_duration);
 				}
 				bench.tear_down();
 			}
